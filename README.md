@@ -1,97 +1,172 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# CandidHR - React Native Application
 
-# Getting Started
+A modern React Native application built with TypeScript, Redux Toolkit, and Redux Saga, following atomic design principles.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## 🚀 Quick Start
 
-## Step 1: Start Metro
+### Prerequisites
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+- Node.js >= 20 (see `.nvmrc`)
+- React Native development environment set up
+- iOS: Xcode and CocoaPods
+- Android: Android Studio and JDK
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+### Installation
 
-```sh
-# Using npm
-npm start
+```bash
+# Install dependencies
+npm install
 
-# OR using Yarn
-yarn start
+# iOS setup (macOS only)
+cd ios && bundle exec pod install && cd ..
 ```
 
-## Step 2: Build and run your app
+### Running the App
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+```bash
+# Start Metro bundler
+npm start
 
-### Android
-
-```sh
-# Using npm
+# Run on Android
 npm run android
 
-# OR using Yarn
-yarn android
+# Run on iOS
+npm run ios
+```
+
+## 📁 Project Structure
+
+This project follows **Atomic Design** principles and feature-based architecture:
+
+```
+src/
+├── components/     # UI Components (atoms, molecules, organisms)
+├── features/       # Redux features (auth, profile, jobs, applications)
+├── store/          # Redux store configuration
+├── screens/        # Screen components
+├── navigation/     # Navigation setup
+├── api/            # API client and endpoints
+├── hooks/          # Custom React hooks
+├── utils/          # Utility functions
+├── theme/          # Theme configuration
+├── types/          # TypeScript types
+└── config/         # App configuration
+```
+
+For detailed structure, see [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md)
+
+## 🏗️ Architecture
+
+### Atomic Design
+- **Atoms**: Basic UI elements (Button, Typography, TextField)
+- **Molecules**: Simple combinations (StatCard, FilterOptionItem)
+- **Organisms**: Complex components (Header, BottomSheet, JobCardList)
+
+### State Management
+- **Redux Toolkit** for state management
+- **Redux Saga** for side effects
+- **Redux Persist** for state persistence
+- Feature-based slices with atomic structure
+
+### Tech Stack
+- React Native 0.82.1
+- TypeScript 5.8.3
+- Redux Toolkit + Redux Saga
+- React Navigation 7.x
+- React Native SVG
+- React Native Vector Icons
+
+## 📝 Available Scripts
+
+```bash
+# Development
+npm start              # Start Metro bundler
+npm run android        # Run on Android
+npm run ios            # Run on iOS
+
+# Code Quality
+npm run lint           # Run ESLint
+npm run lint:fix       # Fix ESLint errors
+npm run format         # Format code with Prettier
+npm run format:check   # Check code formatting
+npm run type-check     # TypeScript type checking
+
+# Testing
+npm test               # Run tests
+npm run test:watch     # Run tests in watch mode
+npm run test:coverage  # Generate test coverage
+
+# Cleanup
+npm run clean          # Clean node_modules
+npm run clean:android  # Clean Android build
+npm run clean:ios      # Clean iOS build
+```
+
+## 📚 Documentation
+
+- [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md) - Complete project structure
+- [ATOMIC_STRUCTURE.md](./ATOMIC_STRUCTURE.md) - Atomic design principles
+- [src/components/README.md](./src/components/README.md) - Component documentation
+- [src/features/README.md](./src/features/README.md) - Feature documentation
+- [src/store/README.md](./src/store/README.md) - Redux store documentation
+
+## 🎨 Code Style
+
+This project uses:
+- **ESLint** for linting
+- **Prettier** for code formatting
+- **TypeScript** for type safety
+- **EditorConfig** for editor consistency
+
+Configuration files:
+- `.eslintrc.js` - ESLint rules
+- `.prettierrc.js` - Prettier configuration
+- `.editorconfig` - Editor settings
+- `tsconfig.json` - TypeScript configuration
+
+## 🧪 Testing
+
+```bash
+# Run tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
+```
+
+## 📦 Building
+
+### Android
+```bash
+cd android
+./gradlew assembleRelease
 ```
 
 ### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
+```bash
+cd ios
+xcodebuild -workspace candidhr.xcworkspace -scheme candidhr -configuration Release
 ```
 
-Then, and every time you update your native dependencies, run:
+## 🤝 Contributing
 
-```sh
-bundle exec pod install
-```
+1. Follow the atomic design structure
+2. Use TypeScript for all new code
+3. Write tests for new features
+4. Follow the naming conventions
+5. Run linting and formatting before committing
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+## 📄 License
 
-```sh
-# Using npm
-npm run ios
+Private project
 
-# OR using Yarn
-yarn ios
-```
+## 🔗 Resources
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+- [React Native Documentation](https://reactnative.dev/)
+- [Redux Toolkit Documentation](https://redux-toolkit.js.org/)
+- [Redux Saga Documentation](https://redux-saga.js.org/)
+- [React Navigation Documentation](https://reactnavigation.org/)
+- [Atomic Design by Brad Frost](https://atomicdesign.bradfrost.com/)
