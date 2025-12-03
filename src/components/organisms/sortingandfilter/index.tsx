@@ -12,11 +12,10 @@ const SortingAndFilter: FC<{
 }> = ({ title, options, onPressFilter }) => {
     return (
         <Fragment>
-            <View style={{ flexDirection: 'row', paddingVertical: 8, backgroundColor: colors.common.white }}>
-
+            <View style={{ flexDirection: 'row', paddingVertical: 8, backgroundColor: colors.common.white, borderBottomWidth:2, borderColor:colors.gray[200] }}>
                 {/* Filters Button */}
                 <Pressable
-                    onPress={onPressFilter}   // ⬅️ CLICK HANDLER
+                    onPress={onPressFilter}   //CLICK HANDLER
                     style={{
                         flexDirection: 'row',
                         alignItems: 'center',
@@ -66,7 +65,6 @@ const SortingAndFilter: FC<{
                         );
                     })}
                 </ScrollView>
-
             </View>
         </Fragment>
     );

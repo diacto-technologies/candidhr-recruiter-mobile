@@ -5,8 +5,13 @@ import { pluscircle } from '../../../assets/svg/pluscircle';
 import { Header, JobCardList, SortingAndFilter, ApplicantList } from '../../../components';
 import { applicants, filtersOption } from '../../../utils/dummaydata';
 import { colors } from '../../../theme/colors';
+import { useStyles } from './styles';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRNSafeAreaInsets } from '../../../hooks/useRNSafeAreaInsets';
 
 const ApplicantScreen = () => {
+    const inset = useRNSafeAreaInsets()
+    const styles = useStyles();
     return (
         <Fragment>
             <Header title='Applicants' />
@@ -16,10 +21,11 @@ const ApplicantScreen = () => {
                     renderItem={({ item }) => <ApplicantList item={item} />}
                     keyExtractor={(item) => item.id}
                     showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ paddingVertical: 12, paddingHorizontal: 16, gap:12 }}
                 />
             </View>
             <View>
-                <SortingAndFilter title='Filters' options={filtersOption} onPressFilter={() => {}} />
+                <SortingAndFilter title='Filters' options={filtersOption} onPressFilter={() => { }} />
             </View>
         </Fragment>
     );
@@ -28,11 +34,4 @@ const ApplicantScreen = () => {
 export default ApplicantScreen;
 
 const styles = StyleSheet.create({
-    container: {
-        backgroundColor: colors.neutrals.lightGray,
-        flex: 1,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-    },
-    text: { fontSize: 22, fontWeight: '600' }
 });

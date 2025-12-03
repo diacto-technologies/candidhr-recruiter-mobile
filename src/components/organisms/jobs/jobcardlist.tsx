@@ -39,7 +39,7 @@ const JobCardList = () => {
 
                 <View style={styles.row}>
                 <Typography variant='P1M' color={colors.mainColors.carbonGray}>{item.applicants} applicants</Typography>
-                    <Text style={styles.dot}></Text>
+                    <View style={styles.dot}></View>
                     <Typography variant='P1' color={colors.grayScale.slateGray}>{item.date}</Typography>
                 </View>
                 <View style={{paddingTop:10}}>
@@ -73,7 +73,7 @@ const JobCardList = () => {
             data={JobList as JobItem[]}
             keyExtractor={(item) => item.id}
             renderItem={renderItem}
-            contentContainerStyle={{ gap: 12, flexGrow: 1 }}
+            contentContainerStyle={{ gap: 12, flexGrow: 1, paddingVertical:12,paddingHorizontal: 16}}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={() => (
                 <View style={styles.emptyContainer}>

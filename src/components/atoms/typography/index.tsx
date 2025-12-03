@@ -1,79 +1,4 @@
-// import React, { Fragment } from 'react';
-// import { Text } from 'react-native';
-// import { Fonts, fontweightType } from '../../theme/fonts';
-// import { TypographyProps } from './typography';
-// import { colors } from '../../../theme/colors';
-
-// export const textvariant = {
-//   H1: { fontFamily: Fonts.CTCSplashRoundedBold, fontSize: 18, fontWeight: '600' as fontweightType },
-//   H1B: { fontFamily: Fonts.BSBloggerSans, fontSize: 16, fontWeight: '600' as fontweightType },
-//   H1C: {
-//     fontFamily: Fonts.CTCSplashRoundedBold,
-//     fontSize: 36,
-//     fontWeight: '600' as fontweightType,
-//   },
-//   H2: {},
-//   H2B: {},
-//   H2C: {},
-//   H3: {},
-//   H3B: { fontFamily: Fonts.BSBloggerSans, fontSize: 24, fontWeight: '600' as fontweightType },
-//   H3C: {},
-//   H4: {},
-//   H4B: { fontFamily: Fonts.BSBloggerSans, fontSize: 20, fontWeight: '600' as fontweightType },
-//   H4C: {},
-//   H5: { fontFamily: Fonts.Akrobat, fontSize: 12, FontWeight: '900' as fontweightType },
-//   H5B: { fontFamily: Fonts.BSBloggerSans, fontSize: 16, fontWeight: '400' as fontweightType },
-//   H5C: { fontFamily: Fonts.Akrobat, fontSize: 14, FontWeight: '900' as fontweightType },
-//   H6: { fontFamily: Fonts.Akrobat, fontSize: 20, FontWeight: '600' as fontweightType },
-//   H7: { fontFamily: Fonts.Akrobat, fontSize: 30, FontWeight: '600' as fontweightType },
-//   H6B: { fontFamily: Fonts.Akrobat, fontSize: 16, FontWeight: '900' as fontweightType },
-//   H6C: { fontFamily: Fonts.Akrobat, fontSize: 24, FontWeight: '900' as fontweightType },
-
-//   P1: {},
-//   P1B: { fontFamily: Fonts.calibriregular, fontSize: 13, fontWeight: '400' as fontweightType },
-//   P1C: { fontFamily: Fonts.calibriregular, fontSize: 14, fontWeight: '400' as fontweightType },
-//   P2: { fontFamily: Fonts.calibriregular, fontSize: 40, fontWeight: '400' as fontweightType },
-//   P2B: { fontFamily: Fonts.BSBloggerSans, fontSize: 14, fontWeight: '400' as fontweightType },
-//   P2C: { fontFamily: Fonts.calibribold, fontSize: 14, fontWeight: '600' as fontweightType },
-//   P3: { fontFamily: Fonts.calibriregular, fontSize: 14, fontWeight: '400' as fontweightType },
-//   P3B: { fontFamily: Fonts.calibribold, fontSize: 12, fontWeight: '600' as fontweightType },
-//   P3C: { fontFamily: Fonts.calibriregular, fontSize: 12, fontWeight: '400' as fontweightType },
-//   P4: {},
-//   P4B: {},
-//   P4C: {},
-//   P5: {},
-//   P5B: {},
-//   P5C: {},
-//   P6: {},
-//   P6B: {},
-//   P6C: {},
-
-//   P11: { fontFamily: Fonts.RubikRegular, fontSize: 12 },
-//   T11: { fontFamily: Fonts.RubikMedium, fontSize: 12 },
-// };
-
-// const Typography = (props: TypographyProps) => {
-//   return (
-//     <Fragment>
-//       <Text
-//         {...props}
-//         style={{
-//           ...textvariant[props?.variant || 'H4B'],
-//           ...props.style,
-//           color: props.color || colors.grayScale.darkGray,
-//         }}
-//       >
-//         {props.children}
-//       </Text>
-//     </Fragment>
-//   );
-// };
-
-// export default Typography;
-
-
 // components/typography/Typography.tsx
-
 import React, { Fragment } from 'react';
 import { Text } from 'react-native';
 import { colors } from '../../../theme/colors';
@@ -84,13 +9,12 @@ import { Fonts, fontweightType } from '../../../theme/fonts';
 
 export const textvariant = {
   // Headings
-
   H1XL: {
     fontFamily: Fonts.InterSemiBold,
     fontSize: 30,
     fontWeight: '600',
   },
-  
+
   H1: {
     fontFamily: Fonts.InterSemiBold,
     fontSize: 20,
@@ -152,16 +76,366 @@ export const textvariant = {
     fontSize: 12,
     fontWeight: '600' as fontweightType,
   },
+
+  P0M: {
+    fontFamily: Fonts.InterMedium,
+    fontSize: 12,
+    fontWeight: '500',
+  },
   P1M: {
-  fontFamily: Fonts.InterMedium,
-  fontSize: 14,
-  fontWeight: '500',
-},
-P2M: {
-  fontFamily: Fonts.InterMedium,
-  fontSize: 16,
-  fontWeight: '500',
-}
+    fontFamily: Fonts.InterMedium,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  P2M: {
+    fontFamily: Fonts.InterMedium,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  regularD2xl: {
+    fontFamily: Fonts.InterRegular,
+    fontSize: 72,
+    fontWeight: '400',
+    fontStyle: 'normal',
+    lineHeight: 90,
+    letterSpacing: 72 * 0.02,
+  },
+
+  regularDxl: {
+    fontFamily: Fonts.InterRegular,
+    fontSize: 60,
+    fontWeight: '400',
+    fontStyle: 'normal',
+    lineHeight: 72,
+    letterSpacing: 60 * 0.02,
+  },
+
+  regularDlg: {
+    fontFamily: Fonts.InterRegular,
+    fontSize: 48,
+    fontWeight: '400',
+    fontStyle: 'normal',
+    lineHeight: 60,
+    letterSpacing: 48 * 0.02,
+  },
+  regularDmd: {
+    fontFamily: Fonts.InterRegular,
+    fontSize: 36,
+    fontWeight: '400',
+    fontStyle: 'normal',
+    lineHeight: 44,
+    letterSpacing: 36 * 0.02,
+  },
+  regularDsm: {
+    fontFamily: Fonts.InterRegular,
+    fontSize: 30,
+    fontWeight: '400',
+    fontStyle: 'normal',
+    lineHeight: 38,
+  },
+  regularDxs: {
+    fontFamily: Fonts.InterRegular,
+    fontSize: 24,
+    fontWeight: '400',
+    fontStyle: 'normal',
+    lineHeight: 32,
+  },
+  regularTxtxl: {
+    fontFamily: Fonts.InterRegular,
+    fontSize: 20,
+    fontWeight: '400',
+    fontStyle: 'normal',
+    lineHeight: 30,
+  },
+
+  regularTxtlg: {
+    fontFamily: Fonts.InterRegular,
+    fontSize: 18,
+    fontWeight: '400',
+    fontStyle: 'normal',
+    lineHeight: 28,
+  },
+  regularTxtmd: {
+    fontFamily: Fonts.InterRegular,
+    fontSize: 16,
+    fontWeight: '400',
+    fontStyle: 'normal',
+    lineHeight: 24,
+  },
+  regularTxtsm: {
+    fontFamily: Fonts.InterRegular,
+    fontSize: 14,
+    fontWeight: '400',
+    fontStyle: 'normal',
+    lineHeight: 20,
+  },
+  regularTxtxs: {
+    fontFamily: Fonts.InterRegular,
+    fontSize: 12,
+    fontWeight: '400',
+    fontStyle: 'normal',
+    lineHeight: 18,
+  },
+
+
+  //// Md Font 
+  mediumD2xl: {
+    fontFamily: Fonts.InterMedium,
+    fontSize: 72,
+    fontWeight: '500',
+    fontStyle: 'normal',
+    lineHeight: 90,
+    letterSpacing: 72 * 0.02,
+  },
+
+  mediumDxl: {
+    fontFamily: Fonts.InterMedium,
+    fontSize: 60,
+    fontWeight: '500',
+    fontStyle: 'normal',
+    lineHeight: 72,
+    letterSpacing: 60 * 0.02,
+  },
+
+  mediumDlg: {
+    fontFamily: Fonts.InterMedium,
+    fontSize: 48,
+    fontWeight: '500',
+    fontStyle: 'normal',
+    lineHeight: 60,
+    letterSpacing: 48 * 0.02,
+  },
+  mediumDmd: {
+    fontFamily: Fonts.InterMedium,
+    fontSize: 36,
+    fontWeight: '500',
+    fontStyle: 'normal',
+    lineHeight: 44,
+    letterSpacing: 36 * 0.02,
+  },
+  mediumDsm: {
+    fontFamily: Fonts.InterMedium,
+    fontSize: 30,
+    fontWeight: '500',
+    fontStyle: 'normal',
+    lineHeight: 38,
+  },
+  mediumDxs: {
+    fontFamily: Fonts.InterMedium,
+    fontSize: 24,
+    fontWeight: '500',
+    fontStyle: 'normal',
+    lineHeight: 32,
+  },
+  mediumTxtxl: {
+    fontFamily: Fonts.InterMedium,
+    fontSize: 20,
+    fontWeight: '500',
+    fontStyle: 'normal',
+    lineHeight: 30,
+  },
+
+  mediumTxtlg: {
+    fontFamily: Fonts.InterMedium,
+    fontSize: 18,
+    fontWeight: '500',
+    fontStyle: 'normal',
+    lineHeight: 28,
+  },
+  mediumTxtmd: {
+    fontFamily: Fonts.InterMedium,
+    fontSize: 16,
+    fontWeight: '500',
+    fontStyle: 'normal',
+    lineHeight: 24,
+  },
+  mediumTxtsm: {
+    fontFamily: Fonts.InterMedium,
+    fontSize: 14,
+    fontWeight: '500',
+    fontStyle: 'normal',
+    lineHeight: 20,
+  },
+  mediumTxtxs: {
+    fontFamily: Fonts.InterMedium,
+    fontSize: 12,
+    fontWeight: '500',
+    fontStyle: 'normal',
+    lineHeight: 18,
+  },
+
+
+
+  /// SemiBold 
+  semiBoldD2xl: {
+    fontFamily: Fonts.InterSemiBold,
+    fontSize: 72,
+    fontWeight: '600',
+    fontStyle: 'normal',
+    lineHeight: 90,
+  },
+
+  semiBoldDxl: {
+    fontFamily: Fonts.InterSemiBold,
+    fontSize: 60,
+    fontWeight: '600',
+    fontStyle: 'normal',
+    lineHeight: 72,
+    letterSpacing: 60 * 0.02,
+  },
+
+  semiBoldDlg: {
+    fontFamily: Fonts.InterSemiBold,
+    fontSize: 48,
+    fontWeight: '600',
+    fontStyle: 'normal',
+    lineHeight: 60,
+    letterSpacing: (48 * 0.02),
+  },
+  semiBoldDmd: {
+    fontFamily: Fonts.InterSemiBold,
+    fontSize: 36,
+    fontWeight: '600',
+    fontStyle: 'normal',
+    lineHeight: 44,
+    letterSpacing: (36 * 0.02),
+  },
+  semiBoldDsm: {
+    fontFamily: Fonts.InterSemiBold,
+    fontSize: 30,
+    fontWeight: '600',
+    fontStyle: 'normal',
+    lineHeight: 38,
+  },
+  semiBoldDxs: {
+    fontFamily: Fonts.InterSemiBold,
+    fontSize: 24,
+    fontWeight: '600',
+    fontStyle: 'normal',
+    lineHeight: 32,
+  },
+  semiBoldTxtxl: {
+    fontFamily: Fonts.InterSemiBold,
+    fontSize: 20,
+    fontWeight: '600',
+    fontStyle: 'normal',
+    lineHeight: 30,
+  },
+
+  semiBoldTxtlg: {
+    fontFamily: Fonts.InterSemiBold,
+    fontSize: 18,
+    fontWeight: '600',
+    fontStyle: 'normal',
+    lineHeight: 28,
+  },
+  semiBoldTxtmd: {
+    fontFamily: Fonts.InterSemiBold,
+    fontSize: 16,
+    fontWeight: '600',
+    fontStyle: 'normal',
+    lineHeight: 24,
+  },
+  semiBoldTxtsm: {
+    fontFamily: Fonts.InterSemiBold,
+    fontSize: 14,
+    fontWeight: '600',
+    fontStyle: 'normal',
+    lineHeight: 20,
+  },
+  semiBoldTxtxs: {
+    fontFamily: Fonts.InterSemiBold,
+    fontSize: 12,
+    fontWeight: '600',
+    fontStyle: 'normal',
+    lineHeight: 18,
+  },
+
+  ////Bold
+  boldD2xl: {
+    fontFamily: Fonts.InterBold,
+    fontSize: 72,
+    fontWeight: '700',
+    fontStyle: 'normal',
+    lineHeight: 90,
+    letterSpacing: (72 * 0.02),
+  },
+
+  boldDxl: {
+    fontFamily: Fonts.InterBold,
+    fontSize: 60,
+    fontWeight: '700',
+    fontStyle: 'normal',
+    lineHeight: 72,
+    letterSpacing: (60 * 0.02),
+  },
+
+  boldDlg: {
+    fontFamily: Fonts.InterBold,
+    fontSize: 48,
+    fontWeight: '700',
+    fontStyle: 'normal',
+    lineHeight: 60,
+    letterSpacing: (48 * 0.02),
+  },
+  boldDmd: {
+    fontFamily: Fonts.InterBold,
+    fontSize: 36,
+    fontWeight: '700',
+    fontStyle: 'normal',
+    lineHeight: 44,
+    letterSpacing: (36 * 0.02),
+  },
+  boldDsm: {
+    fontFamily: Fonts.InterBold,
+    fontSize: 30,
+    fontWeight: '700',
+    fontStyle: 'normal',
+    lineHeight: 38,
+  },
+  boldDxs: {
+    fontFamily: Fonts.InterBold,
+    fontSize: 24,
+    fontWeight: '700',
+    fontStyle: 'normal',
+    lineHeight: 32,
+  },
+  boldTxtxl: {
+    fontFamily: Fonts.InterBold,
+    fontSize: 20,
+    fontWeight: '700',
+    fontStyle: 'normal',
+    lineHeight: 30,
+  },
+
+  boldTxtlg: {
+    fontFamily: Fonts.InterBold,
+    fontSize: 18,
+    fontWeight: '700',
+    fontStyle: 'normal',
+    lineHeight: 28,
+  },
+  boldTxtmd: {
+    fontFamily: Fonts.InterBold,
+    fontSize: 16,
+    fontWeight: '700',
+    fontStyle: 'normal',
+    lineHeight: 24,
+  },
+  boldTxtsm: {
+    fontFamily: Fonts.InterBold,
+    fontSize: 14,
+    fontWeight: '700',
+    fontStyle: 'normal',
+    lineHeight: 20,
+  },
+  boldTxtxs: {
+    fontFamily: Fonts.InterBold,
+    fontSize: 12,
+    fontWeight: '700',
+    fontStyle: 'normal',
+    lineHeight: 18,
+  },
 };
 
 // ---------------- COMPONENT ----------------
@@ -172,11 +446,12 @@ const Typography = (props: TypographyProps) => {
   return (
     <Fragment>
       <Text
+      allowFontScaling={false}
         {...props}
         style={{
           ...variantStyle,
           ...props.style,
-          color: props.color || colors.grayScale.darkGray,
+          color: props.color || colors.gray['900'],
         }}
       >
         {props.children}

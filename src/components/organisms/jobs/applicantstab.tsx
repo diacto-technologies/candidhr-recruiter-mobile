@@ -1,28 +1,37 @@
-import React from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
+import React, { useState } from "react";
+import { View, Text, StyleSheet, Image, FlatList } from "react-native";
+import { applicants } from "../../../utils/dummaydata";
+import ApplicantList from "../applicantlist";
+import SearchBar from "../../atoms/searchbar";
+import CustomSwitch from "../../atoms/switchbutton";
+import { Typography } from "../../atoms";
+import { colors } from "../../../theme/colors";
+import Divider from "../../atoms/divider";
 
 const ApplicantsTab = () => {
+  const [search, setSearch] = useState("");
   return (
-    <View style={styles.container}>
-      {[1, 2, 3, 4].map((item) => (
-        <View key={item} style={styles.card}>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Image
-              source={{ uri: "https://i.pravatar.cc/100" }}
-              style={styles.avatar}
-            />
-            <View>
-              <Text style={styles.name}>Jacob Johns</Text>
-              <Text style={styles.sub}>
-                Applied on : Aug 16, 2025
-              </Text>
-              <Text style={styles.sub}>Applied for : Frontend developer</Text>
-            </View>
-          </View>
-
-          <Text style={styles.status}>Resume screening - Applied</Text>
-        </View>
-      ))}
+    <View style={{ flex: 1}}>
+      <View style={{ paddingHorizontal: 16, gap:4, paddingVertical:10}}>
+      <SearchBar
+        value={search}
+        placeholder="Jacob johns"
+        onChangeText={(t) => setSearch(t)}
+      />
+      <View style={styles.switchContainer}>
+      <CustomSwitch/>
+      <Typography variant="H4" color={colors.mainColors.carbonGray}>AI recommendation</Typography>
+      </View>
+      </View>
+      <Divider/>
+      <FlatList
+      data={applicants}
+      keyExtractor={(item)=>item.id.toString()}
+      renderItem={({ item }) => <ApplicantList item={item} />}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{paddingHorizontal: 16, backgroundColor:colors.common.slightlygray, paddingTop:10}}
+      bounces={false}
+      />
     </View>
   );
 };
@@ -37,7 +46,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 14,
     marginBottom: 12,
-    backgroundColor: "#fff",
+    //backgroundColor: "#fff",
   },
   avatar: {
     width: 48,
@@ -50,11 +59,12 @@ const styles = StyleSheet.create({
   status: {
     marginTop: 10,
     padding: 6,
-    backgroundColor: "#EEF2FF",
+    //backgroundColor: "#EEF2FF",
     color: "#4338CA",
     alignSelf: "flex-start",
     borderRadius: 8,
     fontSize: 12,
     fontWeight: "600",
   },
+  switchContainer:{flexDirection:'row',gap:12, paddingTop:12, alignItems:'center'}
 });

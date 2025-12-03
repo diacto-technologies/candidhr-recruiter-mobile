@@ -1,16 +1,21 @@
 import React, { Fragment, useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { SortingAndFilter, Header, JobCardList, BottomSheet, FilterSheetContent } from '../../../components';
+import { View,Pressable} from 'react-native';
+import { SortingAndFilter, Header, JobCardList, BottomSheet, FilterSheetContent, StatusBar } from '../../../components';
 import { filtersOption } from '../../../utils/dummaydata';
-import { Svg, SvgXml } from 'react-native-svg';
+import { SvgXml } from 'react-native-svg';
 import { pluscircle } from '../../../assets/svg/pluscircle';
-import { Illustrations } from '../../../assets/svg/illustrations';
+import { useStyles } from './styles';
+import { useRNSafeAreaInsets } from '../../../hooks/useRNSafeAreaInsets';
 import { colors } from '../../../theme/colors';
 
 const JobsScreen = () => {
+  const styles = useStyles();
+  const { insetsBottom, insetsTop } = useRNSafeAreaInsets();
   const [filterSheet, setFilterSheet] = useState(false);
   return (
     <Fragment>
+       <View style={{paddingTop: insetsTop, flex:1,backgroundColor: colors.neutrals.lightGray,}}>
+       <StatusBar showWhite />
       <Header title='Jobs' />
       <View style={styles.container}>
         <JobCardList />
@@ -47,18 +52,9 @@ const JobsScreen = () => {
 
         </View>
       </View>
+      </View>
     </Fragment>
   );
 };
 
 export default JobsScreen;
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.neutrals.lightGray,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    flex: 1,
-  },
-  text: { fontSize: 22, fontWeight: '600' }
-});

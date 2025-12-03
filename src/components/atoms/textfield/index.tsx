@@ -55,11 +55,13 @@ const TextField = forwardRef((props: TextFieldProps, ref) => {
         }}
         style={[styles.pressableBase, styles.pressableDynamic]}
       >
+        {/* <View style={styles.topGlow} pointerEvents="none" />
+        <View style={styles.bottomShadow} pointerEvents="none" /> */}
         {renderNode(props.startIcon)}
         <TextInput
           {...props}
           ref={inputRef}
-          placeholderTextColor={'#999999'}
+          placeholderTextColor={colors.gray[500]}
           style={[
             styles.inputBase,
             props.value ? styles.inputWithValue : styles.inputWithoutValue,
