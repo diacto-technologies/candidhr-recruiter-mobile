@@ -1,44 +1,74 @@
-import React, { Fragment, useRef, useState } from 'react';
+import React, { Fragment, useRef, useState } from "react";
 import {
   View,
   StyleSheet,
   Animated,
   TouchableOpacity,
   LayoutChangeEvent,
-} from 'react-native';
-import { colors } from '../../../theme/colors';
-import Typography from '../../atoms/typography';
-import Icon from '../../atoms/vectoricon';
-import { windowWidth } from '../../../utils/devicelayout';
+  FlatList,
+  ScrollView,
+} from "react-native";
+import { colors } from "../../../theme/colors";
+import Typography from "../../atoms/typography";
+import { windowWidth } from "../../../utils/devicelayout";
+import { SvgXml } from "react-native-svg";
+import { leftArrowIcon } from "../../../assets/svg/leftarrow";
+import { rightArrowIcon } from "../../../assets/svg/rightarrow";
+import { useStyles } from "./styles";
+import Icon from "../../atoms/vectoricon";
+import { goBack, navigate } from "../../../utils/navigationUtils";
+import CustomSafeAreaView from "../../atoms/customsafeareaview";
+import Header from "../header";
+import { expandarrowsIcon } from "../../../assets/svg/expandarrows";
+import { useAppSelector } from "../../../hooks/useAppSelector";
+import { selectStageGraphOverview } from "../../../features/dashbaord/selectors";
 
 interface TableRow {
-  jobTitle: string;
-  totalApplicants: number;
-  reviewed: number;
+  job_name: string;
+  total_applicants: number;
+  close_date: string;
+  is_closed: boolean;
+
+  stages: {
+    resume_screening: number;
+    assessment_test: number;
+    video_interview: number;
+    hired: number;
+    reject: number;
+    on_hold: number;
+  };
 }
 
-const mockData: TableRow[] = [
-  { jobTitle: 'UI/UX Designer', totalApplicants: 2, reviewed: 1 },
-  { jobTitle: 'Full stack developer', totalApplicants: 1, reviewed: 34 },
-  { jobTitle: 'Data Science', totalApplicants: 4, reviewed: 0 },
-  { jobTitle: 'Graphic Designer', totalApplicants: 76, reviewed: 12 },
-  { jobTitle: 'Quality Assurance', totalApplicants: 2, reviewed: 0 },
-  { jobTitle: 'Product Manager', totalApplicants: 0, reviewed: 8 },
-];
 
-const MIN_COL_WIDTH = windowWidth * 0.35; // responsive column width
+const TRACK_WIDTH = 320;
 
 const ApplicationStageOverview = () => {
-  const [page, setPage] = useState(1);
+  const styles = useStyles();
   const scrollX = useRef(new Animated.Value(0)).current;
-
   const [contentWidth, setContentWidth] = useState(0);
   const [containerWidth, setContainerWidth] = useState(windowWidth - 40);
+  const OverviewData = useAppSelector(selectStageGraphOverview);
+  const data: TableRow[] = OverviewData?.results ?? [];
 
-  const visibleWidth = containerWidth;
+
+  const shadowOpacity = useRef(new Animated.Value(0)).current;
+
+  // show/hide shadow based on scrollX
+  scrollX.addListener(({ value }) => {
+    Animated.timing(shadowOpacity, {
+      toValue: value > 0 ? 1 : 0,
+      duration: 180,
+      useNativeDriver: false,
+    }).start();
+  });
+
+  const onContainerLayout = (e: LayoutChangeEvent) => {
+    setContainerWidth(e.nativeEvent.layout.width);
+  };
+
+  const visibleWidth = containerWidth - 140;
   const scrollRange = Math.max(contentWidth - visibleWidth, 0);
 
-  const TRACK_WIDTH = 320;
   const THUMB_WIDTH =
     scrollRange > 0
       ? Math.max((visibleWidth / contentWidth) * TRACK_WIDTH, 40)
@@ -47,22 +77,98 @@ const ApplicationStageOverview = () => {
   const translateX = scrollX.interpolate({
     inputRange: [0, scrollRange],
     outputRange: [0, TRACK_WIDTH - THUMB_WIDTH],
-    extrapolate: 'clamp',
+    extrapolate: "clamp",
   });
 
-  const onContainerLayout = (e: LayoutChangeEvent) => {
-    setContainerWidth(e.nativeEvent.layout.width);
+  /** LEFT FIXED COLUMN */
+  const renderLeftColumn = ({ item, index }: { item: TableRow; index: number }) => {
+    const bg = index % 2 === 1 ? colors.neutrals.lightGray : "#FFF";
+
+    return (
+      <View style={[styles.leftFixedColumn, { backgroundColor: bg }]}>
+        <Typography variant="mediumTxtsm">{item?.job_name}</Typography>
+      </View>
+    );
+  };
+
+  /** RIGHT SCROLLABLE CELLS */
+  const renderRightRow = ({ item, index }: { item: TableRow; index: number }) => {
+    const bg = index % 2 === 1 ? colors.neutrals.lightGray : "#FFF";
+
+    return (
+      <View style={[styles.row, { backgroundColor: bg }]}>
+        <Typography style={styles.cell}>{item.total_applicants}</Typography>
+        <Typography style={styles.cell}>{item?.stages?.resume_screening}</Typography>
+        <Typography style={styles.cell}>{item?.stages?.assessment_test}</Typography>
+        <Typography style={styles.cell}>{item?.stages?.video_interview}</Typography>
+        <Typography style={styles.cell}>{item?.stages?.hired}</Typography>
+        <Typography style={styles.cell}>{item?.stages?.reject}</Typography>
+        <Typography style={styles.cell}>{item?.stages?.on_hold}</Typography>
+        <Typography style={styles.cell}>{item?.close_date}</Typography>
+        <Typography style={styles.cell}>{item?.is_closed ? "Closed" : "Open"}</Typography>
+      </View>
+    );
   };
 
   return (
     <Fragment>
-      <View style={styles.card} onLayout={onContainerLayout}>
+        <View style={styles.card} onLayout={onContainerLayout}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 }}>
+          <Typography variant="semiBoldTxtlg">
+            Application Stage Overview
+          </Typography>
+          <TouchableOpacity onPress={()=>navigate('ApplicationOverviewDetails')}>
+            <SvgXml xml={expandarrowsIcon}/>
+          </TouchableOpacity>
+        </View>
 
-        <Typography variant="H2" style={styles.title} color={colors.mainColors.blueGrayTitle}>
-          Application Stage Overview
-        </Typography>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            nestedScrollEnabled   // important
+          >
+            <View style={{ flexDirection: "row" }}>
 
-        <Animated.ScrollView
+              <Animated.View
+                style={[
+                  styles.leftFixedWrapper,
+                  {
+                    shadowColor: "#0A0D12",
+                    shadowOffset: { width: 2, height: 0 },
+                    shadowOpacity: shadowOpacity.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 0.06],
+                    }),
+                    shadowRadius: shadowOpacity.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 10],
+                    }),
+                    elevation: shadowOpacity.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 6],
+                    }),
+                  },
+                ]}
+              >
+                {/* LEFT COLUMN HEADER */}
+                <View style={styles.headerRow}>
+                  <Typography
+                    variant="semiBoldTxtxs"
+                    style={styles.headerText}
+                    color={colors.gray[500]}
+                  >
+                    Job title
+                  </Typography>
+                </View>
+
+                <FlatList
+                  data={data.slice(0, 6)}
+                  renderItem={renderLeftColumn}
+                  keyExtractor={(_, i) => `left-${i}`}
+                  scrollEnabled={false}
+                />
+              </Animated.View>
+
+              <Animated.ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           scrollEventThrottle={16}
@@ -72,171 +178,50 @@ const ApplicationStageOverview = () => {
             { useNativeDriver: false }
           )}
         >
-          {/* Dynamic Content */}
-          <View style={{ flexDirection: 'column' }}>
-            {/* Header */}
-            <View style={styles.headerRow}>
-              <Typography variant="T2" style={styles.headerText} color={colors.grayScale.slateGray}>Job title</Typography>
-              <Typography variant="T2" style={styles.headerText} color={colors.grayScale.slateGray}>Total applicants</Typography>
-              <Typography variant="T2" style={styles.headerText} color={colors.grayScale.slateGray}>Reviewed</Typography>
-              <Typography variant="T2" style={styles.headerText} color={colors.grayScale.slateGray}>Assessment</Typography>
-              <Typography variant="T2" style={styles.headerText} color={colors.grayScale.slateGray}>Video interview</Typography>
-              <Typography variant="T2" style={styles.headerText} color={colors.grayScale.slateGray}>Hired</Typography>
-              <Typography variant="T2" style={styles.headerText} color={colors.grayScale.slateGray}>Rejected</Typography>
-              <Typography variant="T2" style={styles.headerText} color={colors.grayScale.slateGray}>On hold</Typography>
-              <Typography variant="T2" style={styles.headerText} color={colors.grayScale.slateGray}>Close date</Typography>
-              <Typography variant="T2" style={styles.headerText} color={colors.grayScale.slateGray}>Status</Typography>
-            </View>
+                <View>
+                  <View style={styles.headerRow}>
+                    {[
+                      "Total applicants",
+                      "Reviewed",
+                      "Assessment",
+                      "Video interview",
+                      "Hired",
+                      "Rejected",
+                      "On hold",
+                      "Close date",
+                      "Status",
+                    ].map((title, index) => (
+                      <Typography
+                        key={index}
+                        variant="semiBoldTxtxs"
+                        style={styles.headerText}
+                        color={colors.gray[500]}
+                      >
+                        {title}
+                      </Typography>
+                    ))}
+                  </View>
 
-            {/* Rows */}
-            {mockData.map((item, index) => {
-              const isShaded = index % 2 === 1;
-
-              return (
-                <View
-                  key={index}
-                  style={[
-                    styles.row,
-                    isShaded && { backgroundColor: colors.neutrals.lightGray },
-                  ]}
-                >
-                  <Typography variant="P1M" style={styles.cell} color={colors.mainColors.blueGrayTitle}>{item.jobTitle}</Typography>
-                  <Typography variant="P1" style={styles.cell} color={colors.grayScale.darkGray}>{item.totalApplicants}</Typography>
-                  <Typography variant="P1" style={styles.cell} color={colors.grayScale.darkGray}>{item.reviewed}</Typography>
-
-                  {/* Additional columns with placeholder values */}
-                  <Typography variant="P1" style={styles.cell} color={colors.grayScale.darkGray}>10</Typography>
-                  <Typography variant="P1" style={styles.cell} color={colors.grayScale.darkGray}>10</Typography>
-                  <Typography variant="P1" style={styles.cell} color={colors.grayScale.darkGray}>10</Typography>
-                  <Typography variant="P1" style={styles.cell} color={colors.grayScale.darkGray}>10</Typography>
-                  <Typography variant="P1" style={styles.cell} color={colors.grayScale.darkGray}>3</Typography>
-                  <Typography variant="P1" style={styles.cell} color={colors.grayScale.darkGray}>13 AUG, 2025</Typography>
-                  <Typography variant="P1" style={styles.cell}>Closed</Typography>
+                  <FlatList
+                    data={data.slice(0, 6)}
+                    renderItem={renderRightRow}
+                    keyExtractor={(_, i) => `right-${i}`}
+                    scrollEnabled={false}
+                  />
                 </View>
-              );
-            })}
-          </View>
-        </Animated.ScrollView>
-
-        {/* Animated Scroll Bar */}
-        <View style={[styles.scrollTrack, { width: TRACK_WIDTH }]}>
-          <Animated.View
-            style={[
-              styles.scrollThumb,
-              { width: THUMB_WIDTH, transform: [{ translateX }] },
-            ]}
-          />
-        </View>
-
-        {/* Pagination */}
-        <View style={styles.paginationContainer}>
-          <TouchableOpacity
-            style={styles.arrowButton}
-            onPress={() => page > 1 && setPage(page - 1)}
-          >
-            <Icon size={18} name={'arrow-left'} iconFamily={'FontAwesome6Icons'} color={'#A4A7AE'} />
-          </TouchableOpacity>
-
-          <Typography variant="P1M" style={styles.pageText}>
-            Page {page} of 10
+              </Animated.ScrollView>
+            </View>
+          </ScrollView>
+          <View style={styles.paginationContainer}>
+          <TouchableOpacity onPress={()=>navigate('ApplicationOverviewDetails')}>
+          <Typography variant="semiBoldTxtsm" color={colors.brand[700]}>
+            View more
           </Typography>
-
-          <TouchableOpacity
-            style={styles.arrowButton}
-            onPress={() => page < 10 && setPage(page + 1)}
-          >
-            <Icon size={18} name={'arrow-right'} iconFamily={'FontAwesome6Icons'} color={'#A4A7AE'} />
-          </TouchableOpacity>
+        </TouchableOpacity>
         </View>
-      </View>
+        </View>
     </Fragment>
   );
 };
 
 export default ApplicationStageOverview;
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.common.white,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.mainColors.borderColor,
-    shadowColor: 'rgba(10, 13, 18, 0.05)',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  title: {
-    paddingVertical: 20,
-    paddingLeft: 16,
-  },
-
-  /* Header */
-  headerRow: {
-    flexDirection: 'row',
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: colors.mainColors.borderColor,
-    paddingLeft: 20,
-    backgroundColor:colors.neutrals.lightGray
-  },
-  headerText: {
-    minWidth: MIN_COL_WIDTH,
-    marginRight: 16,
-  },
-
-  /* Rows */
-  row: {
-    flexDirection: 'row',
-    paddingVertical: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.mainColors.borderColor,
-    paddingLeft: 20,
-  },
-  cell: {
-    minWidth: MIN_COL_WIDTH,
-    marginRight: 16,
-  },
-
-  /* Scroll Bar */
-  scrollTrack: {
-    // height: 4,
-    // borderRadius: 10,
-    // backgroundColor: '#E5E5E5',
-    // alignSelf: 'center',
-    // marginTop: 14,
-    // overflow: 'hidden',
-    paddingVertical: 6,
-  },
-  scrollThumb: {
-    height: 6,
-    backgroundColor: colors.mainColors.scrollBar,
-    borderRadius: 10,
-  },
-
-  /* Pagination */
-  paginationContainer: {
-    height: 68,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderColor: colors.mainColors.borderColor,
-  },
-  arrowButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.grayScale.bluetintedgray,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor:colors.common.white,
-  },
-  pageText: {
-    color: '#414651',
-  },
-});

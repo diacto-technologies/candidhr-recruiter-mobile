@@ -13,3 +13,4 @@ declare module 'react-native-vector-icons/MaterialIcons';
 
 declare module 'react-native-svg-charts';
 declare module 'd3-scale';
+declare module "react-native-video-controls";

@@ -9,36 +9,60 @@ import { backButtonIcon } from '../../../assets/svg/backbutton';
 import { editIcon } from '../../../assets/svg/edit';
 import { horizontalThreedotIcon } from '../../../assets/svg/horizontalthreedoticon';
 import { searchIcon } from '../../../assets/svg/search';
+import { useStyles } from './styles';
 // import { searchIcon } from '../../assets/svg/search';
 // import { horizontalThreedotIcon } from '../../assets/svg/horizontalthreedoticon';
 // import { editIcon } from '../../assets/svg/edit';
 // import { backButtonIcon } from '../../assets/svg/backbutton';
 
-const Header = ({ title, onBack, backNavigation }: IHeader) => {
+const Header = ({
+  title,
+  showTitle,       // ⭐ NEW
+  onBack,
+  backNavigation,
+  edit,
+  threedot,
+  borderCondition
+}: IHeader) => {
+
+  const styles = useStyles();
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { borderBottomWidth: !borderCondition ? 1 : 0 }]}>
+
       {backNavigation ? (
         <>
-          <Pressable onPress={onBack} style={styles.backButton}>
+          <Pressable onPress={onBack}>
             <SvgXml xml={backButtonIcon} />
           </Pressable>
-          <View style={styles.subEditcontainer}>
-          <Pressable onPress={()=>{}} style={styles.backButton}>
-            <SvgXml xml={editIcon} />
-          </Pressable>
 
-          <Pressable onPress={()=>{}} style={styles.backButton}>
-            <SvgXml xml={horizontalThreedotIcon} />
-          </Pressable>
+          {/* ✅ Show title ONLY if showTitle = true */}
+          {showTitle ? (
+            <Typography variant="semiBoldTxtxl">
+              {title}
+            </Typography>
+          ) : null}
+
+          <View style={styles.subEditcontainer}>
+            {edit ? (
+              <Pressable>
+                <SvgXml xml={editIcon} />
+              </Pressable>
+            ) : null}
+
+            {threedot ? (
+              <Pressable>
+                <SvgXml xml={horizontalThreedotIcon} />
+              </Pressable>
+            ) : null}
           </View>
         </>
       ) : (
         <>
-          <Typography variant="H1" style={styles.title}>
-            {title}
-          </Typography>
+          {/* Normal header mode → ALWAYS show title */}
+          <Typography variant="semiBoldTxtxl">{title}</Typography>
 
-          <Pressable onPress={onBack} style={styles.backButton}>
+          <Pressable onPress={onBack}>
             <SvgXml xml={searchIcon} />
           </Pressable>
         </>
@@ -48,37 +72,5 @@ const Header = ({ title, onBack, backNavigation }: IHeader) => {
   );
 };
 
-
-const styles = StyleSheet.create({
-  backButton: {
-    // left: 0,
-    // padding: 8,
-    // position: 'absolute',
-  },
-  backIcon: {
-    height: 18,
-    tintColor: colors.grayScale.black,
-    width: 18,
-  },
-  container: {
-    width: '100%',
-    height: 72,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent:'space-between',
-    position: 'relative',
-    backgroundColor:'white',
-    paddingHorizontal:20,
-    borderBottomColor:colors.mainColors.borderColor,
-    borderBottomWidth:1,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  subEditcontainer:{
-    flexDirection:'row',
-    columnGap:12
-  }
-});
 
 export default Header;

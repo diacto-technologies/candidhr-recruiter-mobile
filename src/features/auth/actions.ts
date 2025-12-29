@@ -30,3 +30,39 @@ export const addUserRequest = (payload: any) => ({
   payload,
 });
 
+export const forgotPasswordRequestAction = (email: string) => ({
+  type: AUTH_ACTION_TYPES.FORGOT_PASSWORD_REQUEST,
+  payload: { email },
+});
+
+export const forgotPasswordSuccessAction = (message: string) => ({
+  type: AUTH_ACTION_TYPES.FORGOT_PASSWORD_SUCCESS,
+  payload: message,
+});
+
+export const forgotPasswordFailureAction = (error: string) => ({
+  type: AUTH_ACTION_TYPES.FORGOT_PASSWORD_FAILURE,
+  payload: error,
+});
+
+export const resetPasswordRequestAction = (payload: {
+  uid: string;
+  token: string;
+  password: string;
+  password2: string;
+}) => ({
+  type: AUTH_ACTION_TYPES.RESET_PASSWORD_REQUEST,
+  payload,
+});
+
+export const resetPasswordSuccessAction = (message: string) => ({
+  type: AUTH_ACTION_TYPES.RESET_PASSWORD_SUCCESS,
+  payload: message,
+});
+
+export const resetPasswordFailureAction = (error: string) => ({
+  type: AUTH_ACTION_TYPES.RESET_PASSWORD_FAILURE,
+  payload: error,
+});
+
+

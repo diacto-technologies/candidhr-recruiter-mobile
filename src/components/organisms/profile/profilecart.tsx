@@ -1,0 +1,156 @@
+import React, { Fragment } from 'react';
+import { View, Image, StyleSheet } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
+import { colors } from '../../../theme/colors';
+import { Typography } from '../../atoms';
+import { SvgXml } from 'react-native-svg';
+import Icon from '../../atoms/vectoricon';
+import { jobIcon } from '../../../assets/svg/jobicon';
+import { locationIcon } from '../../../assets/svg/location';
+import { singleDotIcon } from '../../../assets/svg/singledot';
+import { useAppSelector } from '../../../hooks/useAppSelector';
+import { selectSelectedApplication } from '../../../features/applications/selectors';
+import { formatMonDDYYYY } from '../../../utils/dateformatter';
+import { formatExperience } from '../../../utils/experienceformatter';
+
+const ProfileCart = () => {
+  const application = useAppSelector(selectSelectedApplication);
+  return (
+    <View style={styles.container}>
+      <LinearGradient
+        colors={[colors.brand[100], '#E3E1FF']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.header}
+      />
+      <View style={styles.photoWrapper}>
+        <View style={styles.photoBorder}>
+          {application?.candidate?.profile_pic ?
+            <Image
+              source={{ uri: application?.candidate?.profile_pic }}
+              style={styles.photo}
+              resizeMode="cover"
+            />
+            :
+            <View style={styles.initialCircle}>
+              <Typography variant="semiBoldDxs" color={colors?.brand[700]}> {(application?.candidate?.name?.trim()?.[0] ?? "_").toUpperCase()}</Typography>
+            </View>
+          }
+        </View>
+      </View>
+
+      <View style={styles.infoContainer}>
+        <View style={{ gap: 4 }}>
+          <Typography variant="semiBoldDxs">{application?.candidate?.name ?? "_"}</Typography>
+          <Typography variant="regularTxtsm" color={colors.gray[600]}>
+            Applied on: {formatMonDDYYYY(application?.applied_at)},{''} for {''}
+            <Typography variant="mediumTxtsm" color={colors.gray[700]}>
+              {application?.job?.title ?? "_"}
+            </Typography>
+          </Typography>
+
+          <View style={styles.row}>
+            <SvgXml xml={locationIcon} width={16} height={16} />
+            <Typography variant="regularTxtsm" color={colors.gray[600]}>
+              {application?.candidate?.location?.city ?? "_"} {application?.candidate?.location?.state ?? "_"}
+            </Typography>
+            <SvgXml xml={singleDotIcon} />
+            <SvgXml xml={jobIcon} height={20} width={20} />
+            <Typography variant="regularTxtsm" color={colors.gray[600]}>
+              {formatExperience(application?.job?.score_weight?.work_experience)}
+            </Typography>
+          </View>
+        </View>
+
+        {/* Social Icons */}
+        <View style={styles.iconRow}>
+          <View style={styles.iconBox}>
+            <Icon name="logo-linkedin" size={20} color="#0A66C2" iconFamily="Ionicons" />
+          </View>
+          <View style={styles.iconBox}>
+            <Icon name="logo-github" size={20} color="#000" iconFamily="Ionicons" />
+          </View>
+          <View style={styles.iconBox}>
+            <Icon name="globe" size={20} color="#444" iconFamily="Entypo" />
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: colors.base.white,
+    overflow: 'hidden',
+  },
+  header: {
+    height: 90,
+    borderRadius: 12,
+    margin: 4
+  },
+  photoWrapper: {
+    position: 'absolute',
+    top: 35,
+    left: 24,
+    zIndex: 10,
+  },
+  photoBorder: {
+    width: 96,
+    height: 96,
+    borderRadius: 50,
+    backgroundColor: colors.base.white,
+    padding: 4,
+    shadowColor: '#0A0D12',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
+    alignItems:'center'
+  },
+  photo: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 50,
+  },
+  infoContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 52,
+    paddingBottom: 16,
+    gap: 16,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  iconRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  iconBox: {
+    width: 40,
+    height: 40,
+    backgroundColor: colors.base.white,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  initialCircle: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor:colors.brand[100]
+  }
+});
+
+export default ProfileCart;

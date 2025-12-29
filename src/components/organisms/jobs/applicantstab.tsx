@@ -1,28 +1,148 @@
-import React from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { View, FlatList, StyleSheet } from "react-native";
+import ApplicantList from "../applicantlist";
+import SearchBar from "../../atoms/searchbar";
+import CustomSwitch from "../../atoms/switchbutton";
+import { Typography } from "../../atoms";
+import Divider from "../../atoms/divider";
+import { colors } from "../../../theme/colors";
+import { useAppDispatch } from "../../../hooks/useAppDispatch";
+import { useAppSelector } from "../../../hooks/useAppSelector";
+
+import {
+  selectApplications,
+  selectApplicationsLoading,
+  selectApplicationsPagination,
+  selectApplicationsHasMore,
+} from "../../../features/applications/selectors";
+
+import { getApplicationsRequestAction } from "../../../features/applications/actions";
+
+const SKELETON_ROWS = 6;
 
 const ApplicantsTab = () => {
-  return (
-    <View style={styles.container}>
-      {[1, 2, 3, 4].map((item) => (
-        <View key={item} style={styles.card}>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Image
-              source={{ uri: "https://i.pravatar.cc/100" }}
-              style={styles.avatar}
-            />
-            <View>
-              <Text style={styles.name}>Jacob Johns</Text>
-              <Text style={styles.sub}>
-                Applied on : Aug 16, 2025
-              </Text>
-              <Text style={styles.sub}>Applied for : Frontend developer</Text>
-            </View>
-          </View>
+  const [search, setSearch] = useState("");
+  const [aiEnabled, setAiEnabled] = useState(false);
 
-          <Text style={styles.status}>Resume screening - Applied</Text>
+  const dispatch = useAppDispatch();
+  const applications = useAppSelector(selectApplications);
+  const loading = useAppSelector(selectApplicationsLoading);
+  const pagination = useAppSelector(selectApplicationsPagination);
+  const hasMore = useAppSelector(selectApplicationsHasMore);
+
+  const jobId = useAppSelector((state) => state.jobs.selectedJob?.id);
+
+  const onEndReachedCalledRef = useRef(false);
+
+  /** 🔥 Debounced Search + AI sort + jobId */
+  useEffect(() => {
+    // 1️⃣ Clear existing list so skeleton shows
+    dispatch(
+      getApplicationsRequestAction({
+        reset: true,
+        page: 1,
+        limit: pagination.limit,
+      })
+    );
+  
+    // 2️⃣ Fetch new results
+    const timeout = setTimeout(() => {
+      dispatch(
+        getApplicationsRequestAction({
+          page: 1,
+          limit: pagination.limit,
+          applicantName: search.trim() || undefined,
+          jobId,
+          sort: aiEnabled
+            ? "-resume__resume_score__overall_score"
+            : "-last_updated",
+        })
+      );
+    }, 400);
+  
+    return () => clearTimeout(timeout);
+  }, [search, aiEnabled, jobId]);
+  
+
+  const handleLoadMore = useCallback(() => {
+    if (loading || !hasMore) return;
+
+    dispatch(
+      getApplicationsRequestAction({
+        page: pagination.page + 1,
+        limit: pagination.limit,
+        append: true,
+        applicantName: search.trim() || undefined,
+        jobId,
+        sort: aiEnabled
+          ? "-resume__resume_score__overall_score"
+          : "-last_updated",
+      })
+    );
+  }, [loading, hasMore, pagination.page, pagination.limit, search, jobId, aiEnabled]);
+
+  const dataSource = useMemo(() => {
+    if (loading && applications.length === 0) {
+      return Array.from({ length: SKELETON_ROWS }).map((_, i) => ({
+        __skeleton: true,
+        __id: `skeleton-${i}`,
+      }));
+    }
+    return applications;
+  }, [loading, applications,aiEnabled]);
+
+  return (
+    <View style={{ flex: 1 }}>
+      {/* 🔍Top Search + Switch */}
+      <View style={{ paddingHorizontal: 16, gap: 4, paddingVertical: 16 }}>
+        <SearchBar
+          value={search}
+          placeholder="Jacob Johns"
+          onChangeText={setSearch}
+        />
+
+        <View style={styles.switchContainer}>
+          <CustomSwitch value={aiEnabled} onValueChange={setAiEnabled} />
+          <Typography variant="H4" color={colors.mainColors.carbonGray}>
+            AI recommendation
+          </Typography>
         </View>
-      ))}
+      </View>
+
+      <Divider />
+
+      {/* 📄List */}
+      <FlatList
+        data={dataSource}
+        keyExtractor={(item: any) =>
+          item.__skeleton ? item.__id : String(item.id)
+        }
+        renderItem={({ item }) =>
+          item.__skeleton ? (
+            <ApplicantList loading />
+          ) : (
+            <ApplicantList item={item} />
+          )
+        }
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          backgroundColor: colors.common.slightlygray,
+          paddingVertical: 16,
+          gap: 16,
+        }}
+        bounces={false}
+        onEndReached={() => {
+          if (!onEndReachedCalledRef.current) {
+            handleLoadMore();
+            onEndReachedCalledRef.current = true;
+          }
+        }}
+        onMomentumScrollBegin={() => {
+          onEndReachedCalledRef.current = false;
+        }}
+        onEndReachedThreshold={0.5}
+      />
     </View>
   );
 };
@@ -37,7 +157,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 14,
     marginBottom: 12,
-    backgroundColor: "#fff",
+    //backgroundColor: "#fff",
   },
   avatar: {
     width: 48,
@@ -50,11 +170,17 @@ const styles = StyleSheet.create({
   status: {
     marginTop: 10,
     padding: 6,
-    backgroundColor: "#EEF2FF",
+    //backgroundColor: "#EEF2FF",
     color: "#4338CA",
     alignSelf: "flex-start",
     borderRadius: 8,
     fontSize: 12,
     fontWeight: "600",
   },
+  switchContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingTop: 12,
+    alignItems: 'center'
+  }
 });

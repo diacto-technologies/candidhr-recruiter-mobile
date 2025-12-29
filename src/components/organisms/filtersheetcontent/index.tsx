@@ -8,6 +8,10 @@ import { colors } from '../../../theme/colors';
 import JobTitleFilter from './jobtitlefilter';
 import ExperienceFilter from './experiencefilter';
 import LocationChip from './locationchip';
+import { SvgXml } from 'react-native-svg';
+import { fileIcon } from '../../../assets/svg/file';
+import { telePhoneIcon } from '../../../assets/svg/telephone';
+import FooterButtons from '../../molecules/footerbuttons';
 // import LocationFilter from './tabs/LocationFilter';
 // import WorkModeFilter from './tabs/WorkModeFilter';
 
@@ -88,28 +92,25 @@ const FilterSheetContent: React.FC<Props> = ({
         </ScrollView>
       </View>
 
-      {/* Footer */}
       <View style={styles.footer}>
-      <View style={{ flex: 1}}>
+      <View>
         <Button
-          variant="contain"
-          size={44}
           buttonColor={colors.common.white}
           textColor={colors.mainColors.carbonGray}
           borderColor={colors.mainColors.borderColor}
           borderRadius={8}
+          borderWidth={1}
         >
           Cancel
         </Button>
         </View>
         <View style={{ flex: 1,}}>
         <Button
-          variant="contain"
-          size={44}
           buttonColor={colors.mainColors.slateBlue}
           textColor={colors.common.white}
           borderColor={colors.mainColors.borderColor}
           borderRadius={8}
+          borderWidth={1}
         >
           Apply filters
         </Button>

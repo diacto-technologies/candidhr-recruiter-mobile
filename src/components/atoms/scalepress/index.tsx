@@ -1,5 +1,6 @@
 import {View,Text,ViewStyle, Animated,TouchableOpacity} from 'react-native';
 import React,{FC} from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface ScalePressProps{
     onPress?:()=>void;

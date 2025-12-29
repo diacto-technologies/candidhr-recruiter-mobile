@@ -1,160 +1,174 @@
-import React from 'react';
+// components/ApplicantCard/index.tsx
+import React, { useRef, useEffect } from 'react';
 import {
   View,
-  Text,
   Image,
   TouchableOpacity,
-  StyleSheet
+  Pressable,
+  Animated,
+  StyleSheet,
+  ViewStyle,
+  DimensionValue,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
+import { navigate } from '../../../utils/navigationUtils';
+import { useStyles } from './styles';
+import { Typography } from '../../atoms';
+import { colors } from '../../../theme/colors';
+import Divider from '../../atoms/divider';
+import { Application } from '../../../features/applications/types';
+import { formatMonDDYYYY } from '../../../utils/dateformatter';
+import { getStatusColor } from './helper';
 
-interface ApplicantItem {
-  id: string;
-  name: string;
-  appliedDate: string;
-  jobRole: string;
-  stage: string;
-  status: string;
-  avatar: string;
+interface ApplicantCardProps {
+  item?: Application | null;
+  loading?: boolean;
+  cardWidth?:number
 }
+const ShimmerBox: React.FC<{
+  width?: DimensionValue;
+  height?: DimensionValue;
+  borderRadius?: number;
+  style?: ViewStyle;
+}> = ({ width = '100%', height = 12, borderRadius = 6, }) => {
+  const anim = useRef(new Animated.Value(0)).current;
 
-const ApplicantCard = ({ item }: { item: ApplicantItem }) => {
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.timing(anim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [anim]);
+
+  const translateX = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-200, 200],
+  });
+
   return (
-    <View style={styles.card}>
-      
-      {/* Top Row - Avatar + Name + 3 Dots */}
+    <View
+      style={[
+        {
+          width,
+          height,
+          borderRadius,
+          overflow: 'hidden',
+          backgroundColor: '#E6E6E6',
+        },
+      ]}
+    >
+      <Animated.View style={{ flex: 1, transform: [{ translateX }] }}>
+        <LinearGradient
+          colors={['#E6E6E6', '#F2F2F2', '#E6E6E6']}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={StyleSheet.absoluteFill}
+        />
+      </Animated.View>
+    </View>
+  );
+};
+
+const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = false, cardWidth }) => {
+  const styles = useStyles();
+
+  // If loading or no item provided -> show skeleton built from ShimmerBox
+  if (loading || !item) {
+    return (
+      <View style={[styles.card,{width:cardWidth}]}>
+        {/* Top row: avatar + two lines */}
+        <View style={styles.rowBetween}>
+          <View style={styles.row}>
+            <ShimmerBox width={56} height={56} borderRadius={28} />
+            <View style={{ marginLeft: 12, flex: 1 }}>
+              <ShimmerBox width={'60%'} height={14} borderRadius={6} style={{ marginBottom: 8 }} />
+              <ShimmerBox width={'40%'} height={12} borderRadius={6} />
+            </View>
+          </View>
+
+          {/* <ShimmerBox width={24} height={24} borderRadius={12} /> */}
+        </View>
+
+        {/* Applied for lines */}
+        <View style={{ marginTop: 12 }}>
+          <ShimmerBox width={'45%'} height={12} borderRadius={6} style={{ marginBottom: 8 }} />
+          <ShimmerBox width={'85%'} height={12} borderRadius={6} />
+        </View>
+
+        <Divider />
+
+        {/* Footer: stage + status */}
+        <View style={[styles.rowBetween, { marginTop: 12 }]}>
+          <ShimmerBox width={'30%'} height={12} borderRadius={6} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <ShimmerBox width={12} height={12} borderRadius={6} />
+            <ShimmerBox width={60} height={12} borderRadius={6} />
+          </View>
+        </View>
+      </View>
+    );
+  }
+  const handlePress = (application_id: string, job_id:string) => {
+    navigate('ApplicantDetails', {
+      application_id,
+      job_id,
+    });
+  };
+
+  return (
+    <Pressable style={[styles.card,{width: cardWidth}]}  onPress={() => handlePress(item?.id, item?.job?.id)}>
+      {/* Top Row - Avatar + Name */}
       <View style={styles.rowBetween}>
         <View style={styles.row}>
-          <Image source={{ uri: item.avatar }} style={styles.avatar} />
-
-          <View>
-            <Text style={styles.name}>{item.name}</Text>
-            <Text style={styles.appliedOn}>
-              Applied on : <Text style={styles.date}>{item.appliedDate}</Text>
-            </Text>
+          <Image
+            source={{ uri: item?.profilePic || 'https://randomuser.me/api/portraits/men/32.jpg' }}
+            style={styles.avatar}
+            resizeMode="cover"
+          />
+          <View style={{ marginLeft: 12 }}>
+            <Typography variant="semiBoldTxtmd">{item?.name ?? "_"}</Typography>
+            <Typography variant="regularTxtsm" color={colors.gray[600]}>
+              Applied on : {formatMonDDYYYY(item?.applied_at)}
+            </Typography>
           </View>
         </View>
 
         <TouchableOpacity>
-          <Text style={styles.menu}>⋯</Text>
+          <Typography style={styles.menu}>⋯</Typography>
         </TouchableOpacity>
       </View>
 
       {/* Applied For */}
-      <Text style={styles.appliedFor}>
-        Applied for : <Text style={styles.bold}>{item.jobRole}</Text>
-      </Text>
+      <Typography variant="regularTxtsm" color={colors.gray[600]}>
+        Applied for :{' '}
+        <Typography variant="mediumTxtsm" color={colors.gray[700]}>
+          {item?.job?.title ?? "_"}
+        </Typography>
+      </Typography>
 
-      {/* Divider */}
-      <View style={styles.divider} />
+      <Divider />
 
-      {/* Stage + Status Badge */}
+      {/* Stage + Status */}
       <View style={styles.rowBetween}>
-        <Text style={styles.stage}>{item.stage}</Text>
+        <Typography variant="regularTxtsm" color={colors.gray[500]}>
+          {item?.stage_name ?? "_"}
+        </Typography>
 
         <View style={styles.statusBadge}>
-          <View style={styles.statusDot} />
-          <Text style={styles.statusText}>{item.status}</Text>
+          <View style={[styles.statusDot,{ backgroundColor: getStatusColor(item?.stages?.latest_status) } ]}/>
+          <Typography variant="mediumTxtxs" color={colors.gray[700]}>
+            {item?.stages?.latest_status ?? "_"}
+          </Typography>
         </View>
       </View>
-
-    </View>
+    </Pressable>
   );
 };
 
 export default ApplicantCard;
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#FFF',
-    padding: 16,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rowBetween: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    marginRight: 12,
-  },
-
-  name: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1D2939',
-  },
-  appliedOn: {
-    fontSize: 13,
-    color: '#475467',
-    marginTop: 4,
-  },
-  date: {
-    color: '#7F56D9',
-    textDecorationLine: 'underline',
-  },
-
-  appliedFor: {
-    marginTop: 12,
-    fontSize: 14,
-    color: '#475467',
-  },
-  bold: {
-    fontWeight: '600',
-    color: '#1D2939',
-  },
-
-  divider: {
-    height: 1,
-    backgroundColor: '#EDEEEF',
-    marginVertical: 12,
-  },
-
-  stage: {
-    color: '#475467',
-    fontSize: 14,
-  },
-
-  statusBadge: {
-    backgroundColor: '#F4F3FF',
-    borderRadius: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#7F56D9',
-    marginRight: 6,
-  },
-  statusText: {
-    fontSize: 12,
-    color: '#7F56D9',
-    fontWeight: '500',
-  },
-
-  menu: {
-    fontSize: 22,
-    fontWeight: '600',
-    paddingHorizontal: 6,
-    color: '#344054',
-  },
-});

@@ -10,6 +10,10 @@ export const selectUser = createSelector(
   (auth) => auth.user
 );
 
+export const selectUserId = createSelector(
+  [selectAuthState],
+  (auth) => auth.user?.id
+);
 export const selectIsAuthenticated = createSelector(
   [selectAuthState],
   (auth) => auth.isAuthenticated
@@ -34,6 +38,54 @@ export const selectRefreshToken = createSelector(
   [selectAuthState],
   (auth) => auth.refreshToken
 );
+
+export const tenant = createSelector(
+  [selectAuthState],
+  (auth) => auth.tenant
+);
+
+export const selectForgotPasswordLoading = createSelector(
+  [selectAuthState],
+  (auth) => auth.forgotPasswordLoading
+);
+
+export const selectForgotPasswordMessage = createSelector(
+  [selectAuthState],
+  (auth) => auth.forgotPasswordMessage
+);
+
+export const selectSavedEmail = createSelector(
+  [selectAuthState],
+  (auth) => auth.email
+);
+
+export const selectSavedPassword = createSelector(
+  [selectAuthState],
+  (auth) => auth.password
+);
+
+export const selectSavedRemember = createSelector(
+  [selectAuthState],
+  (auth) => auth.remember
+);
+
+export const selectResetPasswordLoading = createSelector(
+  [selectAuthState],
+  (auth) => auth.resetPasswordLoading
+);
+
+export const selectResetPasswordMessage = createSelector(
+  [selectAuthState],
+  (auth) => auth.resetPasswordMessage
+);
+
+export const selectResetPasswordError = createSelector(
+  [selectAuthState],
+  (auth) => auth.resetPasswordError
+);
+
+
+
 
 // Legacy selectors for backward compatibility
 export const selectUserLoading = selectAuthLoading;

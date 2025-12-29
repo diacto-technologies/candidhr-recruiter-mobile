@@ -102,16 +102,16 @@ const BottomSheet = ({
               <View style={styles.header}>
                 <View style={styles.touchableMask}>
                   {title && showHeadline ? (
-                    <Typography variant="H1" color={colors.common.black}>
+                    <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
                       {title}
                     </Typography>
                   ) : (
-                    <Typography variant="P2" color={colors.grayScale.grayDark}>
+                    <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
                       {title}
                     </Typography>
                   )}
                   {subTitle && (
-                    <Typography variant="P2" style={styles.subTitle}>
+                    <Typography variant="semiBoldTxtmd" style={styles.subTitle}>
                       {subTitle}
                     </Typography>
                   )}
@@ -126,7 +126,7 @@ const BottomSheet = ({
                 <Ionicons name="close-outline" size={20} />
               </IconButton> */}
                 <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                  <Typography variant="H4" color={colors.neutrals.red}>Clear all</Typography>
+                  <Typography variant="semiBoldTxtsm" color={colors.error[600]}>Clear all</Typography>
                 </View>
               </View>
             </View>

@@ -18,22 +18,79 @@ import {
   deleteJobFailure,
 } from "./slice";
 import { jobsApi } from "./api";
+import { GetJobsRequestActionPayload } from "./actions";
+import { JobsListApiResponse } from "./types";
 
-function* getJobsWorker(action: { type: string; payload?: { page?: number; limit?: number } }): Generator<any, void, any> {
+function* getJobsWorker(action: { type: string; payload?: GetJobsRequestActionPayload }): Generator<any, void, any> {
   try {
-    yield put(getJobsRequest(action.payload));
-    const response = yield call(jobsApi.getJobs, action.payload);
-    yield put(getJobsSuccess(response));
+    const { append = false, ...params } = action.payload || {};
+    const page = params.page ?? 1;
+    yield put(getJobsRequest(params));
+    const response: JobsListApiResponse = yield call(jobsApi.getJobs, params);
+    // const response = yield call(jobsApi.getJobs, action.payload);
+    yield put(getJobsSuccess({page: action.payload?.page ?? 1,
+      append: action.payload?.append ?? false,
+      published: action.payload?.published ?? true,  // 🔥 required
+      data: response,}));
+    console.log(response,"JobListJobListJobListJobList")
   } catch (error: any) {
     yield put(getJobsFailure(error.message || "Failed to fetch jobs"));
+    console.log(error,"Joberrorerror")
   }
 }
+
+function* getPublishedJobsWorker(action: { type: string; payload?: GetJobsRequestActionPayload }) {
+  try {
+    const { append = false, ...params } = action.payload || {};
+    params.published = true;
+
+    yield put(getJobsRequest(params));
+
+    const response: JobsListApiResponse = yield call(jobsApi.getJobs, params);
+
+    yield put(
+      getJobsSuccess({
+        page: params.page ?? 1,
+        append,
+        published: true,
+        data: response,
+      })
+    );
+  } catch (error: any) {
+    yield put(getJobsFailure(error.message));
+  }
+}
+
+function* getUnpublishedJobsWorker(action: { type: string; payload?: GetJobsRequestActionPayload }) {
+  try {
+    const { append = false, ...params } = action.payload || {};
+    params.published = false;
+
+    yield put(getJobsRequest(params));
+
+    const response: JobsListApiResponse = yield call(jobsApi.getJobs, params);
+
+    yield put(
+      getJobsSuccess({
+        page: params.page ?? 1,
+        append,
+        published: false,
+        data: response,
+      })
+    );
+  } catch (error: any) {
+    yield put(getJobsFailure(error.message));
+  }
+}
+
+
 
 function* getJobDetailWorker(action: { type: string; payload: string }): Generator<any, void, any> {
   try {
     yield put(getJobDetailRequest(action.payload));
     const response = yield call(jobsApi.getJobDetail, action.payload);
-    yield put(getJobDetailSuccess(response.job));
+    console.log(response,"getJobDetailWorkergetJobDetailWorkergetJobDetailWorkergetJobDetailWorker")
+    yield put(getJobDetailSuccess(response));
   } catch (error: any) {
     yield put(getJobDetailFailure(error.message || "Failed to fetch job details"));
   }
@@ -70,6 +127,8 @@ function* deleteJobWorker(action: { type: string; payload: string }): Generator<
 }
 
 export function* jobsSaga() {
+  yield takeLatest(JOBS_ACTION_TYPES.GET_PUBLISHED_JOBS_REQUEST, getPublishedJobsWorker);
+  yield takeLatest(JOBS_ACTION_TYPES.GET_UNPUBLISHED_JOBS_REQUEST, getUnpublishedJobsWorker);
   yield takeLatest(JOBS_ACTION_TYPES.GET_JOBS_REQUEST, getJobsWorker);
   yield takeLatest(JOBS_ACTION_TYPES.GET_JOB_DETAIL_REQUEST, getJobDetailWorker);
   yield takeLatest(JOBS_ACTION_TYPES.CREATE_JOB_REQUEST, createJobWorker);

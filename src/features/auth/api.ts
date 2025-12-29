@@ -4,7 +4,10 @@ import { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse } from "
 
 export const authApi = {
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
-    return apiClient.post(API_ENDPOINTS.AUTH.LOGIN, credentials);
+    return apiClient.post(
+      API_ENDPOINTS.AUTH.LOGIN,
+      credentials,
+    );
   },
 
   register: async (data: RegisterRequest): Promise<RegisterResponse> => {
@@ -22,11 +25,20 @@ export const authApi = {
   getMe: async (): Promise<{ user: any }> => {
     return apiClient.get(API_ENDPOINTS.AUTH.ME);
   },
-
-  // Legacy API function for backward compatibility
-  fetchPostsApi: async () => {
-    return fetch("https://jsonplaceholder.typicode.com/posts")
-      .then((res) => res.json());
+  sendResetPasswordEmail: async (payload: { email: string }) => {
+    return apiClient.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, payload);
   },
+  
+  resetPassword: async (
+    uid: string,
+    token: string,
+    data: { password: string; password2: string }
+  ) => {
+    return apiClient.post(
+      `${API_ENDPOINTS.AUTH.RESET_PASSWORD}${uid}/${token}/`,
+      data
+    );
+  },  
+  
 };
 

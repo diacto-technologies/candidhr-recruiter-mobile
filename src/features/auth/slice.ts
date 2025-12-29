@@ -5,9 +5,18 @@ const initialState: AuthState = {
   user: null,
   token: null,
   refreshToken: null,
+  tenant: null,
   isAuthenticated: false,
   loading: false,
   error: null,
+  forgotPasswordLoading: false,
+  forgotPasswordMessage: null,
+  email: "",
+  password: "",
+  remember: false,
+  resetPasswordLoading: false,
+  resetPasswordMessage: null,
+  resetPasswordError: null,
 };
 
 const authSlice = createSlice({
@@ -24,6 +33,7 @@ const authSlice = createSlice({
       state.user = action.payload.user;
       state.token = action.payload.token;
       state.refreshToken = action.payload.refreshToken;
+      state.tenant = action.payload.tenant || null;
       state.isAuthenticated = true;
       state.error = null;
     },
@@ -32,7 +42,7 @@ const authSlice = createSlice({
       state.error = action.payload;
       state.isAuthenticated = false;
     },
-    
+
     // Register actions
     registerRequest: (state, _action: PayloadAction<{ email: string; password: string; name: string }>) => {
       state.loading = true;
@@ -51,7 +61,7 @@ const authSlice = createSlice({
       state.error = action.payload;
       state.isAuthenticated = false;
     },
-    
+
     // Logout actions
     logoutRequest: (state) => {
       state.loading = true;
@@ -60,11 +70,12 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.refreshToken = null;
+      state.tenant = null;
       state.isAuthenticated = false;
       state.loading = false;
       state.error = null;
     },
-    
+
     // Token refresh
     refreshTokenRequest: (state) => {
       state.loading = true;
@@ -78,12 +89,12 @@ const authSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     },
-    
+
     // Clear error
     clearError: (state) => {
       state.error = null;
     },
-    
+
     // Legacy actions for backward compatibility
     setUser: (state, action: PayloadAction<User | object>) => {
       state.user = action.payload as User;
@@ -96,6 +107,53 @@ const authSlice = createSlice({
     },
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
+    },
+
+    forgotPasswordRequest: (state) => {
+      state.forgotPasswordLoading = true;
+      state.forgotPasswordMessage = null;
+      state.error = null;
+    },
+
+    forgotPasswordSuccess: (state, action: PayloadAction<string>) => {
+      state.forgotPasswordLoading = false;
+      state.forgotPasswordMessage = action.payload;
+    },
+
+    forgotPasswordFailure: (state, action: PayloadAction<string>) => {
+      state.forgotPasswordLoading = false;
+      state.error = action.payload;
+    },
+
+    saveCredentials: (
+      state,
+      action: PayloadAction<{ email: string; password: string }>
+    ) => {
+      state.email = action.payload.email;
+      state.password = action.payload.password;
+      state.remember = true;
+    },
+
+    clearCredentials: (state) => {
+      state.email = "";
+      state.password = "";
+      state.remember = false;
+    },
+
+    resetPasswordRequest: (state) => {
+      state.resetPasswordLoading = true;
+      state.resetPasswordError = null;
+      state.resetPasswordMessage = null;
+    },
+
+    resetPasswordSuccess: (state, action: PayloadAction<string>) => {
+      state.resetPasswordLoading = false;
+      state.resetPasswordMessage = action.payload;
+    },
+
+    resetPasswordFailure: (state, action: PayloadAction<string>) => {
+      state.resetPasswordLoading = false;
+      state.resetPasswordError = action.payload;
     },
   },
 });
@@ -117,6 +175,14 @@ export const {
   setUser,
   setLoading,
   setError,
+  forgotPasswordRequest,
+  forgotPasswordSuccess,
+  forgotPasswordFailure,
+  saveCredentials,
+  clearCredentials,
+  resetPasswordRequest,
+  resetPasswordSuccess,
+  resetPasswordFailure,
 } = authSlice.actions;
 
 export default authSlice.reducer;

@@ -1,8 +1,15 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ApplicationsState, Application } from "./types";
+import { ApplicationsState, Application, ApplicationsListResponse, ApplicationResponseItem, ResumeScreeningResponseItem, AssessmentLog, AssessmentReport, AssessmentDetailedReport, ScreeningAssessment, PersonalityScreeningResponse} from "./types";
 
 const initialState: ApplicationsState = {
   applications: [],
+  applicationResponses: [],
+  resumeScreeningResponses: [],
+  assessmentLogs: [],
+  personalityScreeningList: [],
+  personalityScreeningResponses: [],
+  assessmentReport: null,
+  assessmentDetailedReport: null,
   selectedApplication: null,
   loading: false,
   error: null,
@@ -11,22 +18,46 @@ const initialState: ApplicationsState = {
     limit: 10,
     total: 0,
   },
+  hasMore: true,
 };
 
 const applicationsSlice = createSlice({
   name: "applications",
   initialState,
   reducers: {
-    getApplicationsRequest: (state, _action: PayloadAction<{ page?: number; limit?: number; jobId?: string }>) => {
+    getApplicationsRequest: (state, _action: PayloadAction<any>) => {
       state.loading = true;
       state.error = null;
+
+      if (_action.payload?.reset) {
+        state.applications = [];
+        state.pagination.page = 1;
+      }
     },
-    getApplicationsSuccess: (state, action: PayloadAction<{ applications: Application[]; total: number }>) => {
+
+    getApplicationsSuccess: (
+      state,
+      action: PayloadAction<{
+        page: number;
+        append: boolean;
+        data: ApplicationsListResponse;
+      }>
+    ) => {
+      const { page, append, data } = action.payload;
       state.loading = false;
-      state.applications = action.payload.applications;
-      state.pagination.total = action.payload.total;
-      state.error = null;
+      state.pagination.page = page ?? 1;
+      state.pagination.total = data?.count ?? 0;
+
+      const results = data?.results ?? [];
+
+      state.applications = append ? [...state.applications, ...results] : results;
+
+      // If server returns next/previous, you can also use: state.hasMore = Boolean(data.next)
+      state.hasMore = state.applications.length < (data?.count ?? 0);
     },
+
+
+
     getApplicationsFailure: (state, action: PayloadAction<string>) => {
       state.loading = false;
       state.error = action.payload;
@@ -83,6 +114,150 @@ const applicationsSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    getApplicationResponsesRequest: (state) => {
+      state.loading = true;
+      state.error = null;
+    },
+
+    getApplicationResponsesSuccess: (
+      state,
+      action: PayloadAction<ApplicationResponseItem[]>
+    ) => {
+      state.loading = false;
+      state.applicationResponses = action.payload;
+    },
+
+    getApplicationResponsesFailure: (state, action: PayloadAction<string>) => {
+      state.loading = false;
+      state.error = action.payload;
+    },
+
+    getResumeScreeningResponsesRequest: (state) => {
+      state.loading = true;
+      state.error = null;
+    },
+
+    getResumeScreeningResponsesSuccess: (
+      state,
+      action: PayloadAction<ResumeScreeningResponseItem[]>
+    ) => {
+      state.loading = false;
+      state.resumeScreeningResponses = action.payload;
+    },
+
+    getResumeScreeningResponsesFailure: (
+      state,
+      action: PayloadAction<string>
+    ) => {
+      state.loading = false;
+      state.error = action.payload;
+    },
+
+    getAssessmentLogsRequest: (state) => {
+      state.loading = true;
+      state.error = null;
+    },
+
+    getAssessmentLogsSuccess: (
+      state,
+      action: PayloadAction<AssessmentLog[]>
+    ) => {
+      state.loading = false;
+      state.assessmentLogs = action.payload;
+    },
+
+    getAssessmentLogsFailure: (
+      state,
+      action: PayloadAction<string>
+    ) => {
+      state.loading = false;
+      state.error = action.payload;
+    },
+
+    getAssessmentReportRequest: (state) => {
+      state.loading = true;
+      state.error = null;
+    },
+
+    getAssessmentReportSuccess: (
+      state,
+      action: PayloadAction<AssessmentReport>
+    ) => {
+      state.loading = false;
+      state.assessmentReport = action.payload;
+    },
+
+    getAssessmentReportFailure: (
+      state,
+      action: PayloadAction<string>
+    ) => {
+      state.loading = false;
+      state.error = action.payload;
+    },
+
+    getAssessmentDetailedReportRequest: (state) => {
+      state.loading = true;
+      state.error = null;
+    },
+
+    getAssessmentDetailedReportSuccess: (
+      state,
+      action: PayloadAction<AssessmentDetailedReport>
+    ) => {
+      state.loading = false;
+      state.assessmentDetailedReport = action.payload;
+    },
+
+    getAssessmentDetailedReportFailure: (
+      state,
+      action: PayloadAction<string>
+    ) => {
+      state.loading = false;
+      state.error = action.payload;
+    },
+    // applications/slice.ts
+    getPersonalityScreeningListRequest: (state) => {
+      state.loading = true;
+      state.error = null;
+    },
+
+    getPersonalityScreeningListSuccess: (
+      state,
+      action: PayloadAction<ScreeningAssessment[]>
+    ) => {
+      state.loading = false;
+      state.personalityScreeningList = action.payload;
+    },
+
+    getPersonalityScreeningListFailure: (
+      state,
+      action: PayloadAction<string>
+    ) => {
+      state.loading = false;
+      state.error = action.payload;
+    },
+
+    getPersonalityScreeningResponsesRequest: state => {
+      state.loading = true;
+      state.error = null;
+    },
+    
+    getPersonalityScreeningResponsesSuccess: (
+      state,
+      action: PayloadAction<PersonalityScreeningResponse[]>
+    ) => {
+      state.loading = false;
+      state.personalityScreeningResponses = action.payload;
+    },
+    
+    getPersonalityScreeningResponsesFailure: (
+      state,
+      action: PayloadAction<string>
+    ) => {
+      state.loading = false;
+      state.error = action.payload;
+    },
+    
   },
 });
 
@@ -101,6 +276,27 @@ export const {
   updateApplicationStatusFailure,
   setSelectedApplication,
   clearError,
+  getResumeScreeningResponsesRequest,
+  getResumeScreeningResponsesSuccess,
+  getResumeScreeningResponsesFailure,
+  getApplicationResponsesRequest,
+  getApplicationResponsesSuccess,
+  getApplicationResponsesFailure,
+  getAssessmentLogsRequest,
+  getAssessmentLogsSuccess,
+  getAssessmentLogsFailure,
+  getAssessmentReportRequest,
+  getAssessmentReportSuccess,
+  getAssessmentReportFailure,
+  getAssessmentDetailedReportRequest,
+  getAssessmentDetailedReportSuccess,
+  getAssessmentDetailedReportFailure,
+  getPersonalityScreeningListRequest,
+  getPersonalityScreeningListSuccess,
+  getPersonalityScreeningListFailure,
+  getPersonalityScreeningResponsesRequest,
+  getPersonalityScreeningResponsesSuccess,
+  getPersonalityScreeningResponsesFailure,
 } = applicationsSlice.actions;
 
 export default applicationsSlice.reducer;

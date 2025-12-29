@@ -3,10 +3,9 @@ import { API_ENDPOINTS } from "../../api/endpoints";
 import { UpdateProfileRequest, Profile } from "./types";
 
 export const profileApi = {
-  getProfile: async (): Promise<{ profile: Profile }> => {
+  getProfile: async (): Promise<Profile> => {
     return apiClient.get(API_ENDPOINTS.PROFILE.GET);
   },
-
   updateProfile: async (data: UpdateProfileRequest): Promise<{ profile: Profile }> => {
     return apiClient.put(API_ENDPOINTS.PROFILE.UPDATE, data);
   },
