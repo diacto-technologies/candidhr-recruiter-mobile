@@ -1,10 +1,14 @@
 import { JOBS_ACTION_TYPES } from "./constants";
-import { CreateJobRequest, UpdateJobRequest, Job } from "./types";
+import { CreateJobRequest, UpdateJobRequest, Job, GetJobsParams } from "./types";
 
-export const getJobsRequestAction = (params?: { page?: number; limit?: number }) => ({
+export interface GetJobsRequestActionPayload extends GetJobsParams {
+  append?: boolean; // false / undefined = replace list, true = append
+}
+
+export const getJobsRequestAction = (params?: GetJobsRequestActionPayload) => ({
   type: JOBS_ACTION_TYPES.GET_JOBS_REQUEST,
   payload: params,
-});
+})
 
 export const getJobDetailRequestAction = (id: string) => ({
   type: JOBS_ACTION_TYPES.GET_JOB_DETAIL_REQUEST,
@@ -33,5 +37,15 @@ export const setSelectedJobAction = (job: Job | null) => ({
 
 export const clearErrorAction = () => ({
   type: JOBS_ACTION_TYPES.CLEAR_ERROR,
+});
+
+export const getPublishedJobsRequestAction = (params?: GetJobsRequestActionPayload) => ({
+  type: JOBS_ACTION_TYPES.GET_PUBLISHED_JOBS_REQUEST,
+  payload: params,
+});
+
+export const getUnpublishedJobsRequestAction = (params?: GetJobsRequestActionPayload) => ({
+  type: JOBS_ACTION_TYPES.GET_UNPUBLISHED_JOBS_REQUEST,
+  payload: params,
 });
 

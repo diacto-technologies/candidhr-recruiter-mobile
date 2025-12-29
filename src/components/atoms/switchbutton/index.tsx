@@ -118,7 +118,7 @@ const CustomSwitch: React.FC<SwitchProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: 40,
+    width:40,
     height:20,
     padding:2,
     borderRadius: 15,
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   },
   circle: {
     position: "absolute",
-    width: 15,
+    width: 16,
     height: 16,
     borderRadius:12,
   },

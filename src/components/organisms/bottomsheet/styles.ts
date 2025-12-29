@@ -55,6 +55,6 @@ export const useStyles = () => {
       backgroundColor: '#00000077',
       flex: 1,
     },
-    closeIcon: { flex: 1, backgroundColor: colors.common.backdrop, marginBottom:20, paddingHorizontal:6}
+    closeIcon: { flex: 1, backgroundColor: colors.common.backdrop, marginBottom:20, paddingHorizontal:6,}
   });
 };

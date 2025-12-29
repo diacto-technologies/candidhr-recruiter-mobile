@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { colors } from "../../../../theme/colors";
@@ -7,20 +7,28 @@ import { SvgXml } from "react-native-svg";
 import { sparkles } from "../../../../assets/svg/sparkles";
 import Divider from "../../../atoms/divider";
 import Icon from "../../../atoms/vectoricon";
+import { useAppSelector } from "../../../../hooks/useAppSelector";
+import { selectSelectedApplication } from "../../../../features/applications/selectors";
 
 interface Props {
   summary: string;
-  matchScore: string;
-  readinessScore: string;
-  matchedSkills: string[];
+  matchScore: number;
+  readinessScore: number;
+  matchedSkills: ResumeSkill[];
   quickFacts: {
     lastRole: string;
     lastCompany: string;
     education: string;
-    experience: string;
-    certifications: string;
+    experience: string[];
+    certifications: string[];
   };
   risks: string[];
+}
+
+interface ResumeSkill {
+  name: string;
+  relevance: string;
+  relevance_score: number;
 }
 
 const AiSummary = ({
@@ -31,6 +39,8 @@ const AiSummary = ({
   quickFacts,
   risks,
 }: Props) => {
+  const [expanded, setExpanded] = useState(false);
+  const application = useAppSelector(selectSelectedApplication);
   return (
     <View style={styles.card}>
       {/* Header */}
@@ -46,21 +56,29 @@ const AiSummary = ({
         <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>
           Narrative summary
         </Typography>
-
-        <Typography
-          variant="regularTxtsm"
-          color={colors.gray[600]}
-          style={{ lineHeight: 20 }}
-        >
-          {summary}
+        <View style={{ position: "relative" }}>
           <Typography
-            variant="semiBoldTxtsm"
-            color={colors.brand[600]}
+            variant="regularTxtsm"
+            color={colors.gray[600]}
+            style={{ lineHeight: 20, flexShrink: 1 }}
+            numberOfLines={expanded ? undefined : 4}
           >
-            {" "}
-            read more...
+            {summary}
           </Typography>
-        </Typography>
+          {summary?.length > 120 && (
+            <TouchableOpacity
+              onPress={() => setExpanded(!expanded)}
+              style={{ alignSelf: "flex-end" }}
+            >
+              <Typography
+                variant="semiBoldTxtsm"
+                color={colors.brand[600]}
+              >
+                {expanded ? "read less" : "read more"}
+              </Typography>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Divider */}
@@ -115,9 +133,7 @@ const AiSummary = ({
       <View style={styles.snapshotRow}>
         <View style={[styles.snapshotBox, { backgroundColor: colors.success[50] }]}>
           <Typography variant="semiBoldTxtmd" color={colors.success[500]}>
-            {matchedSkills.length < 10
-              ? "0" + matchedSkills.length
-              : matchedSkills.length}
+            {application?.resume?.ai_summary_json?.matched_skills.length ?? 0}
           </Typography>
           <Typography variant="regularTxtsm" color={colors.gray[600]}>
             Matched
@@ -126,7 +142,7 @@ const AiSummary = ({
 
         <View style={[styles.snapshotBox, { backgroundColor: colors.Rose[50] }]}>
           <Typography variant="semiBoldTxtmd" color={colors.error[500]}>
-            07
+            {application?.resume?.ai_summary_json?.missing_skills.length ?? 0}
           </Typography>
           <Typography variant="regularTxtsm" color={colors.gray[600]}>
             Missing
@@ -141,9 +157,24 @@ const AiSummary = ({
       </Typography>
 
       <View style={styles.tagContainer}>
-        {matchedSkills.map((item, index) => (
+        {application?.resume?.ai_summary_json?.matched_skills?.map((item, index) => (
           <View key={index} style={styles.tag}>
             <Typography variant="mediumTxtsm" color={colors.success[700]}>
+              {item}
+            </Typography>
+          </View>
+        ))}
+      </View>
+      <Divider />
+
+      <Typography variant="semiBoldTxtmd" color={"#1F2937"}>
+        Missing Skills
+      </Typography>
+
+      <View style={styles.tagContainer}>
+        {application?.resume?.ai_summary_json?.missing_skills?.map((item, index) => (
+          <View key={index} style={styles.missingtag}>
+            <Typography variant="mediumTxtsm" color={colors.error[700]}>
               {item}
             </Typography>
           </View>
@@ -187,18 +218,39 @@ const AiSummary = ({
         <Typography variant="regularTxtsm" color={colors.gray[600]}>
           Relevant experience
         </Typography>
-        <Typography variant="semiBoldTxtsm" color={colors.gray[900]}>
-          {quickFacts.experience}
-        </Typography>
+        {quickFacts.experience.map((item, index) => (
+          <Typography
+            key={index}
+            variant="semiBoldTxtsm"
+            color={colors.gray[900]}
+          >
+            • {item}
+          </Typography>
+        ))}
       </View>
 
       <View>
         <Typography variant="regularTxtsm" color={colors.gray[600]}>
           Notable Certifications
         </Typography>
-        <Typography variant="semiBoldTxtsm" >
-          {quickFacts.certifications}
-        </Typography>
+        {quickFacts.certifications.length > 0 ? (
+          quickFacts.certifications.map((cert, index) => (
+            <Typography
+              key={index}
+              variant="semiBoldTxtsm"
+              color={colors.gray[900]}
+            >
+              {cert}
+            </Typography>
+          ))
+        ) : (
+          <Typography
+            variant="semiBoldTxtsm"
+            color={colors.gray[900]}
+          >
+            None listed
+          </Typography>
+        )}
       </View>
 
       {/* Divider */}
@@ -217,9 +269,10 @@ const AiSummary = ({
         </View>
 
         {risks.map((risk, index) => (
-          <View key={index}>
+          <View key={index} style={{ flexDirection: 'row', alignContent: 'center' }}>
+            <Icon size={20} name={"dot-single"} iconFamily={"Entypo"} color={colors.error[600]} />
             <Typography variant="regularTxtsm" color={colors.error[600]}>
-              • {risk}
+              {risk}
             </Typography>
           </View>
         ))}
@@ -237,7 +290,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.gray[200],
     padding: 16,
-    gap: 16
+    gap: 16,
+    shadowColor: '#0A0D12',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
 
   headerRow: {
@@ -310,6 +368,14 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     borderWidth: 1,
     borderColor: colors.success[200]
+  },
+  missingtag: {
+    backgroundColor: colors.error[50],
+    paddingVertical: 2,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: colors.error[200]
   },
 
   factRow: {

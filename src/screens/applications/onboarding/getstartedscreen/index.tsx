@@ -6,14 +6,14 @@ import {
   StatusBar,
   TouchableOpacity,
 } from "react-native";
-import { Button, Typography } from "../../../components";
-import { SvgXml } from "react-native-svg";
-import { candidHrLogo, candidHrTxt } from "../../../assets/svg/candidhrlogo";
-import { colors } from "../../../theme/colors";
-import { logoXML } from "../../../assets/svg/logoxml";
-import { navigate } from "../../../utils/navigationUtils";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useStyles } from "./styles";
+import { logoXML } from "../../../../assets/svg/logoxml";
+import { SvgXml } from "react-native-svg";
+import { candidHrLogo } from "../../../../assets/svg/candidhrlogo";
+import { Button, Typography } from "../../../../components";
+import { navigate } from "../../../../utils/navigationUtils";
+import { colors } from "../../../../theme/colors";
 
 const GetStartedScreen = () => {
   const styles = useStyles();
@@ -21,9 +21,8 @@ const GetStartedScreen = () => {
   return (
     <Fragment>
       <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
-
       <ImageBackground
-        source={require("../../../assets/images/welcomescr.png")}
+        source={require("../../../../assets/images/welcomescr.png")}
         style={styles.bg}
         resizeMode="cover"
       >

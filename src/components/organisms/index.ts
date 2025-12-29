@@ -7,7 +7,7 @@ export { default as ApplicationStageChart } from './applicationstagechart';
 export { default as ApplicationStageOverview } from './applicationstageoverview';
 export { default as FeatureConsumptionChart } from './featureconsumptionchart';
 export { default as FilterSheetContent } from './filtersheetcontent';
-export { default as JobCardList } from './jobs/jobcardlist';
+export { default as JobCardList } from './jobs/jobcardlist/index';
 export { default as SortingAndFilter } from './sortingandfilter';
 
 // Export types

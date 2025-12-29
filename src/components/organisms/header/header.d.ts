@@ -6,5 +6,6 @@ export interface IHeader {
   backNavigation?:boolean;
   edit?:boolean;
   threedot?:boolean;
-  borderCondition?:boolean
+  borderCondition?:boolean;
+  showTitle?: boolean;
 }

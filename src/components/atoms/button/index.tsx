@@ -24,8 +24,8 @@ const Button: React.FC<IButton> = (props) => {
   return (
     <Pressable
       {...props}
-      onPressIn={() => setPressed(true)}
-      onPressOut={() => setPressed(false)}
+      // onPressIn={() => setPressed(true)}
+      // onPressOut={() => setPressed(false)}
       style={styles.container}
       disabled={props.disabled || props.isLoading}
     >
@@ -38,12 +38,16 @@ const Button: React.FC<IButton> = (props) => {
       ) : (
         <View style={styles.content}>
           {renderNode(props.startIcon)}
-          <Typography
-            variant="semiBoldTxtmd"
-            color={getTextColor()}
-          >
-            {props.children}
-          </Typography>
+          {props.children && (
+            <Typography
+              variant="semiBoldTxtxs"
+              color={getTextColor()}
+            >
+              {props.children}
+            </Typography>
+          )}
+          
+          {renderNode(props.middleIcon)}
           {renderNode(props.endIcon)}
         </View>
       )}

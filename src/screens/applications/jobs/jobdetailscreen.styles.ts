@@ -1,7 +1,9 @@
 import { StyleSheet } from 'react-native';
 import { colors } from '../../../theme/colors';
+import { useRNSafeAreaInsets } from '../../../hooks/useRNSafeAreaInsets';
 
 export const useStyles = () => {
+  const inset = useRNSafeAreaInsets()
     return StyleSheet.create({
         tabContainer: {
             position: "relative",

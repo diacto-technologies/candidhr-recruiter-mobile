@@ -8,10 +8,15 @@ import Icon from '../../atoms/vectoricon';
 import { jobIcon } from '../../../assets/svg/jobicon';
 import { locationIcon } from '../../../assets/svg/location';
 import { singleDotIcon } from '../../../assets/svg/singledot';
+import { useAppSelector } from '../../../hooks/useAppSelector';
+import { selectSelectedApplication } from '../../../features/applications/selectors';
+import { formatMonDDYYYY } from '../../../utils/dateformatter';
+import { formatExperience } from '../../../utils/experienceformatter';
 
 const ProfileCart = () => {
+  const application = useAppSelector(selectSelectedApplication);
   return (
-    <View style={styles.container}> 
+    <View style={styles.container}>
       <LinearGradient
         colors={[colors.brand[100], '#E3E1FF']}
         start={{ x: 0, y: 0 }}
@@ -20,33 +25,39 @@ const ProfileCart = () => {
       />
       <View style={styles.photoWrapper}>
         <View style={styles.photoBorder}>
-          <Image
-            source={{ uri: 'https://randomuser.me/api/portraits/men/35.jpg' }}
-            style={styles.photo}
-            resizeMode="cover"
-          />
+          {application?.candidate?.profile_pic ?
+            <Image
+              source={{ uri: application?.candidate?.profile_pic }}
+              style={styles.photo}
+              resizeMode="cover"
+            />
+            :
+            <View style={styles.initialCircle}>
+              <Typography variant="semiBoldDxs" color={colors?.brand[700]}> {(application?.candidate?.name?.trim()?.[0] ?? "_").toUpperCase()}</Typography>
+            </View>
+          }
         </View>
       </View>
 
       <View style={styles.infoContainer}>
         <View style={{ gap: 4 }}>
-          <Typography variant="semiBoldDxs">Sachin patidar</Typography>
+          <Typography variant="semiBoldDxs">{application?.candidate?.name ?? "_"}</Typography>
           <Typography variant="regularTxtsm" color={colors.gray[600]}>
-            Applied on: Aug 16, 2025, for{' '}
+            Applied on: {formatMonDDYYYY(application?.applied_at)},{''} for {''}
             <Typography variant="mediumTxtsm" color={colors.gray[700]}>
-              Frontend developer
+              {application?.job?.title ?? "_"}
             </Typography>
           </Typography>
 
           <View style={styles.row}>
             <SvgXml xml={locationIcon} width={16} height={16} />
             <Typography variant="regularTxtsm" color={colors.gray[600]}>
-              Pune, Maharashtra
+              {application?.candidate?.location?.city ?? "_"} {application?.candidate?.location?.state ?? "_"}
             </Typography>
             <SvgXml xml={singleDotIcon} />
             <SvgXml xml={jobIcon} height={20} width={20} />
             <Typography variant="regularTxtsm" color={colors.gray[600]}>
-              3 years
+              {formatExperience(application?.job?.score_weight?.work_experience)}
             </Typography>
           </View>
         </View>
@@ -71,12 +82,12 @@ const ProfileCart = () => {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.base.white,
-    overflow: 'hidden', 
+    overflow: 'hidden',
   },
   header: {
-    height:90,
+    height: 90,
     borderRadius: 12,
-    margin:4
+    margin: 4
   },
   photoWrapper: {
     position: 'absolute',
@@ -87,7 +98,7 @@ const styles = StyleSheet.create({
   photoBorder: {
     width: 96,
     height: 96,
-    borderRadius:50,
+    borderRadius: 50,
     backgroundColor: colors.base.white,
     padding: 4,
     shadowColor: '#0A0D12',
@@ -95,6 +106,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 10,
     elevation: 8,
+    alignItems:'center'
   },
   photo: {
     width: '100%',
@@ -102,7 +114,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
   },
   infoContainer: {
-    paddingHorizontal:16,
+    paddingHorizontal: 16,
     paddingTop: 52,
     paddingBottom: 16,
     gap: 16,
@@ -131,6 +143,14 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
+  initialCircle: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor:colors.brand[100]
+  }
 });
 
 export default ProfileCart;

@@ -10,8 +10,9 @@ import { checkIcon } from "../../../../assets/svg/check";
 
 interface ScoreItem {
   title: string;
-  value: string;
+  percentage: string;
   completed: boolean;
+  value:string;
 }
 
 interface Props {
@@ -48,7 +49,7 @@ const ResumeScore = ({ overall, status, details }: Props) => {
         <Typography variant="mediumTxtsm" style={{ flex: 1 }} color={colors.gray[900]}>
           Overall score
         </Typography>
-        <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>{overall}%</Typography>
+        <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>{overall}</Typography>
         </View>
       </LinearGradient>
       </View>
@@ -72,7 +73,7 @@ const ResumeScore = ({ overall, status, details }: Props) => {
               variant="mediumTxtsm"
               color={item.completed ? colors.gray[700] : colors.gray[600]}
             >
-              {item.title}
+              {item.title} ({item?.percentage})
             </Typography>
           </View>
 
@@ -104,6 +105,11 @@ const styles = StyleSheet.create({
     borderColor: colors.gray[200],
     padding: 16,
     gap: 16,
+    shadowColor: '#0A0D12',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
 
   headerRow: {

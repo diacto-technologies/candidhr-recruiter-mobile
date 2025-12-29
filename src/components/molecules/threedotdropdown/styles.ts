@@ -15,13 +15,13 @@ export const useStyles = () => {
         
             // ☑️ Shadow 1 (0px 32px 64px -12px #0A0D1224)
             shadowColor: "#0A0D12",
-            shadowOffset: { width: 0, height: 32 },
+            shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.14, // 24 hex ≈ 0.14
-            shadowRadius: 64,
+            shadowRadius: 6,
         
             // ☑️ Shadow 2 (0px 5px 5px -2.5px #0A0D120A)
             // Combine smaller subtle shadow
-            elevation: 16, // Android
+            elevation:6, // Android
             borderWidth:1,
             borderColor:colors.mainColors.borderColor
           },

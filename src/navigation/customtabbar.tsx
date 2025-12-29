@@ -56,13 +56,13 @@ const CustomTabBar: FC<BottomTabBarProps> = (props) => {
           );
         })}
 
-      {/* Three-dot */}
-      <TouchableOpacity
-        activeOpacity={0.7}
-        onPress={() => setDropdownVisible(true)}
-      >
-        <SvgXml xml={horizontalThreedotIcon} height={24} width={24} />
-      </TouchableOpacity>
+        {/* Three-dot */}
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => setDropdownVisible(true)}
+        >
+          <SvgXml xml={horizontalThreedotIcon} height={24} width={24} />
+        </TouchableOpacity>
       </View>
 
       {/* Dropdown */}
@@ -70,8 +70,8 @@ const CustomTabBar: FC<BottomTabBarProps> = (props) => {
         visible={dropdownVisible}
         onClose={() => setDropdownVisible(false)}
         menuItems={menuItems as []}
-        top={bottom.bottom + 60}
-        right={20}
+        top={bottom.top +600}
+        right={40}
       />
     </View>
   );
@@ -84,6 +84,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
+    shadowColor: '#0A0D12',
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: -3 },
+    shadowRadius: 10,
+    elevation: 6,
   },
 
   tabRow: {

@@ -85,7 +85,7 @@ const TextField = forwardRef((props: TextFieldProps, ref) => {
         {renderNode(props.endIcon)}
       </Pressable>
       {props.isError && props.error && (
-        <Typography variant="P1C" style={styles.errorText}>
+        <Typography variant="regularTxtsm" color={colors.error[600]}>
           {props.error}
         </Typography>
       )}

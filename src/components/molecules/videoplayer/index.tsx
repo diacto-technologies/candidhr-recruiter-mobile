@@ -1,124 +1,236 @@
-import React, { useState, useRef } from "react";
-import { View, TouchableOpacity } from "react-native";
+import React, { useRef, useState } from "react";
+import {
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  StatusBar,
+  Text,
+} from "react-native";
 import Video from "react-native-video";
-import Ionicons from "react-native-vector-icons/Ionicons";
-import { useStyles } from "./styles";
 import Slider from "@react-native-community/slider";
+import Orientation from "react-native-orientation-locker";
+import { SvgXml } from "react-native-svg";
 
-const VideoPlayerBox = () => {
-  const styles = useStyles();
+import { videoButton } from "../../../assets/svg/videobutton";
+import { sounIcon } from "../../../assets/svg/sound";
+import { pauseVideoIcon } from "../../../assets/svg/pausevideo";
+import { expandIcon } from "../../../assets/svg/expand";
+import { playVideoIcon } from "../../../assets/svg/playvideoIcon";
+import { muteVolumeIcon } from "../../../assets/svg/mutevoulme";
+import { colors } from "../../../theme/colors";
 
-  const videoRef = useRef(null);
+interface VideoPlayerBoxProps {
+  source: string;
+  onProgress?: (data: { currentTime: number; playableDuration: number }) => void;
+}
 
-  const [paused, setPaused] = useState(true);
-  const [muted, setMuted] = useState(false);
-  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+/* ---------------- TIME FORMATTER ---------------- */
+const formatTime = (seconds: number) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+};
 
-  const [volume, setVolume] = useState(0.7);
+export default function VideoPlayerBox({ source, onProgress }: VideoPlayerBoxProps) {
+  const videoRef = useRef<Video>(null);
+
+  const [isPaused, setIsPaused] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const onLoad = (data) => setDuration(data.duration);
-  const onProgress = (data) => setCurrentTime(data.currentTime);
+  /* ---------------- HANDLERS ---------------- */
 
-  const onSeek = (value) => {
-    videoRef?.current?.seek(value);
-    setCurrentTime(value);
+  const togglePlayPause = () => {
+    setIsPaused((prev) => !prev);
   };
 
+  const toggleMute = () => {
+    setIsMuted((prev) => !prev);
+  };
+
+  const toggleFullscreen = () => {
+    if (fullscreen) {
+      Orientation.unlockAllOrientations();
+      StatusBar.setHidden(false);
+      setFullscreen(false);
+    } else {
+      Orientation.lockToLandscape();
+      StatusBar.setHidden(true);
+      setFullscreen(true);
+    }
+  };
+
+  const onLoad = (data: any) => {
+    setDuration(data.duration);
+    setLoading(false);
+  };
+
+  const handleProgress = (data: any) => {
+    setCurrentTime(data.currentTime);
+    onProgress?.(data);
+  };
+
+  const onEnd = () => {
+    setIsPaused(true);
+    setCurrentTime(0);
+    videoRef.current?.seek(0);
+  };
+
+  /* ---------------- RENDER ---------------- */
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, fullscreen && styles.fullscreen]}>
       {/* VIDEO */}
       <Video
         ref={videoRef}
-        source={{ uri: "https://www.w3schools.com/html/mov_bbb.mp4" }}
+        source={{ uri: source }}
         style={styles.video}
-        paused={paused}
-        muted={muted}
-        volume={volume}
-        resizeMode={isFullscreen ? "contain" : "cover"}
+        paused={isPaused}
+        muted={isMuted}
+        resizeMode="contain"
         onLoad={onLoad}
-        onProgress={onProgress}
+        onProgress={handleProgress}
+        onEnd={onEnd}
+        progressUpdateInterval={500}
       />
 
-      {/* CENTER PLAY BTN */}
-      {paused && (
+      {/* LOADER */}
+      {loading && (
+        <ActivityIndicator size="large" color="#fff" style={styles.loader} />
+      )}
+
+      {/* BIG PLAY BUTTON */}
+      {isPaused && !loading && (
         <TouchableOpacity
-          style={styles.playButton}
-          onPress={() => setPaused(false)}
+          style={styles.bigPlayButton}
+          onPress={togglePlayPause}
         >
-          <View style={styles.playCircle}>
-            <Ionicons name="play" size={40} color="#fff" />
-          </View>
+          <SvgXml xml={videoButton} />
         </TouchableOpacity>
       )}
 
-      {/* BOTTOM CONTROLS */}
-      <View style={styles.controlBar}>
-        <View style={{flexDirection:'row'}}>
-        {/* Play Pause */}
-        <TouchableOpacity onPress={() => setPaused(!paused)}>
-          <Ionicons name={paused ? "play" : "pause"} size={32} color="#fff" />
-        </TouchableOpacity>
+      {/* CONTROLS */}
+      {!loading && (
+        <View style={styles.controls}>
+          {/* Play / Pause */}
+          <TouchableOpacity onPress={togglePlayPause}>
+            {isPaused ?
+              <SvgXml
+                xml={pauseVideoIcon}
+                color={colors.base.white}
+              />
+              :
+              <SvgXml
+                xml={playVideoIcon}
+                color={colors.base.white}
+                style={{ marginHorizontal: 8 }}
+              />
+            }
+          </TouchableOpacity>
 
-        {/* Volume Toggle */}
-        <TouchableOpacity
-          onPress={() => setShowVolumeSlider(!showVolumeSlider)}
-        >
-          <Ionicons
-            name={muted ? "volume-mute" : "volume-medium"}
-            size={32}
-            color="#fff"
+          {/* Volume */}
+          <TouchableOpacity onPress={toggleMute}>
+            {isMuted ?
+              <SvgXml
+                xml={muteVolumeIcon}
+                color={colors.base.white}
+              />
+              :
+              <SvgXml
+                xml={sounIcon}
+                color={colors.base.white}
+              />
+            }
+          </TouchableOpacity>
+
+          <Text style={styles.timeText}>
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </Text>
+
+          <Slider
+            style={{ flex: 1, marginHorizontal: 8 }}
+            minimumValue={0}
+            maximumValue={duration}
+            value={currentTime}
+            minimumTrackTintColor={colors.base.white}
+            maximumTrackTintColor="#555"
+            thumbTintColor="transparent"
+            //disabled
+            onSlidingComplete={(val) =>
+              videoRef.current?.seek(val)
+            }
           />
-        </TouchableOpacity>
+
+          {/* Fullscreen */}
+          <TouchableOpacity onPress={toggleFullscreen}>
+            <SvgXml xml={expandIcon} color={colors.base.white} />
+          </TouchableOpacity>
         </View>
-
-        {/* Fullscreen */}
-        <TouchableOpacity onPress={() => setIsFullscreen(!isFullscreen)}>
-          <Ionicons
-            name={isFullscreen ? "contract-outline" : "expand-outline"}
-            size={32}
-            color="#fff"
-          />
-        </TouchableOpacity>
-      </View>
-
-      {/* 🎚️ VOLUME SLIDER POPUP */}
-      {showVolumeSlider && (
-       <View style={styles.volumeSliderContainer}>
-       <View style={styles.rotateWrapper}>
-         <Slider
-           style={styles.verticalSlider}
-           minimumValue={0}
-           maximumValue={1}
-           value={volume}
-           step={0.05}
-           minimumTrackTintColor="#fff"
-           maximumTrackTintColor="gray"
-           thumbTintColor="#fff"
-           onValueChange={(value) => {
-             setMuted(false);
-             setVolume(value);
-           }}
-         />
-       </View>
-     </View>
       )}
-
-      {/* SEEK BAR */}
-      <Slider
-        style={styles.seekBar}
-        minimumValue={0}
-        maximumValue={duration}
-        value={currentTime}
-        minimumTrackTintColor="#fff"
-        maximumTrackTintColor="gray"
-        thumbTintColor="#fff"
-        onSlidingComplete={(value) => onSeek(value)}
-      />
     </View>
   );
-};
+}
 
-export default VideoPlayerBox;
+/* ---------------- STYLES ---------------- */
+
+const styles = StyleSheet.create({
+  container: {
+    width: "100%",
+    height: 180,
+    borderRadius: 14,
+    overflow: "hidden",
+    backgroundColor: "#000",
+  },
+
+  fullscreen: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: "100%",
+    width: "100%",
+    zIndex: 9999,
+    borderRadius: 0,
+  },
+
+  video: {
+    width: "100%",
+    height: "100%",
+  },
+
+  bigPlayButton: {
+    position: "absolute",
+    alignSelf: "center",
+    top: "40%",
+  },
+
+  loader: {
+    position: "absolute",
+    top: "45%",
+    left: "45%",
+  },
+
+  controls: {
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.45)",
+  },
+
+  timeText: {
+    color: "#fff",
+    fontSize: 12,
+    marginHorizontal: 6,
+    minWidth: 80,
+    textAlign: "center",
+  },
+});

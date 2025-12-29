@@ -1,8 +1,9 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   StyleSheet,
   Animated,
+  Text,
 } from "react-native";
 
 import OverviewTab from "../../../components/organisms/jobs/overviewtab";
@@ -11,7 +12,7 @@ import Header from "../../../components/organisms/header";
 import { goBack } from "../../../utils/navigationUtils";
 import SortingAndFilter from "../../../components/organisms/sortingandfilter";
 import { filtersOption } from "../../../utils/dummaydata";
-import { BottomSheet, FilterSheetContent, Typography } from "../../../components";
+import { BottomSheet, FilterSheetContent, StatusBar, Typography } from "../../../components";
 import ImportCandidatesTab from "../../../components/organisms/jobs/ importcandidatestab";
 import JobHeader from "../../../components/organisms/jobs/jobheader/jobheader";
 import { colors } from "../../../theme/colors";
@@ -22,14 +23,31 @@ import { copyIcon } from "../../../assets/svg/copy";
 import Icon from "../../../components/atoms/vectoricon";
 import SlideAnimatedTab from "../../../components/molecules/slideanimatedtab";
 import { useStyles } from "./jobdetailscreen.styles";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import CustomSafeAreaView from "../../../components/atoms/customsafeareaview";
+import { useRoute } from "@react-navigation/native";
+import { useAppDispatch } from "../../../hooks/useAppDispatch";
+import { useAppSelector } from "../../../hooks/useAppSelector";
+import { selectJobsLoading, selectSelectedJob } from "../../../features/jobs/selectors";
+import { getJobDetailRequestAction } from "../../../features/jobs/actions";
 
 const tabs: string[] = ["Overview", "Applicants", "Import candidates"];
 
 const JobDetailScreen: React.FC = () => {
+  const route = useRoute();
+  const { jobId } = route.params as { jobId: string };
   const styles = useStyles();
   const [filterSheet, setFilterSheet] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>("Overview");
   const fadeAnim = useRef(new Animated.Value(1)).current;
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    if (jobId) {
+      dispatch(getJobDetailRequestAction(jobId));
+    }
+  }, [jobId]);
+  
   const renderTabScreen = () => {
     switch (activeTab) {
       case "Overview":
@@ -44,8 +62,8 @@ const JobDetailScreen: React.FC = () => {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
-      <Header backNavigation={true} onBack={goBack} />
+    <CustomSafeAreaView>
+      <Header backNavigation={true} onBack={goBack} edit threedot />
       {activeTab !== "Applicants" && <JobHeader />}
       <View style={styles.tabContainer}>
         <SlideAnimatedTab
@@ -53,7 +71,6 @@ const JobDetailScreen: React.FC = () => {
           activeTab={activeTab}
           onChangeTab={(label) => setActiveTab(label)}
         />
-
         <View style={styles.bottomBorder} />
       </View>
       <View style={{ flex: 1 }}>
@@ -88,8 +105,9 @@ const JobDetailScreen: React.FC = () => {
             size: 44,
             buttonColor: styles.leftButton.backgroundColor,
             textColor: styles.leftButtonText.color,
-            borderColor: styles.leftButton.borderColor,
+            borderColor: colors.error[300],
             borderRadius: styles.leftButton.borderRadius,
+            borderWidth: 1,
             onPress: () => console.log("Unpublish"),
             startIcon: (
               <Icon
@@ -107,13 +125,14 @@ const JobDetailScreen: React.FC = () => {
             buttonColor: styles.rightButton.backgroundColor,
             textColor: styles.rightButtonText.color,
             borderColor: styles.rightButton.borderColor,
+            borderWidth: 1,
             borderRadius: styles.rightButton.borderRadius,
             onPress: () => console.log("Copy"),
             startIcon: <SvgXml xml={copyIcon} />,
           }}
         />
       </View>
-    </View>
+    </CustomSafeAreaView>
   );
 };
 

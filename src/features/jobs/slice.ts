@@ -1,9 +1,11 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { JobsState, Job } from "./types";
+import { JobsState, Job,CreateJobRequest,UpdateJobRequest, JobsListApiResponse, GetJobsParams, JobDetail } from "./types";
 
 const initialState: JobsState = {
-  jobs: [],
+  jobs:[],
   selectedJob: null,
+  publishedCount: 0,
+  unpublishedCount: 0,
   loading: false,
   error: null,
   pagination: {
@@ -11,22 +13,50 @@ const initialState: JobsState = {
     limit: 10,
     total: 0,
   },
+  hasMore: true,
 };
 
 const jobsSlice = createSlice({
   name: "jobs",
   initialState,
   reducers: {
-    getJobsRequest: (state, _action: PayloadAction<{ page?: number; limit?: number }>) => {
+    getJobsRequest: (
+      state,
+      _action: PayloadAction<GetJobsParams | undefined>
+    ) => {
       state.loading = true;
       state.error = null;
     },
-    getJobsSuccess: (state, action: PayloadAction<{ jobs: Job[]; total: number }>) => {
+    getJobsSuccess: (
+      state,
+      action: PayloadAction<{
+        page: number;
+        append: boolean;
+        published: boolean;   // add this in action
+        data: JobsListApiResponse;
+      }>
+    ) => {
+      const { page, append, data, published } = action.payload;
+    
       state.loading = false;
-      state.jobs = action.payload.jobs;
-      state.pagination.total = action.payload.total;
+      state.pagination.page = page;
+      state.pagination.total = data.count;
+    
+      // update job list
+      state.jobs = append ? [...state.jobs, ...data.results] : data.results;
+    
+      // pagination flag
+      state.hasMore = state.jobs.length < data.count;
+    
+      if (published) {
+        state.publishedCount = data.count;
+      } else {
+        state.unpublishedCount = data.count;
+      }
+    
       state.error = null;
     },
+    
     getJobsFailure: (state, action: PayloadAction<string>) => {
       state.loading = false;
       state.error = action.payload;
@@ -35,7 +65,7 @@ const jobsSlice = createSlice({
       state.loading = true;
       state.error = null;
     },
-    getJobDetailSuccess: (state, action: PayloadAction<Job>) => {
+    getJobDetailSuccess: (state, action: PayloadAction<JobDetail>) => {
       state.loading = false;
       state.selectedJob = action.payload;
       state.error = null;
@@ -62,7 +92,7 @@ const jobsSlice = createSlice({
       state.loading = true;
       state.error = null;
     },
-    updateJobSuccess: (state, action: PayloadAction<Job>) => {
+    updateJobSuccess: (state, action: PayloadAction<JobDetail>) => {
       state.loading = false;
       const index = state.jobs.findIndex((job) => job.id === action.payload.id);
       if (index !== -1) {
@@ -94,7 +124,7 @@ const jobsSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     },
-    setSelectedJob: (state, action: PayloadAction<Job | null>) => {
+    setSelectedJob: (state, action: PayloadAction<JobDetail | null>) => {
       state.selectedJob = action.payload;
     },
     clearError: (state) => {

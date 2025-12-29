@@ -15,31 +15,52 @@ import { useStyles } from './styles';
 // import { editIcon } from '../../assets/svg/edit';
 // import { backButtonIcon } from '../../assets/svg/backbutton';
 
-const Header = ({ title, onBack, backNavigation, edit, threedot, borderCondition }: IHeader) => {
+const Header = ({
+  title,
+  showTitle,       // ⭐ NEW
+  onBack,
+  backNavigation,
+  edit,
+  threedot,
+  borderCondition
+}: IHeader) => {
+
   const styles = useStyles();
+
   return (
-    <View style={[styles.container, {borderBottomWidth: !borderCondition ? 1: 0 }]}>
+    <View style={[styles.container, { borderBottomWidth: !borderCondition ? 1 : 0 }]}>
+
       {backNavigation ? (
         <>
           <Pressable onPress={onBack}>
             <SvgXml xml={backButtonIcon} />
           </Pressable>
+
+          {/* ✅ Show title ONLY if showTitle = true */}
+          {showTitle ? (
+            <Typography variant="semiBoldTxtxl">
+              {title}
+            </Typography>
+          ) : null}
+
           <View style={styles.subEditcontainer}>
-          {edit?
-          <Pressable onPress={()=>{}}>
-            <SvgXml xml={editIcon} />
-          </Pressable>:""}
-          {threedot?
-          <Pressable onPress={()=>{}}>
-            <SvgXml xml={horizontalThreedotIcon} />
-          </Pressable>:""}
+            {edit ? (
+              <Pressable>
+                <SvgXml xml={editIcon} />
+              </Pressable>
+            ) : null}
+
+            {threedot ? (
+              <Pressable>
+                <SvgXml xml={horizontalThreedotIcon} />
+              </Pressable>
+            ) : null}
           </View>
         </>
       ) : (
         <>
-          <Typography variant="semiBoldTxtxl">
-            {title}
-          </Typography>
+          {/* Normal header mode → ALWAYS show title */}
+          <Typography variant="semiBoldTxtxl">{title}</Typography>
 
           <Pressable onPress={onBack}>
             <SvgXml xml={searchIcon} />
@@ -50,5 +71,6 @@ const Header = ({ title, onBack, backNavigation, edit, threedot, borderCondition
     </View>
   );
 };
+
 
 export default Header;

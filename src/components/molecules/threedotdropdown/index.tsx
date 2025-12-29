@@ -43,7 +43,7 @@ const ThreeDotDropdown: React.FC<ThreeDotDropdownProps> = ({
                 style={styles.dropdownItem}
                 android_ripple={{ color: "#f0f0f0" }}
                 onPress={() => {
-                  item.onPress();
+                  //item.onPress();
                   onClose();
                 }}
               >

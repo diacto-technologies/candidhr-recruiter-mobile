@@ -2,34 +2,29 @@ import React from "react";
 import { View, StyleSheet } from "react-native";
 import Typography from "../../../atoms/typography";
 import { colors } from "../../../../theme/colors";
+import { useAppSelector } from "../../../../hooks/useAppSelector";
+import { selectApplicationResponses } from "../../../../features/applications/selectors";
 
-interface CriteriaItem {
-  id: number;
-  question: string;
-  response: string;
-  expected: string;
-}
-
-interface Props {
-  data: CriteriaItem[];
-}
-
-const CriteriaResponsesCard = ({ data }: Props) => {
+const CriteriaResponsesCard = () => {
+  const ApplicationResponses = useAppSelector(selectApplicationResponses);
   return (
     <View style={styles.card}>
       <Typography variant="semiBoldTxtlg">
         Criteria responses
       </Typography>
 
-      {data.map((item) => (
-        <View key={item.id} style={styles.innerCard}>
+      {ApplicationResponses?.map((item, index) => (
+        <View key={index} style={styles.innerCard}>
           {/* Question */}
-          <View style={{flexDirection:'row'}}>
-            <Typography variant="mediumTxtmd" color="#1F2937">
-              {item.id}. {""}
+          <View style={{ flexDirection: 'row' }}>
+          <Typography variant="mediumTxtmd" color="#1F2937">
+              {index+1 ?? ""} {""}
             </Typography>
             <Typography variant="mediumTxtmd" color="#1F2937">
-             {item.question}
+              {item?.criteria?.question ?? ""} {""}
+            </Typography>
+            <Typography variant="mediumTxtmd" color="#1F2937">
+              {/* {item?.question} */}
             </Typography>
           </View>
           {/* Response */}
@@ -37,9 +32,16 @@ const CriteriaResponsesCard = ({ data }: Props) => {
             <Typography variant="regularTxtsm" color={colors.gray[600]}>
               Response :
             </Typography>
-            <Typography variant="semiBoldTxtsm" color={colors?.error[500]}>
+            <Typography
+              variant="semiBoldTxtsm"
+              color={
+                item?.response === item?.criteria?.expected_response
+                  ? colors.success[500]
+                  : colors.error[500]
+              }
+            >
               {"  "}
-              {item.response}
+              {item?.response ?? ""}
             </Typography>
           </View>
 
@@ -50,7 +52,7 @@ const CriteriaResponsesCard = ({ data }: Props) => {
             </Typography>
             <Typography variant="semiBoldTxtsm" color={colors?.success[500]}>
               {"  "}
-              {item.expected}
+              {item?.criteria?.expected_response ?? ""}
             </Typography>
           </View>
         </View>
@@ -68,7 +70,12 @@ const styles = StyleSheet.create({
     borderColor: colors.gray[200],
     borderRadius: 12,
     padding: 16,
-    gap: 16
+    gap: 16,
+    shadowColor: '#0A0D12',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
 
   title: {
@@ -80,7 +87,7 @@ const styles = StyleSheet.create({
     borderColor: colors.gray[200],
     borderRadius: 10,
     padding: 12,
-    gap:12,
+    gap: 12,
     backgroundColor: colors.base.white,
   },
   row: {

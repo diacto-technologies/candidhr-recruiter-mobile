@@ -1,9 +1,17 @@
 import { StyleSheet } from 'react-native';
 import { colors } from '../../../theme/colors';
+import { useRNSafeAreaInsets } from '../../../hooks/useRNSafeAreaInsets';
 
 export const useStyles = () => {
+  const inset = useRNSafeAreaInsets()
     return StyleSheet.create({
-        container: { flex: 1, backgroundColor: '#F6F6F8' },
+      container: {
+        flex: 1,
+        paddingTop:inset.insetsTop,
+        paddingBottom:inset.insetsBottom,
+        //backgroundColor:colors.base.white
+    },
+        subContainer: { flex: 1, backgroundColor: '#F6F6F8' },
         tabContainer: {
           position: "relative",
           backgroundColor:colors.base.white,

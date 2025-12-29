@@ -12,10 +12,12 @@ import { profileApi } from "./api";
 
 function* getProfileWorker(): Generator<any, void, any> {
   try {
-    yield put(getProfileRequest());
+    // yield put(getProfileRequest());
     const response = yield call(profileApi.getProfile);
-    yield put(getProfileSuccess(response.profile));
+    console.log(response,"responseresponseresponseresponse")
+    yield put(getProfileSuccess(response));
   } catch (error: any) {
+    console.log(error,"errorerrorerrorerror")
     yield put(getProfileFailure(error.message || "Failed to fetch profile"));
   }
 }

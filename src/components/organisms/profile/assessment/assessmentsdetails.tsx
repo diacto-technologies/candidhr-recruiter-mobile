@@ -1,67 +1,178 @@
-// src/components/organisms/profile/Assessments.tsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
   ViewStyle,
+  Touchable,
+  TouchableOpacity,
 } from "react-native";
+
 import { colors } from "../../../../theme/colors";
 import Typography from "../../../atoms/typography";
+import { useAppSelector } from "../../../../hooks/useAppSelector";
+import {
+  selectAssessmentDetailedReport,
+  selectAssessmentReport,
+} from "../../../../features/applications/selectors";
 import Ring from "../../../atoms/ring";
+import VideoPlayerBox from "../../../molecules/videoplayer";
+import { getAssessmentDetailedReportRequestAction } from "../../../../features/applications/actions";
+import { useAppDispatch } from "../../../../hooks/useAppDispatch";
+import CodingQuestionCard from "./codingquestioncard";
+import Divider from "../../../atoms/divider";
 
 type QuestionType = {
   id: number;
-  time: string; // "34 / 60 Sec."
+  time: string;
   difficulty: "Easy" | "Medium" | "Hard";
-  type: "Multiple" | "Text" | "MCQ" | "Audio";
+  type: "Multiple" | "Text" | "MCQ";
   question: string;
-  chips?: string[]; // answer options / tags
+  chips?: {
+    id: number;
+    label: string;
+    isCorrect: boolean;
+    isSelected: boolean;
+  }[];
   description?: string;
 };
 
 type AssessmentCard = {
+  id: string;
   title: string;
   questions: number;
   correct: number;
-  percent: number; // 0-100
+  percent: number;
 };
 
 interface Props {
-  assessments?: AssessmentCard[];
-  questions?: QuestionType[];
   style?: ViewStyle;
 }
 
-const AssessmentsDetails = ({ assessments = [], questions = [], style }: Props) => {
-  // sample fallback data if none passed
-  const demoAssessments: AssessmentCard[] = [
-    { title: "Research analyst", questions: 10, correct: 3, percent: 45 },
-    { title: "Overall", questions: 0, correct: 0, percent: 76 },
-  ];
-  const demoQuestions: QuestionType[] = [
-    {
-      id: 1,
-      time: "34 / 60 Sec.",
-      difficulty: "Easy",
-      type: "Multiple",
-      question: "Which of the following are common backend programming languages?",
-      chips: ["Python", "JavaScript", "HTML", "Ruby"],
-    },
-    {
-      id: 2,
-      time: "34 / 60 Sec.",
-      difficulty: "Medium",
-      type: "Text",
-      question: "Which of the following are common backend programming languages?",
-      description:
-        "Reddit young minds One AI conversation at a time. Fueled by cutting-edge AI, Miko connects with kids, responds to their emotions and fosters empathy in every interaction.",
-    },
-  ];
+type TabType = "QUESTIONS" | "CODING";
 
-  const cards = assessments.length ? assessments : demoAssessments;
-  const qs = questions.length ? questions : demoQuestions;
+const formatDifficulty = (difficulty?: string) => {
+  if (!difficulty) return "Easy";
+  return (
+    difficulty.charAt(0).toUpperCase() + difficulty.slice(1)
+  ) as "Easy" | "Medium" | "Hard";
+};
+
+const formatQuestionType = (type?: string) => {
+  switch (type) {
+    case "multiple":
+      return "Multiple";
+    case "single":
+      return "MCQ";
+    case "text":
+      return "Text";
+    default:
+      return "Text";
+  }
+};
+
+const AssessmentsDetails = ({ style }: Props) => {
+  const [selectedAssessmentIndex, setSelectedAssessmentIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState<TabType>("QUESTIONS");
+  const dispatch = useAppDispatch();
+  const assessmentDetailedReport = useAppSelector(
+    selectAssessmentDetailedReport
+  );
+  const assessmentReport = useAppSelector(selectAssessmentReport);
+  const assessments = assessmentReport?.assessments ?? [];
+  const assessmentLogId = assessmentReport?.id;
+  const hasQuestions =
+    (assessmentDetailedReport?.answers?.length ?? 0) > 0;
+
+  const hasCoding =
+    (assessmentDetailedReport?.submissions?.length ?? 0) > 0;
+
+  const cards: AssessmentCard[] = assessments.map((item: any) => ({
+    id: item?.id,
+    title: item.name,
+    questions: item.result?.question_count ?? 0,
+    correct: item.result?.correct ?? 0,
+    percent: item.result?.percentage ?? 0,
+  }));
+
+
+  useEffect(() => {
+    if (!assessmentDetailedReport) return;
+  
+    const hasQuestions =
+      (assessmentDetailedReport?.answers?.length ?? 0) > 0;
+  
+    const hasCoding =
+      (assessmentDetailedReport?.submissions?.length ?? 0) > 0;
+  
+    if (!hasQuestions && hasCoding) {
+      setActiveTab("CODING");
+    }
+    else{
+      setActiveTab("QUESTIONS");
+    }
+  }, [assessmentDetailedReport]);
+
+  
+  const handleAssessmentSelect = (
+    assessmentLogId: string,
+    assessmentId: string,
+    index: number,
+    item: { questions: number }
+  ) => {
+    if (selectedAssessmentIndex === index) return;
+
+    setSelectedAssessmentIndex(index);
+    setActiveTab("QUESTIONS");
+
+    dispatch(
+      getAssessmentDetailedReportRequestAction({
+        assessmentLogId,
+        assessmentId,
+      })
+    );
+  };
+
+
+
+  const qs: QuestionType[] =
+    assessmentDetailedReport?.answers?.map(
+      (item: any, index: number) => {
+        const choices = item.question?.choices
+          ? JSON.parse(item.question.choices)
+          : [];
+
+        const selectedChoices = item.selected_choice ?? [];
+
+        return {
+          id: index + 1,
+          time: `${item.duration} / ${item.question.time_limit} Sec.`,
+          difficulty: formatDifficulty(
+            item.question?.difficulty?.difficulty
+          ),
+          type: formatQuestionType(item.question?.type),
+          question: item.question?.text ?? "_",
+
+          chips:
+            item.question?.type !== "text"
+              ? choices.map((c: any) => ({
+                id: c.id,
+                label: c.value,
+                isCorrect: Boolean(c.correct),
+                isSelected: selectedChoices.some(
+                  (s: any) => s.id === c.id
+                ),
+              }))
+              : undefined,
+
+          description:
+            item.question?.type === "text"
+              ? "No response available."
+              : undefined,
+        };
+      }
+    ) ?? [];
+
 
   return (
     <View style={[styles.container, style]}>
@@ -69,7 +180,6 @@ const AssessmentsDetails = ({ assessments = [], questions = [], style }: Props) 
         Assessments
       </Typography>
 
-      {/* Top row with two cards and dashed connector */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -77,106 +187,240 @@ const AssessmentsDetails = ({ assessments = [], questions = [], style }: Props) 
       >
         {cards.map((item, index) => (
           <View key={index} style={styles.topCard}>
-            <View style={styles.topCardInner}>
+            <TouchableOpacity
+              style={[styles.topCardInner, {
+                borderColor: selectedAssessmentIndex === index ? colors.brand[500]
+                  : colors.gray[200]
+              }]}
+              onPress={() => {
+                if (!assessmentLogId) return;
 
-              <Ring percent={item.percent} size={60} showText />
+                handleAssessmentSelect(
+                  assessmentLogId,
+                  item?.id,
+                  index,
+                  item
+                );
+              }}>
+              <Ring percent={item.percent} showText />
 
               <View style={{ gap: 2 }}>
-                <Typography variant="semiBoldTxtmd" >
+                <Typography variant="semiBoldTxtmd">
                   {item.title}
                 </Typography>
 
                 <Typography variant="regularTxtsm" color={colors.gray[600]}>
-                  Question : <Typography variant="semiBoldTxtsm" color={colors.gray[700]}>{item.questions < 10 ? `0${item.questions}` : item.questions}</Typography>
+                  Question:{" "}
+                  <Typography variant="semiBoldTxtsm" color={colors.gray[700]}>
+                    {item.questions < 10
+                      ? `0${item.questions}`
+                      : item.questions}
+                  </Typography>
                 </Typography>
 
                 <Typography variant="regularTxtsm" color={colors.gray[600]}>
-                  Correct : <Typography variant="semiBoldTxtsm" color={colors.gray[700]}>{item.correct < 10 ? `0${item.correct}` : item.correct}</Typography>
+                  Correct:{" "}
+                  <Typography variant="semiBoldTxtsm" color={colors.gray[700]}>
+                    {item.correct < 10
+                      ? `0${item.correct}`
+                      : item.correct}
+                  </Typography>
                 </Typography>
               </View>
-
-            </View>
+            </TouchableOpacity>
           </View>
         ))}
       </ScrollView>
 
+      {activeTab === "QUESTIONS" && hasQuestions && (
+        <ScrollView nestedScrollEnabled>
+          {qs.map((q) => (
+            <View key={q.id} style={styles.qCard}>
+              <View style={styles.qCardTop}>
+                <Typography variant="regularTxtsm" color={colors.gray[600]}>
+                  {q.time}
+                </Typography>
 
-      {/* Questions list */}
-      <ScrollView nestedScrollEnabled>
-        {qs.map((q) => (
-          <View key={q.id} style={styles.qCard}>
-            <View style={styles.qCardTop}>
-              <Typography variant="regularTxtsm" color={colors.gray[600]}>
-                {q.time}
-              </Typography>
+                <View style={styles.topChips}>
+                  <View
+                    style={[
+                      styles.smallChip,
+                      {
+                        backgroundColor: colors.brand[50],
+                        borderColor: colors.brand[200],
+                      },
+                    ]}
+                  >
+                    <Typography variant="mediumTxtxs" color={colors.brand[700]}>
+                      {q.difficulty}
+                    </Typography>
+                  </View>
 
-              <View style={styles.topChips}>
-                <View style={[styles.smallChip, { backgroundColor: colors.brand[50], borderColor: colors.brand[200] }]}>
-                  <Typography variant="mediumTxtxs" color={colors.brand[700]}>{q.difficulty}</Typography>
-                </View>
-                <View style={[styles.smallChip, { backgroundColor: colors.warning[50], borderColor: colors.warning[200] }]}>
-                  <Typography variant="mediumTxtxs" color={colors.warning[700]}>{q.type}</Typography>
+                  <View
+                    style={[
+                      styles.smallChip,
+                      {
+                        backgroundColor: colors.warning[50],
+                        borderColor: colors.warning[200],
+                      },
+                    ]}
+                  >
+                    <Typography variant="mediumTxtxs" color={colors.warning[700]}>
+                      {q.type}
+                    </Typography>
+                  </View>
                 </View>
               </View>
-            </View>
 
-            <View style={{ padding: 12, gap: 12 }}>
-              <View style={{ flexDirection: 'row' }}>
-                <Typography variant="mediumTxtmd" color="#1F2937">
-                  {q.id}.
+              <View style={{ padding: 12, gap: 12 }}>
+                <Typography variant="mediumTxtmd" color={colors.gray[900]}>
+                  {q.id}. {q.question}
                 </Typography>
-                <Typography variant="mediumTxtmd" color="#1F2937">
-                  {q.question}
-                </Typography>
-              </View>
-              {q.chips && (
-                <View style={styles.optionRow}>
-                  {q.chips.map((c, i) => (
-                    <TouchableOpacity
-                      key={i}
-                      style={[
-                        styles.optionChip,
-                        {
-                          backgroundColor:
-                            c === "Python"
-                              ? colors.error[50]
-                              : c === "HTML"
-                                ? colors.success[50]
-                                : colors.gray[50],
 
-                          borderColor:
-                            c === "Python"
-                              ? colors.error[200]
-                              : c === "HTML"
-                                ? colors.success[200]
-                                : colors.gray[200],
-                        },
-                      ]}
-                    >
-                      <Typography variant="mediumTxtsm" color={colors.gray[700]}>
-                        {c}
+                {q.chips && (
+                  <View style={{ gap: 12 }}>
+                    {/* ---------- USER SELECTED ANSWERS ---------- */}
+                    <View style={styles.optionRow}>
+                      {(q.chips.some(c => c.isSelected)
+                        ? q.chips.filter(c => c.isSelected)
+                        : q.chips
+                      ).map((c) => {
+                        const isSelected = c.isSelected;
+                        const isCorrect = c.isCorrect;
+
+                        let backgroundColor = colors.gray[50];
+                        let borderColor = colors.gray[200];
+                        let textColor = colors.gray[700];
+
+                        if (isSelected && isCorrect) {
+                          backgroundColor = colors.success[50];
+                          borderColor = colors.success[200];
+                          textColor = colors.success[700];
+                        } else if (isSelected && !isCorrect) {
+                          backgroundColor = colors.error[50];
+                          borderColor = colors.error[200];
+                          textColor = colors.error[700];
+                        }
+
+                        return (
+                          <View
+                            key={c.id}
+                            style={[
+                              styles.optionChip,
+                              { backgroundColor, borderColor },
+                            ]}
+                          >
+                            <Typography variant="mediumTxtsm" color={textColor}>
+                              {c.label}
+                            </Typography>
+                          </View>
+                        );
+                      })}
+
+                      {/* ---------- NO SELECTION MESSAGE ---------- */}
+                      {q.chips.every(c => !c.isSelected) && (
+                        <Typography
+                          variant="regularTxtsm"
+                          color={colors.error[500]}
+                        >
+                          No option selected
+                        </Typography>
+                      )}
+                    </View>
+
+
+                    <Divider />
+
+                    {/* ---------- CORRECT ANSWERS ---------- */}
+                    <View style={{ gap: 6 }}>
+                      <Typography
+                        variant="mediumTxtsm"
+                        color={colors.gray[600]}
+                      >
+                        Correct Answer
                       </Typography>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
 
-              {q.description && (
-                <Typography variant="regularTxtsm" color={colors.gray[600]}>
-                  {q.description}
-                </Typography>
-              )}
+                      <View style={styles.optionRow}>
+                        {q.chips
+                          .filter(c => c.isCorrect)
+                          .map((c) => (
+                            <View
+                              key={c.id}
+                              style={[
+                                styles.optionChip,
+                                {
+                                  backgroundColor: colors.success[50],
+                                  borderColor: colors.success[200],
+                                },
+                              ]}
+                            >
+                              <Typography
+                                variant="mediumTxtsm"
+                                color={colors.success[700]}
+                              >
+                                {c.label}
+                              </Typography>
+                            </View>
+                          ))}
+                      </View>
+                    </View>
+                  </View>
+                )}
+                {q.description && (
+                  <Typography variant="regularTxtsm" color={colors.gray[600]}>
+                    {q.description}
+                  </Typography>
+                )}
+              </View>
             </View>
-          </View>
-        ))}
-      </ScrollView>
+          ))}
+        </ScrollView>
+      )}
+
+      {/* ---------- CODING TAB ---------- */}
+      {activeTab === "CODING" && hasCoding && (
+        <View>
+          {assessmentDetailedReport?.submissions?.map(
+            (item: any, index: number) => (
+              <CodingQuestionCard
+                key={item.id}
+                index={index}
+                title={item.question?.title}
+                language={item.language}
+                code={item.code}
+                testCases={item.test_cases.map((tc: any) => ({
+                  input: tc.input,
+                  output: tc.stdout,
+                  passed: tc.passed,
+                }))}
+                canEditCode={false}
+              />
+            )
+          )}
+        </View>
+      )}
+
+      {/* ---------- RECORDING ---------- */}
+      {assessmentDetailedReport?.result?.proctoring?.video_thumbnail && (
+        <View style={styles.videoSection}>
+          <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
+            Recording
+          </Typography>
+
+          <VideoPlayerBox
+            source={
+              assessmentDetailedReport?.result?.proctoring?.video_file ??
+              "https://www.w3schools.com/html/mov_bbb.mp4"
+            }
+          />
+        </View>
+      )}
     </View>
   );
 };
 
 export default AssessmentsDetails;
 
-/* ---------------- styles ---------------- */
 const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.common.white,
@@ -187,13 +431,7 @@ const styles = StyleSheet.create({
     gap: 20,
   },
 
-  header: {
-    marginBottom: 12,
-  },
-
-  topRow: {
-    // marginBottom: 12,
-  },
+  topRow: {},
 
   topCard: {
     marginRight: 12,
@@ -209,18 +447,16 @@ const styles = StyleSheet.create({
     gap: 12,
   },
 
-  rightRingWrap: {
-    marginLeft: 12,
+  videoSection: {
+    gap: 8,
   },
 
   qCard: {
     borderWidth: 1,
     borderColor: colors.gray[200],
     borderRadius: 12,
-    //padding: 14,
     marginBottom: 12,
     backgroundColor: colors.common.white,
-    gap: 12,
   },
 
   qCardTop: {
@@ -250,34 +486,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    marginTop: 12,
   },
 
   optionChip: {
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 8,
-    backgroundColor: colors.gray[50],
     borderWidth: 1,
-    borderColor: colors.gray[200],
-    gap: 8,
-  },
-
-  chip: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.gray[200],
-  },
-
-  ringOuter: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  ringCenter: {
-    justifyContent: "center",
-    alignItems: "center",
   },
 });

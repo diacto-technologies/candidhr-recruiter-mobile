@@ -5,41 +5,62 @@ import { colors } from "../../../../theme/colors";
 import { SvgXml } from "react-native-svg";
 import { locationIcon } from "../../../../assets/svg/location";
 import { useStyles } from "./styles";
+import { useAppSelector } from "../../../../hooks/useAppSelector";
+import { selectJobsLoading, selectSelectedJob } from "../../../../features/jobs/selectors";
+import { formatMonDDYYYY } from "../../../../utils/dateformatter";
 
 const JobHeader = () => {
   const styles = useStyles();
+  const jobs = useAppSelector(selectSelectedJob);
+  const loading = useAppSelector(selectJobsLoading);
+  const closeDate = jobs?.close_date ? new Date(jobs.close_date) : null;
+  const isClosed = closeDate ? closeDate < new Date() : false;
   return (
     <View style={styles.container}>
-      <Typography variant="H1" color={colors.mainColors.blueGrayTitle}>Full stack developer</Typography>
-      <View style={{flexDirection:'row',alignItems:'center'}}>
-      <Typography variant="P1M" color={colors.mainColors.carbonGray}>45 applicants</Typography>
-       <View style={styles.dot}></View>
-      <Typography variant="P1" color={colors.grayScale.slateGray}>Aug 16, 2025</Typography>
+      <Typography variant="semiBoldTxtxl">{jobs?.title ?? ""}</Typography>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Typography variant="mediumTxtsm" color={colors.gray[700]}>{jobs?.views_count ?? ""} applicants</Typography>
+        <View style={styles.dot}></View>
+        <Typography variant="regularTxtsm" color={colors.gray[500]}>{formatMonDDYYYY(jobs?.created_at ?? "")}</Typography>
       </View>
-      <View style={{gap:10}}>
-      <View style={styles.row}>
-        <SvgXml xml={locationIcon}  />
-        <Typography variant="P1" color={colors.grayScale.slateGray} style={{paddingLeft:8}}>Pune, Maharashtra</Typography>
-      </View>
-      <View style={styles.chipRow}>
-      <View style={[styles.chip,{backgroundColor:'#F7F6FF',borderColor:'#DDDBFF'}]}>
-      <Typography variant="P0M" color={'#5148CF'}>Full time</Typography>
+      <View style={{ gap: 10 }}>
+        <View style={styles.row}>
+          <SvgXml xml={locationIcon} />
+          <Typography variant="regularTxtsm" color={colors.gray[600]} style={{ paddingLeft: 8 }}>{jobs?.location + "," + jobs?.owner?.state ?? ""}</Typography>
         </View>
+        <View style={styles.chipRow}>
+          <View style={[styles.chip, { backgroundColor: colors.brand[50], borderColor: colors.brand[200] }]}>
+            <Typography variant="mediumTxtxs" color={colors.brand[700]}>{jobs?.employment_type ?? ""}</Typography>
+          </View>
 
-        <View style={[styles.chip,{backgroundColor:'#F0FDF9',borderColor:'#99F6E0'}]}>
-        <Typography variant="P0M" color={'#107569'}>3 - 5 Yrs</Typography>
-        </View>
+          <View style={[styles.chip, { backgroundColor: colors.Teal[50], borderColor: colors.Teal[200] }]}>
+            <Typography variant="mediumTxtxs" color={colors.Teal[700]}>{jobs?.min_experience ?? ""} - {jobs?.max_experience ?? ""} Yrs</Typography>
+          </View>
 
-        <View style={[styles.chip,{backgroundColor:'#FFF6ED',borderColor:'#FDDCAB'}]}>
-        <Typography variant="P0M" color={'#C4320A'}>8 - 10 LPA</Typography>
+          {/* <View style={[styles.chip,{backgroundColor:colors.orange[50],borderColor:colors.orange[200]}]}>
+        <Typography variant="mediumTxtxs" color={colors.orange[700]}>8 - 10 LPA</Typography>
+        </View> */}
         </View>
-      </View>
-      <View style={{flexDirection:'row',alignItems:'center', gap:8}}>
-      <Typography  variant='P1' color={colors.grayScale.slateGray}>Closed on :</Typography>
-      <Typography variant="P0M" color={colors.mainColors.carbonGray}>Aug 16, 2025</Typography>
-      <View style={[styles.close,{backgroundColor:'#FEF3F2',borderColor:'#FECDCA'}]}>
-        <Typography variant="P0M" color={'#B42318'}>Closed</Typography>
-        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Typography variant='regularTxtsm' color={colors.gray[500]}>Closed on :</Typography>
+          <Typography variant="mediumTxtsm" color={colors.gray[700]}>{formatMonDDYYYY(jobs?.close_date ?? "")}</Typography>
+          <View style={[styles.close, { backgroundColor: colors.error[50], borderColor: colors.error[200] }]}>
+            {isClosed ? (
+              <Typography
+                variant="mediumTxtxs"
+                color={colors.error[700]}
+              >
+                Closed
+              </Typography>
+            ) : (
+              <Typography
+              variant="mediumTxtxs"
+              color={colors.error[700]}
+              >
+                Open
+              </Typography>
+            )}
+          </View>
         </View>
       </View>
     </View>

@@ -42,7 +42,7 @@ export const useStyles = (props: any, isFocus: boolean, size: any) => {
             ? props.textFieldColor
             : colors.base.white,
       borderColor: props.isError
-        ? hexToRgb(colors.mainColors.brightRed, 0.8)
+        ? hexToRgb(colors.error[400], 0.8)
         : isFocus
           ? colors.brand[500]
           : colors.gray[300],
@@ -81,7 +81,7 @@ export const useStyles = (props: any, isFocus: boolean, size: any) => {
 
     // Error Text
     errorText: {
-      color: colors.common.black,
+      color: colors.success[400],
     },
     topGlow: {
       ...StyleSheet.absoluteFillObject,

@@ -1,47 +1,140 @@
-import React, { useState } from "react";
-import { View, StyleSheet, TouchableOpacity } from "react-native";
-import Ionicons from "react-native-vector-icons/Ionicons";
+import React, { useState, useRef } from "react";
+import { View, StyleSheet, TouchableOpacity, Animated, Easing } from "react-native";
 import Typography from "../../../atoms/typography";
 import { colors } from "../../../../theme/colors";
+import Sound from "react-native-sound";
 import { SvgXml } from "react-native-svg";
 import { playIcon } from "../../../../assets/svg/play";
+import { useAppSelector } from "../../../../hooks/useAppSelector";
+import { selectResumeScreeningResponses } from "../../../../features/applications/selectors";
 
-interface QuestionItem {
-  id: number;
-  type: "audio" | "mcq" | "text";
-  question: string;
-  response?: string;
-  expectedResponse?: string;
-  audioDuration?: string;
-  textAnswer?: string;
-}
+Sound.setCategory("Playback");
 
-interface Props {
-  data: QuestionItem[];
-}
+const ScreeningQuestions = () => {
+  const screeningResponses = useAppSelector(selectResumeScreeningResponses);
 
-const ScreeningQuestions = ({ data }: Props) => {
   const [selectedTab, setSelectedTab] = useState("All");
+  const [playingId, setPlayingId] = useState<number | null>(null);
 
-  const tabs = ["All", "MCQ’s", "Audio", "Text"];
+  const soundRef = useRef<Sound | null>(null);
+
+  const [progressMap, setProgressMap] = useState<
+    Record<number, { current: number; duration: number }>
+  >({});
+
+  const progressAnimMap = useRef<Record<number, Animated.Value>>({}).current;
+
+  const formattedData =
+    screeningResponses?.map((item, idx) => ({
+      id: idx + 1,
+      type: item.type,
+      question: item.question.text,
+      textAnswer: item.text,
+      audioUrl: item.audio_file,
+    })) ?? [];
+
+  const tabs = ["All", "Audio", "Text"];
 
   const filteredData =
     selectedTab === "All"
-      ? data
-      : data.filter((item) => {
-          if (selectedTab === "MCQ’s") return item.type === "mcq";
-          if (selectedTab === "Audio") return item.type === "audio";
-          if (selectedTab === "Text") return item.type === "text";
-          return true;
+      ? formattedData
+      : formattedData.filter((item) =>
+          selectedTab === "Audio" ? item.type === "audio" : item.type === "text"
+        );
+
+  // Format mm:ss
+  const formatTime = (sec: number) => {
+    if (!sec) return "0:00";
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s < 10 ? "0" + s : s}`;
+  };
+
+  // PLAY / PAUSE + Animation
+  const togglePlay = (id: number, url: string | null) => {
+    if (!url) return;
+
+    // Pause same audio
+    if (playingId === id) {
+      soundRef.current?.pause();
+      setPlayingId(null);
+      progressAnimMap[id]?.stopAnimation();
+      return;
+    }
+
+    // Stop previous audio
+    if (soundRef.current) {
+      soundRef.current.stop();
+      soundRef.current.release();
+    }
+
+    const sound = new Sound(url, undefined, (err) => {
+      if (err) {
+        console.log("Sound load error:", err);
+        return;
+      }
+
+      const dur = sound.getDuration();
+
+      setProgressMap((prev) => ({
+        ...prev,
+        [id]: { current: 0, duration: dur },
+      }));
+
+      setPlayingId(id);
+
+      // Create animation instance if not exists
+      if (!progressAnimMap[id]) {
+        progressAnimMap[id] = new Animated.Value(0);
+      }
+
+      const anim = progressAnimMap[id];
+      anim.setValue(0);
+
+      Animated.timing(anim, {
+        toValue: 1,
+        duration: dur * 1000,
+        easing: Easing.linear,
+        useNativeDriver: false,
+      }).start();
+
+      sound.play((success) => {
+        setPlayingId(null);
+        anim.setValue(0);
+
+        setProgressMap((prev) => ({
+          ...prev,
+          [id]: { current: 0, duration: dur },
+        }));
+
+        sound.release();
+      });
+
+      // Track actual time
+      const timer = setInterval(() => {
+        if (playingId !== id || !soundRef.current) {
+          clearInterval(timer);
+          return;
+        }
+
+        sound.getCurrentTime((t) => {
+          setProgressMap((prev) => ({
+            ...prev,
+            [id]: { ...prev[id], current: t },
+          }));
         });
+      }, 300);
+
+      soundRef.current = sound;
+    });
+  };
 
   return (
     <View style={styles.card}>
-      <Typography variant="semiBoldTxtlg">
-        Screening questions
-      </Typography>
+      {/* TITLE */}
+      <Typography variant="semiBoldTxtlg">Screening questions</Typography>
 
-      {/* Tabs */}
+      {/* TABS */}
       <View style={styles.tabsRow}>
         {tabs.map((tab) => (
           <TouchableOpacity
@@ -49,7 +142,7 @@ const ScreeningQuestions = ({ data }: Props) => {
             onPress={() => setSelectedTab(tab)}
             style={[
               styles.tabBtn,
-              selectedTab === tab ? styles.tabBtnActive: styles.tabBtnDeactive,
+              selectedTab === tab ? styles.tabBtnActive : styles.tabBtnDeactive,
             ]}
           >
             <Typography
@@ -62,73 +155,51 @@ const ScreeningQuestions = ({ data }: Props) => {
         ))}
       </View>
 
-      {/* Question List */}
-      {filteredData.map((item) => (
-        <View key={item.id} style={styles.innerCard}>
-          <View style={{flexDirection:'row'}}>
-           <Typography variant="mediumTxtmd" color="#1F2937">
-            {item.id}. {""}
-          </Typography>
-          <Typography variant="mediumTxtmd" color="#1F2937">
-           {item.question}
-          </Typography>
+      {/* LIST */}
+      {filteredData.map((item) => {
+        const prog = progressMap[item.id] || { current: 0, duration: 0 };
+        const anim = progressAnimMap[item.id] || new Animated.Value(0);
+
+        const animatedWidth = anim.interpolate({
+          inputRange: [0, 1],
+          outputRange: ["0%", "100%"],
+        });
+
+        return (
+          <View key={item.id} style={styles.innerCard}>
+            <Typography variant="mediumTxtmd">{item.id}. {item.question}</Typography>
+
+            {/* AUDIO PLAYER */}
+            {item.type === "audio" && (
+              <View style={styles.audioBox}>
+                <TouchableOpacity onPress={() => togglePlay(item.id, item.audioUrl)}>
+                  <SvgXml xml={playIcon} width={30} height={30} />
+                </TouchableOpacity>
+
+                {/* Current time */}
+                <Typography variant="regularTxtsm">{formatTime(prog.current)}</Typography>
+
+                {/* Progress bar */}
+                <View style={styles.progressBackground}>
+                  <Animated.View
+                    style={[styles.progressFill, { width: animatedWidth }]}
+                  />
+                </View>
+
+                {/* Duration */}
+                <Typography variant="regularTxtsm">
+                  {formatTime(prog.duration)}
+                </Typography>
+              </View>
+            )}
+
+            {/* TEXT RESPONSE */}
+            {item.type === "text" && (
+              <Typography variant="P2">{item.textAnswer}</Typography>
+            )}
           </View>
-
-          {/* AUDIO TYPE */}
-          {item.type === "audio" && (
-            <View style={styles.audioBox}>
-               <SvgXml xml={playIcon} height={20} width={25} color={colors.gray[700]}/>
-              <Typography variant="regularTxtsm" color={colors.gray[600]}>
-                0:00
-              </Typography>
-
-              <View style={styles.audioProgress}>
-                <View style={styles.audioFilled} />
-              </View>
-
-              <Typography variant="regularTxtsm" color={colors.gray[600]}>
-                {item.audioDuration || "1:23"}
-              </Typography>
-            </View>
-          )}
-
-          {/* MCQ TYPE */}
-          {item.type === "mcq" && (
-            <>
-              <View style={styles.row}>
-                <Typography variant="regularTxtsm" color={colors.gray[600]}>
-                  Response :
-                </Typography>
-                <Typography variant="semiBoldTxtsm" color={colors.error[500]}>
-                  {"  "}
-                  {item.response}
-                </Typography>
-              </View>
-
-              <View style={styles.row}>
-                <Typography variant="regularTxtsm" color={colors.gray[600]}>
-                  Expected response :
-                </Typography>
-                <Typography variant="semiBoldTxtsm" color={colors.success[500]}>
-                  {"  "}
-                  {item.expectedResponse}
-                </Typography>
-              </View>
-            </>
-          )}
-
-          {/* TEXT TYPE */}
-          {item.type === "text" && (
-            <Typography
-              variant="P2"
-              color={colors.gray[700]}
-              style={{ marginTop: 4 }}
-            >
-              {item.textAnswer}
-            </Typography>
-          )}
-        </View>
-      ))}
+        );
+      })}
     </View>
   );
 };
@@ -142,26 +213,23 @@ const styles = StyleSheet.create({
     borderColor: colors.gray[200],
     borderRadius: 12,
     padding: 16,
-    gap:16,
+    gap: 16,
   },
   tabsRow: {
     flexDirection: "row",
     gap: 8,
   },
   tabBtn: {
-    paddingVertical:4,
-    paddingHorizontal:12,
-    justifyContent:'center',
-    alignItems:'center',
-    borderRadius:8,
-    backgroundColor: colors.gray[100],
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 8,
   },
   tabBtnActive: {
     backgroundColor: colors.brand[50],
     borderColor: colors.brand[200],
     borderWidth: 1,
   },
-  tabBtnDeactive:{
+  tabBtnDeactive: {
     backgroundColor: colors.gray[50],
     borderColor: colors.gray[200],
     borderWidth: 1,
@@ -171,33 +239,26 @@ const styles = StyleSheet.create({
     borderColor: colors.gray[200],
     borderRadius: 10,
     padding: 12,
-    gap:12,
-  },
-  question: {
-    marginBottom: 10,
-  },
-  row: {
-    flexDirection: "row",
-    marginBottom: 4,
+    gap: 12,
   },
   audioBox: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 10,
     backgroundColor: colors.gray[100],
     padding: 12,
-    gap:8,
-    borderRadius:8,
+    borderRadius: 12,
   },
-  audioProgress: {
+  progressBackground: {
     flex: 1,
-    height: 8,
-    backgroundColor: colors.gray[200],
-    borderRadius: 4,
+    height: 10,
+    backgroundColor: "#E5E7EB",
+    borderRadius: 10,
     overflow: "hidden",
   },
-  audioFilled: {
-    width: "45%",
+  progressFill: {
     height: "100%",
-    backgroundColor: colors.brand[600],
+    backgroundColor: "#635BFF",
+    borderRadius: 10,
   },
 });

@@ -24,7 +24,7 @@ const CustomTimeline = ({ progress, data }: Props) => {
 
         {/* Progress circle */}
         <View style={styles.progressContainer}>
-        <Ring percent={50} size={20} strokeWidth={4} rotation={90}/>
+        <Ring percent={progress} size={20} strokeWidth={4} rotation={90}/>
           <Typography variant="semiBoldTxtmd">{progress}%</Typography>
         </View>
       </View>
@@ -126,6 +126,11 @@ const styles = StyleSheet.create({
     borderColor: colors.gray[200],
     padding: 16,
     gap:20,
+    shadowColor: '#0A0D12',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
 
   headerRow: {

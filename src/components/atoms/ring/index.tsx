@@ -9,7 +9,7 @@ interface RingProps {
   size?: number;
   strokeWidth?: number;
   showText?: boolean;
-  rotation?: number;     // NEW → Pass rotation
+  rotation?: number;
 }
 
 const Ring: React.FC<RingProps> = ({
@@ -17,11 +17,14 @@ const Ring: React.FC<RingProps> = ({
   size = 80,
   strokeWidth = 7,
   showText = false,
-  rotation = -90,        // default same as before
+  rotation = -90,
 }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const progress = (percent / 100) * circumference;
+
+  // ✅ Static calculation (no animation)
+  const strokeDashoffset =
+    circumference - (percent / 100) * circumference;
 
   return (
     <View
@@ -52,9 +55,9 @@ const Ring: React.FC<RingProps> = ({
           r={radius}
           fill="none"
           strokeDasharray={`${circumference} ${circumference}`}
-          strokeDashoffset={circumference - progress}
+          strokeDashoffset={strokeDashoffset}
           strokeLinecap="round"
-          rotation={rotation}            // ← rotation passed here
+          rotation={rotation}
           originX={size / 2}
           originY={size / 2}
         />
@@ -68,7 +71,9 @@ const Ring: React.FC<RingProps> = ({
             alignItems: "center",
           }}
         >
-          <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>{percent}%</Typography>
+          <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
+            {percent}%
+          </Typography>
         </View>
       )}
     </View>

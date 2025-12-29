@@ -28,3 +28,17 @@ export const selectJobsPagination = createSelector(
   (jobs) => jobs.pagination
 );
 
+export const selectJobsHasMore = createSelector(
+  [selectJobsState],
+  (jobs) => jobs.hasMore
+);
+
+export const selectPublishedCount = createSelector(
+  [selectJobsState],
+  (jobs) => jobs.publishedCount
+);
+
+export const selectUnpublishedCount = createSelector(
+  [selectJobsState],
+  (jobs) => jobs.unpublishedCount
+);

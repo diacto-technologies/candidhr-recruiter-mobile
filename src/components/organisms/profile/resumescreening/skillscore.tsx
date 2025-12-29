@@ -98,6 +98,9 @@ const SkillScore = ({ title, overall, status, data }: Props) => {
             <Typography
               variant="mediumTxtsm"
               color={item.matched ? colors.gray[900] : colors.gray[600]}
+              numberOfLines={2}
+              style={{ flex: 0.8,
+                flexShrink: 1,}}
             >
               {item.title}
             </Typography>
@@ -131,6 +134,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     gap: 16,
+    shadowColor: '#0A0D12',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
 
   headerRow: {

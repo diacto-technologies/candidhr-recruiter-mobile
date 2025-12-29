@@ -11,17 +11,29 @@ import { bgRightShape } from "../../../assets/svg/bgrightshape";
 import { logoXML } from "../../../assets/svg/logoxml";
 import { navigate } from "../../../utils/navigationUtils";
 import { useStyles } from "./styles";
+import { useAppSelector } from "../../../store/hooks";
+import { selectIsAuthenticated } from "../../../features/auth/selectors";
 
 const { width, height } = Dimensions.get("window");
 
 const SplashScreen = () => {
   const styles = useStyles();
-  useEffect(() => { 
-    const timeoutId = setTimeout(() => { 
-      navigate('GetStartedScreen') 
-     }, 3000) 
-     return () => clearInterval(timeoutId) 
-    })
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+
+  useEffect(() => {
+    let timeoutId: number;
+    if (isAuthenticated) {
+      timeoutId = setTimeout(() => {
+      navigate('UserBottomTab');
+    }, 3000);
+    } else {
+      timeoutId = setTimeout(() => {
+        navigate('GetStartedScreen');
+      }, 3000);
+    }
+    return () => clearTimeout(timeoutId);
+  }, [isAuthenticated]);
+  
     
   return (
     <Fragment>
