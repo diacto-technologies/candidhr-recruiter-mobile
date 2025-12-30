@@ -1,3 +1,4 @@
+// components/ExperienceFilter.tsx
 import React from 'react';
 import { View } from 'react-native';
 import SearchBar from '../../atoms/searchbar';
@@ -6,18 +7,19 @@ import { selectApplicationsFilters } from '../../../features/applications/select
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { setApplicationsFilters } from '../../../features/applications/slice';
 
-const AppliedFor: React.FC = () => {
+const ContactFilter: React.FC = () => {
   const dispatch = useAppDispatch();
   const filters = useAppSelector(selectApplicationsFilters);
   return (
     <View style={{ paddingHorizontal: 10 }}>
-      <SearchBar value={filters.appliedFor}
-        placeholder="Applied For"
+      <SearchBar value={filters.contact}
+        placeholder="Contact"
         onChangeText={(v) =>
-          dispatch(setApplicationsFilters({ appliedFor: v }))
+          dispatch(setApplicationsFilters({ contact: v }))
         }
+        keyboardType="number-pad"
       />
     </View>
   );
 };
-export default AppliedFor;
+export default ContactFilter;

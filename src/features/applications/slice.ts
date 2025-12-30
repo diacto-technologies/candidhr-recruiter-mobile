@@ -19,6 +19,13 @@ const initialState: ApplicationsState = {
     total: 0,
   },
   hasMore: true,
+  filters: {
+    name:'',
+    email:'',
+    appliedFor: '',
+    contact:'',
+    sort:""
+  },
 };
 
 const applicationsSlice = createSlice({
@@ -257,6 +264,10 @@ const applicationsSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     },
+
+    setApplicationsFilters: (state, action) => {
+      state.filters = { ...state.filters, ...action.payload };
+    },
     
   },
 });
@@ -297,6 +308,7 @@ export const {
   getPersonalityScreeningResponsesRequest,
   getPersonalityScreeningResponsesSuccess,
   getPersonalityScreeningResponsesFailure,
+  setApplicationsFilters,
 } = applicationsSlice.actions;
 
 export default applicationsSlice.reducer;

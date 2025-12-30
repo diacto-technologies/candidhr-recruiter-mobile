@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.common.white,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#D5D7DA',
+    borderColor: colors.gray[300],
     paddingHorizontal: 14,
     height:44,
     shadowColor: '#0A0D12',
@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 18,
-    color: '#1C1E21',
+    color: colors.gray[500],
   },
 });
 

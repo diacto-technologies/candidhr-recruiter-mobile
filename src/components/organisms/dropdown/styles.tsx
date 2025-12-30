@@ -20,8 +20,11 @@ export const styles = StyleSheet.create({
     },
 
     dropdownLabelStyle: {
-        fontSize: 14,
-        fontWeight: '600',
+        fontFamily: Fonts.InterBold,
+        fontSize: 16,
+        fontWeight: '500',
+        fontStyle: 'normal',
+        lineHeight: 24,
         color: colors.gray[900],
     },
 
@@ -46,8 +49,11 @@ export const styles = StyleSheet.create({
     },
 
     labelText: {
-        fontFamily: Fonts.InterMedium,
+        fontFamily: Fonts.InterBold,
         fontSize: 16,
+        fontWeight: '500',
+        fontStyle: 'normal',
+        lineHeight: 24,
         color: colors.gray[900],
     },
 
@@ -72,7 +78,11 @@ export const styles = StyleSheet.create({
     },
 
     optionText: {
-        fontSize: 14,
+        fontFamily: Fonts.InterBold,
+        fontSize: 16,
+        fontWeight: '500',
+        fontStyle: 'normal',
+        lineHeight: 24,
         color: colors.gray[900],
     },
 

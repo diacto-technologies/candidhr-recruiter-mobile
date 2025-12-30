@@ -1,7 +1,7 @@
 // screens/ApplicantScreen/index.tsx
-import React, { Fragment, useCallback, useEffect, useRef, useMemo } from 'react';
+import React, { Fragment, useCallback, useEffect, useRef, useMemo, useState } from 'react';
 import { View, FlatList, useWindowDimensions } from 'react-native';
-import { Header, SortingAndFilter, ApplicantList, Shimmer } from '../../../components';
+import { Header, SortingAndFilter, ApplicantList, Shimmer, BottomSheet, FilterSheetContent } from '../../../components';
 import { filtersOption } from '../../../utils/dummaydata';
 import { useRNSafeAreaInsets } from '../../../hooks/useRNSafeAreaInsets';
 import CustomSafeAreaView from '../../../components/atoms/customsafeareaview';
@@ -10,23 +10,27 @@ import { getApplicationsRequestAction } from '../../../features/applications/act
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import {
   selectApplications,
+  selectApplicationsFilters,
   selectApplicationsHasMore,
   selectApplicationsLoading,
   selectApplicationsPagination,
 } from '../../../features/applications/selectors';
 import { Application } from '../../../features/applications/types';
+import { setApplicationsFilters } from '../../../features/applications/slice';
 
 const SKELETON_ROWS = 6;
 
 type RowItem = Application | { __skeleton: true; __id: string };
 
 const ApplicantScreen = () => {
+  const [filterSheet, setFilterSheet] = useState(false);
   const inset = useRNSafeAreaInsets();
   const dispatch = useAppDispatch();
   const applications = useAppSelector(selectApplications);
   const pagination = useAppSelector(selectApplicationsPagination);
   const hasMore = useAppSelector(selectApplicationsHasMore);
   const loading = useAppSelector(selectApplicationsLoading);
+  const filters = useAppSelector(selectApplicationsFilters);
 
   const onEndReachedCalledRef = useRef(false);
   const { width } = useWindowDimensions();
@@ -34,9 +38,7 @@ const ApplicantScreen = () => {
   const numColumns = isTablet ? 3 : 1;
   const horizontalPadding = 32; // 16 left + 16 right from contentContainerStyle
   const gap = 16;
-
   const availableWidth = width - horizontalPadding - gap * (numColumns - 1);
-
   const itemWidth = availableWidth / numColumns;
 
   useEffect(() => {
@@ -46,7 +48,12 @@ const ApplicantScreen = () => {
         limit: pagination.limit,
       })
     );
-  }, [dispatch, pagination.limit]);
+  }, [dispatch, pagination.limit,filters]);
+
+  const handleClearAllFilters = () => {
+    dispatch(setApplicationsFilters({ name: "" , email:"" , AppliedFor:"", contact:""}))
+    setFilterSheet(false)
+  }
 
   const handleLoadMore = useCallback(() => {
     if (loading || !hasMore) return;
@@ -59,6 +66,7 @@ const ApplicantScreen = () => {
       })
     );
   }, [dispatch, loading, hasMore, pagination.page, pagination.limit]);
+  
 
   const dataSource: RowItem[] = useMemo(() => {
     if (loading && (!applications || applications.length === 0)) {
@@ -114,10 +122,25 @@ const ApplicantScreen = () => {
           //columnWrapperStyle={numColumns > 1 ? { justifyContent: "space-between", gap: 16 } : undefined}
         />
       </CustomSafeAreaView>
-
-      <View>
-        <SortingAndFilter title="Filters" options={filtersOption} onPressFilter={() => { }} />
-      </View>
+      <SortingAndFilter
+        title="Filters"
+        options={filtersOption}
+        onPressFilter={() => setFilterSheet(true)}
+      />
+      <BottomSheet
+        visible={filterSheet}
+        onClose={() => setFilterSheet(false)}
+        onClearAll={()=>handleClearAllFilters()}
+        title="Filter by"
+        showHeadline
+      >
+        <FilterSheetContent
+          onCancel={() => setFilterSheet(false)}
+          onApply={() => setFilterSheet(false)}
+          onClearAll={() => setFilterSheet(false)}
+          job_Id={""}
+        />
+      </BottomSheet>
     </Fragment>
   );
 };

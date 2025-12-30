@@ -74,4 +74,11 @@ export const selectPersonalityScreeningResponses = createSelector(
 );
 
 
+export const selectApplicationsFilters = createSelector(
+  [(state: RootState) => state.applications],
+  (applications) => applications.filters
+);
+
+
+
 

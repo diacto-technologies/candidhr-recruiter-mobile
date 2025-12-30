@@ -1,128 +1,182 @@
-// components/filters/FilterSheetContent.tsx
-import React, { useState } from 'react';
-import { View, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import React, { Fragment, useState, useRef, useEffect } from 'react';
+import { View, TouchableOpacity, ScrollView, StyleSheet, Animated } from 'react-native';
 import Typography from '../../atoms/typography';
 import Button from '../../atoms/button';
 import { colors } from '../../../theme/colors';
 
 import JobTitleFilter from './jobtitlefilter';
-import ExperienceFilter from './experiencefilter';
-import LocationChip from './locationchip';
-import { SvgXml } from 'react-native-svg';
-import { fileIcon } from '../../../assets/svg/file';
-import { telePhoneIcon } from '../../../assets/svg/telephone';
-import FooterButtons from '../../molecules/footerbuttons';
-// import LocationFilter from './tabs/LocationFilter';
-// import WorkModeFilter from './tabs/WorkModeFilter';
+import EmailFilter from './emailfilter';
+import AppliedFor from './locationchip';
+import ContactFilter from './contactfilter';
+
+import { useAppSelector } from '../../../hooks/useAppSelector';
+import { selectApplicationsFilters, selectApplicationsPagination } from '../../../features/applications/selectors';
+import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { getApplicationsRequestAction } from '../../../features/applications/actions';
 
 const leftTabs = [
-  'Job title',
-  'Experience',
-  'Location',
-  'Work mode',
-  'By date',
-  'Job status',
-  'Created by',
+  'Name',
+  'Email',
+  'Applied For',
+  'Contact',
+  'Applied',
+  'Last Update',
 ];
 
 interface Props {
   onCancel: () => void;
   onApply: () => void;
   onClearAll: () => void;
+  job_Id: any;
 }
 
 const FilterSheetContent: React.FC<Props> = ({
   onCancel,
   onApply,
   onClearAll,
+  job_Id
 }) => {
-  const [selectedTab, setSelectedTab] = useState('Job title');
+  const [selectedTab, setSelectedTab] = useState(leftTabs[0]);
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const indicatorY = useRef(new Animated.Value(0)).current;
+
+  const dispatch = useAppDispatch();
+  const filters = useAppSelector(selectApplicationsFilters);
+  const pagination = useAppSelector(selectApplicationsPagination);
+
+
+  useEffect(() => {
+    slideAnim.setValue(50);
+
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 220,
+      useNativeDriver: true,
+    }).start();
+  }, [selectedTab]);
+
+  useEffect(() => {
+    const index = leftTabs.indexOf(selectedTab);
+  
+    Animated.spring(indicatorY, {
+      toValue: index * 0,   // 52 height + 4 margin
+      useNativeDriver: true,
+    }).start();
+  }, [selectedTab]);
+
+  const handleApplyFilters = () => {
+    dispatch(
+      getApplicationsRequestAction({
+        page: 1,
+        limit: pagination.limit,
+        applicantName: filters.name.trim() || "",
+        email: filters.email || "",
+        jobTitle: filters.appliedFor || "",
+        contact: filters.contact || "",
+        sort: "-applied_at",
+        jobId: job_Id || ""
+      })
+    );
+    onCancel()
+  }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        {/* Left Tabs */}
-        <View style={styles.leftTabsContainer}>
-          {leftTabs.map((item, index) => {
-            const isActive = selectedTab === item;
+    <Fragment>
+      <View style={styles.container}>
+        <View style={styles.content}>
 
-            return (
-              <TouchableOpacity
-                key={index}
-                onPress={() => setSelectedTab(item)}
-                style={[
-                  styles.tabItem,
-                  isActive && styles.activeTabItem,
-                ]}
-              >
-                {isActive && <View style={styles.activeIndicator} />}
-                <Typography
-                  variant={isActive ? 'P1M' : 'P2'}
-                  color={isActive ? colors.mainColors.blueGrayTitle : "#414651"}
+          {/* LEFT TABS */}
+          <View style={styles.leftTabsContainer}>
+            {leftTabs.map((item, index) => {
+              const isActive = selectedTab === item;
+
+              return (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => setSelectedTab(item)}
+                  style={[
+                    styles.tabItem,
+                    isActive && styles.activeTabItem,
+                  ]}
                 >
-                  {item}
+                  {isActive && <Animated.View
+                    style={[
+                      styles.activeIndicator,
+                      { transform: [{ translateY: indicatorY }] }
+                    ]}
+                  />}
+                  <Typography
+                    variant={isActive ? 'P1M' : 'P2'}
+                    color={isActive ? colors.mainColors.blueGrayTitle : "#414651"}
+                  >
+                    {item}
+                  </Typography>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* RIGHT SLIDING CONTENT */}
+          <Animated.View
+            style={{
+              flex: 1,
+              transform: [{ translateX: slideAnim }],
+            }}
+          >
+            <ScrollView>
+
+              {selectedTab === 'Name' && <JobTitleFilter />}
+              {selectedTab === 'Email' && <EmailFilter />}
+              {selectedTab === 'Applied For' && <AppliedFor />}
+              {selectedTab === 'Contact' && <ContactFilter />}
+
+              {!['Name', 'Email', 'Applied For', 'Contact'].includes(selectedTab) && (
+                <Typography variant="P2" color="#9CA3AF">
+                  Filters coming soon...
                 </Typography>
-              </TouchableOpacity>
-            );
-          })}
+              )}
+
+            </ScrollView>
+          </Animated.View>
+
         </View>
 
-        {/* Right Content */}
-        <ScrollView>
-          {selectedTab === 'Job title' && <JobTitleFilter />}
+        {/* FOOTER */}
+        <View style={styles.footer}>
+          <View style={{ flex: 1 }}>
+            <Button
+              buttonColor={colors.common.white}
+              textColor={colors.mainColors.carbonGray}
+              borderColor={colors.mainColors.borderColor}
+              borderRadius={8}
+              borderWidth={1}
+              onPress={onCancel}
+            >
+              Cancel
+            </Button>
+          </View>
 
-          {selectedTab === 'Experience' && <ExperienceFilter value={5} onValueChange={()=>{}}/>}
-
-          {selectedTab === 'Location' && <LocationChip/>}
-
-          {selectedTab === 'Work mode' && ""}
-
-          {selectedTab === 'By date' && ""}
-
-          {selectedTab === 'Job status' && ""}
-
-          {selectedTab === 'Created by' && ""}
-
-          {/* Placeholder */}
-          {!['Job title', 'Experience', 'Location', 'Work mode'].includes(selectedTab) && (
-            <Typography variant="P2" color="#9CA3AF">
-              Filters coming soon...
-            </Typography>
-          )}
-        </ScrollView>
+          <View style={{ flex: 1 }}>
+            <Button
+              buttonColor={colors.mainColors.slateBlue}
+              textColor={colors.common.white}
+              borderColor={colors.mainColors.borderColor}
+              borderRadius={8}
+              borderWidth={1}
+              onPress={handleApplyFilters}
+            >
+              Apply filters
+            </Button>
+          </View>
+        </View>
       </View>
-
-      <View style={styles.footer}>
-      <View>
-        <Button
-          buttonColor={colors.common.white}
-          textColor={colors.mainColors.carbonGray}
-          borderColor={colors.mainColors.borderColor}
-          borderRadius={8}
-          borderWidth={1}
-        >
-          Cancel
-        </Button>
-        </View>
-        <View style={{ flex: 1,}}>
-        <Button
-          buttonColor={colors.mainColors.slateBlue}
-          textColor={colors.common.white}
-          borderColor={colors.mainColors.borderColor}
-          borderRadius={8}
-          borderWidth={1}
-        >
-          Apply filters
-        </Button>
-        </View>
-        </View>
-        </View>
+    </Fragment>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    height: '90%',
+    height: '85%',
     borderLeftWidth: 2,
     borderRightWidth: 2,
     borderBottomWidth: 2,
@@ -130,6 +184,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 16,
     borderColor: colors.mainColors.borderColor,
     marginHorizontal: 5,
+    marginBottom: 10,
   },
   content: {
     flexDirection: 'row',
@@ -139,8 +194,9 @@ const styles = StyleSheet.create({
   // Left Tabs
   leftTabsContainer: {
     width: 124,
-    backgroundColor: colors.common.white,
+    backgroundColor: colors.gray[50],
     gap: 10,
+    borderTopRightRadius: 20
   },
   tabItem: {
     paddingVertical: 16,
@@ -216,7 +272,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: '#E5E5E5',
     columnGap: 12,
-  },  
+    borderBottomRightRadius: 16,
+    borderBottomLeftRadius: 16,
+  },
   cancelButton: {
     width: '48%',
     paddingVertical: 14,
@@ -249,9 +307,11 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 40,
   },
-flexStyle: {
+  flexStyle: {
     flex: 1,
   },
 });
 
+
 export default FilterSheetContent;
+

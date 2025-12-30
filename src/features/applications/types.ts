@@ -6,7 +6,7 @@ export interface ApplicationsState {
   assessmentLogs: AssessmentLog[];
   assessmentReport: AssessmentReport | null
   selectedApplication: Application | null;
-  personalityScreeningList:ScreeningAssessment[];
+  personalityScreeningList: ScreeningAssessment[];
   personalityScreeningResponses: PersonalityScreeningResponse[];
   loading: boolean;
   error: string | null;
@@ -15,6 +15,13 @@ export interface ApplicationsState {
     limit: number;
     total: number;
   };
+  filters: {
+    name: string,
+    email: string,
+    appliedFor: string,
+    contact: string,
+    sort: string
+  },
 }
 
 export interface CreateApplicationRequest {
@@ -50,8 +57,8 @@ export interface Application {
   job: {
     id: string;
     title: string;
-    score_weight:{
-      id: string | null; 
+    score_weight: {
+      id: string | null;
       skills: string;
       work_experience: string;
       projects: string;
@@ -79,9 +86,9 @@ export interface ResumeScore {
   id: number;
   ai_score: boolean;
   skills_score: string;
-  work_exp_score: string;       
-  projects_score: string;      
-  education_score: string;     
+  work_exp_score: string;
+  projects_score: string;
+  education_score: string;
   certifications_score: string;
   overall_score: string;
   feedback: string | null;
@@ -152,7 +159,7 @@ export interface ResumeData {
 }
 
 
-  export interface ApplicationsListResponse {
+export interface ApplicationsListResponse {
   count: number;
   next: string | null;
   previous: string | null;
@@ -213,7 +220,7 @@ export interface ApplicationDetailResponse {
       country_code?: string | null;
     };
   };
-  
+
   job: {
     id: string;
     title: string;
@@ -513,7 +520,7 @@ export interface AssessmentResultSummary {
   score: number;
   correct_answer_count: number;
   wrong_answer_count: number;
-  proctoring?:Proctoring;
+  proctoring?: Proctoring;
 }
 
 export interface QuestionDifficulty {
@@ -548,7 +555,7 @@ export interface AssessmentAnswer {
   duration: number;
   submitted_at: string;
   text: string;
-  type:string;
+  type: string;
   assessment_type: string;
   correct: boolean;
   selected_choice: any[];
@@ -628,7 +635,7 @@ export interface ScreeningAssessment {
   link_opened_at: string | null;
 
   preference: string | null;
-  summary: ScreeningSummary| null;
+  summary: ScreeningSummary | null;
 
   tenant: string;
 
@@ -892,71 +899,71 @@ export type ScreeningStatus =
   | "In Progress"
   | string;
 
-  export interface AudioAnalysis {
-    id: string;
-    analysis_date: string;
-    transcription:string;
-    field?: string;
-    value?: number | string | null;
-  }
-  
-  export interface VideoAnalysis {
-    id: string;
-    analysis_date:string,
-    articulation_score: number;
-    articulation_explanation: string;
-    clarity_score: number;
-    clarity_explanation: string;
-    logical_thinking_score: number;
-    logical_thinking_explanation: string;
-    response_quality_score: number;
-    response_quality_explanation: string;
-    language_proficiency_score: number;
-    language_proficiency_explanation: string;
-    technical_correctness_score: number;
-    audio_analyses: AudioAnalysis[];
-    transcription_segments?: TranscriptionSegment[];
-  }
-  
-  export interface PersonalityQuestion {
-    id: string;
-    text: string;
-    type: "text" | "video";
-    time_limit: number;
-    created_at: string,
-    updated_at:string,
-    created_by:string,
-  }
+export interface AudioAnalysis {
+  id: string;
+  analysis_date: string;
+  transcription: string;
+  field?: string;
+  value?: number | string | null;
+}
 
-  export interface TranscriptionWord {
-    start: number;
-    end: number;
-    word: string;
-  }
-  
-  export interface TranscriptionSegment {
-    start: number;
-    end: number;
-    text: string;
-    words: TranscriptionWord[];
-  }
-  
-  
-  export interface PersonalityScreeningResponse {
-    id: string;
-    screening_id: string;
-    application: string;
-    question: PersonalityQuestion;
-    video_file: string | null;
-    video_thumbnail: string | null;
-    audio_file: string | null;
-    duration: number;
-    detected_language: string;
-    transcription_segments?: TranscriptionSegment[];
-    video_analysis: VideoAnalysis;
-    audio_analysis: AudioAnalysis[] | null;
-    started:string,
-    created_at: string;
-    submitted_at: string;
-  }
+export interface VideoAnalysis {
+  id: string;
+  analysis_date: string,
+  articulation_score: number;
+  articulation_explanation: string;
+  clarity_score: number;
+  clarity_explanation: string;
+  logical_thinking_score: number;
+  logical_thinking_explanation: string;
+  response_quality_score: number;
+  response_quality_explanation: string;
+  language_proficiency_score: number;
+  language_proficiency_explanation: string;
+  technical_correctness_score: number;
+  audio_analyses: AudioAnalysis[];
+  transcription_segments?: TranscriptionSegment[];
+}
+
+export interface PersonalityQuestion {
+  id: string;
+  text: string;
+  type: "text" | "video";
+  time_limit: number;
+  created_at: string,
+  updated_at: string,
+  created_by: string,
+}
+
+export interface TranscriptionWord {
+  start: number;
+  end: number;
+  word: string;
+}
+
+export interface TranscriptionSegment {
+  start: number;
+  end: number;
+  text: string;
+  words: TranscriptionWord[];
+}
+
+
+export interface PersonalityScreeningResponse {
+  id: string;
+  screening_id: string;
+  application: string;
+  question: PersonalityQuestion;
+  video_file: string | null;
+  video_thumbnail: string | null;
+  audio_file: string | null;
+  duration: number;
+  detected_language: string;
+  transcription_segments?: TranscriptionSegment[];
+  video_analysis: VideoAnalysis;
+  audio_analysis: AudioAnalysis[] | null;
+  started: string,
+  created_at: string;
+  submitted_at: string;
+}
 

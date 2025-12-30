@@ -42,6 +42,8 @@ export const useStyles = () => {
       borderTopRightRadius: 16,
       overflow: 'hidden',
       marginHorizontal:6,
+      borderBottomLeftRadius:16,
+      borderBottomRightRadius:16,
     },
     subTitle: {
       fontSize: 16,

@@ -30,6 +30,9 @@ import { useAppDispatch } from "../../../hooks/useAppDispatch";
 import { useAppSelector } from "../../../hooks/useAppSelector";
 import { selectJobsLoading, selectSelectedJob } from "../../../features/jobs/selectors";
 import { getJobDetailRequestAction } from "../../../features/jobs/actions";
+import { setApplicationsFilters } from "../../../features/applications/slice";
+import { getApplicationsRequestAction } from "../../../features/applications/actions";
+import { selectApplicationsPagination } from "../../../features/applications/selectors";
 
 const tabs: string[] = ["Overview", "Applicants", "Import candidates"];
 
@@ -41,12 +44,23 @@ const JobDetailScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("Overview");
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const dispatch = useAppDispatch();
+  const pagination = useAppSelector(selectApplicationsPagination);
+  const job_Id = useAppSelector((state) => state.jobs.selectedJob?.id);
 
   useEffect(() => {
-    if (jobId) {
-      dispatch(getJobDetailRequestAction(jobId));
-    }
-  }, [jobId]);
+    if (!jobId) return;
+  
+    dispatch(getJobDetailRequestAction(jobId));
+  
+    dispatch(
+      getApplicationsRequestAction({
+        reset: true,
+        page: 1,
+        limit: pagination.limit,
+      })
+    );
+  }, [jobId, dispatch]);
+  
   
   const renderTabScreen = () => {
     switch (activeTab) {
@@ -60,6 +74,10 @@ const JobDetailScreen: React.FC = () => {
         return null;
     }
   };
+  const handleClearAllFilters = () => {
+    dispatch(setApplicationsFilters({ name: "" , email:"" , AppliedFor:"", contact:""}))
+    setFilterSheet(false)
+  }
 
   return (
     <CustomSafeAreaView>
@@ -90,11 +108,13 @@ const JobDetailScreen: React.FC = () => {
         onClose={() => setFilterSheet(false)}
         title="Filter by"
         showHeadline
+        onClearAll={handleClearAllFilters}
       >
         <FilterSheetContent
           onCancel={() => setFilterSheet(false)}
           onApply={() => setFilterSheet(false)}
           onClearAll={() => console.log("Clear all")}
+          job_Id={job_Id}
         />
       </BottomSheet>
       <View>

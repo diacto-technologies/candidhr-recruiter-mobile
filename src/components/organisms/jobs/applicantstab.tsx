@@ -14,14 +14,15 @@ import {
   selectApplicationsLoading,
   selectApplicationsPagination,
   selectApplicationsHasMore,
+  selectApplicationsFilters,
 } from "../../../features/applications/selectors";
 
 import { getApplicationsRequestAction } from "../../../features/applications/actions";
+import { setApplicationsFilters } from "../../../features/applications/slice";
 
 const SKELETON_ROWS = 6;
 
 const ApplicantsTab = () => {
-  const [search, setSearch] = useState("");
   const [aiEnabled, setAiEnabled] = useState(false);
 
   const dispatch = useAppDispatch();
@@ -29,6 +30,7 @@ const ApplicantsTab = () => {
   const loading = useAppSelector(selectApplicationsLoading);
   const pagination = useAppSelector(selectApplicationsPagination);
   const hasMore = useAppSelector(selectApplicationsHasMore);
+  const filters = useAppSelector(selectApplicationsFilters);
 
   const jobId = useAppSelector((state) => state.jobs.selectedJob?.id);
 
@@ -51,8 +53,11 @@ const ApplicantsTab = () => {
         getApplicationsRequestAction({
           page: 1,
           limit: pagination.limit,
-          applicantName: search.trim() || undefined,
+          applicantName: filters.name.trim() || undefined,
           jobId,
+          email:filters.email  || "",
+          jobTitle: filters.appliedFor || "",
+          contact: filters.contact || "",
           sort: aiEnabled
             ? "-resume__resume_score__overall_score"
             : "-last_updated",
@@ -61,7 +66,7 @@ const ApplicantsTab = () => {
     }, 400);
   
     return () => clearTimeout(timeout);
-  }, [search, aiEnabled, jobId]);
+  }, [filters, aiEnabled, jobId]);
   
 
   const handleLoadMore = useCallback(() => {
@@ -72,14 +77,14 @@ const ApplicantsTab = () => {
         page: pagination.page + 1,
         limit: pagination.limit,
         append: true,
-        applicantName: search.trim() || undefined,
+        applicantName: filters.name.trim() || undefined,
         jobId,
         sort: aiEnabled
           ? "-resume__resume_score__overall_score"
           : "-last_updated",
       })
     );
-  }, [loading, hasMore, pagination.page, pagination.limit, search, jobId, aiEnabled]);
+  }, [loading, hasMore, pagination.page, pagination.limit, filters.name, jobId, aiEnabled]);
 
   const dataSource = useMemo(() => {
     if (loading && applications.length === 0) {
@@ -96,9 +101,11 @@ const ApplicantsTab = () => {
       {/* 🔍Top Search + Switch */}
       <View style={{ paddingHorizontal: 16, gap: 4, paddingVertical: 16 }}>
         <SearchBar
-          value={search}
-          placeholder="Jacob Johns"
-          onChangeText={setSearch}
+          value={filters.name}
+          placeholder="User search by name"
+          onChangeText={(v) =>
+            dispatch(setApplicationsFilters({ name: v }))
+          }
         />
 
         <View style={styles.switchContainer}>

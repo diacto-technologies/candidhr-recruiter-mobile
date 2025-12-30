@@ -416,7 +416,7 @@ export default function VideoInterview() {
             source={
               selectedResponse?.video_file
                 ? selectedResponse.video_file
-                : "https://www.w3schools.com/html/mov_bbb.mp4"
+                : ""
             }
             onProgress={(e) => setCurrentTime(e.currentTime || 0)}
           />
