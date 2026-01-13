@@ -36,6 +36,7 @@ import {
 import { applicationsApi } from "./api";
 import { AssessmentDetailedReportApiResponse, AssessmentLogApiResponse, AssessmentReportApiResponse, GetApplicationResponsesParams, GetApplicationsSagaAction, PersonalityScreeningResponse, ResumeScreeningApiResponse, ScreeningAssessment } from "./types";
 import { getAssessmentDetailedReportRequestAction, getAssessmentReportRequestAction } from "./actions";
+import { StatusBar } from "../../components";
 
 function* getApplicationsWorker(
   action: GetApplicationsSagaAction
@@ -48,7 +49,7 @@ function* getApplicationsWorker(
     yield put(getApplicationsRequest(params));
 
     const response = yield call(applicationsApi.getApplications, params);
-    console.log(response, 'applicantListapplicantListapplicantList')
+    console.log(response, 'applicantListapplicantListapplicantList123',applicationsApi.getApplications)
 
     yield put(
       getApplicationsSuccess({
@@ -230,8 +231,8 @@ function* getPersonalityScreeningListWorker(
   action: {
     type: string;
     payload: {
-      application_id: string,
-      job_id: string,
+      application_id: string;
+      job_id: string;
     };
   }
 ): Generator<any, void, any> {
@@ -243,16 +244,27 @@ function* getPersonalityScreeningListWorker(
       application_id,
       job_id
     );
-    console.log(res, "getPersonalityScreeningListSuccess")
+
+    console.log(res, "getPersonalityScreeningListSuccess");
     yield put(getPersonalityScreeningListSuccess(res));
-  } catch (err: any) {
+
+  } catch (error: any) {
+    console.log(error.status, "getPersonalityScreeningListWorker");
+
+    // ✅ CORRECT: 404 = no video interview
+    if (error.status === 404) {
+      yield put(getPersonalityScreeningListSuccess([]));
+    }
+    else{
     yield put(
       getPersonalityScreeningListFailure(
-        err.message || "Failed to fetch personality screening list"
+        error.message || "Failed to fetch personality screening list"
       )
     );
   }
+  }
 }
+
 
 function* getPersonalityScreeningResponsesWorker(
   action: { type: string; payload: string }

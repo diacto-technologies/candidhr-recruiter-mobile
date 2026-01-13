@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ApplicationsState, Application, ApplicationsListResponse, ApplicationResponseItem, ResumeScreeningResponseItem, AssessmentLog, AssessmentReport, AssessmentDetailedReport, ScreeningAssessment, PersonalityScreeningResponse} from "./types";
+import { ApplicationsState, Application, ApplicationsListResponse, ApplicationResponseItem, ResumeScreeningResponseItem, AssessmentLog, AssessmentReport, AssessmentDetailedReport, ScreeningAssessment, PersonalityScreeningResponse } from "./types";
 
 const initialState: ApplicationsState = {
   applications: [],
@@ -12,6 +12,10 @@ const initialState: ApplicationsState = {
   assessmentDetailedReport: null,
   selectedApplication: null,
   loading: false,
+  loadingApplications: false,
+  loadingApplicationDetail: false,
+  loadingAssessment: false,
+  loadingPersonality: false,
   error: null,
   pagination: {
     page: 1,
@@ -20,11 +24,13 @@ const initialState: ApplicationsState = {
   },
   hasMore: true,
   filters: {
-    name:'',
-    email:'',
+    name: '',
+    email: '',
     appliedFor: '',
-    contact:'',
-    sort:""
+    contact: '',
+    sortBy: 'Applied',
+    sortDir: 'desc',
+    sort: "-applied_at"
   },
 };
 
@@ -70,16 +76,16 @@ const applicationsSlice = createSlice({
       state.error = action.payload;
     },
     getApplicationDetailRequest: (state, _action: PayloadAction<string>) => {
-      state.loading = true;
+      state.loadingApplicationDetail = true;
       state.error = null;
     },
     getApplicationDetailSuccess: (state, action: PayloadAction<Application>) => {
-      state.loading = false;
+      state.loadingApplicationDetail = false;
       state.selectedApplication = action.payload;
       state.error = null;
     },
     getApplicationDetailFailure: (state, action: PayloadAction<string>) => {
-      state.loading = false;
+      state.loadingApplicationDetail = false;
       state.error = action.payload;
     },
     createApplicationRequest: (state, _action: PayloadAction<any>) => {
@@ -140,7 +146,7 @@ const applicationsSlice = createSlice({
     },
 
     getResumeScreeningResponsesRequest: (state) => {
-      state.loading = true;
+      state.loadingResumeScreeningResponses = true;
       state.error = null;
     },
 
@@ -148,7 +154,7 @@ const applicationsSlice = createSlice({
       state,
       action: PayloadAction<ResumeScreeningResponseItem[]>
     ) => {
-      state.loading = false;
+      state.loadingResumeScreeningResponses = false;
       state.resumeScreeningResponses = action.payload;
     },
 
@@ -156,7 +162,7 @@ const applicationsSlice = createSlice({
       state,
       action: PayloadAction<string>
     ) => {
-      state.loading = false;
+      state.loadingResumeScreeningResponses = false;
       state.error = action.payload;
     },
 
@@ -233,8 +239,14 @@ const applicationsSlice = createSlice({
       action: PayloadAction<ScreeningAssessment[]>
     ) => {
       state.loading = false;
+      state.error = null;
       state.personalityScreeningList = action.payload;
+    
+      if (action.payload.length === 0) {
+        state.personalityScreeningResponses = [];
+      }
     },
+    
 
     getPersonalityScreeningListFailure: (
       state,
@@ -242,13 +254,15 @@ const applicationsSlice = createSlice({
     ) => {
       state.loading = false;
       state.error = action.payload;
+      state.personalityScreeningList = [];
+      state.personalityScreeningResponses = [];
     },
 
     getPersonalityScreeningResponsesRequest: state => {
       state.loading = true;
       state.error = null;
     },
-    
+
     getPersonalityScreeningResponsesSuccess: (
       state,
       action: PayloadAction<PersonalityScreeningResponse[]>
@@ -256,19 +270,48 @@ const applicationsSlice = createSlice({
       state.loading = false;
       state.personalityScreeningResponses = action.payload;
     },
-    
+
     getPersonalityScreeningResponsesFailure: (
       state,
       action: PayloadAction<string>
     ) => {
       state.loading = false;
       state.error = action.payload;
+      state.personalityScreeningResponses = [];
     },
 
     setApplicationsFilters: (state, action) => {
       state.filters = { ...state.filters, ...action.payload };
     },
-    
+
+    setSort: (state, action: PayloadAction<{
+      sortBy: 'Applied' | 'Last Update',
+      sortDir: 'asc' | 'desc'
+    }>) => {
+
+      state.filters.sortBy = action.payload.sortBy;
+      state.filters.sortDir = action.payload.sortDir;
+
+      if (action.payload.sortBy === 'Applied') {
+        state.filters.sort =
+          action.payload.sortDir === 'desc'
+            ? '-applied_at'
+            : 'applied_at';
+      } else {
+        state.filters.sort =
+          action.payload.sortDir === 'desc'
+            ? '-last_updated'
+            : 'last_updated';
+      }
+    },
+    resetPersonalityScreeningState: (state) => {
+      state.personalityScreeningList = [];
+      state.personalityScreeningResponses = [];
+      state.assessmentReport = null;
+      state.assessmentDetailedReport = null;
+      state.loading = false;
+      state.error = null;
+    },
   },
 });
 
@@ -309,6 +352,8 @@ export const {
   getPersonalityScreeningResponsesSuccess,
   getPersonalityScreeningResponsesFailure,
   setApplicationsFilters,
+  resetPersonalityScreeningState,
+  setSort
 } = applicationsSlice.actions;
 
 export default applicationsSlice.reducer;

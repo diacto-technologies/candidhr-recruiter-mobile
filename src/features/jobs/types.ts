@@ -107,7 +107,15 @@ export interface UpdateJobRequest extends Partial<CreateJobRequest> {
 export interface GetJobsParams {
   page?: number;
   limit?: number;
-  published?: boolean; // true = published, false = unpublished
+  published?: boolean;
+  title?: string;
+  experience?: string;
+  employmentType?: string;
+  location?: string;
+  createdBy?: string;
+  closeDate?: string;
+  orderBy?: string;
+  append?: boolean;
 }
 // Redux state
 export interface JobsPagination {
@@ -162,13 +170,27 @@ export interface JobDetail {
 
 export interface JobsState {
   jobs: Job[];
+  publishedJobs: Job[];
+  unpublishedJobs: Job[];
   publishedCount: number;
   unpublishedCount: number;
+  activeTab: string;
   selectedJob: JobDetail | null;
   loading: boolean;
   error: string | null;
   pagination: JobsPagination;
-  hasMore: boolean; // 👈 ADD THIS
+  hasMore: boolean;
+  isTabLoading: boolean;
+  filters: {
+    title: string,
+    experience: string,
+    employmentType: string,
+    location: string,
+    owner_name: string,
+    closeDate: string,
+    closeDateTo: string,
+
+  }
 }
 export interface SharedUser {
   id: string;

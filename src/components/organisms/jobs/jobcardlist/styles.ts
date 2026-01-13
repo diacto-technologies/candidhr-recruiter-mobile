@@ -16,7 +16,7 @@ export const useStyles = () => {
             elevation: 1,
         },
         row: { flexDirection: 'row', alignItems: 'center', marginTop: 6, },
-        rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 5 },
+        rowBetween: {flexDirection: 'row', justifyContent: 'space-between', paddingTop: 5},
         dot: { marginHorizontal: 6, height: 16, borderColor: colors.mainColors.borderColor, borderWidth: 1 },
         author: { color: '#475467', fontSize: 13, marginTop: 8 },
         statusText: { fontSize: 12, marginLeft: 6, fontWeight: '500', color: '#344054' },

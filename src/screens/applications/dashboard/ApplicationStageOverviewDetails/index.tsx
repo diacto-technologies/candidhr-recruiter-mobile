@@ -98,7 +98,9 @@ const ApplicationStageOverview = () => {
         <Typography style={styles.cell}>{item?.stages?.reject}</Typography>
         <Typography style={styles.cell}>{item?.stages?.on_hold}</Typography>
         <Typography style={styles.cell}>{item?.close_date}</Typography>
-        <Typography style={styles.cell}>{item?.is_closed ? "Closed" : "Open"}</Typography>
+        <View style={{backgroundColor:item?.is_closed?colors.error[50]:colors.success[50],paddingHorizontal:8, paddingVertical:2,borderRadius:9999,alignItems:'center', borderWidth:1 ,borderColor:item?.is_closed?colors.error[200]:colors.success[200]}}>
+        <Typography variant="regularTxtxs" color={item?.is_closed?colors.error[600]:colors.success[600]}>{item?.is_closed ? "Closed" : "Open"}</Typography>
+        </View>
       </View>
     );
   };

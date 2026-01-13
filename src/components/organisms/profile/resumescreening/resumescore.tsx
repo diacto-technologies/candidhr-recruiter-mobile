@@ -7,6 +7,9 @@ import { colors } from "../../../../theme/colors";
 import { SvgXml } from "react-native-svg";
 import { Wavy_CheckIcon } from "../../../../assets/svg/wavy_check";
 import { checkIcon } from "../../../../assets/svg/check";
+import Shimmer from "../../../atoms/shimmer";
+import { useAppSelector } from "../../../../hooks/useAppSelector";
+import { selectApplicationsDetailLoading } from "../../../../features/applications/selectors";
 
 interface ScoreItem {
   title: string;
@@ -19,14 +22,48 @@ interface Props {
   overall: string;
   status: string;
   details: ScoreItem[];
+  isloading:boolean
 }
 
-const ResumeScore = ({ overall, status, details }: Props) => {
+const ResumeScoreShimmer = () => {
   return (
     <View style={styles.card}>
       {/* Header */}
       <View style={styles.headerRow}>
-        <Typography variant="semiBoldTxtlg">Resume score</Typography>
+        <Shimmer width="40%" height={18} />
+        <Shimmer width={60} height={20} borderRadius={999} />
+      </View>
+
+      {/* Gradient score bar */}
+      <Shimmer height={44} borderRadius={8} />
+
+      {/* Detailed score title */}
+      <Shimmer width="35%" height={16} />
+
+      {/* Score rows */}
+      {[1, 2, 3, 4, 5].map((_, index) => (
+        <View key={index} style={styles.detailRow}>
+          <View style={styles.rowLeft}>
+            <Shimmer width={20} height={20} borderRadius={10} />
+            <Shimmer width={120} height={14} />
+          </View>
+
+          <Shimmer width={32} height={16} />
+        </View>
+      ))}
+    </View>
+  );
+};
+
+const ResumeScore = ({ overall, status, details,isloading }: Props) => {
+  if(isloading){
+   return <ResumeScoreShimmer/>
+  }
+  return (
+    <View style={styles.card}>
+      {/* Header */}
+      <View style={styles.headerRow}>
+        <Typography variant="semiBoldTxtlg">Resume Score</Typography>
 
         <View style={styles.statusPill}>
           <Typography variant="mediumTxtxs" color={colors.success[700]}>
@@ -80,17 +117,6 @@ const ResumeScore = ({ overall, status, details }: Props) => {
           <Typography variant="semiBoldTxtmd" color={colors.gray[700]}>{item.value}</Typography>
         </View>
       ))}
-
-      {/* Divider */}
-      <View style={styles.divider} />
-
-      {/* View More */}
-      <TouchableOpacity style={styles.viewMoreRow}>
-        <Typography variant="semiBoldTxtsm" color={colors.brand[700]}>
-          View more
-        </Typography>
-        <Ionicons name="chevron-down" size={20} color={colors.brand[500]} />
-      </TouchableOpacity>
     </View>
   );
 };

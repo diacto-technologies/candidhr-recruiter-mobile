@@ -1,4 +1,4 @@
-import {Text, TextInput, useColorScheme} from 'react-native';
+import { Text, TextInput, useColorScheme } from 'react-native';
 import React from 'react';
 import { Provider } from 'react-redux';
 import { persistor, store } from './src/store';
@@ -7,6 +7,7 @@ import Navigation from './src/navigation';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Provider as PaperProvider } from 'react-native-paper';
+import { ToastMessageProvider } from './src/components/organisms/toastmessage';
 
 // ⭐ Disable phone default font scaling for entire app
 (Text as any).defaultProps = {
@@ -27,8 +28,10 @@ const App = () => {
       <Provider store={store}>
         <PersistGate loading={null} persistor={persistor}>
           <SafeAreaProvider>
-          <PaperProvider>
-            <Navigation />
+            <PaperProvider>
+              <ToastMessageProvider>
+                <Navigation />
+              </ToastMessageProvider>
             </PaperProvider>
           </SafeAreaProvider>
         </PersistGate>

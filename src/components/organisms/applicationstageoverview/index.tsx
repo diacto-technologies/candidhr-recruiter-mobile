@@ -97,15 +97,17 @@ const ApplicationStageOverview = () => {
 
     return (
       <View style={[styles.row, { backgroundColor: bg }]}>
-        <Typography style={styles.cell}>{item.total_applicants}</Typography>
-        <Typography style={styles.cell}>{item?.stages?.resume_screening}</Typography>
-        <Typography style={styles.cell}>{item?.stages?.assessment_test}</Typography>
-        <Typography style={styles.cell}>{item?.stages?.video_interview}</Typography>
-        <Typography style={styles.cell}>{item?.stages?.hired}</Typography>
-        <Typography style={styles.cell}>{item?.stages?.reject}</Typography>
-        <Typography style={styles.cell}>{item?.stages?.on_hold}</Typography>
-        <Typography style={styles.cell}>{item?.close_date}</Typography>
-        <Typography style={styles.cell}>{item?.is_closed ? "Closed" : "Open"}</Typography>
+        <Typography style={styles.cell} color={colors.gray[600]}>{item.total_applicants}</Typography>
+        <Typography style={styles.cell}  color={colors.gray[600]}>{item?.stages?.resume_screening}</Typography>
+        <Typography style={styles.cell}  color={colors.gray[600]}>{item?.stages?.assessment_test}</Typography>
+        <Typography style={styles.cell}  color={colors.gray[600]}>{item?.stages?.video_interview}</Typography>
+        <Typography style={styles.cell}  color={colors.gray[600]}>{item?.stages?.hired}</Typography>
+        <Typography style={styles.cell}  color={colors.gray[600]}>{item?.stages?.reject}</Typography>
+        <Typography style={styles.cell}  color={colors.gray[600]}>{item?.stages?.on_hold}</Typography>
+        <Typography style={styles.cell}  color={colors.gray[600]}>{item?.close_date}</Typography>
+        <View style={{backgroundColor:item?.is_closed?colors.error[50]:colors.success[50],paddingHorizontal:8, paddingVertical:2,borderRadius:9999,alignItems:'center', borderWidth:1 ,borderColor:item?.is_closed?colors.error[200]:colors.success[200]}}>
+        <Typography variant="regularTxtxs" color={item?.is_closed?colors.error[600]:colors.success[600]}>{item?.is_closed ? "Closed" : "Open"}</Typography>
+        </View>
       </View>
     );
   };

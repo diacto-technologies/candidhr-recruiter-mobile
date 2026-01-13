@@ -40,7 +40,7 @@ const Button: React.FC<IButton> = (props) => {
           {renderNode(props.startIcon)}
           {props.children && (
             <Typography
-              variant="semiBoldTxtxs"
+              variant="semiBoldTxtsm"
               color={getTextColor()}
             >
               {props.children}

@@ -21,7 +21,7 @@ export const store = configureStore({
     getDefaultMiddleware({
       thunk: false,
       serializableCheck: {
-        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
+        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE', 'persist/PURGE'],
       },
     }).concat(sagaMiddleware),
   devTools: __DEV__,

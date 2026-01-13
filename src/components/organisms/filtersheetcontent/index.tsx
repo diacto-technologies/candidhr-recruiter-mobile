@@ -1,49 +1,55 @@
 import React, { Fragment, useState, useRef, useEffect } from 'react';
-import { View, TouchableOpacity, ScrollView, StyleSheet, Animated } from 'react-native';
+import { View, TouchableOpacity, ScrollView, StyleSheet, Animated, FlatList } from 'react-native';
 import Typography from '../../atoms/typography';
 import Button from '../../atoms/button';
 import { colors } from '../../../theme/colors';
-
-import JobTitleFilter from './jobtitlefilter';
-import EmailFilter from './emailfilter';
-import AppliedFor from './locationchip';
-import ContactFilter from './contactfilter';
-
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { selectApplicationsFilters, selectApplicationsPagination } from '../../../features/applications/selectors';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { getApplicationsRequestAction } from '../../../features/applications/actions';
-
-const leftTabs = [
-  'Name',
-  'Email',
-  'Applied For',
-  'Contact',
-  'Applied',
-  'Last Update',
-];
+import { setApplicationsFilters } from '../../../features/applications/slice';
+import Icon from '../../atoms/vectoricon';
+import ExperienceFilter from './experincefilter';
+import DateFilter from './datefilter';
+import TextSearchFilter from './textSearchFilter';
+import { getJobsRequestAction } from '../../../features/jobs/actions';
+import { selectJobFilters, selectJobsActiveTab } from '../../../features/jobs/selectors';
+import { setJobFilters } from '../../../features/jobs/slice';
 
 interface Props {
   onCancel: () => void;
   onApply: () => void;
   onClearAll: () => void;
   job_Id: any;
+  selectedTab: string;
+  setSelectedTab: (tab: string) => void;
+  filtersConfig: string[];
+  mode: "job" | "applicant";
 }
 
 const FilterSheetContent: React.FC<Props> = ({
   onCancel,
   onApply,
   onClearAll,
-  job_Id
+  job_Id,
+  selectedTab,
+  setSelectedTab,
+  filtersConfig,
+  mode
 }) => {
-  const [selectedTab, setSelectedTab] = useState(leftTabs[0]);
+
   const slideAnim = useRef(new Animated.Value(0)).current;
   const indicatorY = useRef(new Animated.Value(0)).current;
 
   const dispatch = useAppDispatch();
   const filters = useAppSelector(selectApplicationsFilters);
+  const jobFilters = useAppSelector(selectJobFilters);
   const pagination = useAppSelector(selectApplicationsPagination);
+  const activeTab = useAppSelector(selectJobsActiveTab);
 
+  const hiddenTabs = ['Applied', 'Last Update'];
+
+  const visibleTabs = filtersConfig.filter((item: string) => !hiddenTabs.includes(item));
 
   useEffect(() => {
     slideAnim.setValue(50);
@@ -56,38 +62,86 @@ const FilterSheetContent: React.FC<Props> = ({
   }, [selectedTab]);
 
   useEffect(() => {
-    const index = leftTabs.indexOf(selectedTab);
-  
+    const index = visibleTabs.indexOf(selectedTab);
+
     Animated.spring(indicatorY, {
-      toValue: index * 0,   // 52 height + 4 margin
+      toValue: index * 0,
       useNativeDriver: true,
     }).start();
   }, [selectedTab]);
 
-  const handleApplyFilters = () => {
-    dispatch(
-      getApplicationsRequestAction({
-        page: 1,
-        limit: pagination.limit,
-        applicantName: filters.name.trim() || "",
-        email: filters.email || "",
-        jobTitle: filters.appliedFor || "",
-        contact: filters.contact || "",
-        sort: "-applied_at",
-        jobId: job_Id || ""
-      })
-    );
-    onCancel()
-  }
-
   return (
     <Fragment>
       <View style={styles.container}>
+
+        <View style={{ marginVertical: 16 }}>
+          <FlatList
+            data={Object.entries(mode === 'job' ? jobFilters : filters).filter(
+              ([key, value]) =>
+                !!value && !['sort', 'sortBy', 'sortDir'].includes(key)
+            )}
+            keyExtractor={([key]) => key}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
+            renderItem={({ item }) => {
+              const [key, value] = item;
+
+              return (
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    paddingLeft: 12,
+                    paddingRight: 6,
+                    paddingVertical: 2,
+                    borderRadius: 8,
+                    backgroundColor: colors.gray[50],
+                    borderWidth: 1,
+                    borderColor: colors.gray[200],
+                    alignItems: 'center',
+                  }}
+                >
+                  <Typography variant="mediumTxtsm" color={colors.gray[700]}>
+                    {value}
+                  </Typography>
+                  <TouchableOpacity
+                   onPress={() => {
+                    if (mode === "applicant") {
+                      dispatch(
+                        setApplicationsFilters({
+                          ...filters,
+                          [key]: "",
+                        })
+                      );
+                    } else {
+                      dispatch(
+                        setJobFilters({
+                          ...jobFilters,
+                          [key]: "",
+                        })
+                      );
+                    }
+                  }}
+                    style={{ marginLeft: 2 }}
+                  >
+                    <Icon
+                      size={16}
+                      name={'close'}
+                      iconFamily={'Ionicons'}
+                      color={colors.gray[400]}
+                    />
+                  </TouchableOpacity>
+                </View>
+              );
+            }}
+          />
+        </View>
+
         <View style={styles.content}>
 
           {/* LEFT TABS */}
           <View style={styles.leftTabsContainer}>
-            {leftTabs.map((item, index) => {
+            {visibleTabs.map((item, index) => {
               const isActive = selectedTab === item;
 
               return (
@@ -99,12 +153,15 @@ const FilterSheetContent: React.FC<Props> = ({
                     isActive && styles.activeTabItem,
                   ]}
                 >
-                  {isActive && <Animated.View
-                    style={[
-                      styles.activeIndicator,
-                      { transform: [{ translateY: indicatorY }] }
-                    ]}
-                  />}
+                  {isActive && (
+                    <Animated.View
+                      style={[
+                        styles.activeIndicator,
+                        { transform: [{ translateY: indicatorY }] }
+                      ]}
+                    />
+                  )}
+
                   <Typography
                     variant={isActive ? 'P1M' : 'P2'}
                     color={isActive ? colors.mainColors.blueGrayTitle : "#414651"}
@@ -116,29 +173,33 @@ const FilterSheetContent: React.FC<Props> = ({
             })}
           </View>
 
-          {/* RIGHT SLIDING CONTENT */}
-          <Animated.View
-            style={{
-              flex: 1,
-              transform: [{ translateX: slideAnim }],
-            }}
-          >
-            <ScrollView>
+          {/* RIGHT CONTENT */}
+          <View style={{ flex: 1, flexShrink: 1 }}>
+            <Animated.View style={{ flex: 1, transform: [{ translateX: slideAnim }] }}>
+              <ScrollView contentContainerStyle={{ flexGrow: 0 }}>
 
-              {selectedTab === 'Name' && <JobTitleFilter />}
-              {selectedTab === 'Email' && <EmailFilter />}
-              {selectedTab === 'Applied For' && <AppliedFor />}
-              {selectedTab === 'Contact' && <ContactFilter />}
+                {selectedTab === 'Name' && <TextSearchFilter mode="applicant" field="name" placeholder="Search by 'Name' " />}
+                {selectedTab === 'Email' && <TextSearchFilter mode="applicant" field="email" placeholder="Search by 'Email'" />}
+                {selectedTab === 'Applied For' && <TextSearchFilter mode="applicant" field="appliedFor" placeholder="Search by 'Applied For'" />}
+                {selectedTab === 'Contact' && <TextSearchFilter mode="applicant" field="contact" placeholder="Search by 'Contact'" />}
 
-              {!['Name', 'Email', 'Applied For', 'Contact'].includes(selectedTab) && (
-                <Typography variant="P2" color="#9CA3AF">
-                  Filters coming soon...
-                </Typography>
-              )}
+                {selectedTab === 'Title' && <TextSearchFilter mode="job" field="title" placeholder="Search by 'Title'" />}
+                {selectedTab === 'Experience' && <ExperienceFilter />}
+                {selectedTab === 'Employment Type' && <TextSearchFilter mode="job" field="employmentType" placeholder="Search by 'Employee Type' " />}
+                {selectedTab === 'Location' && <TextSearchFilter mode="job" field="location" placeholder="Search by 'Location' " />}
+                {selectedTab === 'Close Date' && <DateFilter />}
+                {selectedTab === 'Created By' && <TextSearchFilter mode="job" field="createdBy" placeholder="Search by 'Created By' " />}
 
-            </ScrollView>
-          </Animated.View>
+                {/* 
+                {![...filtersConfig].includes(selectedTab) && (
+                  <Typography variant="P2" color="#9CA3AF">
+                    Filters coming soon...
+                  </Typography>
+                )} */}
 
+              </ScrollView>
+            </Animated.View>
+          </View>
         </View>
 
         {/* FOOTER */}
@@ -163,12 +224,13 @@ const FilterSheetContent: React.FC<Props> = ({
               borderColor={colors.mainColors.borderColor}
               borderRadius={8}
               borderWidth={1}
-              onPress={handleApplyFilters}
+              onPress={onApply}
             >
               Apply filters
             </Button>
           </View>
         </View>
+
       </View>
     </Fragment>
   );
@@ -176,7 +238,8 @@ const FilterSheetContent: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   container: {
-    height: '85%',
+    flexShrink: 1,
+    //maxHeight: '90%',
     borderLeftWidth: 2,
     borderRightWidth: 2,
     borderBottomWidth: 2,
@@ -184,19 +247,18 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 16,
     borderColor: colors.mainColors.borderColor,
     marginHorizontal: 5,
-    marginBottom: 10,
+    marginBottom: 5,
   },
   content: {
     flexDirection: 'row',
-    flex: 1,
+    flexShrink: 1,
   },
-
-  // Left Tabs
   leftTabsContainer: {
     width: 124,
     backgroundColor: colors.gray[50],
     gap: 10,
-    borderTopRightRadius: 20
+    borderTopRightRadius: 20,
+    marginBottom: 50,
   },
   tabItem: {
     paddingVertical: 16,
@@ -208,7 +270,6 @@ const styles = StyleSheet.create({
   },
   activeTabItem: {
     backgroundColor: '#F5F5F5',
-    //borderTopRightRadius:20
   },
   activeIndicator: {
     position: 'absolute',
@@ -220,50 +281,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 12,
     borderBottomRightRadius: 12,
   },
-  activeTabText: {
-    color: '#191B23',
-  },
-  inactiveTabText: {
-    color: '#535862',
-  },
-
-  // Right Filter Options
-  filterOptionsContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  filterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  filterLabelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 1.5,
-    borderColor: '#C8CAD0',
-    backgroundColor: '#FFFFFF',
-  },
-  checkedCheckbox: {
-    backgroundColor: '#6C4BE7',
-    borderColor: '#6C4BE7',
-  },
-  countBadge: {
-    backgroundColor: '#F2F3F5',
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 14,
-  },
-
-  // Footer
   footer: {
     flexDirection: 'row',
     paddingVertical: 16,
@@ -274,44 +291,7 @@ const styles = StyleSheet.create({
     columnGap: 12,
     borderBottomRightRadius: 16,
     borderBottomLeftRadius: 16,
-  },
-  cancelButton: {
-    width: '48%',
-    paddingVertical: 14,
-    borderRadius: 20,
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  applyButton: {
-    width: '48%',
-    paddingVertical: 14,
-    backgroundColor: '#6C4BE7',
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  applyButtonText: {
-    color: '#FFFFFF',
-  },
-  sortButtonContainer: {
-    alignItems: 'center',
-    bottom: 0,
-    elevation: 5,
-    flexDirection: 'row',
-    gap: 16,
-    justifyContent: 'space-evenly',
-    left: 0,
-    paddingBottom: 20 || 20,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    position: 'absolute',
-    right: 0,
-    zIndex: 40,
-  },
-  flexStyle: {
-    flex: 1,
-  },
+  }
 });
 
-
 export default FilterSheetContent;
-

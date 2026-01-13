@@ -35,42 +35,47 @@ const ApplicantsTab = () => {
   const jobId = useAppSelector((state) => state.jobs.selectedJob?.id);
 
   const onEndReachedCalledRef = useRef(false);
-
-  /** 🔥 Debounced Search + AI sort + jobId */
   useEffect(() => {
-    // 1️⃣ Clear existing list so skeleton shows
+    if (!jobId) return;
+
+    const sortValue = aiEnabled
+      ? "-resume__resume_score__overall_score"
+      : (filters.sort || "-last_updated");
+
     dispatch(
       getApplicationsRequestAction({
         reset: true,
         page: 1,
         limit: pagination.limit,
+        applicantName: filters.name.trim() || undefined,
+        jobId,
+        email: filters.email || "",
+        jobTitle: filters.appliedFor || "",
+        contact: filters.contact || "",
+        sort: sortValue,
       })
     );
-  
-    // 2️⃣ Fetch new results
-    const timeout = setTimeout(() => {
-      dispatch(
-        getApplicationsRequestAction({
-          page: 1,
-          limit: pagination.limit,
-          applicantName: filters.name.trim() || undefined,
-          jobId,
-          email:filters.email  || "",
-          jobTitle: filters.appliedFor || "",
-          contact: filters.contact || "",
-          sort: aiEnabled
-            ? "-resume__resume_score__overall_score"
-            : "-last_updated",
-        })
-      );
-    }, 400);
-  
-    return () => clearTimeout(timeout);
-  }, [filters, aiEnabled, jobId]);
-  
+  }, [
+    filters.name,
+    filters.email,
+    filters.appliedFor,
+    filters.contact,
+    filters.sort,
+    aiEnabled,
+    jobId,
+    pagination.limit,
+  ]);
+
+
+
 
   const handleLoadMore = useCallback(() => {
     if (loading || !hasMore) return;
+
+    // Use AI sort if enabled, otherwise use Redux filters.sort
+    const sortValue = aiEnabled
+      ? "-resume__resume_score__overall_score"
+      : (filters.sort || "-last_updated");
 
     dispatch(
       getApplicationsRequestAction({
@@ -79,12 +84,10 @@ const ApplicantsTab = () => {
         append: true,
         applicantName: filters.name.trim() || undefined,
         jobId,
-        sort: aiEnabled
-          ? "-resume__resume_score__overall_score"
-          : "-last_updated",
+        sort: sortValue, // Use Redux filters.sort when AI is disabled
       })
     );
-  }, [loading, hasMore, pagination.page, pagination.limit, filters.name, jobId, aiEnabled]);
+  }, [loading, hasMore, pagination.page, pagination.limit, filters.name, filters.sort, jobId, aiEnabled, dispatch]);
 
   const dataSource = useMemo(() => {
     if (loading && applications.length === 0) {
@@ -94,7 +97,7 @@ const ApplicantsTab = () => {
       }));
     }
     return applications;
-  }, [loading, applications,aiEnabled]);
+  }, [loading, applications, aiEnabled]);
 
   return (
     <View style={{ flex: 1 }}>
@@ -117,6 +120,26 @@ const ApplicantsTab = () => {
       </View>
 
       <Divider />
+      {!loading && applications.length === 0 && (
+        <View
+          style={{
+            alignItems: "center",
+            marginTop: 60,
+            backgroundColor:colors.base.white
+          }}
+        >
+          <Typography variant="semiBoldTxtmd">
+            No results found
+          </Typography>
+          <Typography
+            variant="regularTxtsm"
+            color={colors.gray[500]}
+            style={{ marginTop: 6, textAlign: "center" }}
+          >
+            Try adjusting your search or filters
+          </Typography>
+        </View>
+      )}
 
       {/* 📄List */}
       <FlatList

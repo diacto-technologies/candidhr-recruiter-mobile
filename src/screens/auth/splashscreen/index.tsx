@@ -59,7 +59,7 @@ const SplashScreen = () => {
           </View>
         </View>
 
-        <Typography variant="regularTxtsm" color={colors.base.white} style={styles.footer}>Powered by diacto</Typography>
+        <Typography variant="regularTxtsm" color={colors.base.white} style={styles.footer}>Powered by Diacto</Typography>
       </LinearGradient>
     </Fragment>
   );

@@ -18,6 +18,16 @@ export const selectApplicationsLoading = createSelector(
   (applications) => applications.loading
 );
 
+export const selectApplicationsDetailLoading = createSelector(
+  [selectApplicationsState],
+  (applications) => applications.loadingApplicationDetail
+);
+
+export const selectResumeScreeningResponsesLoading = createSelector(
+  [selectApplicationsState],
+  (applications) => applications.loadingResumeScreeningResponses
+);
+
 export const selectApplicationsError = createSelector(
   [selectApplicationsState],
   (applications) => applications.error
@@ -78,6 +88,9 @@ export const selectApplicationsFilters = createSelector(
   [(state: RootState) => state.applications],
   (applications) => applications.filters
 );
+
+
+
 
 
 

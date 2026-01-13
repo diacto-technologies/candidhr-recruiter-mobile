@@ -11,10 +11,10 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Button from '../../atoms/button';
 import { RootStackParamList } from '../../../types/navigation';
+import { screenWidth } from '../../../utils/constants';
+import { screenHeight } from '../../../utils/devicelayout';
 
-type NavigationProps = NativeStackNavigationProp<RootStackParamList, 'app/modalbox'>;
 const ModalBox = (props: IModalBox) => {
-  const navigation = useNavigation<NavigationProps>();
   const styles = useStyles();
 
   const renderAnimation = () =>
@@ -88,7 +88,7 @@ const ModalBox = (props: IModalBox) => {
               {
                 backgroundColor: props.backgroundColor || colors.common.white,
                 width: props.width ?? screenWidth,
-                height: props.height ?? screenHeight,
+                // height: props.height ?? screenHeight,
                 borderRadius: props.borderRadius ?? 10,
               },
             ]}
@@ -106,40 +106,6 @@ const ModalBox = (props: IModalBox) => {
               {renderMessage()}
             </View>
             {props.children}
-
-            {props.showWhiteModal ? (
-              <View style={styles.whiteModalButtonContainer}>
-                <View style={styles.flexView}>
-                  <Button
-                    onPress={() => {
-                      props.onButtonPress?.();
-                      navigation.navigate("app/start")
-                    }}
-                    variant="outline">Goto Home</Button>
-                </View>
-                <View style={styles.flexView}>
-                  <Button
-                    onPress={() => {
-                      props.onButtonPress?.();
-                      navigation.navigate('customer/order/track', { _order: props.data?.order_number as string, _id: props.data?.id as string });
-                    }}
-                  >Track Order</Button>
-                </View>
-              </View>
-            ) : (
-              <Pressable
-                style={[styles.button, props.buttonStyle]}
-                onPress={props.onButtonPress || props.onClose}
-              >
-                <Typography
-                  variant="H1B"
-                  color={props.showGreenModal ? colors.mainColors.main : colors.common.white}
-                  style={{ textAlign: 'center' }}
-                >
-                  {props.buttonText}
-                </Typography>
-              </Pressable>
-            )}
           </View>
         </View>
       </Modal>

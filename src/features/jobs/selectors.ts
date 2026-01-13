@@ -42,3 +42,31 @@ export const selectUnpublishedCount = createSelector(
   [selectJobsState],
   (jobs) => jobs.unpublishedCount
 );
+
+export const selectJobFilters = createSelector(
+  [selectJobsState],
+  (jobs) => jobs.filters
+);
+
+
+export const selectPublishedJobs = createSelector(
+  [selectJobsState],
+  (jobs) =>jobs.publishedJobs
+);
+
+export const selectUnpublishedJobs = createSelector(
+  [selectJobsState],
+  (jobs) => jobs.unpublishedJobs
+);
+
+export const selectJobsActiveTab = createSelector(
+  [selectJobsState],
+  (jobs) => jobs.activeTab
+);
+
+export const selectIsTabLoading = createSelector(
+  [selectJobsState],
+  (jobs) => jobs.isTabLoading
+);
+
+

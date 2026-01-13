@@ -8,17 +8,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 import { colors } from '../../../theme/colors';
 import Typography from '../../atoms/typography';
 import { IBottomsheet } from './bottomsheet';
-import IconButton from '../../atoms/iconbutton';
 import { useStyles } from './styles';
 import { useRNSafeAreaInsets } from '../../../hooks/useRNSafeAreaInsets';
 import { screenHeight } from '../../../utils/devicelayout';
-import { setApplicationsFilters } from '../../../features/applications/slice';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
-import AppliedFor from '../filtersheetcontent/locationchip';
 
 const BottomSheet = ({
   visible,
@@ -27,12 +23,11 @@ const BottomSheet = ({
   title,
   subTitle,
   showHeadline,
-  onClearAll
+  onClearAll,
 }: IBottomsheet) => {
   const { insetsTop } = useRNSafeAreaInsets();
   const backdropOpacity = useRef(new Animated.Value(0)).current;
   const [modalVisible, setModalVisible] = useState(false);
-  const dispatch = useAppDispatch();
   const styles = useStyles();
 
   useEffect(() => {
@@ -87,10 +82,9 @@ const BottomSheet = ({
           />
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={[styles.sheetContainer, { maxHeight: screenHeight - (insetsTop + 20), marginBottom: 20 }]}
+            style={[styles.sheetContainer, { maxHeight: screenHeight - (insetsTop + 0), marginBottom: 20 }]}
           >
             <View style={{
-              flex: 1,
               marginTop: 5,
               borderTopWidth: 2,
               borderLeftWidth: 2,
@@ -100,6 +94,7 @@ const BottomSheet = ({
               paddingTop: 10,
               marginHorizontal: 5,
               borderColor: colors.mainColors.borderColor,
+              gap:16
             }}>
               <Pressable style={{ width: 40, borderWidth: 2, borderRadius: 8, borderColor: '#E9EAEB', alignSelf: 'center' }} onPress={onClose}></Pressable>
               <View style={styles.header}>

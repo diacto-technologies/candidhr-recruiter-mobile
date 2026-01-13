@@ -17,6 +17,7 @@ const SlideAnimatedTab: React.FC<Props> = ({
   activeTab,
   onChangeTab,
   counts = {},
+  countShow=false
 }) => {
   const underlineX = useRef(new Animated.Value(0)).current;
   const underlineWidth = useRef(new Animated.Value(0)).current;
@@ -30,15 +31,25 @@ const SlideAnimatedTab: React.FC<Props> = ({
     const { x, width } = e.nativeEvent.layout;
     tabLayouts[index] = { x, width };
 
-    if (activeTab === tabs[index] && !initialized.current) {
-      underlineX.setValue(x);
-      underlineWidth.setValue(width);
-      initialized.current = true;
+    // Update underline if this is the active tab
+    if (activeTab === tabs[index]) {
+      if (!initialized.current) {
+        // Initial setup - set immediately without animation
+        underlineX.setValue(x);
+        underlineWidth.setValue(width);
+        initialized.current = true;
+      } else {
+        // Layout changed (e.g., counts loaded) - animate to new position
+        animateToTab(index);
+      }
     }
   };
 
   const animateToTab = (index: number) => {
-    const { x, width } = tabLayouts[index];
+    const layout = tabLayouts[index];
+    if (!layout) return;
+    
+    const { x, width } = layout;
 
     Animated.parallel([
       Animated.spring(underlineX, {
@@ -60,7 +71,6 @@ const SlideAnimatedTab: React.FC<Props> = ({
   const handlePress = (label: string, index: number) => {
     fadeAnim.setValue(0);
     onChangeTab(label, index);
-    animateToTab(index);
   };
 
   useEffect(() => {
@@ -70,12 +80,26 @@ const SlideAnimatedTab: React.FC<Props> = ({
     }
   }, [activeTab]);
 
+  // Update underline when counts change (tabs may have resized)
+  useEffect(() => {
+    if (initialized.current) {
+      const index = tabs.indexOf(activeTab);
+      if (tabLayouts[index]) {
+        // Use a small delay to ensure layout has updated
+        const timer = setTimeout(() => {
+          animateToTab(index);
+        }, 50);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [counts]);
+
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
       <View style={styles.tabRow}>
         {tabs.map((item, index) => {
           const isActive = item === activeTab;
-          const count = counts[item] ?? 0;
+          const count = typeof counts[item] === "number" ? counts[item] : null;
 
           return (
             <TouchableOpacity
@@ -91,7 +115,7 @@ const SlideAnimatedTab: React.FC<Props> = ({
                 >
                   {item}
                 </Typography>
-                {count > 0 && (
+                {count &&(
                   <View
                     style={[
                       styles.countBadge,

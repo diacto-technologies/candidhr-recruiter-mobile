@@ -5,14 +5,11 @@ import {
   Pressable,
   View,
   Text,
-  StyleSheet,
 } from "react-native";
-import { colors } from "../../../theme/colors";
 import { useStyles } from "./styles";
-
 interface MenuItem {
   name: string;
-  title: string;
+  title?: string;
   onPress: () => void;
 }
 
@@ -28,14 +25,14 @@ const ThreeDotDropdown: React.FC<ThreeDotDropdownProps> = ({
   visible,
   onClose,
   menuItems,
-  top = 200,
+  top = 90,
   right = 20,
 }) => {
   const styles = useStyles();
   return (
     <Modal transparent visible={visible} animationType="fade">
       <Pressable style={styles.overlay} onPress={onClose}>
-        <View style={[styles.dropdownContainer, { top, right }]}>
+        <View style={[styles.dropdownContainer, { bottom:top, right }]}>
           {menuItems.map((item, index) => (
             <View key={index}>
               {index > 0 && <View style={styles.divider} />}
@@ -43,7 +40,7 @@ const ThreeDotDropdown: React.FC<ThreeDotDropdownProps> = ({
                 style={styles.dropdownItem}
                 android_ripple={{ color: "#f0f0f0" }}
                 onPress={() => {
-                  //item.onPress();
+                  item.onPress();
                   onClose();
                 }}
               >

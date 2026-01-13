@@ -9,9 +9,9 @@ export { default as FeatureConsumptionChart } from './featureconsumptionchart';
 export { default as FilterSheetContent } from './filtersheetcontent';
 export { default as JobCardList } from './jobs/jobcardlist/index';
 export { default as SortingAndFilter } from './sortingandfilter';
+export { default as ResumeModal } from './resumemodal';
 
 // Export types
 export type { IHeader } from './header/header';
-export type { IBottomSheet } from './bottomsheet/bottomsheet';
+export type { IBottomsheet } from './bottomsheet/bottomsheet';
 export type { IModalBox } from './modalbox/modalbox';
-

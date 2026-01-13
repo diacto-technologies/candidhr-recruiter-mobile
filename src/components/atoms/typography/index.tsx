@@ -1,14 +1,12 @@
-// components/typography/Typography.tsx
 import React, { Fragment } from 'react';
 import { Text } from 'react-native';
 import { colors } from '../../../theme/colors';
 import { TypographyProps } from './typography';
 import { Fonts, fontweightType } from '../../../theme/fonts';
+import { RFValue } from "react-native-responsive-fontsize";
 
-// ---------------- TEXT VARIANTS ----------------
 
 export const textvariant = {
-  // Headings
   H1XL: {
     fontFamily: Fonts.InterSemiBold,
     fontSize: 30,

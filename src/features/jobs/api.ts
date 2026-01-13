@@ -5,24 +5,51 @@ import { CreateJobRequest, UpdateJobRequest, Job, GetJobsParams, JobsListApiResp
 export const jobsApi = {
   getJobs: async (params?: GetJobsParams): Promise<JobsListApiResponse> => {
     const queryParams = new URLSearchParams();
-
-    // Always include page (default to 1)
+  
     queryParams.append("page", (params?.page || 1).toString());
-    
-    // Always include limit (default to 10 if not provided or 0)
-    const limit = params?.limit && params.limit > 0 ? params.limit : 10;
-    queryParams.append("limit", limit.toString());
-    
+    queryParams.append("limit", (params?.limit && params.limit > 0 ? params.limit : 10).toString());
+  
     if (typeof params?.published === "boolean") {
       queryParams.append("published__icontains", String(params.published));
     }
-
+  
+    if (params?.title) {
+      queryParams.append("title__icontains", params.title);
+    }
+  
+    if (params?.experience) {
+      console.log(params?.experience,"experienceexperienceexperienceexperience")
+      queryParams.append("experience__in", String(params.experience));
+    }
+  
+    if (params?.employmentType) {
+      queryParams.append("employment_type__icontains", params.employmentType);
+    }
+  
+    if (params?.location) {
+      queryParams.append("location__icontains", params.location);
+    }
+  
+    if (params?.createdBy) {
+      queryParams.append("owner__name__icontains", params.createdBy);
+    }
+  
+    // ⭐ NEW — close date filter
+    if (params?.closeDate) {
+      queryParams.append("close_date__in", params.closeDate);
+    }
+  
+    // ⭐ NEW — ordering
+    if (params?.orderBy) {
+      queryParams.append("o", params.orderBy);
+    }
+  
     const query = queryParams.toString();
-
-    return apiClient.get(
-      `${API_ENDPOINTS.JOBS.LIST}${query ? `?${query}` : ""}`
-    );
+  
+    return apiClient.get(`${API_ENDPOINTS.JOBS.LIST}?${query}`);
   },
+  
+  
 
   getJobDetail: async (id: string): Promise<JobDetailApiResponse> => {
     return apiClient.get(API_ENDPOINTS.JOBS.DETAIL(id));

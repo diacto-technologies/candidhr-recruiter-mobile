@@ -9,6 +9,7 @@ import Divider from "../../../atoms/divider";
 import Icon from "../../../atoms/vectoricon";
 import { useAppSelector } from "../../../../hooks/useAppSelector";
 import { selectSelectedApplication } from "../../../../features/applications/selectors";
+import Shimmer from "../../../atoms/shimmer";
 
 interface Props {
   summary: string;
@@ -23,6 +24,7 @@ interface Props {
     certifications: string[];
   };
   risks: string[];
+  isloading:boolean
 }
 
 interface ResumeSkill {
@@ -31,6 +33,63 @@ interface ResumeSkill {
   relevance_score: number;
 }
 
+
+const AiSummaryShimmer = () => {
+  return (
+    <View style={styles.card}>
+      {/* Header */}
+      <View style={styles.headerRow}>
+        <Shimmer width={20} height={16} borderRadius={4} />
+        <Shimmer width="35%" height={18} />
+      </View>
+
+      {/* Narrative summary */}
+      <View style={styles.narrativeBox}>
+        <Shimmer width="40%" height={14} />
+        <Shimmer width="100%" height={14} />
+        <Shimmer width="95%" height={14} />
+        <Shimmer width="85%" height={14} />
+      </View>
+
+      {/* Match score */}
+      <Shimmer width="30%" height={16} />
+      <Shimmer width="60%" height={8} borderRadius={8} />
+
+      {/* Job readiness */}
+      <Shimmer width="35%" height={16} />
+      <Shimmer width="60%" height={8} borderRadius={8} />
+
+      {/* Snapshot */}
+      <View style={styles.snapshotRow}>
+        <Shimmer width="45%" height={48} borderRadius={8} />
+        <Shimmer width="45%" height={48} borderRadius={8} />
+      </View>
+
+      {/* Tags */}
+      <View>
+        {[1, 2, 3, 4].map(i => (
+          <Shimmer key={i} width={70} height={24} borderRadius={6} />
+        ))}
+      </View>
+
+      {/* Quick facts */}
+      {[1, 2, 3].map(i => (
+        <View key={i}>
+          <Shimmer width="30%" height={12} />
+          <Shimmer width="50%" height={14} />
+        </View>
+      ))}
+
+      {/* Risks */}
+      <View style={styles.riskBox}>
+        <Shimmer width="60%" height={14} />
+        <Shimmer width="90%" height={12} />
+        <Shimmer width="85%" height={12} />
+      </View>
+    </View>
+  );
+};
+
 const AiSummary = ({
   summary,
   matchScore,
@@ -38,16 +97,20 @@ const AiSummary = ({
   matchedSkills,
   quickFacts,
   risks,
+  isloading
 }: Props) => {
   const [expanded, setExpanded] = useState(false);
   const application = useAppSelector(selectSelectedApplication);
+  if (isloading) {
+    return <AiSummaryShimmer/>
+  }
   return (
     <View style={styles.card}>
       {/* Header */}
       <View style={styles.headerRow}>
         <SvgXml xml={sparkles} height={15} width={20} />
         <Typography variant="semiBoldTxtlg" color={colors.gray[900]}>
-          AI summary
+          AI Summary
         </Typography>
       </View>
 
@@ -406,3 +469,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 });
+function selectApplicationDetailLoading(state: { auth: AuthState; profile: ProfileState; dashboard: AnalyticsState; jobs: JobsState; applications: ApplicationsState; } & PersistPartial): unknown {
+  throw new Error("Function not implemented.");
+}
+

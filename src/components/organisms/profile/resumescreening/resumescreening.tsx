@@ -7,7 +7,7 @@ import DetailedResume from './detailedresume';
 import { Typography } from '../../../atoms';
 import { colors } from '../../../../theme/colors';
 import { useAppSelector } from '../../../../hooks/useAppSelector';
-import { selectSelectedApplication } from '../../../../features/applications/selectors';
+import { selectApplicationsDetailLoading, selectSelectedApplication } from '../../../../features/applications/selectors';
 interface ResumeSkill {
   name: string;
   relevance_score: number | string;
@@ -24,6 +24,7 @@ interface SkillScoreItem {
 
 export default function ResumeScreening() {
   const application = useAppSelector(selectSelectedApplication);
+  const loading = useAppSelector(selectApplicationsDetailLoading);
   const matchedSkills =
     application?.resume?.skills_matched?.map((item: any) =>
       typeof item === "string" ? item : item?.name
@@ -55,6 +56,7 @@ export default function ResumeScreening() {
 
     return Math.round((total / skills.length) * 10);
   };
+
   // const calculateSkillScore = (skills: any[] = []) => {
   //   if (!skills.length) return 0;
 
@@ -66,7 +68,6 @@ export default function ResumeScreening() {
   //   // relevance_score is 0–10 → convert to %
   //   return Math.round((total / skills.length) * 10);
   // };
-
   return (
     <Fragment>
       <View style={styles.container}>
@@ -78,6 +79,7 @@ export default function ResumeScreening() {
         </View>
         <ResumeScore
           overall={application?.resume?.resume_score?.overall_score ?? "0"}
+          isloading={loading}
           status="Good"
           details={[
             { title: "Skill", percentage: (Number(application?.job?.score_weight?.skills) * 100) + "%" ?? "0", value: application?.resume?.resume_score?.skills_score ?? "_", completed: true },
@@ -89,13 +91,15 @@ export default function ResumeScreening() {
         />
 
         <SkillScore
-          title="Skill"
+          title="Skills"
+          isloading={loading}
           overall={String(calculateOverallSkillScore(application?.resume?.resume_json?.skills ?? []))}
           status="Below avg."
           data={skills}
         />
 
         <AiSummary
+          isloading={loading}
           summary={application?.resume?.ai_summary_json?.summary ?? "_"}
           matchScore={application?.resume?.ai_summary_json?.match_score ?? 0}
           readinessScore={application?.resume?.ai_summary_json?.job_readiness_score ?? 0}

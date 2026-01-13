@@ -20,8 +20,15 @@ export interface ApplicationsState {
     email: string,
     appliedFor: string,
     contact: string,
-    sort: string
+    sortBy: string,
+    sortDir: string,
+    sort: string   
   },
+  loadingApplications: boolean;
+  loadingApplicationDetail: boolean;
+  loadingAssessment: boolean;
+  loadingPersonality: boolean;
+  loadingResumeScreeningResponses:boolean;
 }
 
 export interface CreateApplicationRequest {
@@ -46,12 +53,16 @@ export interface Application {
     email: string;
     contact?: string | number | null;
     profile_pic?: string | null; // ✅ allows null
+    notice_period_in_months:number,
     location?: {
       city?: string | null;
       state?: string | null;
       country?: string | null;
       country_code?: string | null;
     };
+    github:string,
+    linkedin:string,
+    personal_website:string,
   };
 
   job: {

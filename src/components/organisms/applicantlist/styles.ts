@@ -30,8 +30,8 @@ export const useStyles = () => {
     },
 
     avatar: {
-      width: 40,
-      height: 40,
+      width: 42,
+      height: 42,
       borderRadius: 40,
       borderWidth: 1,
       borderColor: 'rgba(0, 0, 0, 0.08)',
@@ -112,5 +112,13 @@ export const useStyles = () => {
       fontWeight: '600',
       color: colors.gray[400],
     },
+    initialCircle: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 50,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor:colors.brand[100]
+    }
   });
 };

@@ -13,8 +13,10 @@ import {
 import {
   selectForgotPasswordLoading,
   selectForgotPasswordMessage,
-  selectAuthError
+  selectAuthError,
+  forgetPassowrdError
 } from '../../../features/auth/selectors';
+import { clearError } from '../../../features/auth/slice';
 
 const ForgetPasswordScreen = () => {
   const styles = useStyles();
@@ -23,17 +25,20 @@ const ForgetPasswordScreen = () => {
   const loading = useAppSelector(selectForgotPasswordLoading);
   const successMessage = useAppSelector(selectForgotPasswordMessage);
   const errorMessage = useAppSelector(selectAuthError);
+  const error = useAppSelector(forgetPassowrdError);
 
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState('');
-  useEffect(() => {
-    if (successMessage) {
-      navigate("CheckMailScreen");
-    }
-  }, [successMessage]);
+
+  // useEffect(() => {
+  //   if (successMessage) {
+  //     navigate("CheckMailScreen");
+  //   }
+  // }, [successMessage]);
 
   const handleReset = () => {
-    setEmailError(""); // Clear previous errors
+    setEmailError(""); // Clear previous email validation errors
+    // Note: Don't clear auth error here - let it be cleared by forgotPasswordRequest action
     if (!email.trim()) {
       setEmailError("Please enter your email.");
       return;
@@ -84,7 +89,7 @@ const ForgetPasswordScreen = () => {
             Forgot password
           </Typography>
           <Typography variant="regularTxtmd" color={colors.gray[600]}>
-            No worries, we’ll send you reset instructions.
+            Password reset link will be sent to the below registered email
           </Typography>
         </View>
 
@@ -98,6 +103,7 @@ const ForgetPasswordScreen = () => {
             onChangeText={(text) => {
               setEmail(text);
               setEmailError("");
+              if (errorMessage) dispatch(clearError()); // Clear error when user starts typing
             }}
             keyboardType="email-address"
             autoCapitalize="none"
@@ -119,17 +125,16 @@ const ForgetPasswordScreen = () => {
         >
           Reset password
         </Button>
-
-        {errorMessage ? (
-          <Typography
-            variant="regularTxtsm"
-            color={colors.error[600]}
-            style={{ marginTop: 12 }}
-          >
-            {errorMessage}
-          </Typography>
-          
-        ) : null}
+        <Typography variant="regularTxtsm" color={colors.error[600]}>
+          {error}{ }
+        </Typography>
+        {/* {errorMessage && (
+          <View style={{ marginTop: 16, backgroundColor: colors?.gray[100], alignItems: 'center', paddingVertical: 10, marginHorizontal: 10, borderRadius: 8 }}>
+            <Typography variant="regularTxtsm" color={colors.error[600]}>
+              {errorMessage}
+            </Typography>
+          </View>
+        )} */}
 
       </View>
     </SafeAreaView>

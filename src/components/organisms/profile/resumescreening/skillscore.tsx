@@ -7,6 +7,9 @@ import { colors } from "../../../../theme/colors";
 import { checkIcon } from "../../../../assets/svg/check";
 import { SvgXml } from "react-native-svg";
 import { Wavy_CheckIcon } from "../../../../assets/svg/wavy_check";
+import Shimmer from "../../../atoms/shimmer";
+import { useAppSelector } from "../../../../hooks/useAppSelector";
+import { selectApplicationsDetailLoading } from "../../../../features/applications/selectors";
 
 interface SkillItem {
   title: string;
@@ -19,10 +22,56 @@ interface Props {
   overall: string;
   status: string;
   data: SkillItem[];
+  isloading: boolean
 }
 
-const SkillScore = ({ title, overall, status, data }: Props) => {
+const SkillScoreShimmer = () => {
+  return (
+    <View style={styles.card}>
+      {/* Header */}
+      <View style={styles.headerRow}>
+        <Shimmer width="40%" height={18} />
+        <Shimmer width={60} height={20} borderRadius={999} />
+      </View>
+
+      {/* Gradient bar */}
+      <Shimmer height={44} borderRadius={8} />
+
+      {/* Tabs */}
+      <View style={styles.tabsRow}>
+        {[1, 2, 3].map(i => (
+          <Shimmer key={i} width={70} height={28} borderRadius={8} />
+        ))}
+      </View>
+
+      {/* Skill rows */}
+      {[1, 2, 3, 4, 5].map(i => (
+        <View key={i} style={styles.skillRow}>
+          <View style={styles.leftRow}>
+            <Shimmer width={20} height={20} borderRadius={10} />
+            <Shimmer width={120} height={14} />
+          </View>
+
+          <Shimmer width={36} height={14} />
+        </View>
+      ))}
+
+      {/* Divider */}
+      <Shimmer height={1} width="100%" />
+
+      {/* View more */}
+      <View style={styles.viewMore}>
+        <Shimmer width={80} height={14} />
+      </View>
+    </View>
+  );
+};
+
+
+const SkillScore = ({ title, overall, status, data, isloading }: Props) => {
+
   const [activeTab, setActiveTab] = useState("All");
+  const [expanded, setExpanded] = useState(false);
 
   const tabs = ["All", "Matched", "Unmatched"];
 
@@ -33,6 +82,10 @@ const SkillScore = ({ title, overall, status, data }: Props) => {
         activeTab === "Matched" ? item.matched : !item.matched
       );
 
+  const visibleData = expanded ? filteredData : filteredData.slice(0, 5);
+  if (isloading) {
+    return <SkillScoreShimmer />
+  }
   return (
     <View style={styles.card}>
       {/* Header */}
@@ -58,27 +111,39 @@ const SkillScore = ({ title, overall, status, data }: Props) => {
           style={styles.gradientBox}
         >
           <View style={styles.gradientTextcontainer}>
-            <Typography variant="mediumTxtsm" style={{ flex: 1 }} color={colors.gray[900]}>
+            <Typography
+              variant="mediumTxtsm"
+              style={{ flex: 1 }}
+              color={colors.gray[900]}
+            >
               Overall score
             </Typography>
-            <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>{overall}%</Typography>
+            <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
+              {overall}%
+            </Typography>
           </View>
         </LinearGradient>
       </View>
+
       {/* Tabs */}
       <View style={styles.tabsRow}>
         {tabs.map((tab) => (
           <TouchableOpacity
             key={tab}
-            onPress={() => setActiveTab(tab)}
+            onPress={() => {
+              setActiveTab(tab);
+              setExpanded(false); // reset when switching tabs
+            }}
             style={[
               styles.tabBtn,
-              activeTab === tab ? styles.tabBtnActive : styles.tabBtnDeactive, ,
+              activeTab === tab ? styles.tabBtnActive : styles.tabBtnDeactive,
             ]}
           >
             <Typography
               variant="mediumTxtsm"
-              color={activeTab === tab ? colors.brand[700] : colors.gray[700]}
+              color={
+                activeTab === tab ? colors.brand[700] : colors.gray[700]
+              }
             >
               {tab}
             </Typography>
@@ -87,38 +152,51 @@ const SkillScore = ({ title, overall, status, data }: Props) => {
       </View>
 
       {/* Skill List */}
-      {filteredData.map((item, index) => (
+      {visibleData.map((item, index) => (
         <View key={index} style={styles.skillRow}>
           <View style={styles.leftRow}>
             {item.matched ? (
-               <SvgXml xml={checkIcon} height={20} width={20}/>
+              <SvgXml xml={checkIcon} height={20} width={20} />
             ) : (
-              <SvgXml xml={Wavy_CheckIcon} height={20} width={20}/>
+              <SvgXml xml={Wavy_CheckIcon} height={20} width={20} />
             )}
+
             <Typography
               variant="mediumTxtsm"
               color={item.matched ? colors.gray[900] : colors.gray[600]}
               numberOfLines={2}
-              style={{ flex: 0.8,
-                flexShrink: 1,}}
+              style={{
+                flex: 0.8,
+                flexShrink: 1,
+              }}
             >
               {item.title}
             </Typography>
           </View>
 
-          <Typography variant="semiBoldTxtmd" color={colors.gray[700]}>{item.value}</Typography>
+          <Typography variant="semiBoldTxtmd" color={colors.gray[700]}>
+            {item.value}
+          </Typography>
         </View>
       ))}
 
       {/* Divider */}
       <View style={styles.divider} />
 
-      {/* View more */}
-      <TouchableOpacity style={styles.viewMore}>
+      {/* View more — ALWAYS SHOWN */}
+      <TouchableOpacity
+        style={styles.viewMore}
+        onPress={() => setExpanded(!expanded)}
+      >
         <Typography variant="semiBoldTxtsm" color={colors.brand[700]}>
-          View more
+          {expanded ? "View less" : "View more"}
         </Typography>
-        <Ionicons  name="chevron-down" size={20} color={colors.brand[500]} />
+
+        <Ionicons
+          name={expanded ? "chevron-up" : "chevron-down"}
+          size={20}
+          color={colors.brand[500]}
+        />
       </TouchableOpacity>
     </View>
   );
@@ -169,6 +247,7 @@ const styles = StyleSheet.create({
     gap: 8,
     alignItems: 'center'
   },
+
   tabBtn: {
     paddingVertical: 4,
     paddingHorizontal: 12,
@@ -193,7 +272,7 @@ const styles = StyleSheet.create({
   leftRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap:8
+    gap: 8,
   },
 
   divider: {
@@ -207,21 +286,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
+
   gradientWrapper: {
     flex: 1,
     overflow: "hidden",
   },
+
   gradientTextcontainer: {
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingVertical: 12,
     alignItems: 'center'
   },
+
   tabBtnActive: {
     backgroundColor: colors.brand[50],
     borderColor: colors.brand[200],
     borderWidth: 1,
   },
+
   tabBtnDeactive: {
     backgroundColor: colors.gray[50],
     borderColor: colors.gray[200],

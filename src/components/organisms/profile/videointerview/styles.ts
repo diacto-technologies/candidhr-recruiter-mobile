@@ -3,7 +3,7 @@ import { colors } from '../../../../theme/colors';
 
 export const useStyles = () => {
     return StyleSheet.create({
-        container: { gap: 16, flex: 1, paddingBottom: 50 },
+        container: { gap: 16, flex: 1},
 
         row: { flexDirection: "row", alignItems: "center", gap: 8 },
         rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },

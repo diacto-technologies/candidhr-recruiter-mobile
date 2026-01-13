@@ -15,6 +15,7 @@ import CheckMailScreen from '../screens/auth/checkmail'
 import CreateNewPasswordScreen from '../screens/auth/createnewpassword'
 import ApplicationOverviewDetails from '../screens/applications/dashboard/ApplicationStageOverviewDetails'
 import linking from './linking'
+import OrgnizationalSwitch from '../screens/auth/orgnizationalswitch'
 
 const Stack= createNativeStackNavigator()
 const Navigation:FC = () => {
@@ -22,6 +23,7 @@ const Navigation:FC = () => {
     <NavigationContainer ref={navigationRef} linking={linking}>
         <Stack.Navigator initialRouteName='SplashScreen' screenOptions={{headerShown:false}}>
             <Stack.Screen  name='SplashScreen' component={SplashScreen}/>
+            <Stack.Screen  name='OrgnizationalSwitch' component={OrgnizationalSwitch} options={{animation:'fade',statusBarStyle: 'dark'}}/>
             <Stack.Screen  name='LoginScreen' component={LoginScreen} options={{animation:'fade',statusBarStyle: 'dark'}}/>
             <Stack.Screen  name='ForgetPasswordScreen' component={ForgetPasswordScreen} options={{animation:'fade',statusBarStyle: 'dark'}} />
             <Stack.Screen  name='JobDetailScreen' component={JobDetailScreen} options={{animation:'fade'}}/>

@@ -22,6 +22,8 @@ import { LoginRequest, LoginResponse, RegisterRequest } from "./types";
 import { getProfileRequest } from "../profile/slice";
 import { forgotPasswordFailureAction, forgotPasswordSuccessAction, resetPasswordFailureAction, resetPasswordSuccessAction } from "./actions";
 import { navigate } from "../../utils/navigationUtils";
+import { ToastAndroid } from "react-native";
+import { showToastMessage } from "../../utils/toast";
 
 // Worker sagas
 function* loginWorker(action: { type: string; payload: LoginRequest }): Generator<any, void, any> {
@@ -43,7 +45,7 @@ function* loginWorker(action: { type: string; payload: LoginRequest }): Generato
   } catch (error: any) {
     // Log detailed error for debugging
     if (__DEV__) {
-      console.error('Login Error:', {
+      console.log('Login Error:', {
         message: error.message,
         error: error,
         stack: error.stack,
@@ -117,7 +119,7 @@ function* forgotPasswordWorker(action: any): Generator<any, void, any> {
   try {
     const response = yield call(authApi.sendResetPasswordEmail, action.payload);
     yield put(forgotPasswordSuccessAction(response.message));
-    navigate("CreateNewPasswordScreen");
+    showToastMessage(response.message, 'success');
   } catch (error: any) {
     yield put(forgotPasswordFailureAction(error.Error));
   }

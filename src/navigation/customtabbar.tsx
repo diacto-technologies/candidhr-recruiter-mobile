@@ -17,13 +17,34 @@ import { Colors } from "../utils/constants";
 import { SvgXml } from "react-native-svg";
 import { horizontalThreedotIcon } from "../assets/svg/horizontalthreedoticon";
 import { menuItems } from "../utils/dummaydata";
+import { useDispatch } from "react-redux";
+import { clearCredentials, logoutSuccess, setOrigin } from "../features/auth/slice";
+import { resetAndNavigate } from "../utils/navigationUtils";
+import { removeTokens } from "../utils/tokenUtils";
+import { persistor } from "../store";
 
 const CustomTabBar: FC<BottomTabBarProps> = (props) => {
   const bottom = useSafeAreaInsets();
   const { state, navigation } = props;
+  const dispatch = useDispatch();
 
   const [dropdownVisible, setDropdownVisible] = useState(false);
-  const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
+
+  const handleLogout = async () => {
+    try {
+      await removeTokens();
+      dispatch(logoutSuccess());
+      await persistor.purge();
+    } catch (_) {
+      // Ignore errors during cleanup
+    }
+    resetAndNavigate('GetStartedScreen');
+  };
+
+  const menuItemsWithHandlers = menuItems.map((item) => ({
+    ...item,
+    onPress: item.name === "Logout" ? handleLogout : () => {},
+  }));
 
   // hide on profile
   if (state.routes[state.index].name === "Profile") {
@@ -69,8 +90,8 @@ const CustomTabBar: FC<BottomTabBarProps> = (props) => {
       <ThreeDotDropdown
         visible={dropdownVisible}
         onClose={() => setDropdownVisible(false)}
-        menuItems={menuItems as []}
-        top={bottom.top +600}
+        menuItems={menuItemsWithHandlers}
+        top={bottom.top+40}
         right={40}
       />
     </View>

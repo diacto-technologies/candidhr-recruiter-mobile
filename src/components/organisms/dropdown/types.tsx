@@ -10,12 +10,14 @@ export interface DropdownProps {
     options: Option[];
     labelKey: string;
     valueKey: string; 
-    onSelect: (value: Option) => void;
+    usernameKey?: string; // Key for username field
+    showIndexAndTotal?: boolean; // Show index number and total count (default: true)
+    onSelect?: (value: Option) => void;
     error?: string; 
     disableDropdown?:boolean;
     hasMoreData?:()=>void,
     containerStyle?:StyleProp<ViewStyle>;
-    onChangeText: (text : string) => void;
+    onChangeText?: (text : string) => void;
     textStyle?:StyleProp<TextStyle>;
     isLoader?:boolean;
     clearText?:boolean;
@@ -31,4 +33,6 @@ export interface DropdownProps {
     disabled?: boolean;
     customLabelStyle?:StyleProp<TextStyle>
     loaderStyle?:StyleProp<TextStyle>
+    showHelpIcon?: boolean;
+    statusKey?: string;
 }

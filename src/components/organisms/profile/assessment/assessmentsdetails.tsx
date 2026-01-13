@@ -173,6 +173,7 @@ const AssessmentsDetails = ({ style }: Props) => {
       }
     ) ?? [];
 
+    console.log(assessmentDetailedReport?.result?.proctoring?.video_file,"assessmentDetailedReport?.result?.proctoring?.video_file")
 
   return (
     <View style={[styles.container, style]}>

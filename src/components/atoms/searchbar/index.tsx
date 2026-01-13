@@ -1,9 +1,8 @@
 import React from 'react';
-import { View, TextInput, StyleSheet, TextInputProps, Platform } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { View, TextInput, StyleSheet, Text, Platform, TextInputProps } from 'react-native';
+import { SvgXml } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
 import { searchIcon } from '../../../assets/svg/search';
-import { SvgXml } from 'react-native-svg';
 
 interface SearchBarProps extends TextInputProps {
   value: string;
@@ -19,14 +18,24 @@ const SearchBar: React.FC<SearchBarProps> = ({
 }) => {
   return (
     <View style={styles.container}>
-     <SvgXml xml={searchIcon} style={styles.icon} />
+      <SvgXml xml={searchIcon} style={styles.icon} />
+
+      {/* Fake placeholder */}
+      {!value && (
+        <Text
+          numberOfLines={1}
+          ellipsizeMode="tail"
+          style={styles.placeholder}
+        >
+          {placeholder}
+        </Text>
+      )}
 
       <TextInput
         style={styles.input}
-        placeholder={placeholder}
-        placeholderTextColor="#A3A3A7"
         value={value}
         onChangeText={onChangeText}
+        placeholder=""
         {...rest}
       />
     </View>
@@ -42,7 +51,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.gray[300],
     paddingHorizontal: 14,
-    height:44,
+    height: 44,
     shadowColor: '#0A0D12',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
@@ -56,6 +65,13 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 18,
     color: colors.gray[500],
+  },
+  placeholder: {
+    position: 'absolute',
+    left: 46, // icon margin + padding
+    right: 10,
+    color: '#A3A3A7',
+    fontSize: 18,
   },
 });
 

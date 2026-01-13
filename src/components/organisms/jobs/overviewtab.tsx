@@ -8,14 +8,82 @@ import { SvgXml } from "react-native-svg";
 import { employeeIcon } from "../../../assets/svg/employee";
 import { ScrollView } from "react-native-gesture-handler";
 import { useAppSelector } from "../../../hooks/useAppSelector";
-import { selectSelectedJob } from "../../../features/jobs/selectors";
+import { selectJobsLoading, selectSelectedJob } from "../../../features/jobs/selectors";
 import { useWindowDimensions } from 'react-native';
 import { extractSections } from "../../../utils/extractSections";
+import Shimmer from "../../atoms/shimmer";
 
+
+const OverviewTabShimmer = () => {
+  return (
+    <ScrollView>
+      <View style={styles.container}>
+        {/* Job Description */}
+        <Shimmer width="50%" height={18} />
+        <Shimmer height={14} />
+        <Shimmer height={14} width="90%" />
+        <Shimmer height={14} width="80%" />
+
+        {/* Responsibilities */}
+        <View style={styles.section}>
+          <Shimmer width="40%" height={18} />
+          {[1, 2, 3].map((i) => (
+            <View key={i} style={styles.bulletRow}>
+              <Shimmer width={10} height={10} borderRadius={5} />
+              <Shimmer height={14} width="85%" />
+            </View>
+          ))}
+        </View>
+
+        {/* Skills & Qualifications */}
+        <View style={styles.section}>
+          <Shimmer width="45%" height={18} />
+          {[1, 2, 3].map((i) => (
+            <View key={i} style={styles.bulletRow}>
+              <Shimmer width={10} height={10} borderRadius={5} />
+              <Shimmer height={14} width="80%" />
+            </View>
+          ))}
+        </View>
+
+        {/* Skills required (tags) */}
+        <View style={styles.section}>
+          <Shimmer width="35%" height={18} />
+          <View style={styles.tagWrap}>
+            {[1, 2, 3, 4].map((i) => (
+              <Shimmer key={i} width={60} height={24} borderRadius={6} />
+            ))}
+          </View>
+        </View>
+
+        {/* About Company */}
+        <View style={styles.section}>
+          <Shimmer width="40%" height={18} />
+          <Shimmer height={14} width="90%" />
+
+          <View style={styles.iconRow}>
+            <Shimmer width={16} height={16} borderRadius={8} />
+            <Shimmer width={100} height={14} />
+          </View>
+
+          <View style={styles.iconRow}>
+            <Shimmer width={16} height={16} borderRadius={8} />
+            <Shimmer width={120} height={14} />
+          </View>
+        </View>
+      </View>
+    </ScrollView>
+  );
+};
 const OverviewTab = () => {
   const jobs = useAppSelector(selectSelectedJob);
+  const loading=useAppSelector(selectJobsLoading)
   const extracted = extractSections(jobs?.jd_html ?? "");
   const { width } = useWindowDimensions();
+
+  if(loading){
+    return <OverviewTabShimmer/>
+  }
   return (
     <Fragment>
       <ScrollView>
@@ -82,7 +150,9 @@ const OverviewTab = () => {
             <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>Skills required</Typography>
             <View style={styles.tagWrap}>
               {jobs?.must_have_skills.map((item, index) => (
-                <Typography key={index} style={styles.tag}>{item.value}</Typography>
+                <View style={styles.tag}  key={index}>
+                <Typography variant="regularTxtsm" color={colors.gray[700]}>{item.value}</Typography>
+                </View>
               ))}
             </View>
           </View>
@@ -136,6 +206,10 @@ const styles = StyleSheet.create({
   },
   bulletText: {
     flex: 1,
+  },
+  section: {
+    gap: 8,
+    marginTop: 16,
   },
 
 });
