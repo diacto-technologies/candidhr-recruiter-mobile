@@ -2,5 +2,6 @@
     "java.compile.nullAnalysis.mode": "automatic",
     "java.project.sourcePaths": [
         "src/assets/images"
-    ]
+    ],
+    "java.configuration.updateBuildConfiguration": "interactive"
 }

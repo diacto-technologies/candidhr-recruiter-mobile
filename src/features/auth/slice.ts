@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AuthState, User, LoginResponse, RegisterResponse } from "./types";
+import { stat } from "react-native-fs";
 
 const initialState: AuthState = {
   user: null,
@@ -17,6 +18,7 @@ const initialState: AuthState = {
   resetPasswordLoading: false,
   resetPasswordMessage: null,
   resetPasswordError: null,
+  origin:"",
 };
 
 const authSlice = createSlice({
@@ -74,6 +76,7 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.loading = false;
       state.error = null;
+      state.origin = ""; 
     },
 
     // Token refresh
@@ -155,6 +158,10 @@ const authSlice = createSlice({
       state.resetPasswordLoading = false;
       state.resetPasswordError = action.payload;
     },
+
+    setOrigin: (state, action: PayloadAction<string>) => {
+      state.origin = action.payload;
+    },
   },
 });
 
@@ -183,6 +190,7 @@ export const {
   resetPasswordRequest,
   resetPasswordSuccess,
   resetPasswordFailure,
+  setOrigin
 } = authSlice.actions;
 
 export default authSlice.reducer;

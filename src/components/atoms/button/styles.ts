@@ -1,6 +1,7 @@
 import { StyleSheet } from 'react-native';
 import { IButton } from './button';
 import { colors } from '../../../theme/colors';
+import { transparent } from 'react-native-paper/lib/typescript/styles/themes/v2/colors';
 
 export const useStyles = (props: IButton & { pressed?: boolean }) => {
   const heightMap = {
@@ -27,7 +28,8 @@ export const useStyles = (props: IButton & { pressed?: boolean }) => {
       //minWidth: 140,
       //paddingHorizontal: props.paddingHorizontal ?? 32,
       borderRadius: radius,
-      backgroundColor:props.disabled?colors.brand[300]:bgColor,
+      backgroundColor: props.disabled ? '#cecece' : bgColor,
+      // opacity: props.disabled ? 0.7 : 1,
       overflow: 'hidden',
       justifyContent: 'center',
       alignItems: 'center',

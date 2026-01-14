@@ -1,20 +1,34 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { JobsState, Job,CreateJobRequest,UpdateJobRequest, JobsListApiResponse, GetJobsParams, JobDetail } from "./types";
+import { JobsState, Job, CreateJobRequest, UpdateJobRequest, JobsListApiResponse, GetJobsParams, JobDetail } from "./types";
 
 const initialState: JobsState = {
-  jobs:[],
+  jobs: [],
+  publishedJobs: [],
+  unpublishedJobs: [],
   selectedJob: null,
   publishedCount: 0,
   unpublishedCount: 0,
   loading: false,
   error: null,
+  activeTab: "Published",
   pagination: {
     page: 1,
     limit: 10,
     total: 0,
   },
   hasMore: true,
+  filters: {
+    title: "",
+    experience: "",
+    employmentType: "",
+    location: "",
+    owner_name: "",
+    closeDate: "",
+    closeDateTo: "",
+  },
+  isTabLoading: false
 };
+
 
 const jobsSlice = createSlice({
   name: "jobs",
@@ -26,26 +40,38 @@ const jobsSlice = createSlice({
     ) => {
       state.loading = true;
       state.error = null;
+      state.isTabLoading = _action.payload?.append === false;
     },
     getJobsSuccess: (
       state,
       action: PayloadAction<{
         page: number;
         append: boolean;
-        published: boolean;   // add this in action
+        published: boolean;
         data: JobsListApiResponse;
+        onlyCount?: boolean;
       }>
     ) => {
-      const { page, append, data, published } = action.payload;
+      const { page, append, data, published, onlyCount } = action.payload;
     
       state.loading = false;
+      state.isTabLoading = false;
+    
+      // ✅ COUNT ONLY MODE
+      if (onlyCount) {
+        if (published) {
+          state.publishedCount = data.count;
+        } else {
+          state.unpublishedCount = data.count;
+        }
+        return; // ⛔ DO NOT TOUCH JOB LIST
+      }
+    
+      // ✅ LIST MODE
       state.pagination.page = page;
       state.pagination.total = data.count;
     
-      // update job list
       state.jobs = append ? [...state.jobs, ...data.results] : data.results;
-    
-      // pagination flag
       state.hasMore = state.jobs.length < data.count;
     
       if (published) {
@@ -53,13 +79,12 @@ const jobsSlice = createSlice({
       } else {
         state.unpublishedCount = data.count;
       }
-    
-      state.error = null;
     },
-    
+
     getJobsFailure: (state, action: PayloadAction<string>) => {
       state.loading = false;
       state.error = action.payload;
+      state.isTabLoading = false;
     },
     getJobDetailRequest: (state, _action: PayloadAction<string>) => {
       state.loading = true;
@@ -130,6 +155,26 @@ const jobsSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    setJobFilters: (state, action: PayloadAction<any>) => {
+      state.filters = {
+        ...state.filters,
+        ...action.payload
+      };
+    },
+    clearJobFilters: (state) => {
+      state.filters = {
+        title: "",
+        experience: "",
+        employmentType: "",
+        location: "",
+        owner_name: "",
+        closeDate: "",
+        closeDateTo: "",
+      };
+    },
+    setActiveTab: (state, action: PayloadAction<"Published" | "Unpublished">) => {
+      state.activeTab = action.payload;
+    },
   },
 });
 
@@ -151,6 +196,9 @@ export const {
   deleteJobFailure,
   setSelectedJob,
   clearError,
+  setJobFilters,
+  clearJobFilters,
+  setActiveTab
 } = jobsSlice.actions;
 
 export default jobsSlice.reducer;

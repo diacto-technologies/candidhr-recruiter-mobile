@@ -1,7 +1,6 @@
 import React, { Fragment, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { Header, Button, StatusBar, StatCard, ApplicationStageChart, FeatureConsumptionChart, ApplicationStageOverview, SortingAndFilter, BottomSheet } from '../../../components';
-import { filtersOption } from '../../../utils/dummaydata';
+import { Header, Button, StatCard, ApplicationStageChart, FeatureConsumptionChart, ApplicationStageOverview, SortingAndFilter, BottomSheet } from '../../../components';
 import { colors } from '../../../theme/colors';
 import { useRNSafeAreaInsets } from '../../../hooks/useRNSafeAreaInsets';
 import { SafeAreaView } from 'react-native-safe-area-context';

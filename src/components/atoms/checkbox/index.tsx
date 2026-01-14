@@ -28,7 +28,7 @@ const CheckBox = (props: ICheckBox) => {
       }}
       style={styles.checkBox}
     >
-      {props.checked && <SvgXml xml={checkboxChecked}/>}
+      {props.checked && <SvgXml xml={checkboxChecked} fill={colors.brand[500]}/>}
     </Pressable>
   );
 };

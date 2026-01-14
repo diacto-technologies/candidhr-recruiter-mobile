@@ -4,8 +4,10 @@ import Typography from "../../../atoms/typography";
 import { colors } from "../../../../theme/colors";
 import FooterButtons from "../../../molecules/footerbuttons";
 import { useAppSelector } from "../../../../hooks/useAppSelector";
-import { selectSelectedApplication } from "../../../../features/applications/selectors";
+import { selectApplicationsDetailLoading, selectSelectedApplication } from "../../../../features/applications/selectors";
 import { formatMonDDYYYY } from "../../../../utils/dateformatter";
+import Shimmer from "../../../atoms/shimmer";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 interface WorkItem {
   title: string;
@@ -91,170 +93,295 @@ export const getRelevanceStyles = (
     };
 };
 
-
-
-
-const DetailedResume = () => {
-  const application = useAppSelector(selectSelectedApplication);
-
+const DetailedResumeShimmer = () => {
   return (
     <View style={styles.card}>
-      <Typography variant="semiBoldTxtlg" color={colors.gray[900]}>
-        Detailed resume
-      </Typography>
+      {/* Title */}
+      <Shimmer width="40%" height={20} />
 
-      {/* WORK EXPERIENCE */}
-      <View style={styles.sectionHeader}>
-        <Typography variant="mediumTxtsm" color={colors.gray[600]}>
-          WORK EXPERIENCE
-        </Typography>
-        <View style={styles.roundedConatiner}>
-          <Typography variant="semiBoldTxtxs" color={colors.gray[600]}>
-            {application?.resume?.work_experience.length ?? 0}
-          </Typography>
-        </View>
-      </View>
-
-      {application?.resume?.work_experience?.map((item, index) => (
-        <View key={index} style={styles.block}>
-          <View style={styles.row}>
-            <Typography variant="semiBoldTxtmd" color={colors.gray[900]} style={{ flexShrink: 1 }}>{item?.position ?? "_"}</Typography>
-            {item?.company && (
-              <View style={[styles.relevantPill, { backgroundColor: getRelevanceStyles(item?.relevance).backgroundColor, borderColor: getRelevanceStyles(item?.relevance).borderColor }]}>
-                <Typography variant="mediumTxtxs" color={getRelevanceStyles(item?.relevance).textColor}>
-                  {formatRelevance(item?.relevance)}
-                </Typography>
-              </View>
-            )}
+      {/* Repeated sections */}
+      {[1, 2, 3, 4].map(section => (
+        <View key={section} style={{ gap: 12 }}>
+          {/* Section header */}
+          <View style={styles.sectionHeader}>
+            <Shimmer width="30%" height={14} />
+            <Shimmer width={24} height={14} borderRadius={8} />
           </View>
-          <Typography variant="mediumTxtsm" color={colors.gray[700]}>
-            {item?.company ?? "_"}
-          </Typography>
-          <Typography variant="regularTxtsm" color={colors.gray[600]}>
-            {formatMonDDYYYY(item?.startDate, "MMM YYYY")}, {formatMonDDYYYY(item?.endDate, "MMM YYYY")}
-          </Typography>
 
-          <Typography
-            variant="regularTxtsm"
-            color={colors.gray[600]}
-          >
-            {item.description}
-          </Typography>
-        </View>
-      ))}
-
-      {/* PROJECTS */}
-      <View style={styles.sectionHeader}>
-        <Typography variant="mediumTxtsm" color={colors.gray[600]}>
-          PROJECTS
-        </Typography>
-        <View style={styles.roundedConatiner}>
-          <Typography variant="semiBoldTxtxs" color={colors.gray[600]}>
-            {application?.resume?.projects.length ?? 0}
-          </Typography>
-        </View>
-      </View>
-
-      {application?.resume?.projects?.map((item, index) => (
-        <View key={index} style={styles.block}>
-          <View style={styles.row}>
-            <Typography variant="semiBoldTxtmd" color={colors.gray[900]} style={{ flexShrink: 1 }}>
-              {index + 1}. {item?.name ?? "_"}
-            </Typography>
-            <View style={[styles.relevantPill, { backgroundColor: getRelevanceStyles(item?.relevance).backgroundColor, borderColor: getRelevanceStyles(item?.relevance).borderColor }]}>
-              <Typography variant="mediumTxtxs" color={getRelevanceStyles(item?.relevance).textColor}>
-                {formatRelevance(item?.relevance)}
-              </Typography>
+          {/* Blocks */}
+          {[1, 2].map(item => (
+            <View key={item} style={styles.block}>
+              <Shimmer width="70%" height={16} />
+              <Shimmer width="50%" height={14} />
+              <Shimmer width="90%" height={14} />
             </View>
-          </View>
-          <Typography
-            variant="regularTxtsm"
-            color={colors.gray[600]}
-          >
-            {item.description}
-          </Typography>
-        </View>
-      ))}
-
-      {/* EDUCATION */}
-      <View style={styles.sectionHeader}>
-        <Typography variant="mediumTxtsm" color={colors.gray[600]}>
-          EDUCATION
-        </Typography>
-        <View style={styles.roundedConatiner}>
-          <Typography variant="semiBoldTxtxs" color={colors.gray[600]}>
-            {application?.resume?.education.length ?? 0}
-          </Typography>
-        </View>
-      </View>
-
-      {application?.resume?.education.map((item, index) => (
-        <View key={index} style={styles.block}>
-          <View style={styles.row}>
-            <Typography variant="semiBoldTxtmd" color={colors.gray[900]} style={{ flexShrink: 1 }}>{item?.school ?? "_"}</Typography>
-            <View style={[styles.relevantPill, { backgroundColor: getRelevanceStyles(item?.relevance).backgroundColor, borderColor: getRelevanceStyles(item?.relevance).borderColor }]}>
-              <Typography variant="mediumTxtxs" color={getRelevanceStyles(item?.relevance).textColor}>
-                {formatRelevance(item?.relevance)}
-              </Typography>
-            </View>
-          </View>
-
-          <Typography variant="mediumTxtsm" color={colors.gray[700]}>
-            {item?.degree ?? "_"}
-          </Typography>
-
-          <Typography variant="regularTxtsm"
-            color={colors.gray[600]}>
-            {formatMonDDYYYY(item?.startDate ?? 0)}, {formatMonDDYYYY(item?.endDate ?? 0)}
-          </Typography>
-
-          <Typography variant="regularTxtsm"
-            color={colors.gray[600]}>
-            {item?.cgpa
-              ? `CGPA: ${item.cgpa}`
-              : item?.percent
-                ? `Percentage: ${item.percent}`
-                : "-"}
-          </Typography>
-        </View>
-      ))}
-
-      {/* CERTIFICATIONS */}
-      <View style={styles.sectionHeader}>
-        <Typography variant="mediumTxtsm" color={colors.gray[600]}>
-          CERTIFICATIONS
-        </Typography>
-        <View style={styles.roundedConatiner}>
-          <Typography variant="semiBoldTxtxs" color={colors.gray[600]}>
-            {application?.resume?.certifications.length ?? 0}
-          </Typography>
-        </View>
-      </View>
-
-      {application?.resume?.certifications.map((item, index) => (
-        <View key={index} style={styles.block}>
-          <View style={styles.row}>
-            <Typography variant="semiBoldTxtmd" color={colors.gray[900]}  style={{ flexShrink: 1 }}>{item?.name ?? "_"}</Typography>
-            <View style={[styles.relevantPill, { backgroundColor: getRelevanceStyles(item?.relevance).backgroundColor, borderColor: getRelevanceStyles(item?.relevance).borderColor }]}>
-              <Typography variant="mediumTxtxs" color={getRelevanceStyles(item?.relevance).textColor}>
-                {formatRelevance(item?.relevance)}
-              </Typography>
-            </View>
-          </View>
-
-          <Typography variant="mediumTxtsm" color={colors.gray[700]}>
-            {item?.description ?? "_"}
-          </Typography>
-          {/* <Typography variant="regularTxtsm"
-            color={colors.gray[600]}>
-            {item.year}
-          </Typography> */}
+          ))}
         </View>
       ))}
     </View>
   );
 };
 
+const EmptyState = ({ text }: { text: string }) => (
+  <View style={styles.emptyContainer}>
+    <View style={styles.emptyIcon}>
+      <Ionicons name="folder-outline" size={20} color={colors.gray[400]} />
+    </View>
+    <Typography variant="mediumTxtsm" color={colors.gray[500]}>
+      {text}
+    </Typography>
+  </View>
+);
+
+
+const DetailedResume = () => {
+  const application = useAppSelector(selectSelectedApplication);
+  const loading = useAppSelector(selectApplicationsDetailLoading);
+
+  if (loading) {
+    return <DetailedResumeShimmer />;
+  }
+
+  const resume = application?.resume;
+
+  return (
+    <View style={styles.card}>
+      <Typography variant="semiBoldTxtlg" color={colors.gray[900]}>
+        Detailed Resume
+      </Typography>
+
+      {/* ================= WORK EXPERIENCE ================= */}
+      <View style={styles.sectionHeader}>
+        <Typography variant="mediumTxtsm" color={colors.gray[600]}>
+          WORK EXPERIENCE
+        </Typography>
+        <View style={styles.roundedConatiner}>
+          <Typography variant="semiBoldTxtxs" color={colors.gray[600]}>
+            {resume?.work_experience?.length ?? 0}
+          </Typography>
+        </View>
+      </View>
+
+      {resume?.work_experience?.length ? (
+        resume.work_experience.map((item, index) => (
+          <View key={index} style={styles.block}>
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Typography variant="semiBoldTxtmd" color={colors.gray[900]} numberOfLines={2}
+                  ellipsizeMode="tail">
+                  {item?.position ?? "_"}
+                </Typography>
+              </View>
+
+              {item?.relevance && (
+                <View
+                  style={[
+                    styles.relevantPill,
+                    {
+                      backgroundColor:
+                        getRelevanceStyles(item.relevance).backgroundColor,
+                      borderColor:
+                        getRelevanceStyles(item.relevance).borderColor,
+                    },
+                  ]}
+                >
+                  <Typography
+                    variant="mediumTxtxs"
+                    color={getRelevanceStyles(item.relevance).textColor}
+                  >
+                    {formatRelevance(item.relevance)}
+                  </Typography>
+                </View>
+              )}
+            </View>
+
+            <Typography variant="mediumTxtsm" color={colors.gray[700]}>
+              {item?.company ?? "_"}
+            </Typography>
+
+            <Typography variant="regularTxtsm" color={colors.gray[600]}>
+              {formatMonDDYYYY(item?.startDate, "MMM YYYY")} –{" "}
+              {formatMonDDYYYY(item?.endDate, "MMM YYYY")}
+            </Typography>
+
+            <Typography variant="regularTxtsm" color={colors.gray[600]}>
+              {item?.description ?? "-"}
+            </Typography>
+          </View>
+        ))
+      ) : (
+        <EmptyState text="No work experience found." />
+      )}
+
+      {/* ================= PROJECTS ================= */}
+      <View style={styles.sectionHeader}>
+        <Typography variant="mediumTxtsm" color={colors.gray[600]}>
+          PROJECTS
+        </Typography>
+        <View style={styles.roundedConatiner}>
+          <Typography variant="semiBoldTxtxs" color={colors.gray[600]}>
+            {resume?.projects?.length ?? 0}
+          </Typography>
+        </View>
+      </View>
+
+      {resume?.projects?.length ? (
+        resume.projects.map((item, index) => (
+          <View key={index} style={styles.block}>
+            <View style={styles.row}>
+              <View style={{flex:1}}>
+              <Typography variant="semiBoldTxtmd" color={colors.gray[900]} numberOfLines={3}
+                  ellipsizeMode="tail">
+                {index + 1}. {item?.name ?? "_"}
+              </Typography>
+              </View>
+
+              {item?.relevance && (
+                <View
+                  style={[
+                    styles.relevantPill,
+                    {
+                      backgroundColor:
+                        getRelevanceStyles(item.relevance).backgroundColor,
+                      borderColor:
+                        getRelevanceStyles(item.relevance).borderColor,
+                    },
+                  ]}
+                >
+                  <Typography
+                    variant="mediumTxtxs"
+                    color={getRelevanceStyles(item.relevance).textColor}
+                  >
+                    {formatRelevance(item.relevance)}
+                  </Typography>
+                </View>
+              )}
+            </View>
+
+            <Typography variant="regularTxtsm" color={colors.gray[600]}>
+              {item?.description ?? "-"}
+            </Typography>
+          </View>
+        ))
+      ) : (
+        <EmptyState text="No project details found." />
+      )}
+
+      {/* ================= EDUCATION ================= */}
+      <View style={styles.sectionHeader}>
+        <Typography variant="mediumTxtsm" color={colors.gray[600]}>
+          EDUCATION
+        </Typography>
+        <View style={styles.roundedConatiner}>
+          <Typography variant="semiBoldTxtxs" color={colors.gray[600]} numberOfLines={2}
+                  ellipsizeMode="tail">
+            {resume?.education?.length ?? 0}
+          </Typography>
+        </View>
+      </View>
+
+      {resume?.education?.length ? (
+        resume.education.map((item, index) => (
+          <View key={index} style={styles.block}>
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Typography variant="semiBoldTxtmd" color={colors.gray[900]} numberOfLines={3}
+                  ellipsizeMode="tail">
+                  {item?.school ?? "_"}
+                </Typography>
+              </View>
+
+              {item?.relevance && (
+                <View
+                  style={[
+                    styles.relevantPill,
+                    {
+                      backgroundColor:
+                        getRelevanceStyles(item.relevance).backgroundColor,
+                      borderColor:
+                        getRelevanceStyles(item.relevance).borderColor,
+                    },
+                  ]}
+                >
+                  <Typography
+                    variant="mediumTxtxs"
+                    color={getRelevanceStyles(item.relevance).textColor}
+                  >
+                    {formatRelevance(item.relevance)}
+                  </Typography>
+                </View>
+              )}
+            </View>
+
+            <Typography variant="mediumTxtsm" color={colors.gray[700]}>
+              {item?.degree ?? "_"}
+            </Typography>
+
+            <Typography variant="regularTxtsm" color={colors.gray[600]}>
+              {formatMonDDYYYY(item?.startDate)} –{" "}
+              {formatMonDDYYYY(item?.endDate)}
+            </Typography>
+          </View>
+        ))
+      ) : (
+        <EmptyState text="No education details found." />
+      )}
+
+      {/* ================= CERTIFICATIONS ================= */}
+      <View style={styles.sectionHeader}>
+        <Typography variant="mediumTxtsm" color={colors.gray[600]}>
+          CERTIFICATIONS
+        </Typography>
+        <View style={styles.roundedConatiner}>
+          <Typography variant="semiBoldTxtxs" color={colors.gray[600]}>
+            {resume?.certifications?.length ?? 0}
+          </Typography>
+        </View>
+      </View>
+
+      {resume?.certifications?.length ? (
+        resume.certifications.map((item, index) => (
+          <View key={index} style={styles.block}>
+            <View style={styles.row}>
+              <View style={{flex:1}}>
+                <Typography variant="semiBoldTxtmd" color={colors.gray[900]} numberOfLines={3} ellipsizeMode="tail">
+                  {item?.name ?? "_"}
+                </Typography>
+                </View>
+
+                {item?.relevance && (
+                  <View
+                    style={[
+                      styles.relevantPill,
+                      {
+                        backgroundColor:
+                          getRelevanceStyles(item.relevance).backgroundColor,
+                        borderColor:
+                          getRelevanceStyles(item.relevance).borderColor,
+                      },
+                    ]}
+                  >
+                    <Typography
+                      variant="mediumTxtxs"
+                      color={getRelevanceStyles(item.relevance).textColor}
+                    >
+                      {formatRelevance(item.relevance)}
+                    </Typography>
+                  </View>
+                )}
+            </View>
+
+            <Typography variant="mediumTxtsm" color={colors.gray[700]}>
+              {item?.description ?? "_"}
+            </Typography>
+          </View>
+        ))
+      ) : (
+        <EmptyState text="No certifications found." />
+      )}
+    </View>
+  );
+};
 export default DetailedResume;
 
 const styles = StyleSheet.create({
@@ -292,7 +419,7 @@ const styles = StyleSheet.create({
 
   row: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: 8,
   },
 
@@ -311,5 +438,28 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     backgroundColor: colors.gray[50],
     borderColor: colors.gray[200],
-  }
+  },
+  emptyContainer: {
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: colors.gray[300],
+    borderRadius: 12,
+    padding: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 12,
+  },
+
+  emptyIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+
 });
+

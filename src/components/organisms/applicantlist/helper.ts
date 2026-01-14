@@ -26,6 +26,9 @@ export const getStatusColor = (status?: string) => {
     case "Assigned":
       return colors.gray[500];
 
+    case "Under Review":
+      return colors.blue[500];
+
     case "Completed":
       return colors.success[500];
 

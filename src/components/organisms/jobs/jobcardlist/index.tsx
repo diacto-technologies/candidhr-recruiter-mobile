@@ -15,6 +15,9 @@ import {
     selectJobsHasMore,
     selectPublishedCount,
     selectUnpublishedCount,
+    selectJobFilters,
+    selectJobsActiveTab,
+    selectIsTabLoading,
 } from "../../../../features/jobs/selectors";
 import { getJobsRequestAction } from "../../../../features/jobs/actions";
 import { formatMonDDYYYY } from "../../../../utils/dateformatter";
@@ -24,10 +27,11 @@ import { horizontalThreedotIcon } from "../../../../assets/svg/horizontalthreedo
 import { colors } from "../../../../theme/colors";
 import SlideAnimatedTab from "../../../molecules/slideanimatedtab";
 import Shimmer from "../../../atoms/shimmer";
+import { setActiveTab } from "../../../../features/jobs/slice";
 
 const JobCardList = () => {
     const tabs = ["Published", "Unpublished"];
-    const [activeTab, setActiveTab] = useState<"Published" | "Unpublished">("Published");
+    const activeTab = useAppSelector(selectJobsActiveTab);
 
     const jobsList = useAppSelector(selectJobs);
     const loading = useAppSelector(selectJobsLoading);
@@ -35,20 +39,23 @@ const JobCardList = () => {
     const hasMore = useAppSelector(selectJobsHasMore);
     const publishedCount = useAppSelector(selectPublishedCount);
     const unpublishedCount = useAppSelector(selectUnpublishedCount);
+    const jobFilters = useAppSelector(selectJobFilters);
+    const isTabLoading = useAppSelector(selectIsTabLoading);
 
     const styles = useStyles();
     const dispatch = useAppDispatch();
 
-    useEffect(() => {
-        dispatch(
-            getJobsRequestAction({
-                page: 1,
-                limit: pagination.limit,
-                published: activeTab === "Published",
-                append: false,
-            })
-        );
-    }, [activeTab]);
+    // useEffect(() => {
+    //     dispatch(
+    //         getJobsRequestAction({
+    //             page: 1,
+    //             limit: pagination.limit,
+    //             published: activeTab === 'Published',
+    //             append: false,
+    //             ...jobFilters
+    //         })
+    //     );
+    // }, [activeTab]);
 
     const handleLoadMore = useCallback(() => {
         if (loading || !hasMore) return;
@@ -59,11 +66,12 @@ const JobCardList = () => {
                 limit: pagination.limit,
                 published: activeTab === "Published",
                 append: true,
+                ...jobFilters,
             })
         );
     }, [loading, hasMore, pagination, activeTab]);
 
-    
+
     const renderShimmerCard = () => (
         <View
             style={{
@@ -93,8 +101,7 @@ const JobCardList = () => {
         </View>
     );
 
-    // 🔥 Show shimmer when initially loading
-    if (loading && jobsList.length === 0) {
+    if (isTabLoading || (loading && jobsList.length === 0)) {
         return (
             <>
                 {/* Tabs */}
@@ -103,8 +110,9 @@ const JobCardList = () => {
                         tabs={tabs}
                         activeTab={activeTab}
                         onChangeTab={(label) =>
-                            setActiveTab(label === "Published" ? "Published" : "Unpublished")
+                            dispatch(setActiveTab(label === "Published" ? "Published" : "Unpublished"))
                         }
+                        countShow={true}
                     />
                     <View style={styles.bottomBorder} />
                 </View>
@@ -119,12 +127,13 @@ const JobCardList = () => {
         );
     }
 
-    // NORMAL JOB CARD
     const renderItem = ({ item }: { item: Job }) => (
         <View style={styles.card}>
-         <Pressable onPress={() => navigate("JobDetailScreen", { jobId: item.id })}>
+            <Pressable onPress={() => navigate("JobDetailScreen", { jobId: item.id })}>
                 <View style={styles.rowBetween}>
-                    <Typography variant="semiBoldTxtmd">{item.title ?? ""}</Typography>
+                    <View style={{ flex: 1 }}>
+                        <Typography variant="semiBoldTxtmd">{item.title ?? ""}</Typography>
+                    </View>
                     <SvgXml xml={horizontalThreedotIcon} />
                 </View>
 
@@ -155,7 +164,7 @@ const JobCardList = () => {
                         <View style={{ flexDirection: "row", gap: 4 }}>
                             <SvgXml xml={userApplicationIcon} width={20} height={20} />
                             <Typography variant="mediumTxtsm" color={colors.gray[600]}>
-                                {item.applicants_count ?? "" }
+                                {item.applicants_count ?? ""}
                             </Typography>
                         </View>
                     </View>
@@ -181,12 +190,31 @@ const JobCardList = () => {
                     tabs={tabs}
                     activeTab={activeTab}
                     onChangeTab={(label) =>
-                        setActiveTab(label === "Published" ? "Published" : "Unpublished")
+                        dispatch(setActiveTab(label === "Published" ? "Published" : "Unpublished"))
                     }
                 />
                 <View style={styles.bottomBorder} />
             </View>
-
+            {!loading && !isTabLoading && jobsList.length === 0 && (
+                <View
+                    style={{
+                        alignItems: "center",
+                        marginTop: 60,
+                        paddingHorizontal: 16,
+                    }}
+                >
+                    <Typography variant="semiBoldTxtmd">
+                        No results found
+                    </Typography>
+                    <Typography
+                        variant="regularTxtsm"
+                        color={colors.gray[500]}
+                        style={{ marginTop: 6, textAlign: "center" }}
+                    >
+                        Try adjusting your search or filters
+                    </Typography>
+                </View>
+            )}
             {/* Job List */}
             <FlatList
                 data={jobsList}
@@ -197,8 +225,8 @@ const JobCardList = () => {
                     paddingVertical: 20,
                     gap: 12,
                 }}
-                initialNumToRender={10}       // render first 10 items
-                maxToRenderPerBatch={10}      // batch size
+                initialNumToRender={10}
+                maxToRenderPerBatch={10}
                 windowSize={10}
                 showsVerticalScrollIndicator={false}
                 onEndReached={handleLoadMore}

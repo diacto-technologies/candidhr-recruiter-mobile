@@ -1,5 +1,5 @@
 // components/ApplicantCard/index.tsx
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Image,
@@ -19,11 +19,14 @@ import Divider from '../../atoms/divider';
 import { Application } from '../../../features/applications/types';
 import { formatMonDDYYYY } from '../../../utils/dateformatter';
 import { getStatusColor } from './helper';
+import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { setApplicationsFilters } from '../../../features/applications/slice';
+import { useFocusEffect } from '@react-navigation/native';
 
 interface ApplicantCardProps {
   item?: Application | null;
   loading?: boolean;
-  cardWidth?:number
+  cardWidth?: number
 }
 const ShimmerBox: React.FC<{
   width?: DimensionValue;
@@ -44,6 +47,7 @@ const ShimmerBox: React.FC<{
     loop.start();
     return () => loop.stop();
   }, [anim]);
+
 
   const translateX = anim.interpolate({
     inputRange: [0, 1],
@@ -80,7 +84,7 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
   // If loading or no item provided -> show skeleton built from ShimmerBox
   if (loading || !item) {
     return (
-      <View style={[styles.card,{width:cardWidth}]}>
+      <View style={styles.card}>
         {/* Top row: avatar + two lines */}
         <View style={styles.rowBetween}>
           <View style={styles.row}>
@@ -113,7 +117,7 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
       </View>
     );
   }
-  const handlePress = (application_id: string, job_id:string) => {
+  const handlePress = (application_id: string, job_id: string) => {
     navigate('ApplicantDetails', {
       application_id,
       job_id,
@@ -121,17 +125,25 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
   };
 
   return (
-    <Pressable style={[styles.card,{width: cardWidth}]}  onPress={() => handlePress(item?.id, item?.job?.id)}>
+    <Pressable style={[styles.card]} onPress={() => handlePress(item?.id, item?.job?.id)}>
       {/* Top Row - Avatar + Name */}
       <View style={styles.rowBetween}>
         <View style={styles.row}>
-          <Image
-            source={{ uri: item?.profilePic || 'https://randomuser.me/api/portraits/men/32.jpg' }}
-            style={styles.avatar}
-            resizeMode="cover"
-          />
+          {item?.candidate?.profile_pic ?
+            <Image
+              source={{ uri: item?.candidate?.profile_pic }}
+              style={styles.avatar}
+              resizeMode="cover"
+            />
+            :
+            <View style={[styles.avatar, { alignItems: 'center', justifyContent: 'center', }]}>
+              <Typography variant="semiBoldTxtlg" color={colors?.brand[700]} style={{ paddingRight: 5 }}> {(item?.candidate?.name?.trim()?.[0] ?? "").toUpperCase()}</Typography>
+            </View>
+          }
           <View style={{ marginLeft: 12 }}>
-            <Typography variant="semiBoldTxtmd">{item?.name ?? "_"}</Typography>
+            <Typography variant="semiBoldTxtmd">
+              {item?.name ?? (item?.id ? "****" + String(item.id).slice(-4) : '')}
+            </Typography>
             <Typography variant="regularTxtsm" color={colors.gray[600]}>
               Applied on : {formatMonDDYYYY(item?.applied_at)}
             </Typography>
@@ -147,7 +159,7 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
       <Typography variant="regularTxtsm" color={colors.gray[600]}>
         Applied for :{' '}
         <Typography variant="mediumTxtsm" color={colors.gray[700]}>
-          {item?.job?.title ?? "_"}
+          {item?.job?.title ?? ""}
         </Typography>
       </Typography>
 
@@ -155,16 +167,19 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
 
       {/* Stage + Status */}
       <View style={styles.rowBetween}>
-        <Typography variant="regularTxtsm" color={colors.gray[500]}>
-          {item?.stage_name ?? "_"}
-        </Typography>
-
-        <View style={styles.statusBadge}>
-          <View style={[styles.statusDot,{ backgroundColor: getStatusColor(item?.stages?.latest_status) } ]}/>
-          <Typography variant="mediumTxtxs" color={colors.gray[700]}>
-            {item?.stages?.latest_status ?? "_"}
+        <View style={{ flex: 1 }}>
+          <Typography variant="regularTxtsm" color={colors.gray[500]}>
+            {item?.stage_name ?? ""}
           </Typography>
         </View>
+        {item?.stages?.latest_status &&
+          <View style={styles.statusBadge}>
+            <View style={[styles.statusDot, { backgroundColor: getStatusColor(item?.stages?.latest_status) }]} />
+            <Typography variant="mediumTxtxs" color={colors.gray[700]}>
+              {item?.stages?.latest_status ?? ""}
+            </Typography>
+          </View>
+        }
       </View>
     </Pressable>
   );

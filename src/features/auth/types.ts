@@ -18,6 +18,7 @@ export interface AuthState {
   resetPasswordLoading: boolean,
   resetPasswordMessage: string | null,
   resetPasswordError: string | null,
+  origin:string,
 }
 
 export interface LoginRequest {

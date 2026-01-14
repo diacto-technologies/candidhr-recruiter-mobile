@@ -1,140 +1,179 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { View, StyleSheet, TouchableOpacity, Animated, Easing } from "react-native";
 import Typography from "../../../atoms/typography";
 import { colors } from "../../../../theme/colors";
 import Sound from "react-native-sound";
 import { SvgXml } from "react-native-svg";
-import { playIcon } from "../../../../assets/svg/play";
+import { pauseIcon } from "../../../../assets/svg/pause";
 import { useAppSelector } from "../../../../hooks/useAppSelector";
-import { selectResumeScreeningResponses } from "../../../../features/applications/selectors";
+import { selectResumeScreeningResponses, selectResumeScreeningResponsesLoading } from "../../../../features/applications/selectors";
+import { pauseVideoIcon } from "../../../../assets/svg/pausevideo";
+import { playVideoIcon } from "../../../../assets/svg/playvideoIcon";
+import { playIcon } from "../../../../assets/svg/play";
+import Shimmer from "../../../atoms/shimmer";
 
 Sound.setCategory("Playback");
 
+
+const ScreeningQuestionsShimmer = () => {
+  return (
+    <View style={styles.card}>
+      {/* Title */}
+      <Shimmer width="45%" height={20} />
+
+      {/* Tabs */}
+      <View style={styles.tabsRow}>
+        {[1, 2, 3].map(i => (
+          <Shimmer key={i} width={70} height={28} borderRadius={8} />
+        ))}
+      </View>
+
+      {/* Questions */}
+      {[1, 2, 3].map(i => (
+        <View key={i} style={styles.innerCard}>
+          <Shimmer width="90%" height={16} />
+
+          {/* Audio / text placeholder */}
+          <Shimmer width="100%" height={44} borderRadius={12} />
+        </View>
+      ))}
+    </View>
+  );
+};
+
 const ScreeningQuestions = () => {
   const screeningResponses = useAppSelector(selectResumeScreeningResponses);
+  const loading = useAppSelector(selectResumeScreeningResponsesLoading);
 
-  const [selectedTab, setSelectedTab] = useState("All");
+  const [selectedTab, setSelectedTab] = useState<'All' | 'Audio' | 'Text'>('All');
   const [playingId, setPlayingId] = useState<number | null>(null);
 
   const soundRef = useRef<Sound | null>(null);
+  const timersRef = useRef<Record<number, NodeJS.Timeout>>({});
+  const progressAnimMap = useRef<Record<number, Animated.Value>>({}).current;
 
   const [progressMap, setProgressMap] = useState<
     Record<number, { current: number; duration: number }>
   >({});
 
-  const progressAnimMap = useRef<Record<number, Animated.Value>>({}).current;
-
+  /* ------------------ FORMAT DATA ------------------ */
   const formattedData =
-    screeningResponses?.map((item, idx) => ({
+    screeningResponses?.map((item: any, idx: number) => ({
       id: idx + 1,
-      type: item.type,
-      question: item.question.text,
-      textAnswer: item.text,
-      audioUrl: item.audio_file,
+      type: item?.type, // 'audio' | 'text'
+      question: item?.question?.text,
+      textAnswer: item?.text,
+      audioUrl: item?.audio_file,
     })) ?? [];
 
-  const tabs = ["All", "Audio", "Text"];
+  const tabs: Array<'All' | 'Audio' | 'Text'> = ['All', 'Audio', 'Text'];
 
   const filteredData =
-    selectedTab === "All"
+    selectedTab === 'All'
       ? formattedData
       : formattedData.filter((item) =>
-          selectedTab === "Audio" ? item.type === "audio" : item.type === "text"
+          selectedTab === 'Audio'
+            ? item.type === 'audio'
+            : item.type === 'text'
         );
 
-  // Format mm:ss
+  const hasData = filteredData.length > 0;
+
+  /* ------------------ HELPERS ------------------ */
   const formatTime = (sec: number) => {
-    if (!sec) return "0:00";
+    if (!sec) return '0:00';
     const m = Math.floor(sec / 60);
     const s = Math.floor(sec % 60);
-    return `${m}:${s < 10 ? "0" + s : s}`;
+    return `${m}:${s < 10 ? '0' + s : s}`;
   };
 
-  // PLAY / PAUSE + Animation
-  const togglePlay = (id: number, url: string | null) => {
-    if (!url) return;
-
-    // Pause same audio
-    if (playingId === id) {
-      soundRef.current?.pause();
-      setPlayingId(null);
-      progressAnimMap[id]?.stopAnimation();
-      return;
-    }
-
-    // Stop previous audio
+  const cleanup = () => {
     if (soundRef.current) {
       soundRef.current.stop();
       soundRef.current.release();
+      soundRef.current = null;
     }
+
+    if (playingId && timersRef.current[playingId]) {
+      clearInterval(timersRef.current[playingId]);
+      delete timersRef.current[playingId];
+    }
+
+    if (playingId && progressAnimMap[playingId]) {
+      progressAnimMap[playingId].stopAnimation();
+      progressAnimMap[playingId].setValue(0);
+    }
+  };
+
+  const togglePlay = (id: number, url?: string) => {
+    if (!url) return;
+
+    if (playingId === id) {
+      cleanup();
+      setPlayingId(null);
+      return;
+    }
+
+    cleanup();
 
     const sound = new Sound(url, undefined, (err) => {
       if (err) {
-        console.log("Sound load error:", err);
+        console.log('Sound load error:', err);
         return;
       }
 
-      const dur = sound.getDuration();
+      soundRef.current = sound;
+      setPlayingId(id);
+
+      const duration = sound.getDuration();
 
       setProgressMap((prev) => ({
         ...prev,
-        [id]: { current: 0, duration: dur },
+        [id]: { current: 0, duration },
       }));
 
-      setPlayingId(id);
-
-      // Create animation instance if not exists
       if (!progressAnimMap[id]) {
         progressAnimMap[id] = new Animated.Value(0);
       }
 
-      const anim = progressAnimMap[id];
-      anim.setValue(0);
-
-      Animated.timing(anim, {
+      Animated.timing(progressAnimMap[id], {
         toValue: 1,
-        duration: dur * 1000,
+        duration: duration * 1000,
         easing: Easing.linear,
         useNativeDriver: false,
       }).start();
 
-      sound.play((success) => {
-        setPlayingId(null);
-        anim.setValue(0);
-
-        setProgressMap((prev) => ({
-          ...prev,
-          [id]: { current: 0, duration: dur },
-        }));
-
-        sound.release();
-      });
-
-      // Track actual time
-      const timer = setInterval(() => {
-        if (playingId !== id || !soundRef.current) {
-          clearInterval(timer);
-          return;
-        }
-
-        sound.getCurrentTime((t) => {
+      timersRef.current[id] = setInterval(() => {
+        sound.getCurrentTime((current) => {
           setProgressMap((prev) => ({
             ...prev,
-            [id]: { ...prev[id], current: t },
+            [id]: { current, duration },
           }));
         });
       }, 300);
 
-      soundRef.current = sound;
+      sound.play(() => {
+        cleanup();
+        setPlayingId(null);
+      });
     });
   };
 
+  useEffect(() => {
+    return () => cleanup();
+  }, []);
+
+  /* ------------------ LOADING ------------------ */
+  if (loading) {
+    return <ScreeningQuestionsShimmer />;
+  }
+
+  /* ------------------ UI ------------------ */
   return (
     <View style={styles.card}>
-      {/* TITLE */}
-      <Typography variant="semiBoldTxtlg">Screening questions</Typography>
+      <Typography variant="semiBoldTxtlg">Screening Questions</Typography>
 
-      {/* TABS */}
+      {/* Tabs */}
       <View style={styles.tabsRow}>
         {tabs.map((tab) => (
           <TouchableOpacity
@@ -142,12 +181,18 @@ const ScreeningQuestions = () => {
             onPress={() => setSelectedTab(tab)}
             style={[
               styles.tabBtn,
-              selectedTab === tab ? styles.tabBtnActive : styles.tabBtnDeactive,
+              selectedTab === tab
+                ? styles.tabBtnActive
+                : styles.tabBtnDeactive,
             ]}
           >
             <Typography
               variant="mediumTxtsm"
-              color={selectedTab === tab ? colors.brand[700] : colors.gray[700]}
+              color={
+                selectedTab === tab
+                  ? colors.brand[700]
+                  : colors.gray[700]
+              }
             >
               {tab}
             </Typography>
@@ -155,55 +200,88 @@ const ScreeningQuestions = () => {
         ))}
       </View>
 
-      {/* LIST */}
-      {filteredData.map((item) => {
-        const prog = progressMap[item.id] || { current: 0, duration: 0 };
-        const anim = progressAnimMap[item.id] || new Animated.Value(0);
-
-        const animatedWidth = anim.interpolate({
-          inputRange: [0, 1],
-          outputRange: ["0%", "100%"],
-        });
-
-        return (
-          <View key={item.id} style={styles.innerCard}>
-            <Typography variant="mediumTxtmd">{item.id}. {item.question}</Typography>
-
-            {/* AUDIO PLAYER */}
-            {item.type === "audio" && (
-              <View style={styles.audioBox}>
-                <TouchableOpacity onPress={() => togglePlay(item.id, item.audioUrl)}>
-                  <SvgXml xml={playIcon} width={30} height={30} />
-                </TouchableOpacity>
-
-                {/* Current time */}
-                <Typography variant="regularTxtsm">{formatTime(prog.current)}</Typography>
-
-                {/* Progress bar */}
-                <View style={styles.progressBackground}>
-                  <Animated.View
-                    style={[styles.progressFill, { width: animatedWidth }]}
-                  />
-                </View>
-
-                {/* Duration */}
-                <Typography variant="regularTxtsm">
-                  {formatTime(prog.duration)}
-                </Typography>
-              </View>
-            )}
-
-            {/* TEXT RESPONSE */}
-            {item.type === "text" && (
-              <Typography variant="P2">{item.textAnswer}</Typography>
-            )}
+      {/* EMPTY STATE */}
+      {!hasData && (
+        <View style={styles.emptyState}>
+          <View>
+            <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
+              No screening responses available
+            </Typography>
+            <Typography variant="regularTxtsm" color={colors.gray[500]}>
+              When the candidate submits answers, they’ll show up here
+              automatically.
+            </Typography>
           </View>
-        );
-      })}
+
+          <View style={styles.avatarCircle}>
+            <Typography variant="semiBoldTxtsm" color={colors.gray[600]}>
+              Q/A
+            </Typography>
+          </View>
+        </View>
+      )}
+
+      {/* LIST */}
+      {hasData &&
+        filteredData.map((item) => {
+          const prog = progressMap[item.id] || { current: 0, duration: 0 };
+          const anim = progressAnimMap[item.id] || new Animated.Value(0);
+
+          const animatedWidth = anim.interpolate({
+            inputRange: [0, 1],
+            outputRange: ['0%', '100%'],
+          });
+
+          return (
+            <View key={item.id} style={styles.innerCard}>
+              <Typography variant="mediumTxtmd">
+                {item.id}. {item.question}
+              </Typography>
+
+              {item.type === 'audio' && (
+                <View style={styles.audioBox}>
+                  <TouchableOpacity
+                    onPress={() => togglePlay(item.id, item.audioUrl)}
+                  >
+                    <SvgXml
+                      xml={
+                        playingId === item.id ? playIcon : pauseIcon
+                      }
+                      width={24}
+                      height={24}
+                    />
+                  </TouchableOpacity>
+
+                  <Typography variant="regularTxtsm">
+                    {formatTime(prog.current)}
+                  </Typography>
+
+                  <View style={styles.progressBackground}>
+                    <Animated.View
+                      style={[
+                        styles.progressFill,
+                        { width: animatedWidth },
+                      ]}
+                    />
+                  </View>
+
+                  <Typography variant="regularTxtsm">
+                    {formatTime(prog.duration)}
+                  </Typography>
+                </View>
+              )}
+
+              {item.type === 'text' && (
+                <Typography variant="P2">
+                  {item.textAnswer}
+                </Typography>
+              )}
+            </View>
+          );
+        })}
     </View>
   );
 };
-
 export default ScreeningQuestions;
 
 const styles = StyleSheet.create({
@@ -248,6 +326,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.gray[100],
     padding: 12,
     borderRadius: 12,
+    justifyContent:'center',
   },
   progressBackground: {
     flex: 1,
@@ -261,4 +340,23 @@ const styles = StyleSheet.create({
     backgroundColor: "#635BFF",
     borderRadius: 10,
   },
+  emptyState: {
+    borderRadius: 12,
+    backgroundColor: colors.gray[50],
+    flexDirection: 'row',
+    alignSelf:'center',
+    marginHorizontal: 20,
+    padding:20
+  },
+  
+  avatarCircle: {
+    height: 48,
+    width: 48,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor:colors.gray[200],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
+

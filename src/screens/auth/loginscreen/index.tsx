@@ -18,21 +18,16 @@ import { goBack, navigate, resetAndNavigate } from '../../../utils/navigationUti
 import CheckBox from '../../../components/atoms/checkbox';
 import { useStyles } from './styles';
 import CustomSafeAreaView from '../../../components/atoms/customsafeareaview';
-import { eyeVisibleIcon } from '../../../assets/svg/eyevisible';
 import { clearCredentials, saveCredentials } from '../../../features/auth/slice';
 
 const LoginScreen = () => {
   const styles = useStyles();
   const dispatch = useAppDispatch();
-
   const savedEmail = useAppSelector(selectSavedEmail);
   const savedPassword = useAppSelector(selectSavedPassword);
   const savedRemember = useAppSelector(selectSavedRemember);
-
-
+  const isLoading=useAppSelector(selectAuthLoading);
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
-  const error = useAppSelector(selectAuthError);
-
   const [email, setEmail] = useState(savedEmail || '');
   const [password, setPassword] = useState(savedPassword || '');
   const [rememberMe, setRememberMe] = useState(savedRemember);
@@ -99,10 +94,9 @@ const LoginScreen = () => {
 
   return (
     <CustomSafeAreaView>
-      <Header backNavigation={true} onBack={goBack} />
+      <Header backNavigation={true} onBack={goBack} borderCondition={true}/>
 
       <View style={styles.inner}>
-
         <Typography variant="semiBoldDxs" color={colors.gray[900]}>
           Sign in
         </Typography>
@@ -143,7 +137,7 @@ const LoginScreen = () => {
 
         <View style={styles.row}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <CheckBox
+            {/* <CheckBox
               type="square"
               checked={rememberMe}
               onChange={() => {
@@ -158,7 +152,7 @@ const LoginScreen = () => {
             />
             <Typography variant="semiBoldTxtsm" color={colors.gray[700]}>
               Remember me
-            </Typography>
+            </Typography> */}
           </View>
 
           <TouchableOpacity onPress={() => navigate("ForgetPasswordScreen")}>
@@ -169,7 +163,7 @@ const LoginScreen = () => {
         </View>
 
         <Button variant="contain" onPress={handleLogin} disabled={!email || !password}>
-          Continue
+          {isLoading? "Signing in...":"Continue" }
         </Button>
 
         {/* {error && (

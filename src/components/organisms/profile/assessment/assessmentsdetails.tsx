@@ -173,6 +173,7 @@ const AssessmentsDetails = ({ style }: Props) => {
       }
     ) ?? [];
 
+    console.log(assessmentDetailedReport?.result?.proctoring?.video_file,"assessmentDetailedReport?.result?.proctoring?.video_file")
 
   return (
     <View style={[styles.container, style]}>
@@ -410,7 +411,7 @@ const AssessmentsDetails = ({ style }: Props) => {
           <VideoPlayerBox
             source={
               assessmentDetailedReport?.result?.proctoring?.video_file ??
-              "https://www.w3schools.com/html/mov_bbb.mp4"
+              ""
             }
           />
         </View>

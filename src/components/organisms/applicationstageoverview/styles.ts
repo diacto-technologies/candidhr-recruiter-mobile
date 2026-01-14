@@ -2,6 +2,7 @@ import { StyleSheet } from "react-native";
 import { useRNSafeAreaInsets } from "../../../hooks/useRNSafeAreaInsets";
 import { windowWidth } from "../../../utils/devicelayout";
 import { colors } from "../../../theme/colors";
+import { Fonts } from "../../../theme/fonts";
 
 
 export const useStyles = () => {
@@ -33,13 +34,16 @@ export const useStyles = () => {
 
     row: {
       flexDirection: "row",
-      paddingVertical: 23.50,
       borderBottomWidth: 1,
       borderColor: colors.gray["200"],
+      height: 69, 
       paddingLeft: 20,
+      alignItems: "center",  
     },
 
     cell: {
+      fontFamily: Fonts.InterRegular,
+      fontSize: 14,
       minWidth: MIN_COL_WIDTH,
       marginRight: 16,
     },
@@ -54,10 +58,11 @@ export const useStyles = () => {
     },
 
     leftFixedColumn: {
-      paddingVertical: 24,
       paddingLeft: 20,
       borderBottomWidth: 1,
       borderColor: colors.gray[200],
+      height: 69,
+      justifyContent: "center"       
     },
 
     /** SCROLLBAR */

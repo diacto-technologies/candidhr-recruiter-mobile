@@ -24,6 +24,7 @@ export const applicationsApi = {
     const url = qs ? `${API_ENDPOINTS.APPLICATIONS.LIST}?${qs}` : API_ENDPOINTS.APPLICATIONS.LIST;
 
     const res = await apiClient.get(url);
+    console.log(res,"resresresres")
     return res?.data ?? res;
   },
 

@@ -14,7 +14,7 @@ const persistConfig = {
   whitelist: ["authSlice"],
 };
 
-const persistedReducer = persistReducer(persistConfig, rootReducer);
+const persistedReducer = persistReducer(persistConfig, rootReducer,);
 const sagaMiddleware = createSagaMiddleware();
 
 export const store = configureStore({

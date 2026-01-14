@@ -2,7 +2,6 @@ import React, { Fragment, useEffect } from "react";
 import { View, Text, StyleSheet, Dimensions } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
 import { SvgXml } from "react-native-svg";
-import StatusBar from "../../../components/atoms/statusbar";
 import { colors } from "../../../theme/colors";
 import { candidHrLogo, candidHrTxt } from "../../../assets/svg/candidhrlogo";
 import { Typography } from "../../../components";
@@ -13,6 +12,7 @@ import { navigate } from "../../../utils/navigationUtils";
 import { useStyles } from "./styles";
 import { useAppSelector } from "../../../store/hooks";
 import { selectIsAuthenticated } from "../../../features/auth/selectors";
+import StatusBarBackground from "../../../components/atoms/statusbar";
 
 const { width, height } = Dimensions.get("window");
 
@@ -37,7 +37,7 @@ const SplashScreen = () => {
     
   return (
     <Fragment>
-      <StatusBar showBrandGradient />
+      <StatusBarBackground showBrandGradient />
 
       <LinearGradient
         colors={[colors.brand[700], colors.brand[600]]}
@@ -59,7 +59,7 @@ const SplashScreen = () => {
           </View>
         </View>
 
-        <Typography variant="regularTxtsm" color={colors.base.white} style={styles.footer}>Powered by diacto</Typography>
+        <Typography variant="regularTxtsm" color={colors.base.white} style={styles.footer}>Powered by Diacto</Typography>
       </LinearGradient>
     </Fragment>
   );

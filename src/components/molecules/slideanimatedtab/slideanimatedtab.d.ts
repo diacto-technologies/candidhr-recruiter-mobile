@@ -15,4 +15,5 @@ export interface TabsProps {
     activeTab: string;
     onChangeTab: (label: string, index: number) => void;
     counts?: Record<string, number>; // 🔥 counts added
+    countShow?:boolean;
   }

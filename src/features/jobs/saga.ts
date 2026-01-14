@@ -1,4 +1,4 @@
-import { call, put, takeLatest } from "redux-saga/effects";
+import { call, CallEffect, put, PutEffect, takeLatest } from "redux-saga/effects";
 import { JOBS_ACTION_TYPES } from "./constants";
 import {
   getJobsRequest,
@@ -20,38 +20,48 @@ import {
 import { jobsApi } from "./api";
 import { GetJobsRequestActionPayload } from "./actions";
 import { JobsListApiResponse } from "./types";
+import { PayloadAction } from "@reduxjs/toolkit";
 
-function* getJobsWorker(action: { type: string; payload?: GetJobsRequestActionPayload }): Generator<any, void, any> {
+function* getJobsWorker(
+  action: { type: string; payload?: GetJobsRequestActionPayload }
+): Generator<any, void, any> {
   try {
-    const { append = false, ...params } = action.payload || {};
-    const page = params.page ?? 1;
-    yield put(getJobsRequest(params));
-    const response: JobsListApiResponse = yield call(jobsApi.getJobs, params);
-    // const response = yield call(jobsApi.getJobs, action.payload);
-    yield put(getJobsSuccess({page: action.payload?.page ?? 1,
-      append: action.payload?.append ?? false,
-      published: action.payload?.published ?? true,  // 🔥 required
-      data: response,}));
-    console.log(response,"JobListJobListJobListJobList")
-  } catch (error: any) {
-    yield put(getJobsFailure(error.message || "Failed to fetch jobs"));
-    console.log(error,"Joberrorerror")
-  }
-}
+    const payload = action.payload;
+    yield put(getJobsRequest(payload));
 
-function* getPublishedJobsWorker(action: { type: string; payload?: GetJobsRequestActionPayload }) {
-  try {
-    const { append = false, ...params } = action.payload || {};
-    params.published = true;
-
-    yield put(getJobsRequest(params));
-
-    const response: JobsListApiResponse = yield call(jobsApi.getJobs, params);
+    const response: JobsListApiResponse = yield call(
+      jobsApi.getJobs,
+      payload
+    );
+    console.log(response, "getJobsWorkergetJobsWorkergetJobsWorker")
 
     yield put(
       getJobsSuccess({
-        page: params.page ?? 1,
-        append,
+        page: payload?.page ?? 1,
+        append: payload?.append ?? false,
+        published: payload?.published ?? true,
+        data: response,
+      })
+    );
+  } catch (error: any) {
+    yield put(getJobsFailure(error.message || "Failed to fetch jobs"));
+  }
+}
+
+function* getPublishedJobsWorker(
+  action: PayloadAction<GetJobsRequestActionPayload | undefined>
+): Generator<CallEffect | PutEffect, void, JobsListApiResponse> {
+  try {
+    const payload = { ...(action.payload ?? {}), published: true };
+
+    yield put(getJobsRequest(payload));
+
+    const response = yield call(jobsApi.getJobs, payload);
+
+    yield put(
+      getJobsSuccess({
+        page: payload.page ?? 1,
+        append: payload.append ?? false,
         published: true,
         data: response,
       })
@@ -61,19 +71,21 @@ function* getPublishedJobsWorker(action: { type: string; payload?: GetJobsReques
   }
 }
 
-function* getUnpublishedJobsWorker(action: { type: string; payload?: GetJobsRequestActionPayload }) {
+
+function* getUnpublishedJobsWorker(
+  action: PayloadAction<GetJobsRequestActionPayload | undefined>
+): Generator<CallEffect | PutEffect, void, JobsListApiResponse> {
   try {
-    const { append = false, ...params } = action.payload || {};
-    params.published = false;
+    const payload = { ...(action.payload ?? {}), published: false };
 
-    yield put(getJobsRequest(params));
+    yield put(getJobsRequest(payload));
 
-    const response: JobsListApiResponse = yield call(jobsApi.getJobs, params);
+    const response = yield call(jobsApi.getJobs, payload);
 
     yield put(
       getJobsSuccess({
-        page: params.page ?? 1,
-        append,
+        page: payload.page ?? 1,
+        append: payload.append ?? false,
         published: false,
         data: response,
       })
@@ -83,13 +95,11 @@ function* getUnpublishedJobsWorker(action: { type: string; payload?: GetJobsRequ
   }
 }
 
-
-
 function* getJobDetailWorker(action: { type: string; payload: string }): Generator<any, void, any> {
   try {
     yield put(getJobDetailRequest(action.payload));
     const response = yield call(jobsApi.getJobDetail, action.payload);
-    console.log(response,"getJobDetailWorkergetJobDetailWorkergetJobDetailWorkergetJobDetailWorker")
+    console.log(response, "getJobDetailWorkergetJobDetailWorkergetJobDetailWorkergetJobDetailWorker")
     yield put(getJobDetailSuccess(response));
   } catch (error: any) {
     yield put(getJobDetailFailure(error.message || "Failed to fetch job details"));

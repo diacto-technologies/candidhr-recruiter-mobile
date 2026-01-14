@@ -8,6 +8,42 @@ import { useStyles } from "./styles";
 import { useAppSelector } from "../../../../hooks/useAppSelector";
 import { selectJobsLoading, selectSelectedJob } from "../../../../features/jobs/selectors";
 import { formatMonDDYYYY } from "../../../../utils/dateformatter";
+import Shimmer from "../../../atoms/shimmer";
+
+
+const JobHeaderShimmer = () => {
+  return (
+    <View style={{ paddingVertical: 16 }}>
+      {/* Title */}
+      <Shimmer height={24} width="70%" style={{ marginBottom: 12 }} />
+
+      {/* Meta row */}
+      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
+        <Shimmer height={14} width="30%" />
+        <View style={{ width: 8 }} />
+        <Shimmer height={14} width="20%" />
+      </View>
+
+      {/* Location */}
+      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
+        <Shimmer height={14} width="60%" />
+      </View>
+
+      {/* Chips */}
+      <View style={{ flexDirection: "row", gap: 10, marginBottom: 12 }}>
+        <Shimmer height={24} width={80} borderRadius={12} />
+        <Shimmer height={24} width={100} borderRadius={12} />
+      </View>
+
+      {/* Close date */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <Shimmer height={14} width="25%" />
+        <Shimmer height={14} width="20%" />
+        <Shimmer height={20} width={60} borderRadius={10} />
+      </View>
+    </View>
+  );
+};
 
 const JobHeader = () => {
   const styles = useStyles();
@@ -15,6 +51,10 @@ const JobHeader = () => {
   const loading = useAppSelector(selectJobsLoading);
   const closeDate = jobs?.close_date ? new Date(jobs.close_date) : null;
   const isClosed = closeDate ? closeDate < new Date() : false;
+
+  if(loading){
+   return <JobHeaderShimmer/>
+  }
   return (
     <View style={styles.container}>
       <Typography variant="semiBoldTxtxl">{jobs?.title ?? ""}</Typography>
@@ -44,7 +84,7 @@ const JobHeader = () => {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Typography variant='regularTxtsm' color={colors.gray[500]}>Closed on :</Typography>
           <Typography variant="mediumTxtsm" color={colors.gray[700]}>{formatMonDDYYYY(jobs?.close_date ?? "")}</Typography>
-          <View style={[styles.close, { backgroundColor: colors.error[50], borderColor: colors.error[200] }]}>
+          <View style={[styles.close, { backgroundColor: isClosed? colors.error[50]:colors.success[50], borderColor: isClosed?colors.error[200]:colors.success[200] }]}>
             {isClosed ? (
               <Typography
                 variant="mediumTxtxs"
@@ -55,7 +95,7 @@ const JobHeader = () => {
             ) : (
               <Typography
               variant="mediumTxtxs"
-              color={colors.error[700]}
+              color={colors.success[700]}
               >
                 Open
               </Typography>

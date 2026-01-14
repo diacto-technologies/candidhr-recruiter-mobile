@@ -44,6 +44,11 @@ export const tenant = createSelector(
   (auth) => auth.tenant
 );
 
+export const organizationalOrigin = createSelector(
+  [selectAuthState],
+  (auth) => auth.origin,
+);
+
 export const selectForgotPasswordLoading = createSelector(
   [selectAuthState],
   (auth) => auth.forgotPasswordLoading
@@ -82,6 +87,10 @@ export const selectResetPasswordMessage = createSelector(
 export const selectResetPasswordError = createSelector(
   [selectAuthState],
   (auth) => auth.resetPasswordError
+);
+export const forgetPassowrdError = createSelector(
+  [selectAuthState],
+  (auth) => auth.forgotPasswordMessage
 );
 
 

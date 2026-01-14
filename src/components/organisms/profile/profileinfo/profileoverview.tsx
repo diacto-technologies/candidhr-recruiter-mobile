@@ -11,15 +11,41 @@ import { walletIcon } from "../../../../assets/svg/wallet";
 import { currencyRuppeIcon } from "../../../../assets/svg/currencyruppe";
 import { calenderIcon } from "../../../../assets/svg/calender";
 import { useAppSelector } from "../../../../hooks/useAppSelector";
-import { selectSelectedApplication } from "../../../../features/applications/selectors";
+import { selectApplicationsDetailLoading, selectSelectedApplication } from "../../../../features/applications/selectors";
 import { applicants } from "../../../../utils/dummaydata";
 import { formatNoticePeriod } from "../../../../utils/experienceformatter";
 import FooterButtons from "../../../molecules/footerbuttons";
 import { useRNSafeAreaInsets } from "../../../../hooks/useRNSafeAreaInsets";
+import CopyText from "../../../molecules/copyText";
+import Shimmer from "../../../atoms/shimmer";
+
+const OverviewCardShimmer = () => {
+  return (
+    <View style={styles.card}>
+      <Shimmer height={20} width="40%" />
+
+      <Shimmer height={180} borderRadius={14} />
+
+      {[1, 2, 3, 4].map(i => (
+        <View key={i} style={styles.row}>
+          <Shimmer width={40} height={40} borderRadius={8} />
+          <View style={{ marginLeft: 14, flex: 1 }}>
+            <Shimmer width="60%" height={14} />
+            <Shimmer width="40%" height={12} style={{ marginTop: 6 }} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+};
 
 const OverviewCard = () => {
   const application = useAppSelector(selectSelectedApplication);
-  const insets = useRNSafeAreaInsets();
+  const loading = useAppSelector(selectApplicationsDetailLoading);
+  if (loading) {
+    return <OverviewCardShimmer />;
+  }
+
   return (
     <View style={styles.card}>
       <Typography variant="semiBoldTxtlg">Overview</Typography>
@@ -29,7 +55,7 @@ const OverviewCard = () => {
           source={
             application?.resume?.introduction_video
               ? application.resume.introduction_video
-              : "https://www.w3schools.com/html/mov_bbb.mp4"
+              : ""
           }
         />
       </View>
@@ -39,15 +65,16 @@ const OverviewCard = () => {
             <SvgXml xml={phoneIcon} height={20} width={20} />
           </View>
           <View style={styles.textBox}>
-            <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>{application?.candidate?.contact ?? "_"}</Typography>
+            <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>{application?.candidate?.contact ?? "Not provided"}</Typography>
             <Typography variant="regularTxtsm" color={colors.gray[600]}>
               Phone number
             </Typography>
           </View>
-
-          <TouchableOpacity>
-            <SvgXml xml={copyIcon} height={20} width={20} />
-          </TouchableOpacity>
+          {application?.candidate?.contact &&
+            <CopyText text={(application?.candidate?.contact ?? "").toString()} message="Number copied">
+              <SvgXml xml={copyIcon} height={20} width={20} />
+            </CopyText>
+          }
         </View>
 
         {/* Email */}
@@ -57,15 +84,17 @@ const OverviewCard = () => {
           </View>
 
           <View style={styles.textBox}>
-            <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>{application?.candidate?.email ?? "_"}</Typography>
+            <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>{application?.candidate?.email ?? ""}</Typography>
             <Typography variant="regularTxtsm" color={colors.gray[600]}>
               Email address
             </Typography>
           </View>
 
-          <TouchableOpacity>
-            <SvgXml xml={copyIcon} height={20} width={20} />
-          </TouchableOpacity>
+          {application?.candidate?.email &&
+            <CopyText text={application?.candidate?.email ?? ""} message="Email copied">
+              <SvgXml xml={copyIcon} height={20} width={20} />
+            </CopyText>
+          }
         </View>
       </View>
       <View style={styles.divider} />
@@ -104,7 +133,7 @@ const OverviewCard = () => {
         </View>
 
         <View style={styles.textBox}>
-          <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>{application?.notice_period_in_months ?? 0}days</Typography>
+          <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>{application?.candidate?.notice_period_in_months ?? 0} days</Typography>
           <Typography variant="regularTxtsm" color={colors.gray[600]}>
             Notice period
           </Typography>
@@ -116,7 +145,7 @@ const OverviewCard = () => {
         </View>
 
         <View style={styles.textBox}>
-          <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>{application?.resume?.relevant_experience_in_months ?? 0}months</Typography>
+          <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>{application?.resume?.relevant_experience_in_months ?? 0} months</Typography>
           <Typography variant="regularTxtsm" color={colors.gray[600]}>
             Relevant Experience
           </Typography>

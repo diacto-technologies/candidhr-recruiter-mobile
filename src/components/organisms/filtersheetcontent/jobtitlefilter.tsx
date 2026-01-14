@@ -1,8 +1,13 @@
 // components/filters/tabs/JobTitleFilter.tsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Typography from '../../atoms/typography';
+import SearchBar from '../../atoms/searchbar';
+import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { useAppSelector } from '../../../hooks/useAppSelector';
+import { selectApplicationsFilters } from '../../../features/applications/selectors';
+import { setApplicationsFilters } from '../../../features/applications/slice';
 
 const jobTitles = [
   { label: 'Hybrid', count: 23 },
@@ -11,46 +16,26 @@ const jobTitles = [
 ];
 
 const JobTitleFilter = () => {
-  const [selected, setSelected] = useState<string[]>([]);
+  const dispatch = useAppDispatch();
+  const filters = useAppSelector(selectApplicationsFilters);
 
-  const toggle = (label: string) => {
-    setSelected((prev) =>
-      prev.includes(label)
-        ? prev.filter((i) => i !== label)
-        : [...prev, label]
-    );
-  };
+  // const toggle = (label: string) => {
+  //   setSelected((prev) =>
+  //     prev.includes(label)
+  //       ? prev.filter((i) => i !== label)
+  //       : [...prev, label]
+  //   );
+  // };
 
   return (
-    <>
-      {jobTitles.map((item) => {
-        const isChecked = selected.includes(item.label);
-
-        return (
-          <TouchableOpacity
-            key={item.label}
-            style={styles.row}
-            onPress={() => toggle(item.label)}
-          >
-            {/* Checkbox + Label */}
-            <View style={styles.left}>
-              <View style={[styles.checkbox, isChecked && styles.checked]}>
-                {isChecked && (
-                  <Icon name="check" size={16} color="#FFFFFF" />
-                )}
-              </View>
-
-              <Typography variant="P2">{item.label}</Typography>
-            </View>
-
-            {/* Count badge */}
-            <View style={styles.badge}>
-              <Typography variant="P3">{item.count}</Typography>
-            </View>
-          </TouchableOpacity>
-        );
-      })}
-    </>
+    <View style={{ paddingHorizontal: 10 }}>
+      <SearchBar value={filters.name}
+        placeholder="Search"
+        onChangeText={(v) =>
+          dispatch(setApplicationsFilters({ name: v }))
+        }
+      />
+    </View>
   );
 };
 

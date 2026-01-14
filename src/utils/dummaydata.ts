@@ -1,12 +1,19 @@
-export const filtersOption = [
-    'Job title',
+export const  applicantFiltersOption = [
+    'Name',
+    'Email',
+    'Applied For',
+    'Contact',
+    'Applied',
+    'Last Update',
+]
+
+export const jobFiltersOption = [
+    'Title',
     'Experience',
+    'Employment Type',
     'Location',
-    'Salary',
-    'Work mode',
-    'By date',
-    'Job status',
-    'Created by',
+    'Close Date',
+    'Created By',
 ]
 
 export const JobList = [
@@ -94,10 +101,10 @@ export const applicants = [
 export const menuItems = [
     {
         id: '1',
-        name: 'Assessment',
+        name: 'Logout',
     },
-    {
-        id: '2',
-        name: 'Video Interview',
-    },
+    // {
+    //     id: '2',
+    //     name: 'Video Interview',
+    // },
 ]

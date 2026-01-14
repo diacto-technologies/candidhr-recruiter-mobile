@@ -20,7 +20,7 @@ const GetStartedScreen = () => {
   const insets = useSafeAreaInsets();
   return (
     <Fragment>
-      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
+      {/* <StatusBar translucent backgroundColor="transparent" barStyle="light-content" /> */}
       <ImageBackground
         source={require("../../../../assets/images/welcomescr.png")}
         style={styles.bg}
@@ -57,13 +57,13 @@ const GetStartedScreen = () => {
             size='Medium'
             borderRadius={8}
             textColor="#fff"
-            onPress={()=>navigate('LoginScreen')}
+            onPress={()=>navigate('OrgnizationalSwitch')}
           >
             Sign in
           </Button>
 
           {/* CONTACT US BUTTON */}
-            <Button
+            {/* <Button
               buttonColor="#FFFFFF"
               textColor={colors.gray[700]}
               borderGradientOpacity={0.5}
@@ -72,7 +72,7 @@ const GetStartedScreen = () => {
               onPress={()=>{navigate('ContactUsScreen')}}
             >
               Contact us
-            </Button>
+            </Button> */}
           </View>
         </View>
       </ImageBackground>

@@ -10,6 +10,7 @@ import { getPersonalityScreeningListRequestAction, getPersonalityScreeningRespon
 import { selectPersonalityScreeningList, selectPersonalityScreeningResponses, selectSelectedApplication } from '../../../../features/applications/selectors';
 import { useAppSelector } from '../../../../hooks/useAppSelector';
 import Dropdown from '../../dropdown';
+import StatusDropdown from '../../dropdown/statusDropdown';
 import { formatMonDDYYYY } from '../../../../utils/dateformatter';
 import VideoPlayerBox from '../../../molecules/videoplayer';
 import { getStatusColor } from '../../applicantlist/helper';
@@ -18,14 +19,19 @@ import { sparkles } from '../../../../assets/svg/sparkles';
 import { useStyles } from "./styles";
 import { TranscriptionSegment } from '../../../../features/applications/types';
 import Divider from '../../../atoms/divider';
+import CopyText from '../../../molecules/copyText';
 
 
 const STATUS_OPTIONS = [
-  { id: "shortlisted", name: "Shortlisted" },
-  { id: "hired", name: "Hired" },
+  { id: "started", name: "Started" },
+  { id: "assigned", name: "Assigned" },
+  { id: "under_review", name: "Under Review" },
+  { id: "completed", name: "Completed" },
   { id: "on_hold", name: "On Hold" },
   { id: "rejected", name: "Rejected" },
+  { id: "shortlisted", name: "Shortlisted" },
   { id: "final_interview", name: "Scheduled Final Interview" },
+  { id: "hired", name: "Hired" },
 ];
 
 export default function VideoInterview() {
@@ -47,11 +53,14 @@ export default function VideoInterview() {
 
     dispatch(
       getPersonalityScreeningListRequestAction({
-        application_id: applicant.id,
-        job_id: applicant.job.id,
+        application_id: applicant?.id,
+        job_id: applicant?.job.id,
       })
     );
   }, []);
+
+  console.log(applicant?.id,"kkkkkkkkkkkkk",applicant?.job.id)
+  
 
 
   useEffect(() => {
@@ -69,12 +78,39 @@ export default function VideoInterview() {
   }, [PersonalityScreeningList]);
 
   const sessionOptions =
-    PersonalityScreeningList?.map(item => ({
+    PersonalityScreeningList?.map((item,index) => ({
       id: item.id,
-      name: `Automated Video Interview  ${item.status_text ?? '—'}`,
+      name: `Automated Video Interview`,
       status_text: item?.status_text ?? "—",
       raw: item,
     })) ?? [];
+
+  // Map status_text to STATUS_OPTIONS id format
+  const mapStatusTextToId = (statusText: string): string => {
+    const statusMap: { [key: string]: string } = {
+      'Started': 'started',
+      'Assigned': 'assigned',
+      'Under Review': 'under_review',
+      'Completed': 'completed',
+      'On Hold': 'on_hold',
+      'Rejected': 'rejected',
+      'Shortlisted': 'shortlisted',
+      'Scheduled Final Interview': 'final_interview',
+      'Hired': 'hired',
+    };
+    return statusMap[statusText] || '';
+  };
+
+  // Get current status id from selected session
+  const currentStatusId = useMemo(() => {
+    if (selectedSession && PersonalityScreeningList?.length) {
+      const currentSession = PersonalityScreeningList.find(item => item.id === selectedSession);
+      if (currentSession?.status_text) {
+        return mapStatusTextToId(currentSession.status_text);
+      }
+    }
+    return '';
+  }, [selectedSession, PersonalityScreeningList]);
 
   const screening = useMemo(() => {
     if (!PersonalityScreeningList?.length || !selectedSession) return null;
@@ -132,7 +168,7 @@ export default function VideoInterview() {
 
   const scorePercent =
     summaryData.score !== null
-      ? Math.round(summaryData.score * 100)
+      ? Math.round(summaryData.score * 10)
       : null;
 
   const convertSeconds = (duration: number) => {
@@ -153,7 +189,7 @@ export default function VideoInterview() {
 
   const handleCopyTranscription = async () => {
     const transcriptionText = getTranscriptionText();
-    Alert.alert('Transcription', transcriptionText);
+
   };
 
   const getTranscriptionText = () => {
@@ -206,6 +242,34 @@ export default function VideoInterview() {
 
   return (
     <View style={styles.container}>
+      {/* <View style={{ zIndex: 9999 }}>
+        <StatusDropdown
+          label="Status"
+          options={STATUS_OPTIONS}
+          labelKey="name"
+          valueKey="id"
+          setValue={currentStatusId}
+          onSelect={(item) => {
+            // TODO: Add API call to update status here
+            // The status will be updated for the current selectedSession
+          }}
+        />
+      </View> */}
+      <View style={{ zIndex: 1000 }}>
+        <Dropdown
+          label="Session"
+          dropdownLabel="Session"
+          options={sessionOptions}
+          labelKey="name"
+          valueKey="id"
+          statusKey="status_text"
+          setValue={selectedSession}
+          onSelect={(item) => {
+            setSelectedSession(item?.id);
+          }}
+          onChangeText={() => { }}
+        />
+      </View>
       <View style={styles.shortListedCard}>
         <View style={styles.rowBetween}>
           <View style={styles.row}>
@@ -215,40 +279,11 @@ export default function VideoInterview() {
               variant="mediumTxtmd"
               color={colors.gray[900]}
             >
-              {PersonalityScreeningList?.find(item => item.id === selectedSession)?.status_text ?? "_"}
+              Status {PersonalityScreeningList?.find(item => item.id === selectedSession)?.status_text ?? "_"}
             </Typography>
           </View>
           <SvgXml xml={arrowDown} />
         </View>
-      </View>
-      <View style={{ zIndex: 9999 }}>
-        <Dropdown
-          label="Status"
-          dropdownLabel="Status"
-          options={STATUS_OPTIONS}
-          labelKey="name"
-          valueKey="id"
-          //setValue={selectedSession}
-          onSelect={(item) => {
-            // setSelectedSession(item?.id)
-          }}
-          onChangeText={() => { }}
-        />
-      </View>
-      <View style={{ zIndex: 1000 }}>
-        <Dropdown
-          label="Session"
-          dropdownLabel="Session"
-          options={sessionOptions}
-          labelKey="name"
-          valueKey="id"
-          setValue={selectedSession}
-          onSelect={(item) => {
-            setSelectedSession(item?.id);
-          }}
-          onChangeText={() => { }}
-        />
-
       </View>
 
       {/* TIMELINE */}
@@ -266,7 +301,7 @@ export default function VideoInterview() {
         <View style={{ flexDirection: "row", alignItems: 'center', gap: 8 }}>
           <SvgXml xml={sparkles} height={20} width={20} />
           <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
-            Video interview - AI summary
+            Video Interview - AI Summary
           </Typography>
         </View>
 
@@ -296,13 +331,13 @@ export default function VideoInterview() {
               {activeTab} Analysis
             </Typography>
 
-            {scorePercent !== null && (
+            {/* {scorePercent !== null && (
               <View style={styles.scoreBadge}>
                 <Typography variant="mediumTxtxs" color={colors.orange[700]}>
                   Score: {scorePercent}%
                 </Typography>
               </View>
-            )}
+            )} */}
           </View>
 
           <Typography
@@ -382,7 +417,7 @@ export default function VideoInterview() {
                         <View style={styles.thumbnail} />
                       )}
                       <View style={styles.responseDropdownContent}>
-                        <Typography variant="mediumTxtmd" color={colors.gray[900]}>
+                        <Typography variant="mediumTxtmd" color={colors.gray[900]} numberOfLines={4} ellipsizeMode="tail">
                           {responseItem.question?.text ?? "—"}
                         </Typography>
                         <Typography variant="regularTxtsm" color={colors.gray[600]}>
@@ -416,7 +451,7 @@ export default function VideoInterview() {
             source={
               selectedResponse?.video_file
                 ? selectedResponse.video_file
-                : "https://www.w3schools.com/html/mov_bbb.mp4"
+                : ""
             }
             onProgress={(e) => setCurrentTime(e.currentTime || 0)}
           />
@@ -434,9 +469,9 @@ export default function VideoInterview() {
             <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
               Transcription
             </Typography>
-            <TouchableOpacity onPress={handleCopyTranscription}>
+            <CopyText text={getTranscriptionText ?? ""} message="Transcription copied">
               <SvgXml xml={copyIcon} />
-            </TouchableOpacity>
+            </CopyText>
           </View>
           <View style={styles.transcriptionTabs}>
             <TouchableOpacity

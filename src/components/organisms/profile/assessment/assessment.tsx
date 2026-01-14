@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 
@@ -6,6 +6,7 @@ import CustomTimeline from './timelinecard';
 import AssessmentsDetails from './assessmentsdetails';
 import Typography from '../../../atoms/typography';
 import Dropdown from '../../dropdown';
+import StatusDropdown from '../../dropdown/statusDropdown';
 
 import { colors } from '../../../../theme/colors';
 import { arrowDown } from '../../../../assets/svg/arrowdown';
@@ -34,12 +35,17 @@ interface TimelineItem {
   status: 'completed' | 'current';
 }
 
-const options = [
-  { id: 1, name: 'Apple' },
-  { id: 2, name: 'Banana' },
-  { id: 3, name: 'Mango' },
+const STATUS_OPTIONS = [
+  { id: "started", name: "Started" },
+  { id: "assigned", name: "Assigned" },
+  { id: "under_review", name: "Under Review" },
+  { id: "completed", name: "Completed" },
+  { id: "on_hold", name: "On Hold" },
+  { id: "rejected", name: "Rejected" },
+  { id: "shortlisted", name: "Shortlisted" },
+  { id: "final_interview", name: "Scheduled Final Interview" },
+  { id: "hired", name: "Hired" },
 ];
-
 
 const Assessment = () => {
   const [session, setSelectedSession] = useState<string | null>(null);
@@ -48,11 +54,11 @@ const Assessment = () => {
   const assessmentLogs = useAppSelector(selectAssessmentLogs);
   const assessmentReport = useAppSelector(selectAssessmentReport);
 
-  useEffect(() => {
-    if (applicant?.id) {
-      dispatch(getAssessmentLogsRequestAction(applicant?.id as string));
-    }
-  }, []);
+  // useEffect(() => {
+  //   if (applicant?.id) {
+  //     dispatch(getAssessmentLogsRequestAction(applicant?.id as string));
+  //   }
+  // }, []);
 
   useEffect(() => {
     if (session) {
@@ -66,6 +72,39 @@ const Assessment = () => {
   //     setSelectedSession(assessmentLogs[assessmentLogs.length - 1]?.id);
   //   }
   // }, [assessmentLogs, session]);
+
+  useEffect(() => {
+    if (!session && assessmentLogs?.length) {
+      setSelectedSession(assessmentLogs[assessmentLogs.length - 1].id);   // or last item if needed
+    }
+  }, [assessmentLogs]);
+
+  // Map status_text to STATUS_OPTIONS id format
+  const mapStatusTextToId = (statusText: string): string => {
+    const statusMap: { [key: string]: string } = {
+      'Started': 'started',
+      'Assigned': 'assigned',
+      'Under Review': 'under_review',
+      'Completed': 'completed',
+      'On Hold': 'on_hold',
+      'Rejected': 'rejected',
+      'Shortlisted': 'shortlisted',
+      'Scheduled Final Interview': 'final_interview',
+      'Hired': 'hired',
+    };
+    return statusMap[statusText] || '';
+  };
+
+  // Get current status id from selected session
+  const currentStatusId = useMemo(() => {
+    if (session && assessmentLogs?.length) {
+      const currentSession = assessmentLogs.find(item => item.id === session);
+      if (currentSession?.status_text) {
+        return mapStatusTextToId(currentSession.status_text);
+      }
+    }
+    return '';
+  }, [session, assessmentLogs]);
 
   const timelineSteps = [
     {
@@ -115,6 +154,34 @@ const Assessment = () => {
 
   return (
     <View style={styles.container}>
+      {/* <StatusDropdown
+          label="Status"
+          options={STATUS_OPTIONS}
+          labelKey="name"
+          valueKey="id"
+          setValue={currentStatusId}
+          onSelect={(item) => {
+            // TODO: Add API call to update status here
+            // The status will be updated for the current selectedSession
+          }}
+        /> */}
+      {/* <View style={{ zIndex: 1000 }}> */}
+      <Dropdown
+        label="Session"
+        dropdownLabel="Session"
+        options={assessmentLogs?.map((item, index) => ({
+          id: item.id,
+          name: `Assessment`,
+          status_text: item?.status_text ?? "—",
+          raw: item,
+        })) ?? []}
+        setValue={session ?? assessmentLogs[0]?.id}
+        statusKey="status_text"
+        labelKey="name"
+        valueKey="id"
+        onSelect={item => setSelectedSession(item?.id)}
+        onChangeText={() => { }}
+      />
       <View style={styles.shortListedCard}>
         <View style={styles.rowBetween}>
           <View style={styles.row}>
@@ -123,37 +190,13 @@ const Assessment = () => {
               variant="mediumTxtmd"
               color={colors.gray[900]}
             >
-              {assessmentLogs?.find(item => item.id === session)?.status_text ?? "_"}
+             Status {assessmentLogs?.find(item => item.id === session)?.status_text ?? "_"}
             </Typography>
           </View>
           <SvgXml xml={arrowDown} />
         </View>
       </View>
-
-      {/* ================= Session Card ================= */}
-      {/* <View style={styles.shortListedCard}>
-        <View style={styles.rowBetween}>
-          <Typography variant="mediumTxtmd" color={colors.gray[900]}>
-            Session: Assessment {assessmentLogs?.[1]?.assessments_count ?? '0'}
-          </Typography>
-        </View>
-      </View> */}
-      <View style={{ zIndex: 1000 }}>
-        <Dropdown
-          label="Session"
-          dropdownLabel="Session"
-          options={assessmentLogs?.map((item) => ({
-            id: item.id,
-            name: `${item.status_text} (Assessment ${item.assessments_count})`,
-            assessments_count: item.assessments_count,
-          })) ?? []}
-          setValue={session ?? assessmentLogs[0]?.id}
-          labelKey="name"
-          valueKey="id"
-          onSelect={item => setSelectedSession(item?.id)}
-          onChangeText={() => { }}
-        />
-      </View>
+      {/* </View> */}
 
       <CustomTimeline progress={progress} data={timelineData} />
 
