@@ -313,7 +313,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   innerCard: {
-    alignItems:'center',
     borderWidth: 1,
     borderColor: colors.gray[200],
     borderRadius: 10,
@@ -360,3 +359,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
+

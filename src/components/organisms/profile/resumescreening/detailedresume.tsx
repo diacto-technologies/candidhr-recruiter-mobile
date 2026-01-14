@@ -166,9 +166,12 @@ const DetailedResume = () => {
         resume.work_experience.map((item, index) => (
           <View key={index} style={styles.block}>
             <View style={styles.row}>
-              <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
-                {item?.position ?? "_"}
-              </Typography>
+              <View style={{ flex: 1 }}>
+                <Typography variant="semiBoldTxtmd" color={colors.gray[900]} numberOfLines={2}
+                  ellipsizeMode="tail">
+                  {item?.position ?? "_"}
+                </Typography>
+              </View>
 
               {item?.relevance && (
                 <View
@@ -226,9 +229,12 @@ const DetailedResume = () => {
         resume.projects.map((item, index) => (
           <View key={index} style={styles.block}>
             <View style={styles.row}>
-              <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
+              <View style={{flex:1}}>
+              <Typography variant="semiBoldTxtmd" color={colors.gray[900]} numberOfLines={3}
+                  ellipsizeMode="tail">
                 {index + 1}. {item?.name ?? "_"}
               </Typography>
+              </View>
 
               {item?.relevance && (
                 <View
@@ -267,7 +273,8 @@ const DetailedResume = () => {
           EDUCATION
         </Typography>
         <View style={styles.roundedConatiner}>
-          <Typography variant="semiBoldTxtxs" color={colors.gray[600]}>
+          <Typography variant="semiBoldTxtxs" color={colors.gray[600]} numberOfLines={2}
+                  ellipsizeMode="tail">
             {resume?.education?.length ?? 0}
           </Typography>
         </View>
@@ -277,9 +284,12 @@ const DetailedResume = () => {
         resume.education.map((item, index) => (
           <View key={index} style={styles.block}>
             <View style={styles.row}>
-              <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
-                {item?.school ?? "_"}
-              </Typography>
+              <View style={{ flex: 1 }}>
+                <Typography variant="semiBoldTxtmd" color={colors.gray[900]} numberOfLines={3}
+                  ellipsizeMode="tail">
+                  {item?.school ?? "_"}
+                </Typography>
+              </View>
 
               {item?.relevance && (
                 <View
@@ -333,30 +343,32 @@ const DetailedResume = () => {
         resume.certifications.map((item, index) => (
           <View key={index} style={styles.block}>
             <View style={styles.row}>
-              <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
-                {item?.name ?? "_"}
-              </Typography>
-
-              {item?.relevance && (
-                <View
-                  style={[
-                    styles.relevantPill,
-                    {
-                      backgroundColor:
-                        getRelevanceStyles(item.relevance).backgroundColor,
-                      borderColor:
-                        getRelevanceStyles(item.relevance).borderColor,
-                    },
-                  ]}
-                >
-                  <Typography
-                    variant="mediumTxtxs"
-                    color={getRelevanceStyles(item.relevance).textColor}
-                  >
-                    {formatRelevance(item.relevance)}
-                  </Typography>
+              <View style={{flex:1}}>
+                <Typography variant="semiBoldTxtmd" color={colors.gray[900]} numberOfLines={3} ellipsizeMode="tail">
+                  {item?.name ?? "_"}
+                </Typography>
                 </View>
-              )}
+
+                {item?.relevance && (
+                  <View
+                    style={[
+                      styles.relevantPill,
+                      {
+                        backgroundColor:
+                          getRelevanceStyles(item.relevance).backgroundColor,
+                        borderColor:
+                          getRelevanceStyles(item.relevance).borderColor,
+                      },
+                    ]}
+                  >
+                    <Typography
+                      variant="mediumTxtxs"
+                      color={getRelevanceStyles(item.relevance).textColor}
+                    >
+                      {formatRelevance(item.relevance)}
+                    </Typography>
+                  </View>
+                )}
             </View>
 
             <Typography variant="mediumTxtsm" color={colors.gray[700]}>
@@ -407,9 +419,8 @@ const styles = StyleSheet.create({
 
   row: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: 8,
-    flexWrap:'wrap'
   },
 
   relevantPill: {
@@ -439,16 +450,16 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 12,
   },
-  
+
   emptyIcon: {
     width: 36,
     height: 36,
     borderRadius: 18,
     borderWidth: 1,
     borderColor: colors.gray[300],
-    alignItems:'center',
-    justifyContent:'center'
+    alignItems: 'center',
+    justifyContent: 'center'
   },
-  
+
 });
 

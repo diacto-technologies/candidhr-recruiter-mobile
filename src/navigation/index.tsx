@@ -21,20 +21,25 @@ const Stack= createNativeStackNavigator()
 const Navigation:FC = () => {
   return (
     <NavigationContainer ref={navigationRef} linking={linking}>
-        <Stack.Navigator initialRouteName='SplashScreen' screenOptions={{headerShown:false}}>
-            <Stack.Screen  name='SplashScreen' component={SplashScreen}/>
-            <Stack.Screen  name='OrgnizationalSwitch' component={OrgnizationalSwitch} options={{animation:'fade',statusBarStyle: 'dark'}}/>
-            <Stack.Screen  name='LoginScreen' component={LoginScreen} options={{animation:'fade',statusBarStyle: 'dark'}}/>
-            <Stack.Screen  name='ForgetPasswordScreen' component={ForgetPasswordScreen} options={{animation:'fade',statusBarStyle: 'dark'}} />
-            <Stack.Screen  name='JobDetailScreen' component={JobDetailScreen} options={{animation:'fade'}}/>
-            <Stack.Screen  name='UserBottomTab' component={UserBottomTab} options={{animation:'fade',statusBarStyle: 'dark'}} />
-            <Stack.Screen  name='ApplicantDetails' component={ApplicantDetails} options={{animation:'fade'}}/>
-            <Stack.Screen  name='GetStartedScreen' component={GetStartedScreen} options={{animation:'fade'}}/>
-            <Stack.Screen  name='ContactUsScreen' component={ContactUsScreen} options={{animation:'fade'}}/>
-            <Stack.Screen  name='CheckMailScreen' component={CheckMailScreen} options={{animation:'fade'}}/>
-            <Stack.Screen  name='CreateNewPasswordScreen' component={CreateNewPasswordScreen} options={{animation:'fade'}}/>
-            <Stack.Screen name="ApplicationOverviewDetails" component={ApplicationOverviewDetails}/>
-        </Stack.Navigator>
+      <Stack.Navigator initialRouteName='SplashScreen' screenOptions={{ headerShown: false }}>
+        <Stack.Screen name='SplashScreen' component={SplashScreen} />
+        <Stack.Screen name='OrgnizationalSwitch' component={OrgnizationalSwitch} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
+        <Stack.Screen name='LoginScreen' component={LoginScreen} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
+        <Stack.Screen name='ForgetPasswordScreen' component={ForgetPasswordScreen} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
+        <Stack.Screen name='JobDetailScreen' component={JobDetailScreen} options={{ animation: 'fade' }} />
+        <Stack.Screen name='UserBottomTab' component={UserBottomTab} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
+        <Stack.Screen name='ApplicantDetails' component={ApplicantDetails} options={{ animation: 'fade' }} />
+        <Stack.Screen name='GetStartedScreen' component={GetStartedScreen} options={{
+          animation: 'fade',
+          headerShown: false,
+          statusBarStyle: 'light',
+          statusBarTranslucent: true,
+        }} />
+        <Stack.Screen name='ContactUsScreen' component={ContactUsScreen} options={{ animation: 'fade' }} />
+        <Stack.Screen name='CheckMailScreen' component={CheckMailScreen} options={{ animation: 'fade' }} />
+        <Stack.Screen name='CreateNewPasswordScreen' component={CreateNewPasswordScreen} options={{ animation: 'fade' }} />
+        <Stack.Screen name="ApplicationOverviewDetails" component={ApplicationOverviewDetails} />
+      </Stack.Navigator>
     </NavigationContainer>
   )
 }

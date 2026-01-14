@@ -16,7 +16,7 @@ export const useStyles = () => {
             shadowRadius: 3,
             elevation: 1,
             gap:20,
-            height:290
+            height:290,
         },
         title: {
             fontSize: 18,

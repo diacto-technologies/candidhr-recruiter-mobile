@@ -36,7 +36,6 @@ import {
 import { applicationsApi } from "./api";
 import { AssessmentDetailedReportApiResponse, AssessmentLogApiResponse, AssessmentReportApiResponse, GetApplicationResponsesParams, GetApplicationsSagaAction, PersonalityScreeningResponse, ResumeScreeningApiResponse, ScreeningAssessment } from "./types";
 import { getAssessmentDetailedReportRequestAction, getAssessmentReportRequestAction } from "./actions";
-import { StatusBar } from "../../components";
 
 function* getApplicationsWorker(
   action: GetApplicationsSagaAction

@@ -85,9 +85,9 @@ const Dropdown = ({
             renderItem={(item, selected) => (
             <View style={[styles.optionItem, selected && styles.selectedOptionItem]}>
               <View style={styles.optionTextContainer}>
-                <Text style={styles.optionNameText} numberOfLines={1} ellipsizeMode="tail">
+                <Typography style={styles.optionNameText} numberOfLines={1} ellipsizeMode="tail">
                   {item.name}
-                </Text>
+                </Typography>
                 {item.status && ( <View style={styles.statusBadge}> <View style={[styles.statusDot,{ backgroundColor: getStatusColor(item.status) }]} /> <Typography style={styles.statusText}>{item.status}</Typography> </View> )}
                 {showIndexAndTotal && (
                   <View style={styles.numberBadge}>
@@ -124,9 +124,14 @@ const Dropdown = ({
         />
         {selectedItem && (
           <View style={styles.customSelectedDisplay}>
-            <Text style={styles.selectedTextStyle} numberOfLines={1}>
-             {" "} {selectedItem.name}{showIndexAndTotal ? ` ${selectedItem.indexs}` : ''}
-            </Text>
+            <View style={{flex:1,flexDirection:'row', alignItems:'center', marginRight:5}}>
+            <Typography style={styles.selectedTextStyle} numberOfLines={1} ellipsizeMode='tail'>
+             {" "} {selectedItem.name}
+            </Typography>
+            <Typography style={styles.selectedTextStyle} numberOfLines={1} ellipsizeMode='tail'>
+            {showIndexAndTotal ? ` ${selectedItem.indexs}` : ''}
+            </Typography>
+            </View>
             {showIndexAndTotal && (
               <View style={styles.selectedTotalBadge}>
                 <Text style={styles.selectedTotalText}>{selectedItem.total}</Text>
@@ -136,7 +141,7 @@ const Dropdown = ({
         )}
         {!selectedItem && (
           <View style={styles.customSelectedDisplay}>
-            {/* <Text style={styles.placeholderStyle}>{label}</Text> */}
+            <Text style={styles.placeholderStyle}>{label}</Text>
           </View>
         )}
         </View>

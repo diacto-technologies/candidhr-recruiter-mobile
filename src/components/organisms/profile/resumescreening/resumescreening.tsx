@@ -8,6 +8,7 @@ import { Typography } from '../../../atoms';
 import { colors } from '../../../../theme/colors';
 import { useAppSelector } from '../../../../hooks/useAppSelector';
 import { selectApplicationsDetailLoading, selectSelectedApplication } from '../../../../features/applications/selectors';
+import { formatPercentage, getScoreStatus, getSkillStatus } from '../../../../screens/applications/applicant/helper';
 interface ResumeSkill {
   name: string;
   relevance_score: number | string;
@@ -78,9 +79,9 @@ export default function ResumeScreening() {
           </View>
         </View>
         <ResumeScore
-          overall={application?.resume?.resume_score?.overall_score ?? "0"}
+          overall={formatPercentage(application?.resume?.resume_score?.overall_score ?? "0")}
           isloading={loading}
-          status="Good"
+          status={getScoreStatus(application?.resume?.resume_score?.overall_score ?? "0")}
           details={[
             { title: "Skill", percentage: (Number(application?.job?.score_weight?.skills) * 100) + "%" ?? "0", value: application?.resume?.resume_score?.skills_score ?? "_", completed: true },
             { title: "Experience", percentage: (Number(application?.job?.score_weight?.work_experience) * 100) + "%", value: application?.resume?.resume_score?.work_exp_score ?? "_", completed: false },
@@ -93,8 +94,12 @@ export default function ResumeScreening() {
         <SkillScore
           title="Skills"
           isloading={loading}
-          overall={String(calculateOverallSkillScore(application?.resume?.resume_json?.skills ?? []))}
-          status="Below avg."
+          overall={String(calculateOverallSkillScore(
+            application?.resume?.resume_json?.skills ?? []
+          ))}
+          status={String(getSkillStatus(calculateOverallSkillScore(
+            application?.resume?.resume_json?.skills ?? []
+          )))}
           data={skills}
         />
 

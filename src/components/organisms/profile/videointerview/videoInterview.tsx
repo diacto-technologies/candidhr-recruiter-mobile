@@ -417,7 +417,7 @@ export default function VideoInterview() {
                         <View style={styles.thumbnail} />
                       )}
                       <View style={styles.responseDropdownContent}>
-                        <Typography variant="mediumTxtmd" color={colors.gray[900]}>
+                        <Typography variant="mediumTxtmd" color={colors.gray[900]} numberOfLines={4} ellipsizeMode="tail">
                           {responseItem.question?.text ?? "—"}
                         </Typography>
                         <Typography variant="regularTxtsm" color={colors.gray[600]}>

@@ -4,7 +4,7 @@ import { colors } from '../../../theme/colors';
 export const useStyles = () => {
   return StyleSheet.create({
     card: {
-      //flex:1,
+      flex:1,
       backgroundColor: colors.base.white,
       padding: 16,
       borderRadius: 12,

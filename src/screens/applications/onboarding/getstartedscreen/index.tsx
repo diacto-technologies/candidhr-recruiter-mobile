@@ -20,7 +20,7 @@ const GetStartedScreen = () => {
   const insets = useSafeAreaInsets();
   return (
     <Fragment>
-      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
+      {/* <StatusBar translucent backgroundColor="transparent" barStyle="light-content" /> */}
       <ImageBackground
         source={require("../../../../assets/images/welcomescr.png")}
         style={styles.bg}

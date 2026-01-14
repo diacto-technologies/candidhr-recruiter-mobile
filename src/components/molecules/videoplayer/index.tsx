@@ -4,13 +4,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  StatusBar,
   Text,
 } from "react-native";
 import Video from "react-native-video";
 import Slider from "@react-native-community/slider";
 import Orientation from "react-native-orientation-locker";
 import { SvgXml } from "react-native-svg";
+import { useNavigation } from "@react-navigation/native";
 
 import { videoButton } from "../../../assets/svg/videobutton";
 import { sounIcon } from "../../../assets/svg/sound";
@@ -22,22 +22,27 @@ import { colors } from "../../../theme/colors";
 
 interface VideoPlayerBoxProps {
   source: string;
-  onProgress?: (data: { currentTime: number; playableDuration: number }) => void;
+  onProgress?: (data: {
+    currentTime: number;
+    playableDuration: number;
+  }) => void;
 }
 
 const formatTime = (seconds?: number) => {
   if (!isFinite(seconds as number) || seconds! < 0) {
     seconds = 0;
   }
-
   const mins = Math.floor(seconds! / 60);
   const secs = Math.floor(seconds! % 60);
-
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 };
 
-export default function VideoPlayerBox({ source, onProgress }: VideoPlayerBoxProps) {
+export default function VideoPlayerBox({
+  source,
+  onProgress,
+}: VideoPlayerBoxProps) {
   const videoRef = useRef<React.ElementRef<typeof Video>>(null);
+  const navigation = useNavigation<any>();
 
   const [isPaused, setIsPaused] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
@@ -48,54 +53,53 @@ export default function VideoPlayerBox({ source, onProgress }: VideoPlayerBoxPro
 
   const hasSource = Boolean(source);
 
-  const togglePlayPause = () => setIsPaused(prev => !prev);
-  const toggleMute = () => setIsMuted(prev => !prev);
+  const togglePlayPause = () => setIsPaused((prev) => !prev);
+  const toggleMute = () => setIsMuted((prev) => !prev);
 
-  const toggleFullscreen = () => {
-    if (fullscreen) {
-      // Exit fullscreen
-      videoRef.current?.dismissFullscreenPlayer();
-      Orientation.unlockAllOrientations();
-      StatusBar.setHidden(false, 'fade');
-      setFullscreen(false);
-    } else {
-      // Enter fullscreen
-      Orientation.lockToLandscape();
-      StatusBar.setHidden(true, 'fade');
-      setFullscreen(true);
-      videoRef.current?.presentFullscreenPlayer();
-    }
+  const enterFullscreen = () => {
+    Orientation.lockToLandscape();
+    navigation.setOptions({ statusBarHidden: true });
+    setFullscreen(true);
+    videoRef.current?.presentFullscreenPlayer();
   };
 
-  // Handle fullscreen state changes from native
+  const exitFullscreen = () => {
+    Orientation.unlockAllOrientations();
+    navigation.setOptions({ statusBarHidden: false });
+    setFullscreen(false);
+    videoRef.current?.dismissFullscreenPlayer();
+  };
+
+  const toggleFullscreen = () => {
+    fullscreen ? exitFullscreen() : enterFullscreen();
+  };
+
   const onFullscreenPlayerWillPresent = () => {
     Orientation.lockToLandscape();
-    StatusBar.setHidden(true, 'fade');
+    navigation.setOptions({ statusBarHidden: true });
     setFullscreen(true);
   };
 
   const onFullscreenPlayerWillDismiss = () => {
     Orientation.unlockAllOrientations();
-    StatusBar.setHidden(false, 'fade');
+    navigation.setOptions({ statusBarHidden: false });
     setFullscreen(false);
   };
 
-  // Cleanup orientation on unmount
   useEffect(() => {
     return () => {
       Orientation.unlockAllOrientations();
-      StatusBar.setHidden(false, 'fade');
+      navigation.setOptions({ statusBarHidden: false });
     };
-  }, []);
+  }, [navigation]);
 
   const onLoad = (data: any) => {
     setDuration(data.duration || 0);
     setCurrentTime(0);
     setLoading(false);
-  };;
+  };
 
   const handleProgress = (data: any) => {
-    console.log(data.currentTime,"currentTimecurrentTime")
     setCurrentTime(Math.max(0, data.currentTime));
     onProgress?.(data);
   };
@@ -108,7 +112,6 @@ export default function VideoPlayerBox({ source, onProgress }: VideoPlayerBoxPro
 
   return (
     <View style={[styles.container, fullscreen && styles.fullscreen]}>
-      {/* NO VIDEO CASE */}
       {!hasSource && (
         <View style={styles.noVideoBox}>
           <Text style={styles.noVideoText}>
@@ -117,7 +120,6 @@ export default function VideoPlayerBox({ source, onProgress }: VideoPlayerBoxPro
         </View>
       )}
 
-      {/* VIDEO PLAYER CASE */}
       {hasSource && (
         <>
           <Video
@@ -142,7 +144,10 @@ export default function VideoPlayerBox({ source, onProgress }: VideoPlayerBoxPro
           )}
 
           {isPaused && !loading && (
-            <TouchableOpacity style={styles.bigPlayButton} onPress={togglePlayPause}>
+            <TouchableOpacity
+              style={styles.bigPlayButton}
+              onPress={togglePlayPause}
+            >
               <SvgXml xml={videoButton} />
             </TouchableOpacity>
           )}
@@ -151,21 +156,17 @@ export default function VideoPlayerBox({ source, onProgress }: VideoPlayerBoxPro
             <View style={styles.controls}>
               <TouchableOpacity onPress={togglePlayPause}>
                 {isPaused ? (
-                  <SvgXml xml={pauseVideoIcon} color={colors.base.white} />
+                  <SvgXml xml={pauseVideoIcon} />
                 ) : (
-                  <SvgXml
-                    xml={playVideoIcon}
-                    color={colors.base.white}
-                    style={{ marginHorizontal: 8 }}
-                  />
+                  <SvgXml xml={playVideoIcon} />
                 )}
               </TouchableOpacity>
 
               <TouchableOpacity onPress={toggleMute}>
                 {isMuted ? (
-                  <SvgXml xml={muteVolumeIcon} color={colors.base.white} />
+                  <SvgXml xml={muteVolumeIcon} />
                 ) : (
-                  <SvgXml xml={sounIcon} color={colors.base.white} />
+                  <SvgXml xml={sounIcon} />
                 )}
               </TouchableOpacity>
 
@@ -181,11 +182,13 @@ export default function VideoPlayerBox({ source, onProgress }: VideoPlayerBoxPro
                 minimumTrackTintColor={colors.base.white}
                 maximumTrackTintColor="#555"
                 thumbTintColor="transparent"
-                onSlidingComplete={(val) => videoRef.current?.seek(val)}
+                onSlidingComplete={(val) =>
+                  videoRef.current?.seek(val)
+                }
               />
 
               <TouchableOpacity onPress={toggleFullscreen}>
-                <SvgXml xml={expandIcon} color={colors.base.white} />
+                <SvgXml xml={expandIcon} />
               </TouchableOpacity>
             </View>
           )}
@@ -218,8 +221,6 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
-
-  /* WHITE NO VIDEO BOX */
   noVideoBox: {
     width: "100%",
     height: "100%",
@@ -233,7 +234,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
   },
-
   bigPlayButton: {
     position: "absolute",
     alignSelf: "center",

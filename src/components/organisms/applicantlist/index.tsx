@@ -84,7 +84,7 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
   // If loading or no item provided -> show skeleton built from ShimmerBox
   if (loading || !item) {
     return (
-      <View style={[styles.card, { width: cardWidth }]}>
+      <View style={styles.card}>
         {/* Top row: avatar + two lines */}
         <View style={styles.rowBetween}>
           <View style={styles.row}>
@@ -125,7 +125,7 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
   };
 
   return (
-    <Pressable style={[styles.card, { width: cardWidth }]} onPress={() => handlePress(item?.id, item?.job?.id)}>
+    <Pressable style={[styles.card]} onPress={() => handlePress(item?.id, item?.job?.id)}>
       {/* Top Row - Avatar + Name */}
       <View style={styles.rowBetween}>
         <View style={styles.row}>
@@ -142,7 +142,7 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
           }
           <View style={{ marginLeft: 12 }}>
             <Typography variant="semiBoldTxtmd">
-              {item?.name ?? (item?.id ? "****"+String(item.id).slice(-4) : '')}
+              {item?.name ?? (item?.id ? "****" + String(item.id).slice(-4) : '')}
             </Typography>
             <Typography variant="regularTxtsm" color={colors.gray[600]}>
               Applied on : {formatMonDDYYYY(item?.applied_at)}
@@ -172,12 +172,14 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
             {item?.stage_name ?? ""}
           </Typography>
         </View>
-        <View style={styles.statusBadge}>
-          <View style={[styles.statusDot, { backgroundColor: getStatusColor(item?.stages?.latest_status) }]} />
-          <Typography variant="mediumTxtxs" color={colors.gray[700]}>
-            {item?.stages?.latest_status ?? ""}
-          </Typography>
-        </View>
+        {item?.stages?.latest_status &&
+          <View style={styles.statusBadge}>
+            <View style={[styles.statusDot, { backgroundColor: getStatusColor(item?.stages?.latest_status) }]} />
+            <Typography variant="mediumTxtxs" color={colors.gray[700]}>
+              {item?.stages?.latest_status ?? ""}
+            </Typography>
+          </View>
+        }
       </View>
     </Pressable>
   );

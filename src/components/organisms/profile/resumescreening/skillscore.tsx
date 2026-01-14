@@ -10,6 +10,7 @@ import { Wavy_CheckIcon } from "../../../../assets/svg/wavy_check";
 import Shimmer from "../../../atoms/shimmer";
 import { useAppSelector } from "../../../../hooks/useAppSelector";
 import { selectApplicationsDetailLoading } from "../../../../features/applications/selectors";
+import { getStatusStyles } from "../../../../screens/applications/applicant/helper";
 
 interface SkillItem {
   title: string;
@@ -91,9 +92,19 @@ const SkillScore = ({ title, overall, status, data, isloading }: Props) => {
       {/* Header */}
       <View style={styles.headerRow}>
         <Typography variant="semiBoldTxtlg">{title}</Typography>
-
-        <View style={styles.statusPill}>
-          <Typography variant="mediumTxtxs" color={colors.warning[700]}>
+        <View
+          style={[
+            styles.statusPill,
+            {
+              backgroundColor: getStatusStyles(status).backgroundColor,
+              borderColor: getStatusStyles(status).borderColor,
+            },
+          ]}
+        >
+          <Typography
+            variant="mediumTxtxs"
+            color={getStatusStyles(status).textColor}
+          >
             {status}
           </Typography>
         </View>

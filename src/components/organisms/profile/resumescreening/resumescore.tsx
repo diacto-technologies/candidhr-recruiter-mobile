@@ -10,6 +10,7 @@ import { checkIcon } from "../../../../assets/svg/check";
 import Shimmer from "../../../atoms/shimmer";
 import { useAppSelector } from "../../../../hooks/useAppSelector";
 import { selectApplicationsDetailLoading } from "../../../../features/applications/selectors";
+import { formatPercentage, getStatusStyles } from "../../../../screens/applications/applicant/helper";
 
 interface ScoreItem {
   title: string;
@@ -65,30 +66,41 @@ const ResumeScore = ({ overall, status, details,isloading }: Props) => {
       <View style={styles.headerRow}>
         <Typography variant="semiBoldTxtlg">Resume Score</Typography>
 
-        <View style={styles.statusPill}>
-          <Typography variant="mediumTxtxs" color={colors.success[700]}>
+        <View
+          style={[
+            styles.statusPill,
+            {
+              backgroundColor: getStatusStyles(status).backgroundColor,
+              borderColor: getStatusStyles(status).borderColor,
+            },
+          ]}
+        >
+          <Typography
+            variant="mediumTxtxs"
+            color={getStatusStyles(status).textColor}
+          >
             {status}
           </Typography>
         </View>
       </View>
       {/* Gradient Score Bar */}
       <View style={styles.gradientWrapper}>
-      <LinearGradient
-        colors={[
-          "rgba(254,200,75,0.74)",
-          "rgba(254,200,75,0.0)"
-        ]}
-        start={{ x: 0, y: 0.5 }}   // 90deg → left → right
-        end={{ x: 1, y: 0.5 }}
-        style={styles.gradientBox}
-      >
-        <View style={styles.gradientTextcontainer}>
-        <Typography variant="mediumTxtsm" style={{ flex: 1 }} color={colors.gray[900]}>
-          Overall score
-        </Typography>
-        <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>{overall}</Typography>
-        </View>
-      </LinearGradient>
+        <LinearGradient
+          colors={[
+            "rgba(254,200,75,0.74)",
+            "rgba(254,200,75,0.0)"
+          ]}
+          start={{ x: 0, y: 0.5 }}   // 90deg → left → right
+          end={{ x: 1, y: 0.5 }}
+          style={styles.gradientBox}
+        >
+          <View style={styles.gradientTextcontainer}>
+            <Typography variant="mediumTxtsm" style={{ flex: 1 }} color={colors.gray[900]}>
+              Overall score
+            </Typography>
+            <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>{overall}</Typography>
+          </View>
+        </LinearGradient>
       </View>
 
       {/* Detailed Score */}
@@ -101,9 +113,9 @@ const ResumeScore = ({ overall, status, details,isloading }: Props) => {
           <View style={styles.rowLeft}>
             {/* Icon */}
             {item.completed ? (
-               <SvgXml xml={checkIcon} height={20} width={20}/>
+              <SvgXml xml={checkIcon} height={20} width={20} />
             ) : (
-                <SvgXml xml={Wavy_CheckIcon} height={20} width={20}/>
+              <SvgXml xml={Wavy_CheckIcon} height={20} width={20} />
             )}
 
             <Typography
@@ -114,7 +126,7 @@ const ResumeScore = ({ overall, status, details,isloading }: Props) => {
             </Typography>
           </View>
 
-          <Typography variant="semiBoldTxtmd" color={colors.gray[700]}>{item.value}</Typography>
+          <Typography variant="semiBoldTxtmd" color={colors.gray[700]}>{formatPercentage(item.value)}</Typography>
         </View>
       ))}
     </View>
@@ -149,7 +161,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     gap: 8,
     borderRadius: 9999,
-    backgroundColor: colors.success[50],
+    // backgroundColor: colors.success[50],
     borderWidth: 1,
     borderColor: colors.success[200],
   },

@@ -103,13 +103,13 @@ export default function ApplicantDetails() {
       case 'Profile Info':
         return <ProfileInfo />;
       case 'Resume Screening':
-        return hasResumeScreening && <ResumeScreening />;
+        return hasResumeScreening ? <ResumeScreening /> : <View />;
       case 'Assessments':
-        return hasAssessments ? <Assessment /> : null;
+        return hasAssessments ? <Assessment /> : <View />;
       case 'Automated Video Interview':
-        return hasVideoInterview ? <VideoInterview /> : null;
+        return hasVideoInterview ? <VideoInterview /> : <View />;
       default:
-        return <></>;
+        return <View />;
     }
   };
 
