@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import CustomTabBar from './customtabbar';
 import Dashboard from '../screens/applications/dashboard';
@@ -6,6 +6,7 @@ import JobsScreen from '../screens/applications/jobs';
 import ApplicantScreen from '../screens/applications/applicant';
 import Profile from '../screens/applications/profile';
 const Tab = createBottomTabNavigator();
+
 const UserBottomTab: React.FC = () => {
   return (
     <Tab.Navigator

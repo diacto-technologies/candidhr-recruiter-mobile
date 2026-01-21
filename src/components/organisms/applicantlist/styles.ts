@@ -1,10 +1,13 @@
 import { StyleSheet } from 'react-native';
 import { colors } from '../../../theme/colors';
+import DeviceInfo from 'react-native-device-info';
 
 export const useStyles = () => {
+  const isTablet = DeviceInfo.isTablet();
   return StyleSheet.create({
     card: {
-      flex:1,
+      width:isTablet ? '49%':"100%",
+      marginHorizontal:isTablet ? 5:0,
       backgroundColor: colors.base.white,
       padding: 16,
       borderRadius: 12,
@@ -21,12 +24,22 @@ export const useStyles = () => {
     row: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
     },
     rowBetween: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
+    },
+    borderWrapper: {
+      height:40,
+      width:40,
+      backgroundColor: colors.gray[100],
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: 'rgba(0, 0, 0, 0.08)',
+      borderRadius:999,
+      // padding: 4,
     },
 
     avatar: {
@@ -78,7 +91,7 @@ export const useStyles = () => {
       borderRadius: 6,
       flexDirection: 'row',
       alignItems: 'center',
-      paddingVertical: 4,
+      paddingVertical: 2,
       paddingHorizontal: 8,
 
       borderWidth: 1,
@@ -113,12 +126,12 @@ export const useStyles = () => {
       color: colors.gray[400],
     },
     initialCircle: {
-      width: '100%',
-      height: '100%',
-      borderRadius: 50,
+      height:"90%",
+      width:"90%",
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor:colors.brand[100]
+      backgroundColor: colors.gray[100],
+      borderRadius:999
     }
   });
 };

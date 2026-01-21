@@ -153,7 +153,7 @@ export default function ApplicantDetails() {
   return (
     <Fragment>
       <CustomSafeAreaView>
-        <Header backNavigation={true} onBack={() => goBack()} threedot={true} />
+        <Header backNavigation={true} onBack={() => goBack()}/>
         <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} bounces={false}>
           <View style={styles.subContainer}>
             <ProfileCart />

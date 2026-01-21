@@ -98,15 +98,15 @@ const ApplicationStageOverview = () => {
     return (
       <View style={[styles.row, { backgroundColor: bg }]}>
         <Typography style={styles.cell} color={colors.gray[600]}>{item.total_applicants}</Typography>
-        <Typography style={styles.cell}  color={colors.gray[600]}>{item?.stages?.resume_screening}</Typography>
-        <Typography style={styles.cell}  color={colors.gray[600]}>{item?.stages?.assessment_test}</Typography>
-        <Typography style={styles.cell}  color={colors.gray[600]}>{item?.stages?.video_interview}</Typography>
-        <Typography style={styles.cell}  color={colors.gray[600]}>{item?.stages?.hired}</Typography>
-        <Typography style={styles.cell}  color={colors.gray[600]}>{item?.stages?.reject}</Typography>
-        <Typography style={styles.cell}  color={colors.gray[600]}>{item?.stages?.on_hold}</Typography>
-        <Typography style={styles.cell}  color={colors.gray[600]}>{item?.close_date}</Typography>
-        <View style={{backgroundColor:item?.is_closed?colors.error[50]:colors.success[50],paddingHorizontal:8, paddingVertical:2,borderRadius:9999,alignItems:'center', borderWidth:1 ,borderColor:item?.is_closed?colors.error[200]:colors.success[200]}}>
-        <Typography variant="regularTxtxs" color={item?.is_closed?colors.error[600]:colors.success[600]}>{item?.is_closed ? "Closed" : "Open"}</Typography>
+        <Typography style={styles.cell} color={colors.gray[600]}>{item?.stages?.resume_screening}</Typography>
+        <Typography style={styles.cell} color={colors.gray[600]}>{item?.stages?.assessment_test}</Typography>
+        <Typography style={styles.cell} color={colors.gray[600]}>{item?.stages?.video_interview}</Typography>
+        <Typography style={styles.cell} color={colors.gray[600]}>{item?.stages?.hired}</Typography>
+        <Typography style={styles.cell} color={colors.gray[600]}>{item?.stages?.reject}</Typography>
+        <Typography style={styles.cell} color={colors.gray[600]}>{item?.stages?.on_hold}</Typography>
+        <Typography style={styles.cell} color={colors.gray[600]}>{item?.close_date}</Typography>
+        <View style={{ backgroundColor: item?.is_closed ? colors.error[50] : colors.success[50], paddingHorizontal: 8, paddingVertical: 2, borderRadius: 9999, alignItems: 'center', borderWidth: 1, borderColor: item?.is_closed ? colors.error[200] : colors.success[200] }}>
+          <Typography variant="regularTxtxs" color={item?.is_closed ? colors.error[600] : colors.success[600]}>{item?.is_closed ? "Closed" : "Open"}</Typography>
         </View>
       </View>
     );
@@ -114,114 +114,116 @@ const ApplicationStageOverview = () => {
 
   return (
     <Fragment>
-        <View style={styles.card} onLayout={onContainerLayout}>
+      <View style={styles.card} onLayout={onContainerLayout}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 }}>
           <Typography variant="semiBoldTxtlg">
             Application Stage Overview
           </Typography>
-          <TouchableOpacity onPress={()=>navigate('ApplicationOverviewDetails')}>
-            <SvgXml xml={expandarrowsIcon}/>
+          <TouchableOpacity onPress={() => navigate('ApplicationOverviewDetails')}>
+            <SvgXml xml={expandarrowsIcon} />
           </TouchableOpacity>
         </View>
 
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            nestedScrollEnabled   // important
-          >
-            <View style={{ flexDirection: "row" }}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          nestedScrollEnabled 
+          bounces={false}
+        >
+          <View style={{ flexDirection: "row" }}>
 
-              <Animated.View
-                style={[
-                  styles.leftFixedWrapper,
-                  {
-                    shadowColor: "#0A0D12",
-                    shadowOffset: { width: 2, height: 0 },
-                    shadowOpacity: shadowOpacity.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, 0.06],
-                    }),
-                    shadowRadius: shadowOpacity.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, 10],
-                    }),
-                    elevation: shadowOpacity.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, 6],
-                    }),
-                  },
-                ]}
-              >
-                {/* LEFT COLUMN HEADER */}
+            <Animated.View
+              style={[
+                styles.leftFixedWrapper,
+                {
+                  shadowColor: "#0A0D12",
+                  shadowOffset: { width: 2, height: 0 },
+                  shadowOpacity: shadowOpacity.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 0.06],
+                  }),
+                  shadowRadius: shadowOpacity.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 10],
+                  }),
+                  elevation: shadowOpacity.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 6],
+                  }),
+                },
+              ]}
+            >
+              {/* LEFT COLUMN HEADER */}
+              <View style={styles.headerRow}>
+                <Typography
+                  variant="semiBoldTxtxs"
+                  style={styles.headerText}
+                  color={colors.gray[500]}
+                >
+                  Job title
+                </Typography>
+              </View>
+
+              <FlatList
+                data={data.slice(0, 6)}
+                renderItem={renderLeftColumn}
+                keyExtractor={(_, i) => `left-${i}`}
+                scrollEnabled={false}
+              />
+            </Animated.View>
+
+            <Animated.ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              scrollEventThrottle={16}
+              onContentSizeChange={(w) => setContentWidth(w)}
+              onScroll={Animated.event(
+                [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+                { useNativeDriver: false }
+              )}
+              bounces={false}
+            >
+              <View>
                 <View style={styles.headerRow}>
-                  <Typography
-                    variant="semiBoldTxtxs"
-                    style={styles.headerText}
-                    color={colors.gray[500]}
-                  >
-                    Job title
-                  </Typography>
+                  {[
+                    "Total applicants",
+                    "Reviewed",
+                    "Assessment",
+                    "Video interview",
+                    "Hired",
+                    "Rejected",
+                    "On hold",
+                    "Close date",
+                    "Status",
+                  ].map((title, index) => (
+                    <Typography
+                      key={index}
+                      variant="semiBoldTxtxs"
+                      style={styles.headerText}
+                      color={colors.gray[500]}
+                    >
+                      {title}
+                    </Typography>
+                  ))}
                 </View>
 
                 <FlatList
                   data={data.slice(0, 6)}
-                  renderItem={renderLeftColumn}
-                  keyExtractor={(_, i) => `left-${i}`}
+                  renderItem={renderRightRow}
+                  keyExtractor={(_, i) => `right-${i}`}
                   scrollEnabled={false}
                 />
-              </Animated.View>
-
-              <Animated.ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          scrollEventThrottle={16}
-          onContentSizeChange={(w) => setContentWidth(w)}
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-            { useNativeDriver: false }
-          )}
-        >
-                <View>
-                  <View style={styles.headerRow}>
-                    {[
-                      "Total applicants",
-                      "Reviewed",
-                      "Assessment",
-                      "Video interview",
-                      "Hired",
-                      "Rejected",
-                      "On hold",
-                      "Close date",
-                      "Status",
-                    ].map((title, index) => (
-                      <Typography
-                        key={index}
-                        variant="semiBoldTxtxs"
-                        style={styles.headerText}
-                        color={colors.gray[500]}
-                      >
-                        {title}
-                      </Typography>
-                    ))}
-                  </View>
-
-                  <FlatList
-                    data={data.slice(0, 6)}
-                    renderItem={renderRightRow}
-                    keyExtractor={(_, i) => `right-${i}`}
-                    scrollEnabled={false}
-                  />
-                </View>
-              </Animated.ScrollView>
-            </View>
-          </ScrollView>
-          <View style={styles.paginationContainer}>
-          <TouchableOpacity onPress={()=>navigate('ApplicationOverviewDetails')}>
-          <Typography variant="semiBoldTxtsm" color={colors.brand[700]}>
-            View more
-          </Typography>
-        </TouchableOpacity>
+              </View>
+            </Animated.ScrollView>
+          </View>
+        </ScrollView>
+        <View style={styles.paginationContainer}>
+          <TouchableOpacity onPress={() => navigate('ApplicationOverviewDetails')}>
+            <Typography variant="semiBoldTxtsm" color={colors.brand[700]}>
+              View more
+            </Typography>
+          </TouchableOpacity>
         </View>
-        </View>
+      </View>
     </Fragment>
   );
 };

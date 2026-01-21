@@ -4,4 +4,5 @@ export interface StatCardProps {
     percentage: string;
     subText: string;
     onPressInfo?: () => void;
+    tooltipText?: string;
   }

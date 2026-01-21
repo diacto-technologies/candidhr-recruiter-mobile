@@ -28,7 +28,7 @@ export const useStyles = (props: IButton & { pressed?: boolean }) => {
       //minWidth: 140,
       //paddingHorizontal: props.paddingHorizontal ?? 32,
       borderRadius: radius,
-      backgroundColor: props.disabled ? '#cecece' : bgColor,
+      backgroundColor: props.disabled ? colors.gray[50] : bgColor,
       // opacity: props.disabled ? 0.7 : 1,
       overflow: 'hidden',
       justifyContent: 'center',

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View,Pressable } from 'react-native';
+import { View, Pressable } from 'react-native';
 import Typography from '../../atoms/typography';
 import { SvgXml } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
@@ -11,9 +11,10 @@ import { Shimmer } from '../../atoms';
 import { selectAnalyticsLoading } from '../../../features/dashbaord';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useStyles } from './styles';
+import InfoTooltip from '../../atoms/Infotooltip';
 
 
-const StatCard = ({ title, value, percentage, subText, onPressInfo }: StatCardProps) => {
+const StatCard = ({ title, value, percentage, subText, onPressInfo,tooltipText }: StatCardProps) => {
   const styles = useStyles();
   const analyticsLoading = useAppSelector(selectAnalyticsLoading)
   return (
@@ -24,14 +25,15 @@ const StatCard = ({ title, value, percentage, subText, onPressInfo }: StatCardPr
         ) : (
           <View style={styles.row}>
             <SvgXml xml={userIcon} />
-            <Typography variant="regularTxtsm" style={styles.title} color={colors.gray['600']}>
+            <Typography variant="regularTxtsm" style={styles.title} color={colors.gray["600"]}>
               {title}
             </Typography>
           </View>
         )}
-        <Pressable onPress={onPressInfo}>
+
+        <InfoTooltip text={`${tooltipText}`}>
           <SvgXml xml={infoIcon} />
-        </Pressable>
+        </InfoTooltip>
       </View>
 
       {/* Main Value */}
@@ -44,7 +46,7 @@ const StatCard = ({ title, value, percentage, subText, onPressInfo }: StatCardPr
           }} />
         ) : (
           <Typography variant="semiBoldDsm">
-           {String(value)}
+            {String(value)}
           </Typography>
         )}
         {/* Percentage Row */}

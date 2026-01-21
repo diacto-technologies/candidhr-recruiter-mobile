@@ -16,31 +16,38 @@ import {
 } from "./slice";
 import { dashboardApi } from "./api";
 import { SagaIterator } from "redux-saga";
+import { PayloadAction } from "@reduxjs/toolkit";
 
-function* analyticsWorker(): SagaIterator {
+function* analyticsWorker(
+  action: PayloadAction<{ jobId?: string }>
+): SagaIterator {
   try {
     yield put(getAnalyticsRequest());
-    const response = yield call(dashboardApi.getAnalytics);
-    console.log(response, "DataCount")
+
+    const jobId = action.payload?.jobId;
+
+    const response = yield call(dashboardApi.getAnalytics, jobId);
     yield put(getAnalyticsSuccess(response));
   } catch (error: any) {
     yield put(getAnalyticsFailure(error.message || "Failed to load analytics"));
   }
 }
 
-function* applicantsStageGraphWorker(): SagaIterator {
+function* applicantsStageGraphWorker( action: PayloadAction<{ jobId?: string }>): SagaIterator {
   try {
     yield put(getStageGraphRequest());
-    const response = yield call(dashboardApi.getApplicantsStageGraph);
+    const jobId = action.payload?.jobId;
+    const response = yield call(dashboardApi.getApplicantsStageGraph,jobId);
     yield put(getStageGraphSuccess(response));
   } catch (error: any) {
     yield put(getStageGraphFailure(error.message));
   }
 }
 
-function* featureConsumptionWorker(): SagaIterator {
+function* featureConsumptionWorker( action: PayloadAction<{ jobId?: string }>): SagaIterator {
   try {
-    const response = yield call(dashboardApi.getFeatureConsumption);
+    const jobId = action.payload?.jobId;
+    const response = yield call(dashboardApi.getFeatureConsumption,jobId);
     yield put(getFeatureConsumptionSuccess(response));
     console.log("featureConsumptionWorker", response);
   } catch (error: any) {
@@ -58,9 +65,10 @@ function* weeklyGraphWorker(): Generator<any, void, any> {
   }
 }
 
-function* stageGraphOverviewWorker():SagaIterator {
+function* stageGraphOverviewWorker(action: PayloadAction<{ jobId?: string }>):SagaIterator {
   try {
-    const response = yield call(dashboardApi.getApplicantsStageGraphOverview);
+    const jobId = action.payload?.jobId;
+    const response = yield call(dashboardApi.getApplicantsStageGraphOverview,jobId);
     console.log(response,"getStageGraphOverviewSuccess")
     yield put(getStageGraphOverviewSuccess(response));
   } catch (error: any) {

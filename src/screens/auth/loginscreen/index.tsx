@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,6 +19,10 @@ import CheckBox from '../../../components/atoms/checkbox';
 import { useStyles } from './styles';
 import CustomSafeAreaView from '../../../components/atoms/customsafeareaview';
 import { clearCredentials, saveCredentials } from '../../../features/auth/slice';
+import { saveCredentialsToPasswordManager } from '../../../utils/credentialManager';
+import BackgroundPattern from '../../../components/atoms/backgroundpattern';
+import { eyeVisibleIcon } from '../../../assets/svg/eyevisible';
+import { eyeHiddenIcon } from '../../../assets/svg/eyehiddenicon';
 
 const LoginScreen = () => {
   const styles = useStyles();
@@ -26,7 +30,7 @@ const LoginScreen = () => {
   const savedEmail = useAppSelector(selectSavedEmail);
   const savedPassword = useAppSelector(selectSavedPassword);
   const savedRemember = useAppSelector(selectSavedRemember);
-  const isLoading=useAppSelector(selectAuthLoading);
+  const isLoading = useAppSelector(selectAuthLoading);
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const [email, setEmail] = useState(savedEmail || '');
   const [password, setPassword] = useState(savedPassword || '');
@@ -34,12 +38,24 @@ const LoginScreen = () => {
   const [emailError, setEmailError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  // Track if login was just successful to save credentials to password manager
+  const previousAuthState = useRef(isAuthenticated);
+  const loginEmailRef = useRef<string>('');
+  const loginPasswordRef = useRef<string>('');
 
   useEffect(() => {
+    // When login becomes successful, save credentials to password manager if rememberMe is checked
+    if (isAuthenticated && !previousAuthState.current && rememberMe) {
+      // Login just succeeded
+      saveCredentialsToPasswordManager(loginEmailRef.current, loginPasswordRef.current);
+    }
+
+    previousAuthState.current = isAuthenticated;
+
     if (isAuthenticated) {
       resetAndNavigate("UserBottomTab");
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, rememberMe]);
 
 
   const handleLogin = () => {
@@ -81,6 +97,10 @@ const LoginScreen = () => {
       return;
     }
 
+    // Store email and password for potential password manager save after successful login
+    loginEmailRef.current = email.trim();
+    loginPasswordRef.current = password;
+
     dispatch(loginRequestAction({ email: email.trim(), password }));
 
     if (rememberMe) {
@@ -94,85 +114,86 @@ const LoginScreen = () => {
 
   return (
     <CustomSafeAreaView>
-      <Header backNavigation={true} onBack={goBack} borderCondition={true}/>
-
-      <View style={styles.inner}>
-        <Typography variant="semiBoldDxs" color={colors.gray[900]}>
-          Sign in
-        </Typography>
-
-        <View style={styles.label}>
-          <Typography variant="semiBoldTxtsm" color={colors.gray[700]}>
-            Email *
+        <BackgroundPattern>
+        <Header backNavigation={true} onBack={goBack} borderCondition={true} />
+        <View style={styles.inner}>
+          <Typography variant="semiBoldDxs" color={colors.gray[900]}>
+            Sign in
           </Typography>
 
-          <TextField
-            placeholder="Enter your email"
-            value={email}
-            onChangeText={(t) => { setEmail(t); setEmailError(''); }}
-            isError={!!emailError}
-            error={emailError}
-            autoCapitalize="none"
-          />
-        </View>
-
-        <View style={styles.label}>
-          <Typography variant="semiBoldTxtsm" color={colors.gray[700]}>
-            Password *
-          </Typography>
-
-          <TextField
-            placeholder="Enter password"
-            secureTextEntry={!showPassword}
-            value={password}
-            onChangeText={setPassword}
-            autoCapitalize="none"
-          // endIcon={
-          //   <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-          //     <SvgXml xml={showPassword ? eyeVisibleIcon : eyeVisibleIcon} width={22} height={22} />
-          //   </TouchableOpacity>
-          // }
-          />
-        </View>
-
-        <View style={styles.row}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            {/* <CheckBox
-              type="square"
-              checked={rememberMe}
-              onChange={() => {
-                const newValue = !rememberMe;
-                setRememberMe(newValue);
-                if (newValue) {
-                  dispatch(saveCredentials({ email, password }));
-                } else {
-                  dispatch(clearCredentials());
-                }
-              }}
-            />
+          <View style={styles.label}>
             <Typography variant="semiBoldTxtsm" color={colors.gray[700]}>
-              Remember me
-            </Typography> */}
+              Email *
+            </Typography>
+
+            <TextField
+              placeholder="Enter your email"
+              value={email}
+              onChangeText={(t) => { setEmail(t); setEmailError(''); }}
+              isError={!!emailError}
+              error={emailError}
+              autoCapitalize="none"
+            />
           </View>
 
-          <TouchableOpacity onPress={() => navigate("ForgetPasswordScreen")}>
-            <Typography variant="semiBoldTxtsm" color={colors.brand[700]}>
-              Forgot password?
+          <View style={styles.label}>
+            <Typography variant="semiBoldTxtsm" color={colors.gray[700]}>
+              Password *
             </Typography>
-          </TouchableOpacity>
-        </View>
 
-        <Button variant="contain" onPress={handleLogin} disabled={!email || !password}>
-          {isLoading? "Signing in...":"Continue" }
-        </Button>
+            <TextField
+              placeholder="Enter password"
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={setPassword}
+              autoCapitalize="none"
+            endIcon={
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <SvgXml xml={showPassword ? eyeVisibleIcon : eyeHiddenIcon} width={18} height={18} />
+              </TouchableOpacity>
+            }
+            />
+          </View>
 
-        {/* {error && (
+          <View style={styles.row}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <CheckBox
+                type="square"
+                checked={rememberMe}
+                onChange={() => {
+                  const newValue = !rememberMe;
+                  setRememberMe(newValue);
+                  if (newValue) {
+                    dispatch(saveCredentials({ email, password }));
+                  } else {
+                    dispatch(clearCredentials());
+                  }
+                }}
+              />
+              <Typography variant="semiBoldTxtsm" color={colors.gray[700]}>
+                Remember me
+              </Typography>
+            </View>
+
+            <TouchableOpacity onPress={() => navigate("ForgetPasswordScreen")}>
+              <Typography variant="semiBoldTxtsm" color={colors.brand[700]}>
+                Forgot password?
+              </Typography>
+            </TouchableOpacity>
+          </View>
+
+          <Button variant="contain" onPress={handleLogin} disabled={!email || !password} textColor={!email || !password ? colors.gray[400] : colors.base.white}>
+            {isLoading ? "Signing in..." : "Continue"}
+          </Button>
+
+          {/* {error && (
           <Typography variant="regularTxtsm" color={colors.error[600]}>
             {error}
           </Typography>
         )} */}
 
-      </View>
+        </View>
+        </BackgroundPattern>
     </CustomSafeAreaView>
   );
 };

@@ -23,6 +23,9 @@ const Dropdown = ({
   disableDropdown,
   customContainerStyle,
   statusKey,
+  searchable = false,
+  searchPlaceholder = 'Search...',
+  searchField = 'name',
 }: DropdownProps) => {
 
   const [value, setValueInternal] = useState<any>(null);
@@ -31,8 +34,8 @@ const Dropdown = ({
 
   /* ----- MAP OPTIONS ----- */
   useEffect(() => {
-    const mapped = options.map((item,index) => {
-      const indexs=index+1
+    const mapped = options.map((item, index) => {
+      const indexs = index + 1
       const name = item[labelKey] || '';
       const status = statusKey && item[statusKey] ? item[statusKey] : '';
       const username = usernameKey && item[usernameKey] ? `@${item[usernameKey]}` : '';
@@ -46,7 +49,7 @@ const Dropdown = ({
         username: username,
         indexs: index + 1,
         total: options.length,
-        status:status
+        status: status
       };
     });
     setItems(mapped);
@@ -82,68 +85,83 @@ const Dropdown = ({
             placeholderStyle={styles.placeholderStyle}
             activeColor={colors.brand[50]}
 
+            // ✅ SHOW SEARCH ONLY IF searchable === true
+            search={searchable}
+            searchPlaceholder={searchPlaceholder}
+            searchField={searchField}
+            inputSearchStyle={styles.searchInput}
+
             renderItem={(item, selected) => (
-            <View style={[styles.optionItem, selected && styles.selectedOptionItem]}>
-              <View style={styles.optionTextContainer}>
-                <Typography style={styles.optionNameText} numberOfLines={1} ellipsizeMode="tail">
-                  {item.name}
-                </Typography>
-                {item.status && ( <View style={styles.statusBadge}> <View style={[styles.statusDot,{ backgroundColor: getStatusColor(item.status) }]} /> <Typography style={styles.statusText}>{item.status}</Typography> </View> )}
-                {showIndexAndTotal && (
-                  <View style={styles.numberBadge}>
-                    <Text style={styles.optionNumberText}>#{item.indexs}</Text>
-                  </View>
+              <View style={[styles.optionItem, selected && styles.selectedOptionItem]}>
+                <View style={styles.optionTextContainer}>
+                  <Typography style={styles.optionNameText} numberOfLines={1} ellipsizeMode="tail">
+                    {item.name}
+                  </Typography>
+
+                  {item.status && (
+                    <View style={styles.statusBadge}>
+                      <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
+                      <Typography style={styles.statusText}>{item.status}</Typography>
+                    </View>
+                  )}
+
+                  {showIndexAndTotal && (
+                    <View style={styles.numberBadge}>
+                      <Text style={styles.optionNumberText}>#{item.indexs}</Text>
+                    </View>
+                  )}
+                </View>
+
+                {selected && (
+                  <Ionicons
+                    name="checkmark"
+                    size={20}
+                    color={colors.brand[600]}
+                    style={styles.checkmarkIcon}
+                  />
                 )}
               </View>
-              {selected && (
-                <Ionicons
-                  name="checkmark"
-                  size={20}
-                  color={colors.brand[600]}
-                  style={styles.checkmarkIcon}
-                />
+            )}
+
+            onChange={item => {
+              setValueInternal(item.value);
+              onSelect?.(item.original);
+            }}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+
+            flatListProps={{ nestedScrollEnabled: true }}
+
+            renderLeftIcon={() => (
+              <View style={{ marginRight: 8 }}>
+                <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
+                  {label}{' '}
+                </Typography>
+              </View>
+            )}
+          />
+          {selectedItem && (
+            <View style={styles.customSelectedDisplay}>
+              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', marginRight: 5 }}>
+                <Typography style={styles.selectedTextStyle} numberOfLines={1} ellipsizeMode='tail'>
+                  {" "} {selectedItem.name}
+                </Typography>
+                <Typography style={styles.selectedTextStyle} numberOfLines={1} ellipsizeMode='tail'>
+                  {showIndexAndTotal ? ` ${selectedItem.indexs}` : ''}
+                </Typography>
+              </View>
+              {showIndexAndTotal && (
+                <View style={styles.selectedTotalBadge}>
+                  <Text style={styles.selectedTotalText}>{selectedItem.total}</Text>
+                </View>
               )}
             </View>
           )}
-
-          flatListProps={{ nestedScrollEnabled: true }}
-
-          onChange={item => {
-            setValueInternal(item.value);
-            onSelect?.(item.original);
-          }}
-
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-
-          renderLeftIcon={() => (
-            <View style={{ marginRight: 8 }}>
-              <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>{label} </Typography>
+          {!selectedItem && (
+            <View style={styles.customSelectedDisplay}>
+              <Text style={styles.placeholderStyle}>{label}</Text>
             </View>
           )}
-        />
-        {selectedItem && (
-          <View style={styles.customSelectedDisplay}>
-            <View style={{flex:1,flexDirection:'row', alignItems:'center', marginRight:5}}>
-            <Typography style={styles.selectedTextStyle} numberOfLines={1} ellipsizeMode='tail'>
-             {" "} {selectedItem.name}
-            </Typography>
-            <Typography style={styles.selectedTextStyle} numberOfLines={1} ellipsizeMode='tail'>
-            {showIndexAndTotal ? ` ${selectedItem.indexs}` : ''}
-            </Typography>
-            </View>
-            {showIndexAndTotal && (
-              <View style={styles.selectedTotalBadge}>
-                <Text style={styles.selectedTotalText}>{selectedItem.total}</Text>
-              </View>
-            )}
-          </View>
-        )}
-        {!selectedItem && (
-          <View style={styles.customSelectedDisplay}>
-            <Text style={styles.placeholderStyle}>{label}</Text>
-          </View>
-        )}
         </View>
       </View>
 

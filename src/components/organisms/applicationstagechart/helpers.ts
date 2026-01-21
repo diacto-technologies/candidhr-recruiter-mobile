@@ -2,40 +2,32 @@ import { stackDataItem } from "react-native-gifted-charts";
 import { colors } from "../../../theme/colors";
 import { BarItem, stageDataInterface } from "./applicationstagechart";
 
-export const buildBarData = (stageData: stageDataInterface | null): BarItem[] => {
+export const buildBarData = (
+  stageData: stageDataInterface | null,
+  selectedIndex: number
+): BarItem[] => {
+  const defaultFront = colors.gradients.brand.g600_500[1];
+  const defaultGradient = colors.gradients.brand.g600_500[0];
+
+  const activeFront =  colors.gradients.brand.g600_500[1];
+  const activeGradient = colors.gradients.brand.g600_500[0];
+
+  const makeBar = (value: number, label: string, index: number): BarItem => ({
+    value,
+    label,
+    frontColor: selectedIndex === index ? activeFront : defaultFront,
+    gradientColor: selectedIndex === index ? activeGradient : defaultGradient,
+  });
+
   return [
-    {
-      value: stageData?.resume_screening ?? 0,
-      label: "Resume\nscreening",
-      frontColor: colors.brand[500],
-      gradientColor: colors.brand[600],
-    },
-    {
-      value: stageData?.assessment_test ?? 0,
-      label: "Assessment",
-      frontColor: colors.brand[500],
-      gradientColor: colors.brand[600],
-    },
-    {
-      value: stageData?.video_interview ?? 0,
-      label: "Video\ninterview",
-      frontColor: colors.brand[500],
-      gradientColor: colors.brand[600],
-    },
-    {
-      value: stageData?.rejected ?? 0,
-      label: "Rejected",
-      frontColor: colors.gray[100],
-      gradientColor: colors.gray[200],
-    },
-    {
-      value: stageData?.on_hold ?? 0,
-      label: "On hold",
-      frontColor: colors.gray[100],
-      gradientColor: colors.gray[200],
-    },
+    makeBar(stageData?.resume_screening ?? 0, "Resume\nscreening", 0),
+    makeBar(stageData?.assessment_test ?? 0, "Assessment", 1),
+    makeBar(stageData?.video_interview ?? 0, "Video\ninterview", 2),
+    makeBar(stageData?.rejected ?? 0, "Rejected", 3),
+    makeBar(stageData?.on_hold ?? 0, "On hold", 4),
   ];
 };
+
 
 export const getMaxValueFromStageData = (stageData: any): number => {
   return (

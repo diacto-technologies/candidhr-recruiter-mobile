@@ -13,4 +13,3 @@ export const updateProfileRequestAction = (payload: UpdateProfileRequest) => ({
 export const clearErrorAction = () => ({
   type: PROFILE_ACTION_TYPES.CLEAR_ERROR,
 });
-

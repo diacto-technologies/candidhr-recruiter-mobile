@@ -18,6 +18,7 @@ import { useAppSelector } from "../../../../hooks/useAppSelector";
 import { useRoute } from "@react-navigation/native";
 import { useAppDispatch } from "../../../../hooks/useAppDispatch";
 import { getApplicationDetailRequestAction } from "../../../../features/applications/actions";
+import { useNetworkConnectivity } from "../../../../hooks/useNetworkConnectivity";
 
 interface TableRow {
   job_name: string;
@@ -46,6 +47,9 @@ const ApplicationStageOverview = () => {
   const data: TableRow[] = OverviewData?.results ?? [];
   const shadowOpacity = useRef(new Animated.Value(0)).current;
   const route = useRoute();
+  
+  // Monitor network connectivity
+  useNetworkConnectivity();
   // show/hide shadow based on scrollX
   scrollX.addListener(({ value }) => {
     Animated.timing(shadowOpacity, {
@@ -113,7 +117,7 @@ const ApplicationStageOverview = () => {
         <View style={styles.card} onLayout={onContainerLayout}>
           <ScrollView
             showsVerticalScrollIndicator={false}
-            nestedScrollEnabled   // important
+            nestedScrollEnabled
             bounces={false}
           >
             <View style={{ flexDirection: "row" }}>

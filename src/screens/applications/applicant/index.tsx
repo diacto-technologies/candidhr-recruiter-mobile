@@ -18,14 +18,16 @@ import { setApplicationsFilters, setSort } from '../../../features/applications/
 import { applicantFiltersOption } from '../../../utils/dummaydata';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../../../theme/colors';
+import DeviceInfo from 'react-native-device-info';
 
-const SKELETON_ROWS = 6;
+const SKELETON_ROWS = 20;
 
 type RowItem = Application | { __skeleton: true; __id: string };
 
 const ApplicantScreen = () => {
   const [filterSheet, setFilterSheet] = useState(false);
   const [selectedTab, setSelectedTab] = useState('Name');
+  const [openSearch, setOpenSearch] = useState(false);
   const inset = useRNSafeAreaInsets();
   const dispatch = useAppDispatch();
   const applications = useAppSelector(selectApplications);
@@ -36,7 +38,7 @@ const ApplicantScreen = () => {
 
   const onEndReachedCalledRef = useRef(false);
   const { width } = useWindowDimensions();
-  const isTablet = width >= 768;
+  const isTablet = DeviceInfo.isTablet();
   const numColumns = isTablet ? 3 : 1;
   const horizontalPadding = 32;
   const gap = 16;
@@ -69,13 +71,24 @@ const ApplicantScreen = () => {
     skipInitialFetch.current = false;
   }, [dispatch, getApiParams]);
 
+  // ✅ Debounce search by name
+  useEffect(() => {
+    if (skipInitialFetch.current) return;
+    
+    const timer = setTimeout(() => {
+      dispatch(getApplicationsRequestAction(getApiParams(1, false)));
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [filters.name, dispatch, getApiParams]);
+
   // // Refetch when filters or sort change (permanent fix - no setTimeout)
   // useEffect(() => {
   //   // Skip initial fetch - useFocusEffect handles that
   //   if (skipInitialFetch.current) {
   //     return;
   //   }
-    
+
   //   // Refetch when any filter or sort changes
   //   dispatch(getApplicationsRequestAction(getApiParams(1, false)));
   // }, [filters.sort, filters.name, filters.email, filters.appliedFor, filters.contact, dispatch, getApiParams]);
@@ -91,15 +104,15 @@ const ApplicantScreen = () => {
 
   const handleSort = (item: string) => {
     const isSortable = item === 'Applied' || item === 'Last Update';
-  
+
     if (isSortable) {
       const isSameField = filters.sortBy === item;
-  
+
       dispatch(setSort({
         sortBy: item,
         sortDir: isSameField
-          ? (filters.sortDir === 'desc' ? 'asc' : 'desc')   
-          : 'desc',                                         
+          ? (filters.sortDir === 'desc' ? 'asc' : 'desc')
+          : 'desc',
       }));
     } else {
       setSelectedTab(item);
@@ -136,32 +149,57 @@ const ApplicantScreen = () => {
   return (
     <Fragment>
       <CustomSafeAreaView>
-        <Header title="Applicants" />
+        <Header
+          title="Applicants"
+          enableJobSearch={true}
+          simpleSearch={true}
+          simpleSearchPlaceholder="Search by name"
+          openSearch={openSearch}
+          onSearchToggle={setOpenSearch}
+          searchText={filters?.name || ''}
+          onSimpleSearch={(text) => {
+            dispatch(
+              setApplicationsFilters({
+                ...filters,
+                name: text, // ✅ search applicant by name
+              })
+            );
+          }}
+          onSimpleClear={() => {
+            dispatch(
+              setApplicationsFilters({
+                ...filters,
+                name: "",
+              })
+            );
+            setOpenSearch(false);
+          }}
+        />
         {!loading && applications.length === 0 && (
-                <View
-                    style={{
-                        alignItems: "center",
-                        marginTop: 60,
-                        paddingHorizontal: 16,
-                    }}
-                >
-                    <Typography variant="semiBoldTxtmd">
-                        No results found
-                    </Typography>
-                    <Typography
-                        variant="regularTxtsm"
-                        color={colors.gray[500]}
-                        style={{ marginTop: 6, textAlign: "center" }}
-                    >
-                        Try adjusting your search or filters
-                    </Typography>
-                </View>
-            )}
+          <View
+            style={{
+              alignItems: "center",
+              marginTop: 60,
+              paddingHorizontal: 16,
+            }}
+          >
+            <Typography variant="semiBoldTxtmd">
+              No results found
+            </Typography>
+            <Typography
+              variant="regularTxtsm"
+              color={colors.gray[500]}
+              style={{ marginTop: 6, textAlign: "center" }}
+            >
+              Try adjusting your search or filters
+            </Typography>
+          </View>
+        )}
         <FlatList<RowItem>
           data={dataSource}
           renderItem={renderItem}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingVertical: 12, paddingHorizontal: 16, gap: 12 }}
+          contentContainerStyle={{ paddingVertical:16, paddingHorizontal:16, gap: 12 }}
           onEndReached={() => {
             if (!onEndReachedCalledRef.current) {
               handleLoadMore();
@@ -186,8 +224,7 @@ const ApplicantScreen = () => {
             const id = (item as Application).id ?? 'no-id';
             return `app-${id}-${index}`;
           }}
-        //numColumns={numColumns}
-        //columnWrapperStyle={numColumns > 1 ? { justifyContent: "space-between", gap: 16 } : undefined}
+          numColumns={isTablet ? 2 : 1}
         />
       </CustomSafeAreaView>
       <SortingAndFilter
@@ -195,9 +232,9 @@ const ApplicantScreen = () => {
         options={applicantFiltersOption}
         onPressFilter={() => setFilterSheet(true)}
         setSelectedTab={setSelectedTab}
-        selectedTab={selectedTab} 
-        onItemPress={(t)=>handleSort(t)}
-        />
+        selectedTab={selectedTab}
+        onItemPress={(t) => handleSort(t)}
+      />
 
       <BottomSheet
         visible={filterSheet}
@@ -208,12 +245,12 @@ const ApplicantScreen = () => {
       >
         <FilterSheetContent
           onCancel={() => setFilterSheet(false)}
-          onApply={()=>handleApplyFilters()}
+          onApply={() => handleApplyFilters()}
           onClearAll={() => setFilterSheet(false)}
           selectedTab={selectedTab}
           setSelectedTab={setSelectedTab}
           job_Id={""}
-          filtersConfig={applicantFiltersOption} mode={'applicant'}        />
+          filtersConfig={applicantFiltersOption} mode={'applicant'} />
       </BottomSheet>
     </Fragment>
   );

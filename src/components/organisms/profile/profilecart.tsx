@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, Image, StyleSheet, Pressable, Linking, Platform } from 'react-native';
+import { View, StyleSheet, Pressable, Linking, Platform } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { SvgXml } from 'react-native-svg';
 
 import { colors } from '../../../theme/colors';
-import { Shimmer, Typography } from '../../atoms';
+import { Shimmer, Typography, ProfileAvatar } from '../../atoms';
 import Icon from '../../atoms/vectoricon';
 
 import { jobIcon } from '../../../assets/svg/jobicon';
@@ -15,6 +15,7 @@ import { useAppSelector } from '../../../hooks/useAppSelector';
 import { selectApplicationsDetailLoading, selectSelectedApplication } from '../../../features/applications/selectors';
 import { formatMonDDYYYY } from '../../../utils/dateformatter';
 import { formatExperience } from '../../../utils/experienceformatter';
+import { Button } from 'react-native-share';
 
 
 const ProfileCardShimmer = () => {
@@ -23,7 +24,7 @@ const ProfileCardShimmer = () => {
       <Shimmer height={90} borderRadius={12} style={{ margin: 4 }} />
 
       <View style={styles.photoWrapper}>
-        <View style={[styles.photoBorder]}>
+        <View style={styles.shimmerBorder}>
           <Shimmer width={88} height={88} borderRadius={44} />
         </View>
       </View>
@@ -135,21 +136,13 @@ const ProfileCart = () => {
 
       {/* Profile Image */}
       <View style={styles.photoWrapper}>
-        <View style={styles.photoBorder}>
-          {candidate?.profile_pic ? (
-            <Image
-              source={{ uri: candidate.profile_pic }}
-              style={styles.photo}
-              resizeMode="cover"
-            />
-          ) : (
-            <View style={styles.initialCircle}>
-              <Typography variant="semiBoldDxs" color={colors.brand[700]}>
-                {(candidate?.name?.trim()?.[0] ?? '').toUpperCase()}
-              </Typography>
-            </View>
-          )}
-        </View>
+        <ProfileAvatar
+          imageUrl={candidate?.profile_pic}
+          name={candidate?.name}
+          size={88}
+          fontVariant="semiBoldDxs"
+          outerSize={16}
+        />
       </View>
 
       {/* Info */}
@@ -249,26 +242,19 @@ const styles = StyleSheet.create({
   photoWrapper: {
     position: 'absolute',
     top: 35,
-    left: 24,
+    left: 18,
     zIndex: 10,
   },
-  photoBorder: {
-    width: 96,
-    height: 96,
-    borderRadius: 50,
+  shimmerBorder: {
+    width: 105,
+    height: 105,
+    borderRadius: 999,
     backgroundColor: colors.base.white,
     padding: 4,
-    shadowColor: '#0A0D12',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 8,
-    alignItems: 'center'
-  },
-  photo: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
   },
   infoContainer: {
     paddingHorizontal: 16,
@@ -300,14 +286,6 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
-  initialCircle: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.brand[100]
-  }
 });
 
 export default ProfileCart;

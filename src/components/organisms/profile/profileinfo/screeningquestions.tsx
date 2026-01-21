@@ -203,7 +203,7 @@ const ScreeningQuestions = () => {
       {/* EMPTY STATE */}
       {!hasData && (
         <View style={styles.emptyState}>
-          <View>
+          <View style={{flex:1}}>
             <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
               No screening responses available
             </Typography>
@@ -346,7 +346,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignSelf:'center',
     marginHorizontal: 20,
-    padding:20
+    padding:20,
+     alignItems:'center'
   },
   
   avatarCircle: {

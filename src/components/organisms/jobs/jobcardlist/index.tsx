@@ -28,6 +28,7 @@ import { colors } from "../../../../theme/colors";
 import SlideAnimatedTab from "../../../molecules/slideanimatedtab";
 import Shimmer from "../../../atoms/shimmer";
 import { setActiveTab } from "../../../../features/jobs/slice";
+import DeviceInfo from "react-native-device-info";
 
 const JobCardList = () => {
     const tabs = ["Published", "Unpublished"];
@@ -41,6 +42,7 @@ const JobCardList = () => {
     const unpublishedCount = useAppSelector(selectUnpublishedCount);
     const jobFilters = useAppSelector(selectJobFilters);
     const isTabLoading = useAppSelector(selectIsTabLoading);
+    const isTablet = DeviceInfo.isTablet();
 
     const styles = useStyles();
     const dispatch = useAppDispatch();
@@ -74,14 +76,7 @@ const JobCardList = () => {
 
     const renderShimmerCard = () => (
         <View
-            style={{
-                backgroundColor: colors.common.white,
-                borderRadius: 12,
-                padding: 16,
-                marginBottom: 12,
-                borderWidth: 1,
-                borderColor: "#E5E7EB",
-            }}
+            style={styles.card}
         >
             <Shimmer width="70%" height={18} style={{ marginBottom: 12 }} />
             <Shimmer width="50%" height={14} style={{ marginBottom: 16 }} />
@@ -119,9 +114,16 @@ const JobCardList = () => {
 
                 {/* Shimmer List */}
                 <View style={{ paddingHorizontal: 16, paddingVertical: 20 }}>
-                    {[1, 2, 3, 4, 5].map((_, i) => (
-                        <View key={i}>{renderShimmerCard()}</View>
-                    ))}
+                    <FlatList
+                        data={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11,12,13,14,15,16,17,18,19,20]}
+                        keyExtractor={(item) => String(item)}
+                        renderItem={() => renderShimmerCard()}
+                        numColumns={isTablet ? 2 : 1}
+                        key={isTablet ? "tablet-shimmer-2" : "mobile-shimmer-1"} // ✅ important
+                        columnWrapperStyle={isTablet ? { justifyContent: "space-between" } : undefined}
+                        contentContainerStyle={{ gap: 12 }}
+                        showsVerticalScrollIndicator={false}
+                    />
                 </View>
             </>
         );
@@ -131,10 +133,10 @@ const JobCardList = () => {
         <View style={styles.card}>
             <Pressable onPress={() => navigate("JobDetailScreen", { jobId: item.id })}>
                 <View style={styles.rowBetween}>
-                    <View style={{ flex: 1 }}>
+                    <View style={{ flex: 1, flexDirection:'row', justifyContent:'space-between' }}>
                         <Typography variant="semiBoldTxtmd">{item.title ?? ""}</Typography>
+                        <SvgXml xml={horizontalThreedotIcon} height={20} width={20} />
                     </View>
-                    <SvgXml xml={horizontalThreedotIcon} />
                 </View>
 
                 <View style={styles.row}>
@@ -146,11 +148,14 @@ const JobCardList = () => {
                     </Typography>
                 </View>
 
+                <View style={{marginVertical:4}}>
                 <Divider
-                    height={2}
+                    height={1.2}
                     marginVertical={8}
                     color={colors.mainColors.borderColor}
                 />
+                </View>
+
 
                 <View style={styles.rowBetween}>
                     <View style={{ flexDirection: "row", gap: 12 }}>
@@ -222,7 +227,7 @@ const JobCardList = () => {
                 renderItem={renderItem}
                 contentContainerStyle={{
                     paddingHorizontal: 16,
-                    paddingVertical: 20,
+                    paddingVertical: 16,
                     gap: 12,
                 }}
                 initialNumToRender={10}
@@ -233,11 +238,12 @@ const JobCardList = () => {
                 onEndReachedThreshold={0.5}
                 ListFooterComponent={
                     loading && jobsList.length > 0 ? (
-                        <View style={{ paddingHorizontal: 16, paddingVertical: 10 }}>
+                        <View style={{ paddingHorizontal: 16, paddingVertical: 10}}>
                             <Shimmer width="100%" height={20} borderRadius={8} />
                         </View>
                     ) : null
                 }
+                numColumns={isTablet ? 2 : 1}
             />
         </>
     );

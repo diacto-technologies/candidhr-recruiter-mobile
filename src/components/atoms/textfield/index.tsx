@@ -18,9 +18,9 @@ const TextField = forwardRef((props: TextFieldProps, ref) => {
   const [isFocus, setInFocus] = useState<true | false>(false);
 
   const size = {
-    Large: 73,
+    Large: 128,
     Regular: 56,
-    Medium: 48,
+    Medium: 44,
     Small: 40,
     Tab: 32,
   };
@@ -58,6 +58,9 @@ const TextField = forwardRef((props: TextFieldProps, ref) => {
         {/* <View style={styles.topGlow} pointerEvents="none" />
         <View style={styles.bottomShadow} pointerEvents="none" /> */}
         {renderNode(props.startIcon)}
+        {props.startIcon && props.showDivider && (
+          <View style={styles.verticalDivider} />
+        )}
         <TextInput
           {...props}
           ref={inputRef}

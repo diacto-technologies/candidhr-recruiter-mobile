@@ -109,17 +109,14 @@ const Assessment = () => {
   const timelineSteps = [
     {
       title: 'Invited On',
-      date: formatMonDDYYYY(
-        assessmentReport?.timeline?.assigned_at,
-        'DD MMM YYYY HH:mm'
-      ),
-      completed: true,
+      date: formatMonDDYYYY(assessmentReport?.timeline?.assigned_at,'DD MMM YYYY HH:mm','IST'),
+      completed: !!assessmentReport?.timeline?.assigned_at,
     },
     {
       title: 'Link Opened',
       date: formatMonDDYYYY(
         assessmentReport?.timeline?.link_opened_at,
-        'DD MMM YYYY HH:mm'
+        'DD MMM YYYY HH:mm','IST'
       ),
       completed: !!assessmentReport?.timeline?.link_opened,
     },
@@ -127,7 +124,7 @@ const Assessment = () => {
       title: 'Started',
       date: formatMonDDYYYY(
         assessmentReport?.timeline?.started_at,
-        'DD MMM YYYY HH:mm'
+        'DD MMM YYYY HH:mm','IST'
       ),
       completed: !!assessmentReport?.timeline?.started,
     },
@@ -135,7 +132,7 @@ const Assessment = () => {
       title: 'Completed',
       date: formatMonDDYYYY(
         assessmentReport?.timeline?.completed_at,
-        'DD MMM YYYY HH:mm'
+        'DD MMM YYYY HH:mm','IST'
       ),
       completed: !!assessmentReport?.timeline?.completed,
     },

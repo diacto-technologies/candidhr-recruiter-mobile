@@ -1,9 +1,14 @@
 import { StyleSheet } from 'react-native';
 import { colors } from '../../../../theme/colors';
+import DeviceInfo from 'react-native-device-info';
+
 
 export const useStyles = () => {
+    const isTablet = DeviceInfo.isTablet();
     return StyleSheet.create({
         card: {
+            width:isTablet ? '49%':"100%",
+            marginHorizontal:isTablet ? 5:0,
             backgroundColor: colors.common.white,
             borderRadius: 12,
             padding: 16,
@@ -15,8 +20,8 @@ export const useStyles = () => {
             shadowRadius: 3,
             elevation: 1,
         },
-        row: { flexDirection: 'row', alignItems: 'center', marginTop: 6, },
-        rowBetween: {flexDirection: 'row', justifyContent: 'space-between', paddingTop: 5},
+        row: { flexDirection: 'row', alignItems: 'center'},
+        rowBetween: {flexDirection: 'row', justifyContent: 'space-between'},
         dot: { marginHorizontal: 6, height: 16, borderColor: colors.mainColors.borderColor, borderWidth: 1 },
         author: { color: '#475467', fontSize: 13, marginTop: 8 },
         statusText: { fontSize: 12, marginLeft: 6, fontWeight: '500', color: '#344054' },

@@ -95,7 +95,7 @@ const CriteriaResponsesCard = () => {
       ) : (
         /* EMPTY STATE */
         <View style={styles.emptyState}>
-          <View>
+          <View style={{flex:1}}>
             <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
               No criteria responses available
             </Typography>
@@ -119,6 +119,7 @@ export default CriteriaResponsesCard;
 
 const styles = StyleSheet.create({
   card: {
+    flex:1,
     backgroundColor: colors.common.white,
     borderWidth: 1,
     borderColor: colors.gray[200],
@@ -154,7 +155,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignSelf:'center',
     marginHorizontal: 20,
-    padding:20
+    padding:20,
+    alignItems:'center'
   },
   
   avatarCircle: {

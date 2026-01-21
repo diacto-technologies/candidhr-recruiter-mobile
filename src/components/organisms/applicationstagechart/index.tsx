@@ -24,7 +24,7 @@ const ApplicationStageChart: React.FC = () => {
     const stageDataLoading = useAppSelector(selectApplicantStageGraphLoading);
     const [selectedIndex, setSelectedIndex] = useState<number>(-1);
 
-    const barData = buildBarData(stageData); // Use your helper
+    const barData = buildBarData(stageData, selectedIndex); // Use your helper
     const maxValueFromAPI = getMaxValueFromStageData(stageData); // Use your helper
 
     // ✅ Responsive Spacing (fixed calculation)
@@ -69,7 +69,7 @@ const ApplicationStageChart: React.FC = () => {
                         barWidth={barWidth}
                         initialSpacing={dynamicSpacing/2}
                         spacing={dynamicSpacing}
-                        showGradient // This enables the gradients from frontColor + gradientColor
+                        showGradient
                         yAxisThickness={0}
                         xAxisThickness={0}
                         height={164}

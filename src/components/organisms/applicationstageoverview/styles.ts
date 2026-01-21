@@ -6,7 +6,7 @@ import { Fonts } from "../../../theme/fonts";
 
 
 export const useStyles = () => {
-  const MIN_COL_WIDTH = windowWidth * 0.20;
+  const MIN_COL_WIDTH = windowWidth * 0.25;
   const insets = useRNSafeAreaInsets();
 
   return StyleSheet.create({
@@ -47,10 +47,9 @@ export const useStyles = () => {
       minWidth: MIN_COL_WIDTH,
       marginRight: 16,
     },
-
-    /** FIXED LEFT COLUMN */
+    
     leftFixedWrapper: {
-      //width: 140,
+      width: "50%",
       backgroundColor: colors.base.white,
       borderRightWidth: 1,
       borderColor: colors.gray[200],
@@ -77,8 +76,7 @@ export const useStyles = () => {
 
     paginationContainer: {
       flexDirection: "row",
-      padding: 10,
-      borderTopWidth: 1,
+      padding: 16,
       borderColor: colors.gray["200"],
       alignSelf: "center",
     },

@@ -1,5 +1,5 @@
 import React, { Fragment, useEffect } from "react";
-import { View, Text, StyleSheet, Dimensions } from "react-native";
+import { View, Text, StyleSheet, Dimensions, useWindowDimensions, Image } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
 import { SvgXml } from "react-native-svg";
 import { colors } from "../../../theme/colors";
@@ -14,11 +14,24 @@ import { useAppSelector } from "../../../store/hooks";
 import { selectIsAuthenticated } from "../../../features/auth/selectors";
 import StatusBarBackground from "../../../components/atoms/statusbar";
 
-const { width, height } = Dimensions.get("window");
+
+
 
 const SplashScreen = () => {
-  const styles = useStyles();
+  const { width, height } = useWindowDimensions();
+  const isTablet = width >= 768;
+
+  const logoWidth = isTablet ? width * 0.28 : width * 0.38;
+  const logoHeight = logoWidth * 0.16;
+
+  const textWidth = isTablet ? width * 0.30 : width * 0.40;
+  const textHeight = textWidth * 0.08;
+
+  const candidLogoWidth = isTablet ? width * 0.08 : width * 0.11;
+  const candidLogoHeight = candidLogoWidth * 1.19;
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
+
+  const styles = useStyles();
 
   useEffect(() => {
     let timeoutId: number;
@@ -33,36 +46,66 @@ const SplashScreen = () => {
     }
     return () => clearTimeout(timeoutId);
   }, [isAuthenticated]);
-  
-    
+
   return (
-    <Fragment>
+    <>
       <StatusBarBackground showBrandGradient />
 
       <LinearGradient
         colors={[colors.brand[700], colors.brand[600]]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
         style={styles.gradient}
       >
-        <SvgXml xml={bgLeftShap} width={width * 1.2} height={height * 1.5}
-          style={styles.leftShape} />
+        {/* RIGHT BACKGROUND SHAPE */}
+        <Image
+          source={require("../../../assets/images/bgrighticon.png")}
+          style={styles.rightBg}
+          resizeMode="cover"
+        />
 
-        <SvgXml xml={bgRightShape} width={width * 1.2} height={height * 0.9}
-          style={styles.rightShape} />
+        {/* LEFT BACKGROUND SHAPE */}
+        <Image
+          source={require("../../../assets/images/bglefticon.png")}
+          style={styles.leftBg}
+          resizeMode="cover"
+        />
 
+        {/* CENTER LOGO */}
         <View style={styles.centerBox}>
-          <SvgXml xml={logoXML} width={40.318} height={48}/>
-          <View style={{gap:10}}>
-          <SvgXml xml={candidHrLogo} fill={colors.base.white} width={'143.872'} height={'22.679'} />
-          <SvgXml xml={candidHrTxt} fill={colors.base.white} width={'144.291'} height={'11.917'}/>
+          <SvgXml
+            xml={logoXML}
+            width={candidLogoWidth}
+            height={candidLogoHeight}
+          />
+
+          <View style={{ gap: 10 }}>
+            <SvgXml
+              xml={candidHrLogo}
+              fill={colors.base.white}
+              width={logoWidth}
+              height={logoHeight}
+            />
+
+            <SvgXml
+              xml={candidHrTxt}
+              fill={colors.base.white}
+              width={textWidth}
+              height={textHeight}
+            />
           </View>
         </View>
 
-        <Typography variant="regularTxtsm" color={colors.base.white} style={styles.footer}>Powered by Diacto</Typography>
+        {/* FOOTER */}
+        <Typography
+          variant="regularTxtsm"
+          color={colors.base.white}
+          style={styles.footer}
+        >
+          Powered by diacto
+        </Typography>
       </LinearGradient>
-    </Fragment>
+    </>
   );
 };
+
 
 export default SplashScreen;

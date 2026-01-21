@@ -12,7 +12,7 @@ export const API_ENDPOINTS = {
   // Profile endpoints
   PROFILE: {
     GET: '/core/user/',
-    UPDATE: '/profile',
+    UPDATE: '/core/users/details/update/',
     AVATAR: '/profile/avatar',
   },
   // Jobs endpoints
@@ -23,6 +23,7 @@ export const API_ENDPOINTS = {
     UPDATE: (id: string) => `/jobs/${id}`,
     DELETE: (id: string) => `/jobs/${id}`,
     APPLY: (id: string) => `/jobs/${id}/apply`,
+    JOB_NAME_LIST: "/job/v1/job-names-list/",
   },
   // Applications endpoints
   APPLICATIONS: {

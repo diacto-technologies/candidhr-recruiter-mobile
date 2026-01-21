@@ -224,15 +224,54 @@ export const apiClient = {
   },
 
   patch: async (endpoint: string, data?: any, customConfig?: RequestInit) => {
+    const isFormData = data instanceof FormData;
+    
+    // Build headers - for FormData, don't set Content-Type (let fetch set it with boundary)
+    let headers: Record<string, string>;
+    if (isFormData) {
+      const token = getAuthToken();
+      const organizationId = getOrganizationId();
+      const origin = organizationalOrigin(store.getState());
+      
+      headers = {
+        'Origin': origin,
+        ...(customConfig?.headers as Record<string, string> || {}),
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      if (organizationId) {
+        headers['X-Organization-Id'] = organizationId;
+      }
+      
+      if (__DEV__) {
+        console.log('PATCH FormData Request:', {
+          url: `${API_BASE_URL}${endpoint}`,
+          headers,
+          isFormData: true,
+        });
+      }
+    } else {
+      headers = buildHeaders(customConfig?.headers as Record<string, string> | undefined);
+    }
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'PATCH',
-      headers: buildHeaders(customConfig?.headers as Record<string, string> | undefined),
-      body: JSON.stringify(data),
+      headers,
+      body: isFormData ? data : JSON.stringify(data),
       ...customConfig,
     });
 
+    if (__DEV__ && isFormData) {
+      console.log('PATCH FormData Response:', {
+        status: response.status,
+        statusText: response.statusText,
+      });
+    }
+
     if (!response.ok) {
-      await handleApiError(response);
+      await handleApiError(response, endpoint);
     }
 
     return response.json();

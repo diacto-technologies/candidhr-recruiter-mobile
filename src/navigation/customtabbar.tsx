@@ -101,7 +101,7 @@ const CustomTabBar: FC<BottomTabBarProps> = (props) => {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: Colors.background,
-    paddingVertical: 8,
+    paddingVertical: 4,
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",

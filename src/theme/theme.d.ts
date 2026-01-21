@@ -9,24 +9,24 @@ export interface IColors {
     lightGreen: string;
     verylightGreen: string;
     dark_green: string;
-    primary:string;
-    borderColor:string;
-    blueGrayTitle:string;
-    scrollBar:string;
-    carbonGray:string;
-    slateBlue:string;
+    primary: string;
+    borderColor: string;
+    blueGrayTitle: string;
+    scrollBar: string;
+    carbonGray: string;
+    slateBlue: string;
   };
   grayScale: {
     black: string;
-    richBlack:string;
+    richBlack: string;
     darkGray: string;
     grayDark: string;
     mediumGray: string;
     lightGray: string;
     veryLightGray: string;
-    graylight:string;
-    slateGray:string;
-    bluetintedgray:string;
+    graylight: string;
+    slateGray: string;
+    bluetintedgray: string;
   };
   // gradients: {
   //   greenToBlack: [string, string];
@@ -40,7 +40,7 @@ export interface IColors {
     lightYellow: string;
     lightOrange: string;
     lightRed: string;
-    red:string,
+    red: string,
   };
   common: {
     white: string;
@@ -48,12 +48,12 @@ export interface IColors {
     black: string;
     grayBlack: string;
     backdrop: string;
-    slightlygray:string;
+    slightlygray: string;
   };
   input: {
     inputOutline: string;
   };
-  barchart:{
+  barchart: {
     lightGray: string,
   },
   base: {
@@ -231,6 +231,7 @@ export interface IColors {
   },
   gradients: {
     grey: {
+      g100_100:[string,string];
       g600_500: [string, string];
       g700_600: [string, string];
       g800_600: [string, string];
@@ -248,10 +249,11 @@ export interface IColors {
     };
     brand: {
       g600_500: [string, string];
+      g600_700: [string, string];
       g700_600: [string, string];
       g800_600: [string, string];
       g800_700: [string, string];
       g900_700: [string, string];
     };
-  };  
+  };
 }

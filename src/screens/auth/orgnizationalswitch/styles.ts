@@ -8,6 +8,7 @@ export const useStyles = () => {
           },
         
           inner: {
+            zIndex:9999,
             padding: 16,
             gap: 24,
           },
