@@ -29,6 +29,7 @@ import SlideAnimatedTab from "../../../molecules/slideanimatedtab";
 import Shimmer from "../../../atoms/shimmer";
 import { setActiveTab } from "../../../../features/jobs/slice";
 import DeviceInfo from "react-native-device-info";
+import { useNetworkConnectivity } from "../../../../hooks/useNetworkConnectivity";
 
 const JobCardList = () => {
     const tabs = ["Published", "Unpublished"];
@@ -43,6 +44,7 @@ const JobCardList = () => {
     const jobFilters = useAppSelector(selectJobFilters);
     const isTabLoading = useAppSelector(selectIsTabLoading);
     const isTablet = DeviceInfo.isTablet();
+    const isConnected = useNetworkConnectivity();
 
     const styles = useStyles();
     const dispatch = useAppDispatch();
@@ -60,7 +62,7 @@ const JobCardList = () => {
     // }, [activeTab]);
 
     const handleLoadMore = useCallback(() => {
-        if (loading || !hasMore) return;
+        if (!isConnected || loading || !hasMore) return;
 
         dispatch(
             getJobsRequestAction({
@@ -71,7 +73,7 @@ const JobCardList = () => {
                 ...jobFilters,
             })
         );
-    }, [loading, hasMore, pagination, activeTab]);
+    }, [isConnected, loading, hasMore, pagination.page, pagination.limit, activeTab, jobFilters]);
 
 
     const renderShimmerCard = () => (
@@ -95,8 +97,28 @@ const JobCardList = () => {
             </View>
         </View>
     );
-
-    if (isTabLoading || (loading && jobsList.length === 0)) {
+    if (!isConnected && jobsList.length === 0) {
+        return (
+          <>
+            <View style={styles.tabContainer}>
+              <SlideAnimatedTab
+                tabs={tabs}
+                activeTab={activeTab}
+                onChangeTab={(label) =>
+                  dispatch(setActiveTab(label === "Published" ? "Published" : "Unpublished"))
+                }
+                countShow={true}
+              />
+              <View style={styles.bottomBorder} />
+            </View>
+      
+            <View style={{ alignItems: "center", marginTop: 60, paddingHorizontal: 16 }}>
+              <Typography variant="semiBoldTxtmd"> No results found</Typography>
+            </View>
+          </>
+        );
+      }      
+    if (isTabLoading || (jobsList.length === 0)) {
         return (
             <>
                 {/* Tabs */}
@@ -104,8 +126,9 @@ const JobCardList = () => {
                     <SlideAnimatedTab
                         tabs={tabs}
                         activeTab={activeTab}
-                        onChangeTab={(label) =>
+                        onChangeTab={(label) =>{
                             dispatch(setActiveTab(label === "Published" ? "Published" : "Unpublished"))
+                        }
                         }
                         countShow={true}
                     />

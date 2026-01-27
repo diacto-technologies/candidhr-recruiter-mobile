@@ -1,6 +1,7 @@
 import { StyleSheet, Dimensions } from 'react-native';
 import { colors } from '../../../theme/colors';
 import { Fonts } from '../../../theme/fonts';
+import { shadowStyles } from '../../../theme/shadowcolor';
 
 export const styles = StyleSheet.create({
     wrapper: {
@@ -12,16 +13,12 @@ export const styles = StyleSheet.create({
         overflow: 'visible',
         backgroundColor: colors.common.white,
         borderRadius: 8,
-        borderWidth: 1,
+        borderWidth: 0.5,
         borderColor: colors.gray[300],
         paddingLeft: 12,
         paddingRight: 6,
         paddingVertical: 0,
-        shadowColor: '#0A0D12',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 3,
-        elevation: 1,
+        ...shadowStyles.shadow_xs
     },
 
     containerFocused: {

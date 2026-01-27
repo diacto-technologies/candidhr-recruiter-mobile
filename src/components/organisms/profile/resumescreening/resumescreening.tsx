@@ -9,6 +9,7 @@ import { colors } from '../../../../theme/colors';
 import { useAppSelector } from '../../../../hooks/useAppSelector';
 import { selectApplicationsDetailLoading, selectSelectedApplication } from '../../../../features/applications/selectors';
 import { formatPercentage, getScoreStatus, getSkillStatus } from '../../../../screens/applications/applicant/helper';
+import { shadowStyles } from '../../../../theme/shadowcolor';
 interface ResumeSkill {
   name: string;
   relevance_score: number | string;
@@ -130,16 +131,17 @@ const styles = StyleSheet.create({
   shortListedCard: {
     backgroundColor: colors.common.white,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: colors.gray[300],
     paddingVertical: 10,
     paddingHorizontal: 14,
     gap: 8,
-    shadowColor: '#0A0D12',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
+    // shadowColor: '#0A0D12',
+    // shadowOffset: { width: 0, height: 1 },
+    // shadowOpacity: 0.05,
+    // shadowRadius: 3,
+    // elevation: 1,
+    ...shadowStyles.shadow_xs
   }
 
 });

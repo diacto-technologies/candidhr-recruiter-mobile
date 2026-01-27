@@ -38,12 +38,12 @@ export const useStyles = () => {
     },
     sheetContainer: {
       backgroundColor: colors.common.white,
-      borderTopLeftRadius: 16,
-      borderTopRightRadius: 16,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
       overflow: 'hidden',
       marginHorizontal:6,
-      borderBottomLeftRadius:16,
-      borderBottomRightRadius:16,
+      borderBottomLeftRadius:20,
+      borderBottomRightRadius:20,
     },
     subTitle: {
       fontSize: 16,
@@ -57,6 +57,6 @@ export const useStyles = () => {
       backgroundColor: '#00000077',
       flex: 1,
     },
-    closeIcon: { flex: 1, backgroundColor:'rgba(0,0,0,0.1)', marginBottom:20, paddingHorizontal:6}
+    closeIcon: { flex: 1, backgroundColor:'rgba(0,0,0,0.1)', marginBottom:20}
   });
 };

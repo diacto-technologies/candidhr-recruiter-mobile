@@ -15,6 +15,9 @@ export const API_ENDPOINTS = {
     UPDATE: '/core/users/details/update/',
     AVATAR: '/profile/avatar',
   },
+  USERS: {
+    LIST: '/core/users/list/',
+  },
   // Jobs endpoints
   JOBS: {
     LIST: '/job/v1/filter',

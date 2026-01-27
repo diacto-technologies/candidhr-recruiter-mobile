@@ -44,11 +44,9 @@ const LoginScreen = () => {
   const loginPasswordRef = useRef<string>('');
 
   useEffect(() => {
-    // When login becomes successful, save credentials to password manager if rememberMe is checked
-    if (isAuthenticated && !previousAuthState.current && rememberMe) {
-      // Login just succeeded
-      saveCredentialsToPasswordManager(loginEmailRef.current, loginPasswordRef.current);
-    }
+    // if (isAuthenticated && !previousAuthState.current && rememberMe) {
+    //   saveCredentialsToPasswordManager(loginEmailRef.current, loginPasswordRef.current);
+    // }
 
     previousAuthState.current = isAuthenticated;
 
@@ -56,6 +54,7 @@ const LoginScreen = () => {
       resetAndNavigate("UserBottomTab");
     }
   }, [isAuthenticated, rememberMe]);
+
 
 
   const handleLogin = () => {
@@ -114,7 +113,7 @@ const LoginScreen = () => {
 
   return (
     <CustomSafeAreaView>
-        <BackgroundPattern>
+      <BackgroundPattern>
         <Header backNavigation={true} onBack={goBack} borderCondition={true} />
         <View style={styles.inner}>
           <Typography variant="semiBoldDxs" color={colors.gray[900]}>
@@ -130,9 +129,9 @@ const LoginScreen = () => {
               placeholder="Enter your email"
               value={email}
               onChangeText={(t) => { setEmail(t); setEmailError(''); }}
-              isError={!!emailError}
-              error={emailError}
               autoCapitalize="none"
+              autoComplete="email"
+              textContentType="username"
             />
           </View>
 
@@ -147,11 +146,13 @@ const LoginScreen = () => {
               value={password}
               onChangeText={setPassword}
               autoCapitalize="none"
-            endIcon={
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                <SvgXml xml={showPassword ? eyeVisibleIcon : eyeHiddenIcon} width={18} height={18} />
-              </TouchableOpacity>
-            }
+              autoComplete="password"
+              textContentType="password"
+              endIcon={
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                  <SvgXml xml={showPassword ? eyeVisibleIcon : eyeHiddenIcon} width={18} height={18} />
+                </TouchableOpacity>
+              }
             />
           </View>
 
@@ -193,7 +194,7 @@ const LoginScreen = () => {
         )} */}
 
         </View>
-        </BackgroundPattern>
+      </BackgroundPattern>
     </CustomSafeAreaView>
   );
 };

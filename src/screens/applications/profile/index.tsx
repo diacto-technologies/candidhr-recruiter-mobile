@@ -1,6 +1,6 @@
 import React, { Fragment, useCallback, useEffect } from 'react';
 import { View, StyleSheet, Pressable, Image, ScrollView } from 'react-native';
-import { Header } from '../../../components';
+import { Header, Shimmer } from '../../../components';
 import { goBack, navigate, resetAndNavigate } from '../../../utils/navigationUtils';
 import CustomSafeAreaView from '../../../components/atoms/customsafeareaview';
 import Typography from '../../../components/atoms/typography';
@@ -31,6 +31,7 @@ import { removeTokens } from '../../../utils/tokenUtils';
 import { logoutSuccess } from '../../../features/auth/slice';
 import { persistor } from '../../../store';
 import Divider from '../../../components/atoms/divider';
+import { useStyles } from './styles';
 
 interface MenuItem {
   id: string;
@@ -47,6 +48,7 @@ interface MenuSection {
 
 const Profile = () => {
   const dispatch = useAppDispatch();
+  const styles = useStyles();
 
   const profile = useAppSelector(selectProfile);
   const loading = useAppSelector(selectProfileLoading);
@@ -103,31 +105,49 @@ const Profile = () => {
       ],
     },
   ];
+  const renderProfileShimmer = () => {
+    return (
+      <View style={styles.profileCard}>
+        <View style={styles.profileLeft}>
+          <Shimmer width={44} height={44} borderRadius={22} />
+
+          <View style={styles.profileInfo}>
+            <Shimmer width={120} height={16} borderRadius={6} />
+            <View style={{ height: 8 }} />
+            <Shimmer width={180} height={12} borderRadius={6} />
+          </View>
+        </View>
+
+        <Shimmer width={16} height={16} borderRadius={4} />
+      </View>
+    );
+  };
+
 
   const renderMenuItem = (item: MenuItem, isLast: boolean) => {
     return (
-      <View style={{paddingHorizontal: 16,}}>
-      <Pressable
-        key={item.id}
-        style={[styles.row]}
-        onPress={item.onPress}
-      >
-        <View style={styles.rowLeft}>
-          <View style={[styles.rowIconWrap, item.isLogout && styles.logoutIconWrap]}>
-            <SvgXml xml={item.icon} width={16} height={16} />
+      <View key={item.id} style={{ paddingHorizontal: 16, }}>
+        <Pressable
+          key={item.id}
+          style={[styles.row]}
+          onPress={item.onPress}
+        >
+          <View style={styles.rowLeft}>
+            <View style={[styles.rowIconWrap, item.isLogout && styles.logoutIconWrap]}>
+              <SvgXml xml={item.icon} width={16} height={16} />
+            </View>
+
+            <Typography
+              variant="mediumTxtsm"
+              color={item.isLogout ? colors.error[500] : colors.gray[900]}
+            >
+              {item.title}
+            </Typography>
           </View>
 
-          <Typography
-            variant="mediumTxtsm"
-            color={item.isLogout ? colors.error[500] : colors.gray[900]}
-          >
-            {item.title}
-          </Typography>
-        </View>
-
-        <SvgXml xml={chevronRightIcon} width={16} height={16} />
-      </Pressable>
-      {!isLast && <Divider height={1}/>}
+          <SvgXml xml={chevronRightIcon} width={16} height={16} />
+        </Pressable>
+        {!isLast && <Divider height={1} />}
       </View>
     );
   };
@@ -145,38 +165,40 @@ const Profile = () => {
       <CustomSafeAreaView>
         <Header title="Setting" backNavigation={true} onBack={() => goBack()} />
 
-        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.container} showsVerticalScrollIndicator={false} bounces={false}>
           {/* ✅ Profile Card */}
-          <Pressable style={styles.profileCard} onPress={handleProfilePress}>
-            <View style={styles.profileLeft}>
-              <View style={styles.avatarWrap}>
-                {profile?.profile_pic ? (
-                  <Image source={{ uri: profile.profile_pic }} style={styles.avatar} />
-                ) : (
-                  <View style={styles.avatarPlaceholder}>
-                    <Typography variant="semiBoldTxtmd" color={colors.gray[700]}>
-                      {profile?.name?.charAt(0)?.toUpperCase() || 'U'}
-                    </Typography>
-                  </View>
-                )}
+          {loading ? (
+            renderProfileShimmer()
+          ) : (
+            <Pressable style={styles.profileCard} onPress={handleProfilePress}>
+              <View style={styles.profileLeft}>
+                <View style={styles.avatarWrap}>
+                  {profile?.profile_pic ? (
+                    <Image source={{ uri: profile.profile_pic }} style={styles.avatar} />
+                  ) : (
+                    <View style={styles.avatarPlaceholder}>
+                      <Typography variant="semiBoldTxtmd" color={colors.gray[700]}>
+                        {profile?.name?.charAt(0)?.toUpperCase() || 'U'}
+                      </Typography>
+                    </View>
+                  )}
+                </View>
+
+                <View style={styles.profileInfo}>
+                  <Typography variant="semiBoldTxtlg" color={colors.gray[900]}>
+                    {profile?.name || 'User'}
+                  </Typography>
+
+                  <Typography variant="regularTxtsm" color={colors.gray[500]}>
+                    {profile?.email || 'email@example.com'}
+                  </Typography>
+                </View>
               </View>
 
-              <View style={styles.profileInfo}>
-                <Typography variant="semiBoldTxtlg" color={colors.gray[900]}>
-                  {profile?.name || 'User'}
-                </Typography>
-
-                <Typography variant="regularTxtsm" color={colors.gray[500]}>
-                  {profile?.email || 'email@example.com'}
-                </Typography>
-              </View>
-            </View>
-
-            <SvgXml xml={chevronRightIcon} width={16} height={16} />
-          </Pressable>
+              <SvgXml xml={chevronRightIcon} width={16} height={16} />
+            </Pressable>
+          )}
           {menuSections.map(renderSection)}
-
-          <View style={{ height: 40 }} />
         </ScrollView>
       </CustomSafeAreaView>
     </Fragment>
@@ -184,110 +206,3 @@ const Profile = () => {
 };
 
 export default Profile;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.gray[50],
-    paddingHorizontal: 16,
-  },
-
-  profileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.base.white,
-    borderRadius: 16,
-    padding: 16,
-    marginTop: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: colors.gray[200],
-  },
-  profileLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatarWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    overflow: 'hidden',
-    marginRight: 12,
-    borderWidth:1,
-    borderColor:"#00000014"
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-  },
-  avatarPlaceholder: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.gray[200],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  profileInfo: {
-    justifyContent: 'center',
-  },
-
-  detailsCard: {
-    backgroundColor: colors.base.white,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: colors.gray[200],
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray[200],
-  },
-
-  card: {
-    backgroundColor: colors.base.white,
-    borderRadius: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: colors.gray[200],
-    overflow: 'hidden',
-  },
-
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 16,
-    backgroundColor: colors.base.white,
-  },
-  rowDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray[200],
-    marginHorizontal:16
-  },
-
-  rowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  rowIconWrap: {
-    padding:8,
-    borderRadius:50,
-    backgroundColor: colors.gray[50],
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-
-  logoutIconWrap: {
-    backgroundColor: colors.error[50],
-    borderColor: colors.error[200],
-  },
-});

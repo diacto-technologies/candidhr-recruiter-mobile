@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { colors } from '../../../theme/colors';
+import { shadowStyles } from '../../../theme/shadowcolor';
 
 export const useStyles = () => {
   return StyleSheet.create({
@@ -13,16 +14,7 @@ export const useStyles = () => {
       borderWidth: 0.5,
       borderColor: colors.gray['200'],
       gap: 16,
-
-      // Shadow = box-shadow: 0 1px 2px 0 rgba(10, 13, 18, 0.05)
-      shadowColor: '#0A0D12',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 2,
-      borderBottomWidth:0,
-
-      // Android
-      elevation:1,
+      ...shadowStyles.shadow_xs,
     },
 
     row: {

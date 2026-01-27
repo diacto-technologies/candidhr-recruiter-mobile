@@ -66,20 +66,35 @@ const CompanyLogoAvatar: React.FC<CompanyLogoAvatarProps> = ({
   const imageStyle: ImageStyle = {
     width: imageSize,
     height: imageSize,
-    borderRadius: imageSize / 2, // Makes it circular
+
   };
 
   const badgeStyle: ViewStyle = {
     width: badgeSize,
     height: badgeSize,
-    borderRadius: badgeSize / 2,
+    borderRadius: 100,
   };
 
   return (
     <View style={[styles.wrapper, style]}>
       <View style={[styles.container, containerStyle]}>
         {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={imageStyle} resizeMode="stretch" />
+         <View
+         style={{
+           width: imageSize,
+           height: imageSize,
+           borderRadius: imageSize / 2,
+           overflow: 'hidden',           // 👈 THIS is critical
+           justifyContent: 'center',
+           alignItems: 'center',
+         }}
+       >
+         <Image
+           source={{ uri: imageUrl }}
+           style={styles.logoImage}
+           resizeMode="cover"
+         />
+       </View>       
         ) : (
           <View style={[styles.initialsContainer, containerStyle]}>
             <Typography variant={fontVariant as any} color={colors.gray[500]}>
@@ -109,18 +124,24 @@ const styles = StyleSheet.create({
   wrapper: {
     position: 'relative',
     alignSelf: 'center',
+    justifyContent:'center'
   },
   container: {
     backgroundColor: colors.base.white,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: colors.gray[200],
     overflow: 'hidden',
+  
+    justifyContent: 'center',
+    alignItems: 'center',
+  
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 3,
   },
+  
   initialsContainer: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -141,4 +162,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.gray[100],
   },
+  logoImage: {
+    width: '100%',
+    height: '100%',
+  },  
 });

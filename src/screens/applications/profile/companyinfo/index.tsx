@@ -25,12 +25,9 @@ import PhoneInput from '../../../../components/atoms/phonefield';
 import { Fonts } from '../../../../theme/fonts';
 import { searchIcon } from '../../../../assets/svg/search';
 import { editAvatarIcon } from '../../../../assets/svg/editavatar';
-// Chevron down icon for dropdown
-const chevronDownIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M5 7.5L10 12.5L15 7.5" stroke="#717680" stroke-width="1.67" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>`;
-
-
+import { useRNSafeAreaInsets } from '../../../../hooks/useRNSafeAreaInsets';
+import { useStyles } from './styles';
+import { chevronDownIcon } from '../../../../assets/svg/chevrondownicon';
 interface DropdownOption {
   label: string;
   value: string;
@@ -86,6 +83,7 @@ const locationOptions: DropdownOption[] = [
 const CompanyInfo = () => {
   const profile = useAppSelector(selectProfile);
   const tenant = profile?.tenant;
+  const styles = useStyles();
 
   // Form state
   const [companyName, setCompanyName] = useState('');
@@ -104,6 +102,7 @@ const CompanyInfo = () => {
   const [facebook, setFacebook] = useState('');
   const [twitter, setTwitter] = useState('');
   const [loading, setLoading] = useState(false);
+  const { insetsTop } = useRNSafeAreaInsets();
 
   // Initialize form with tenant data
   useEffect(() => {
@@ -300,8 +299,8 @@ const CompanyInfo = () => {
           >
             {/* Logo Section */}
             <View style={styles.logoSection}>
-            <View style={styles.avatarContainer}>
-              {/* <CompanyLogoAvatar
+            {/* <View style={styles.avatarContainer}> */}
+              <CompanyLogoAvatar
                 imageUrl={profile?.tenant?.logo}
                 name={companyName || profile?.tenant?.org_name}
                 size={96}
@@ -309,18 +308,18 @@ const CompanyInfo = () => {
                 fontVariant="semiBoldDxs"
                 showEditBadge={true}
                 onEditPress={handleEditLogo}
-              /> */}
-               <ProfileAvatar
+              />
+               {/* <ProfileAvatar
                 imageUrl={profile?.tenant?.logo}
                 name={profile?.tenant?.org_name}
                 size={96}
                 fontVariant="semiBoldDxs"
                 outerSize={16}
-              />
-              <Pressable style={styles.editAvatarButton} onPress={()=>{}}>
+              /> */}
+              {/* <Pressable style={styles.editAvatarButton} onPress={()=>{}}>
                   <SvgXml xml={editAvatarIcon} width={20} height={20} />
-                </Pressable>
-                </View>
+                </Pressable> */}
+                {/* </View> */}
             </View>
 
             {/* Form Fields */}
@@ -435,16 +434,12 @@ const CompanyInfo = () => {
               {/* Twitter */}
               {renderUrlField('Twitter', twitter, setTwitter, 'x.com/...')}
             </View>
-
-            <View style={styles.bottomSpacer} />
-          </ScrollView>
-
-          {/* Save Button */}
-          <View style={styles.buttonContainer}>
+            <View style={styles.buttonContainer}>
             <Button onPress={()=>{}} isLoading={loading} style={styles.saveButton}>
               Save
             </Button>
           </View>
+          </ScrollView>
         </KeyboardAvoidingView>
       </CustomSafeAreaView>
     </Fragment>
@@ -452,134 +447,3 @@ const CompanyInfo = () => {
 };
 
 export default CompanyInfo;
-
-const styles = StyleSheet.create({
-  keyboardView: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: colors.base.white,
-  },
-  logoSection: {
-    alignItems: 'center',
-    paddingVertical: 24,
-    backgroundColor: colors.base.white,
-    borderBottomColor: colors.gray[100],
-  },
-  formContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    backgroundColor: colors.base.white,
-  },
-  fieldContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    marginBottom: 6,
-  },
-  textArea: {
-    height: 128,
-    textAlignVertical: 'top',
-    paddingTop: 12,
-  },
-  dropdownContainer: {
-    borderWidth: 1,
-    borderColor: colors.gray[200],
-    borderRadius: 12,
-    backgroundColor: colors.base.white,
-  },
-  dropdown: {
-    height: 44,
-    paddingHorizontal: 16,
-  },
-  placeholderStyle: {
-    fontFamily: Fonts.InterMedium,
-    fontSize: 16,
-    fontWeight: '500',
-    fontStyle: 'normal',
-    lineHeight: 24,
-    color: colors.gray[900],
-  },
-  selectedTextStyle: {
-    fontFamily: Fonts.InterMedium,
-    fontSize: 16,
-    fontWeight: '500',
-    fontStyle: 'normal',
-    lineHeight: 24,
-    color: colors.gray[900],
-  },
-  dropdownListContainer: {
-    backgroundColor: colors.base.white,
-  },
-  searchIconContainer: {
-    marginRight: 8,
-  },
-  urlInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  httpPrefix: {
-    height: 56,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: colors.gray[200],
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-    backgroundColor: colors.gray[50],
-  },
-  urlInput: {
-    flex: 1,
-  },
-  phoneContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  phoneCodeContainer: {
-    height: 56,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: colors.gray[200],
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-    backgroundColor: colors.base.white,
-  },
-  phoneInputContainer: {
-    flex: 1,
-  },
-  bottomSpacer: {
-    height: 100,
-  },
-  buttonContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 30,
-  },
-  saveButton: {
-    width: '100%',
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: colors.brand[600],
-  },
-  editAvatarButton: {
-    position: 'absolute',
-    bottom: 5,
-    right: 0,
-    padding:8,
-    borderRadius:100,
-    backgroundColor: colors.base.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  avatarContainer: {
-    position: 'relative',
-  },
-});

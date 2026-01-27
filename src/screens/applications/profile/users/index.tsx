@@ -19,6 +19,8 @@ import { SvgXml } from 'react-native-svg';
 import { Fonts } from '../../../../theme/fonts';
 import { useRNSafeAreaInsets } from '../../../../hooks/useRNSafeAreaInsets';
 import { sortIcon } from '../../../../assets/svg/sort';
+import { ThreeDotDropdown } from '../../../../components';
+import { horizontalThreedotIcon } from '../../../../assets/svg/horizontalthreedoticon';
 interface User {
   id: string;
   name: string;
@@ -49,6 +51,7 @@ const Users = () => {
   const [contentWidth, setContentWidth] = useState(0);
   const [containerWidth, setContainerWidth] = useState(windowWidth - 40);
   const [searchText, setSearchText] = useState('');
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const shadowOpacity = useRef(new Animated.Value(0)).current;
 
   // TODO: Replace with actual API data
@@ -117,23 +120,63 @@ const Users = () => {
   /** RIGHT SCROLLABLE CELLS - Invited on, Role */
   const renderRightRow = ({ item, index }: { item: User; index: number }) => {
     const bg = index % 2 === 1 ? colors.neutrals.lightGray : '#FFF';
+    const isOpen = activeMenuId === item.id;
 
     return (
       <View style={[styles.row, { backgroundColor: bg }]}>
         <Typography style={styles.cell} variant="regularTxtsm" color={colors.gray[600]}>
           {item.invited_on}
         </Typography>
+
         <Typography style={styles.cell} variant="regularTxtsm" color={colors.gray[600]}>
           {item.role}
         </Typography>
+
+        {/* ACTION COLUMN */}
+        <View style={styles.actionCell}>
+          <Pressable onPress={() => setActiveMenuId(isOpen ? null : item.id)}>
+            <SvgXml
+              xml={horizontalThreedotIcon}
+              width={20}
+              height={20}
+              style={{ transform: [{ rotate: '90deg' }] }}
+            />
+          </Pressable>
+
+          {/* DROPDOWN */}
+          {isOpen && (
+            <View style={styles.dropdown}>
+              <Pressable
+                style={styles.dropdownItem}
+                onPress={() => {
+                  setActiveMenuId(null);
+                  console.log('Remove', item.id);
+                }}
+              >
+                <Typography color={colors.error[600]}>Remove</Typography>
+              </Pressable>
+
+              <Pressable
+                style={styles.dropdownItem}
+                onPress={() => {
+                  setActiveMenuId(null);
+                  console.log('Update', item.id);
+                }}
+              >
+                <Typography color={colors.brand[600]}>Update</Typography>
+              </Pressable>
+            </View>
+          )}
+        </View>
       </View>
     );
   };
 
+
   return (
     <Fragment>
       <CustomSafeAreaView>
-        <Header title="Users" backNavigation showTitle onBack={goBack}/>
+        <Header title="Users" backNavigation showTitle onBack={goBack} />
 
         {/* Search and Sort Row */}
         <View style={styles.searchRow}>
@@ -216,7 +259,7 @@ const Users = () => {
               >
                 <View>
                   <View style={styles.headerRow}>
-                    {['Invited on', 'Role'].map((title, index) => (
+                    {['Invited on', 'Role', "Action"].map((title, index) => (
                       <Typography
                         key={index}
                         variant="semiBoldTxtxs"
@@ -385,4 +428,33 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: colors.brand[600],
   },
+  actionCell: {
+    width: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+
+  dropdown: {
+    position: 'absolute',
+    top: 24,
+    right: 0,
+    width: 140,
+    backgroundColor: '#FFF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.gray[200],
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 6,
+    zIndex: 999,
+  },
+
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+
 });

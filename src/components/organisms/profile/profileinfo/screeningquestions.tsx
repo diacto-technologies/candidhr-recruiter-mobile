@@ -11,6 +11,7 @@ import { pauseVideoIcon } from "../../../../assets/svg/pausevideo";
 import { playVideoIcon } from "../../../../assets/svg/playvideoIcon";
 import { playIcon } from "../../../../assets/svg/play";
 import Shimmer from "../../../atoms/shimmer";
+import { shadowStyles } from "../../../../theme/shadowcolor";
 
 Sound.setCategory("Playback");
 
@@ -287,11 +288,12 @@ export default ScreeningQuestions;
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.common.white,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: colors.gray[200],
     borderRadius: 12,
     padding: 16,
     gap: 16,
+    ...shadowStyles.shadow_xs
   },
   tabsRow: {
     flexDirection: "row",

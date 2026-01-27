@@ -18,6 +18,7 @@ import FooterButtons from "../../../molecules/footerbuttons";
 import { useRNSafeAreaInsets } from "../../../../hooks/useRNSafeAreaInsets";
 import CopyText from "../../../molecules/copyText";
 import Shimmer from "../../../atoms/shimmer";
+import { shadowStyles } from "../../../../theme/shadowcolor";
 
 const OverviewCardShimmer = () => {
   return (
@@ -161,15 +162,16 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.common.white,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: colors.gray[200],
     gap: 16,
     padding: 16,
-    shadowColor: '#0A0D12',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
+    // shadowColor: '#0A0D12',
+    // shadowOffset: { width: 0, height: 1 },
+    // shadowOpacity: 0.05,
+    // shadowRadius: 3,
+    // elevation: 1,
+    ...shadowStyles.shadow_xs
   },
   row: {
     flexDirection: "row",

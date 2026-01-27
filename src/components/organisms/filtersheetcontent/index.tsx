@@ -146,13 +146,14 @@ const FilterSheetContent: React.FC<Props> = ({
 
               return (
                 <TouchableOpacity
-                  key={index}
-                  onPress={() => setSelectedTab(item)}
-                  style={[
-                    styles.tabItem,
-                    isActive && styles.activeTabItem,
-                  ]}
-                >
+                key={index}
+                onPress={() => setSelectedTab(item)}
+                style={[
+                  styles.tabItem,
+                  index === 0 && styles.firstTabItem,
+                  isActive && styles.activeTabItem,
+                ]}
+              >
                   {isActive && (
                     <Animated.View
                       style={[
@@ -238,6 +239,7 @@ const FilterSheetContent: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   container: {
+    flex:1,
     flexShrink: 1,
     //maxHeight: '90%',
     borderLeftWidth: 2,
@@ -250,6 +252,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   content: {
+    flex:1,
     flexDirection: 'row',
     flexShrink: 1,
   },
@@ -258,15 +261,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.gray[50],
     gap: 10,
     borderTopRightRadius: 20,
-    marginBottom: 50,
+    // paddingBottom: 50,
   },
   tabItem: {
     paddingVertical: 16,
     height: 52,
     paddingHorizontal: 18,
     marginBottom: 4,
-    position: 'relative',
-    borderTopRightRadius: 20
+    position: 'relative'
+  },
+  firstTabItem: {
+    borderTopRightRadius: 20,
   },
   activeTabItem: {
     backgroundColor: '#F5F5F5',
