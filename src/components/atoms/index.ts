@@ -7,6 +7,9 @@ export { default as StatusBar } from './statusbar';
 export { default as VectorIcon } from './vectoricon';
 export { default as Shimmer } from './shimmer';
 export { default as ScalePress } from './scalepress';
+export { default as ProfileAvatar } from './profileavatar';
+export { default as CompanyLogoAvatar } from './companylogoavatar';
+export { UrlInputField } from './urlinputfield';
 
 // Export types
 export type { IButton } from './button/button';
@@ -14,4 +17,5 @@ export type { TypographyProps } from './typography/typography';
 export type { TextFieldProps } from './textfield/textfield';
 export type { IIconButton } from './iconbutton/iconbutton';
 export type { IStatusBar } from './statusbar/statusbar';
-
+export type { UrlInputFieldProps } from './urlinputfield/urlinputfield.d';
+export type { CompanyLogoAvatarProps } from './companylogoavatar/companylogoavatar.d';

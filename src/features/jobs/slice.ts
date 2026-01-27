@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { JobsState, Job, CreateJobRequest, UpdateJobRequest, JobsListApiResponse, GetJobsParams, JobDetail } from "./types";
+import { JobsState, Job, CreateJobRequest, UpdateJobRequest, JobsListApiResponse, GetJobsParams, JobDetail, JobNamesListApiResponse } from "./types";
 
 const initialState: JobsState = {
   jobs: [],
@@ -26,6 +26,11 @@ const initialState: JobsState = {
     closeDate: "",
     closeDateTo: "",
   },
+  jobNameList: [],
+  jobNameListLoading: false,
+  jobNameListPage: 1,
+  jobNameListNext: null,
+  jobNameListSearch: "",
   isTabLoading: false
 };
 
@@ -53,10 +58,10 @@ const jobsSlice = createSlice({
       }>
     ) => {
       const { page, append, data, published, onlyCount } = action.payload;
-    
+
       state.loading = false;
       state.isTabLoading = false;
-    
+
       // ✅ COUNT ONLY MODE
       if (onlyCount) {
         if (published) {
@@ -66,14 +71,14 @@ const jobsSlice = createSlice({
         }
         return; // ⛔ DO NOT TOUCH JOB LIST
       }
-    
+
       // ✅ LIST MODE
       state.pagination.page = page;
       state.pagination.total = data.count;
-    
+
       state.jobs = append ? [...state.jobs, ...data.results] : data.results;
       state.hasMore = state.jobs.length < data.count;
-    
+
       if (published) {
         state.publishedCount = data.count;
       } else {
@@ -175,6 +180,49 @@ const jobsSlice = createSlice({
     setActiveTab: (state, action: PayloadAction<"Published" | "Unpublished">) => {
       state.activeTab = action.payload;
     },
+    getJobNameListRequest: (
+      state,
+      action: PayloadAction<{ page: number; search: string; append: boolean }>
+    ) => {
+      state.jobNameListLoading = true;
+      state.error = null;
+
+      state.jobNameListPage = action.payload.page;
+      state.jobNameListSearch = action.payload.search;
+    },
+
+    getJobNameListSuccess: (
+      state,
+      action: PayloadAction<{
+        append: boolean;
+        page: number;
+        data: JobNamesListApiResponse;
+      }>
+    ) => {
+      state.jobNameListLoading = false;
+
+      const { append, data } = action.payload;
+
+      state.jobNameListNext = data.next;
+
+      state.jobNameList = append
+        ? [...state.jobNameList, ...(data.results ?? [])]
+        : data.results ?? [];
+    },
+
+    getJobNameListFailure: (state, action: PayloadAction<string>) => {
+      state.jobNameListLoading = false;
+      state.error = action.payload;
+    },
+
+    clearJobNameList: (state) => {
+      state.jobNameList = [];
+      state.jobNameListNext = null;
+      state.jobNameListPage = 1;
+      state.jobNameListSearch = "";
+      state.jobNameListLoading = false;
+    },
+
   },
 });
 
@@ -198,7 +246,11 @@ export const {
   clearError,
   setJobFilters,
   clearJobFilters,
-  setActiveTab
+  setActiveTab,
+  getJobNameListRequest,
+  getJobNameListSuccess,
+  getJobNameListFailure,
+  clearJobNameList,
 } = jobsSlice.actions;
 
 export default jobsSlice.reducer;

@@ -124,7 +124,7 @@ const JobDetailScreen: React.FC = () => {
 
   return (
     <CustomSafeAreaView>
-      <Header backNavigation={true} onBack={goBack} edit threedot />
+      <Header backNavigation={true} onBack={goBack}/>
       {activeTab !== "Applicants" && <JobHeader />}
       <View style={styles.tabContainer}>
         <SlideAnimatedTab

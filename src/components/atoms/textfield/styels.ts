@@ -35,12 +35,9 @@ export const useStyles = (props: any, isFocus: boolean, size: any) => {
       elevation:0.8,
     },
     pressableDynamic: {
-      backgroundColor:
-        props.disable === true
-          ? hexToRgb(colors.gray[300], 0.5)
-          : props.textFieldColor
-            ? props.textFieldColor
-            : colors.base.white,
+      backgroundColor: props.textFieldColor
+        ? props.textFieldColor
+        : colors.base.white,
       borderColor: props.isError
         ? hexToRgb(colors.error[400], 0.8)
         : isFocus
@@ -74,7 +71,7 @@ export const useStyles = (props: any, isFocus: boolean, size: any) => {
         props.multiline === true
           ? props.height
             ? props.height
-            : 55
+            : size[props.size || 'Medium']
           : size[props.size || 'Medium'],
       ...(props.multiline === true && { textAlignVertical: 'top' }),
     },

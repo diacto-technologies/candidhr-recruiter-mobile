@@ -78,6 +78,7 @@ export default function ResumeScreening() {
             <Typography variant='mediumTxtmd' color={colors.gray[900]}>{application?.resume?.status_text}</Typography>
           </View>
         </View>
+        
         <ResumeScore
           overall={formatPercentage(application?.resume?.resume_score?.overall_score ?? "0")}
           isloading={loading}

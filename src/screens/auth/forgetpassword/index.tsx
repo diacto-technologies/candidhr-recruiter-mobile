@@ -17,6 +17,7 @@ import {
   forgetPassowrdError
 } from '../../../features/auth/selectors';
 import { clearError } from '../../../features/auth/slice';
+import BackgroundPattern from '../../../components/atoms/backgroundpattern';
 
 const ForgetPasswordScreen = () => {
   const styles = useStyles();
@@ -80,10 +81,9 @@ const ForgetPasswordScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <BackgroundPattern>
       <Header backNavigation={true} borderCondition={true} onBack={() => goBack()} />
-
       <View style={styles.inner}>
-
         <View style={styles.gap}>
           <Typography variant="semiBoldDxs" color={colors.gray[900]}>
             Forgot password
@@ -118,10 +118,10 @@ const ForgetPasswordScreen = () => {
           variant="contain"
           size="Medium"
           borderRadius={8}
-          textColor={colors.base.white}
           isLoading={loading}
           onPress={handleReset}
           disabled={!email}
+          textColor={!email ? colors.gray[400]:colors.base.white}
         >
           Reset password
         </Button>
@@ -137,6 +137,7 @@ const ForgetPasswordScreen = () => {
         )} */}
 
       </View>
+      </BackgroundPattern>
     </SafeAreaView>
   );
 };

@@ -14,6 +14,9 @@ import ContactUsScreen from '../screens/auth/contactus'
 import CheckMailScreen from '../screens/auth/checkmail'
 import CreateNewPasswordScreen from '../screens/auth/createnewpassword'
 import ApplicationOverviewDetails from '../screens/applications/dashboard/ApplicationStageOverviewDetails'
+import AccountInfo from '../screens/applications/profile/accountinfo'
+import CompanyInfo from '../screens/applications/profile/companyinfo'
+import Users from '../screens/applications/profile/users'
 import linking from './linking'
 import OrgnizationalSwitch from '../screens/auth/orgnizationalswitch'
 
@@ -39,6 +42,9 @@ const Navigation:FC = () => {
         <Stack.Screen name='CheckMailScreen' component={CheckMailScreen} options={{ animation: 'fade' }} />
         <Stack.Screen name='CreateNewPasswordScreen' component={CreateNewPasswordScreen} options={{ animation: 'fade' }} />
         <Stack.Screen name="ApplicationOverviewDetails" component={ApplicationOverviewDetails} />
+        <Stack.Screen name='AccountInfo' component={AccountInfo} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
+        <Stack.Screen name='CompanyInfo' component={CompanyInfo} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
+        <Stack.Screen name='Users' component={Users} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
       </Stack.Navigator>
     </NavigationContainer>
   )

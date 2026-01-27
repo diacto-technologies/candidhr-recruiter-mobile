@@ -34,10 +34,15 @@ const SortingAndFilter: FC<Props> = ({
     <Fragment>
       <View style={{
         flexDirection: 'row',
-        paddingVertical: 8,
+        paddingVertical: 12,
         backgroundColor: colors.common.white,
-        borderBottomWidth: 2,
+        borderBottomWidth: 1,
         borderColor: colors.gray[200],
+        elevation: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 3,
       }}>
         <Pressable
           onPress={onPressFilter}
@@ -45,8 +50,7 @@ const SortingAndFilter: FC<Props> = ({
             flexDirection: 'row',
             alignItems: 'center',
             gap: 8,
-            paddingVertical: 4,
-            paddingHorizontal: 10,
+            paddingHorizontal: 8,
           }}
         >
           <View style={{ position: 'relative' }}>
@@ -85,20 +89,20 @@ const SortingAndFilter: FC<Props> = ({
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
-                  // paddingVertical: 4,
+                  paddingVertical: 4,
                   paddingHorizontal: 12,
                   borderRadius: 8,
                   borderWidth: 1,
-                  borderColor: isActive ? colors.brand[200] : '#E9EAEB',
-                  backgroundColor: isActive ? colors.brand[50] : '#FAFAFA',
-                  marginRight: 12,
-                  gap: 4,
+                  borderColor: isActive ? colors.brand[200] : colors.gray[200],
+                  backgroundColor: isActive ? colors.brand[50] : colors.gray[50],
+                  marginRight: 8,
+                  gap: 8,
                 }}
               >
 
                 <Typography
                   variant="P1M"
-                  color={isActive ? colors.brand[700] : '#414651'}
+                  color={isActive ? colors.brand[700] : colors.gray[700]}
                 >
                   {item}
                 </Typography>

@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useState, useCallback } from 'react';
+import React, { Fragment, useEffect, useState, useCallback, useRef } from 'react';
 import { View, Pressable } from 'react-native';
 import { SortingAndFilter, Header, JobCardList, BottomSheet, FilterSheetContent, StatusBar } from '../../../components';
 import { jobFiltersOption } from '../../../utils/dummaydata';
@@ -10,7 +10,7 @@ import { getJobsRequestAction, getPublishedJobsRequestAction, getUnpublishedJobs
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { selectJobFilters, selectJobsActiveTab, selectJobsPagination } from '../../../features/jobs/selectors';
-import { clearJobFilters } from '../../../features/jobs/slice';
+import { clearJobFilters, setJobFilters } from '../../../features/jobs/slice';
 import { setApplicationsFilters } from '../../../features/applications/slice';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -19,6 +19,7 @@ const JobsScreen = () => {
   const dispatch = useAppDispatch();
   const [filterSheet, setFilterSheet] = useState(false);
   const [selectedTab, setSelectedTab] = useState(jobFiltersOption[0]);
+  const [openSearch, setOpenSearch] = useState(false);
   const pagination = useAppSelector(selectJobsPagination);
   const jobFilters = useAppSelector(selectJobFilters);
   const activeTab = useAppSelector(selectJobsActiveTab);
@@ -34,22 +35,51 @@ const JobsScreen = () => {
     }, [dispatch])
   );
 
+  // ✅ Track previous filters to detect title-only changes
+  const prevFiltersRef = useRef(jobFilters);
+  
   useEffect(() => {
     dispatch(getPublishedJobsRequestAction(jobFilters));
     dispatch(getUnpublishedJobsRequestAction(jobFilters));
   }, [jobFilters]);
 
+  // ✅ Debounce search by title, immediate for other filters
   useEffect(() => {
-    dispatch(
-      getJobsRequestAction({
-        page: 1,
-        limit: pagination.limit,
-        append: false,
-        published: activeTab === "Published",
-        ...jobFilters,
-      })
-    );
-  }, [jobFilters, pagination.limit, activeTab]);
+    const isTitleOnlyChange = 
+      prevFiltersRef.current.title !== jobFilters.title &&
+      JSON.stringify({ ...prevFiltersRef.current, title: undefined }) === 
+      JSON.stringify({ ...jobFilters, title: undefined });
+
+    if (isTitleOnlyChange) {
+      // Title changed, debounce the API call
+      const timer = setTimeout(() => {
+        dispatch(
+          getJobsRequestAction({
+            page: 1,
+            limit: pagination.limit,
+            append: false,
+            published: activeTab === "Published",
+            ...jobFilters,
+          })
+        );
+      }, 400);
+
+      prevFiltersRef.current = jobFilters;
+      return () => clearTimeout(timer);
+    } else {
+      // Other filters changed, call immediately
+      dispatch(
+        getJobsRequestAction({
+          page: 1,
+          limit: pagination.limit,
+          append: false,
+          published: activeTab === "Published",
+          ...jobFilters,
+        })
+      );
+      prevFiltersRef.current = jobFilters;
+    }
+  }, [jobFilters, pagination.limit, activeTab, dispatch]);
 
   const handleApplyFilters = () => {
     dispatch(
@@ -67,7 +97,22 @@ const JobsScreen = () => {
   return (
     <Fragment>
       <CustomSafeAreaView>
-        <Header title='Jobs' />
+        <Header
+          title="Jobs"
+          enableJobSearch={true}
+          simpleSearch={true}
+          simpleSearchPlaceholder="Search by title"
+          openSearch={openSearch}
+          onSearchToggle={setOpenSearch}
+          searchText={jobFilters?.title || ''}
+          onSimpleSearch={(text) => {
+            dispatch(setJobFilters({ ...jobFilters, title: text }));
+          }}
+          onSimpleClear={() => {
+            dispatch(setJobFilters({ ...jobFilters, title: '' }));
+            setOpenSearch(false);
+          }}
+        />
         <View style={styles.container}>
           <JobCardList />
           <View style={{ position: 'relative' }}>
@@ -91,8 +136,9 @@ const JobsScreen = () => {
         onPressFilter={() => setFilterSheet(true)}
         setSelectedTab={setSelectedTab}
         selectedTab={selectedTab}
-        onItemPress={function (item: string): void {
-          throw new Error('Function not implemented.');
+        onItemPress={(item) => {
+          setSelectedTab(item);
+          setFilterSheet(true)
         }} />
       <BottomSheet
         visible={filterSheet}

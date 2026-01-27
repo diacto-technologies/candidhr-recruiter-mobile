@@ -7,6 +7,7 @@ import { goBack, navigate } from '../../../utils/navigationUtils';
 import { useStyles } from './styles';
 import CustomSafeAreaView from '../../../components/atoms/customsafeareaview';
 import { setOrigin } from '../../../features/auth/slice';
+import BackgroundPattern from '../../../components/atoms/backgroundpattern';
 
 const OrgnizationalSwitch = () => {
   const styles = useStyles();
@@ -27,8 +28,8 @@ const OrgnizationalSwitch = () => {
 
   return (
     <CustomSafeAreaView>
+       <BackgroundPattern>
       <Header backNavigation={true} onBack={goBack} borderCondition={true} />
-
       <View style={styles.inner}>
 
         <Typography variant="semiBoldDxs" color={colors.gray[900]}>
@@ -63,10 +64,13 @@ const OrgnizationalSwitch = () => {
           variant="contain"
           onPress={handleContinue}
           disabled={!orgName}
+          borderColor={colors.gray[200]}
+          textColor={!orgName ? colors.gray[400]:colors.base.white}
         >
           Continue
         </Button>
       </View>
+      </BackgroundPattern>
     </CustomSafeAreaView>
   );
 };

@@ -13,7 +13,7 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import { navigate } from '../../../utils/navigationUtils';
 import { useStyles } from './styles';
-import { Typography } from '../../atoms';
+import { ProfileAvatar, Typography } from '../../atoms';
 import { colors } from '../../../theme/colors';
 import Divider from '../../atoms/divider';
 import { Application } from '../../../features/applications/types';
@@ -22,6 +22,8 @@ import { getStatusColor } from './helper';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { setApplicationsFilters } from '../../../features/applications/slice';
 import { useFocusEffect } from '@react-navigation/native';
+import { SvgXml } from 'react-native-svg';
+import { horizontalThreedotIcon } from '../../../assets/svg/horizontalthreedoticon';
 
 interface ApplicantCardProps {
   item?: Application | null;
@@ -129,6 +131,7 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
       {/* Top Row - Avatar + Name */}
       <View style={styles.rowBetween}>
         <View style={styles.row}>
+        <View style={[styles.borderWrapper]}>
           {item?.candidate?.profile_pic ?
             <Image
               source={{ uri: item?.candidate?.profile_pic }}
@@ -136,10 +139,11 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
               resizeMode="cover"
             />
             :
-            <View style={[styles.avatar, { alignItems: 'center', justifyContent: 'center', }]}>
-              <Typography variant="semiBoldTxtlg" color={colors?.brand[700]} style={{ paddingRight: 5 }}> {(item?.candidate?.name?.trim()?.[0] ?? "").toUpperCase()}</Typography>
-            </View>
+            // <View style={[styles.initialCircle]}>
+              <Typography variant="semiBoldTxtlg" color={colors?.gray[700]} style={{ paddingRight: 5 }}> {(item?.candidate?.name?.trim()?.[0] ?? "").toUpperCase()}</Typography>
+            // </View>
           }
+          </View>
           <View style={{ marginLeft: 12 }}>
             <Typography variant="semiBoldTxtmd">
               {item?.name ?? (item?.id ? "****" + String(item.id).slice(-4) : '')}
@@ -150,8 +154,8 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
           </View>
         </View>
 
-        <TouchableOpacity>
-          <Typography style={styles.menu}>⋯</Typography>
+        <TouchableOpacity style={{ alignSelf: 'flex-start' }}>
+          <SvgXml xml={horizontalThreedotIcon} height={20} width={20} />
         </TouchableOpacity>
       </View>
 

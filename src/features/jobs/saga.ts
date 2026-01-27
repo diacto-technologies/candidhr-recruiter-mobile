@@ -16,10 +16,13 @@ import {
   deleteJobRequest,
   deleteJobSuccess,
   deleteJobFailure,
+  getJobNameListRequest,
+  getJobNameListSuccess,
+  getJobNameListFailure,
 } from "./slice";
 import { jobsApi } from "./api";
 import { GetJobsRequestActionPayload } from "./actions";
-import { JobsListApiResponse } from "./types";
+import { JobNamesListApiResponse, JobsListApiResponse } from "./types";
 import { PayloadAction } from "@reduxjs/toolkit";
 
 function* getJobsWorker(
@@ -136,6 +139,36 @@ function* deleteJobWorker(action: { type: string; payload: string }): Generator<
   }
 }
 
+function* getJobNameListWorker(
+  action: PayloadAction<{ page?: number; search?: string; append?: boolean } | undefined>
+): Generator<any, void, any> {
+  try {
+    const page = action.payload?.page ?? 1;
+    const search = action.payload?.search ?? "";
+    const append = action.payload?.append ?? false;
+
+    yield put(getJobNameListRequest({ page, search, append }));
+
+    const response: JobNamesListApiResponse = yield call(
+      jobsApi.getJobNamesList,
+      page,
+      search
+    );
+    console.log(response,"getJobNameListWorkergetJobNameListWorkergetJobNameListWorker")
+
+    yield put(
+      getJobNameListSuccess({
+        page,
+        append,
+        data: response,
+      })
+    );
+  } catch (error: any) {
+    yield put(getJobNameListFailure(error.message || "Failed to fetch job names list"));
+  }
+}
+
+
 export function* jobsSaga() {
   yield takeLatest(JOBS_ACTION_TYPES.GET_PUBLISHED_JOBS_REQUEST, getPublishedJobsWorker);
   yield takeLatest(JOBS_ACTION_TYPES.GET_UNPUBLISHED_JOBS_REQUEST, getUnpublishedJobsWorker);
@@ -144,5 +177,6 @@ export function* jobsSaga() {
   yield takeLatest(JOBS_ACTION_TYPES.CREATE_JOB_REQUEST, createJobWorker);
   yield takeLatest(JOBS_ACTION_TYPES.UPDATE_JOB_REQUEST, updateJobWorker);
   yield takeLatest(JOBS_ACTION_TYPES.DELETE_JOB_REQUEST, deleteJobWorker);
+  yield takeLatest(JOBS_ACTION_TYPES.GET_JOB_NAME_LIST_REQUEST, getJobNameListWorker);
 }
 

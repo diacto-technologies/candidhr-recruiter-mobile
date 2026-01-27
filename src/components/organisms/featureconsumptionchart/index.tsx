@@ -21,7 +21,7 @@ const FeatureConsumptionChart: React.FC = () => {
     const loading = useAppSelector(selectFeatureConsumptionLoading);
     const [selectedIndex, setSelectedIndex] = useState<number>(-1);
 
-    const barData = buildBarData(featureData);
+   const barData = buildBarData(featureData, selectedIndex);
     const barCount = barData.length;
     const barWidth = 101;
     const availableWidth = screenWidth - 10;

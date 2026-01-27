@@ -69,4 +69,29 @@ export const selectIsTabLoading = createSelector(
   (jobs) => jobs.isTabLoading
 );
 
+export const selectJobNameList = createSelector(
+  [selectJobsState],
+  (jobs) => jobs.jobNameList
+);
+
+export const selectJobNameListLoading = createSelector(
+  [selectJobsState],
+  (jobs) => jobs.jobNameListLoading
+);
+
+export const selectJobNameListNext = createSelector(
+  [selectJobsState],
+  (jobs) => jobs.jobNameListNext
+);
+
+export const selectJobNameListPage = createSelector(
+  [selectJobsState],
+  (jobs) => jobs.jobNameListPage
+);
+
+export const selectJobNameListSearch = createSelector(
+  [selectJobsState],
+  (jobs) => jobs.jobNameListSearch
+);
+
 

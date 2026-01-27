@@ -66,5 +66,18 @@ export const jobsApi = {
   deleteJob: async (id: string): Promise<void> => {
     return apiClient.delete(API_ENDPOINTS.JOBS.DELETE(id));
   },
+
+  getJobNamesList: async (page: number, search: string) => {
+    const queryParams = new URLSearchParams();
+
+    queryParams.append("page", String(page));
+
+    if (search) {
+      queryParams.append("title__icontains", search);
+    }
+
+    return apiClient.get(`${API_ENDPOINTS.JOBS.JOB_NAME_LIST}?${queryParams.toString()}`);
+  },
+
 };
 

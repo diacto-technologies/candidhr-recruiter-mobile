@@ -50,7 +50,7 @@ export const useStyles = () => {
 
     /** FIXED LEFT COLUMN */
     leftFixedWrapper: {
-      //width: 140,
+      width: '50%',
       backgroundColor: colors.base.white,
       borderRightWidth: 1,
       borderColor: colors.gray[200],
@@ -63,7 +63,7 @@ export const useStyles = () => {
       paddingLeft: 20,
       borderBottomWidth: 1,
       borderColor: colors.gray[200],
-      justifyContent: "center"
+      justifyContent: "center",
     },
 
     /** SCROLLBAR */
@@ -79,7 +79,7 @@ export const useStyles = () => {
     paginationContainer: {
       flexDirection: "row",
       paddingBottom: insets.insetsBottom,
-      borderTopWidth: 1,
+      // borderTopWidth: 1,
       borderColor: colors.gray["200"],
       alignSelf: "center",
     },

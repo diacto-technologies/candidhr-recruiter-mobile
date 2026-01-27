@@ -7,7 +7,7 @@ export const profileApi = {
     return apiClient.get(API_ENDPOINTS.PROFILE.GET);
   },
   updateProfile: async (data: UpdateProfileRequest): Promise<{ profile: Profile }> => {
-    return apiClient.put(API_ENDPOINTS.PROFILE.UPDATE, data);
+    return apiClient.patch(API_ENDPOINTS.PROFILE.UPDATE, data);
   },
 
   updateAvatar: async (avatar: string): Promise<{ profile: Profile }> => {

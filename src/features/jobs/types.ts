@@ -191,6 +191,11 @@ export interface JobsState {
     closeDateTo: string,
 
   }
+  jobNameList: JobNameItem[];
+  jobNameListLoading: boolean;
+  jobNameListPage: number;
+  jobNameListNext: string | null;
+  jobNameListSearch: string;
 }
 export interface SharedUser {
   id: string;
@@ -234,6 +239,18 @@ export interface Workflow {
   id: string;
   name: string;
 }
+
+export type JobNameItem = {
+  id: string;
+  title: string;
+};
+
+export type JobNamesListApiResponse = {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: JobNameItem[];
+};
 
 
 

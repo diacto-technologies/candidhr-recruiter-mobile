@@ -49,3 +49,14 @@ export const getUnpublishedJobsRequestAction = (params?: GetJobsRequestActionPay
   payload: params,
 });
 
+export type GetJobNameListPayload = {
+  page?: number;
+  search?: string;
+  append?: boolean;
+};
+
+export const getJobNameListRequestAction = (payload?: GetJobNameListPayload) => ({
+  type: JOBS_ACTION_TYPES.GET_JOB_NAME_LIST_REQUEST,
+  payload,
+});
+

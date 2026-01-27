@@ -4,6 +4,7 @@ export const useStyles = () => {
     return StyleSheet.create({
         container: { flex: 1, backgroundColor: '#fff' },
         inner: {
+            zIndex:999,
             padding: 16,
             gap: 24,
         },
