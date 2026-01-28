@@ -5,6 +5,7 @@ import { colors } from "../../../../theme/colors";
 import { SvgXml } from "react-native-svg";
 import { checkMarkIcon } from "../../../../assets/svg/checkmark";
 import Ring from "../../../atoms/ring";
+import { shadowStyles } from "../../../../theme/shadowcolor";
 interface TimelineItem {
   title: string;
   date?: string;
@@ -126,11 +127,12 @@ const styles = StyleSheet.create({
     borderColor: colors.gray[200],
     padding: 16,
     gap:20,
-    shadowColor: '#0A0D12',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
+    // shadowColor: '#0A0D12',
+    // shadowOffset: { width: 0, height: 1 },
+    // shadowOpacity: 0.05,
+    // shadowRadius: 3,
+    // elevation: 1,
+    ...shadowStyles.shadow_xs
   },
 
   headerRow: {

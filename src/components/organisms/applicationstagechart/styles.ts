@@ -1,6 +1,7 @@
 import { StyleSheet } from 'react-native';
 import { colors } from '../../../theme/colors';
 import { Fonts } from '../../../theme/fonts';
+import { shadowStyles } from '../../../theme/shadowcolor';
 
 export const useStyles = () => {
     return StyleSheet.create({
@@ -8,14 +9,10 @@ export const useStyles = () => {
             backgroundColor: colors.base.white,
             borderRadius: 12,
             padding: 16,
-            borderWidth: 1,
+            borderWidth: 0.5,
             borderColor: colors.gray['200'],
-            shadowColor: '#0A0D12',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 3,
-            elevation: 1,
             gap:20,
+            ...shadowStyles.shadow_xs
         },
     
         xAxisLabel: {

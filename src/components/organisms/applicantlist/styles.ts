@@ -1,6 +1,7 @@
 import { StyleSheet } from 'react-native';
 import { colors } from '../../../theme/colors';
 import DeviceInfo from 'react-native-device-info';
+import { shadowStyles } from '../../../theme/shadowcolor';
 
 export const useStyles = () => {
   const isTablet = DeviceInfo.isTablet();
@@ -11,14 +12,10 @@ export const useStyles = () => {
       backgroundColor: colors.base.white,
       padding: 16,
       borderRadius: 12,
-      borderWidth: 1,
+      borderWidth: 0.5,
       borderColor: colors.gray[200],
       gap: 12,
-      shadowColor: '#0A0D12',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 3,
-      elevation: 1,
+      ...shadowStyles.shadow_xs
     },
 
     row: {

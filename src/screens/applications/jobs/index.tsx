@@ -13,6 +13,8 @@ import { selectJobFilters, selectJobsActiveTab, selectJobsPagination } from '../
 import { clearJobFilters, setJobFilters } from '../../../features/jobs/slice';
 import { setApplicationsFilters } from '../../../features/applications/slice';
 import { useFocusEffect } from '@react-navigation/native';
+import { useNetworkConnectivity } from '../../../hooks/useNetworkConnectivity';
+import { selectToken } from '../../../features/auth/selectors';
 
 const JobsScreen = () => {
   const styles = useStyles();
@@ -23,6 +25,8 @@ const JobsScreen = () => {
   const pagination = useAppSelector(selectJobsPagination);
   const jobFilters = useAppSelector(selectJobFilters);
   const activeTab = useAppSelector(selectJobsActiveTab);
+  const token = useAppSelector(selectToken);
+  const isConnected = useNetworkConnectivity();
 
   useFocusEffect(
     useCallback(() => {
@@ -41,7 +45,7 @@ const JobsScreen = () => {
   useEffect(() => {
     dispatch(getPublishedJobsRequestAction(jobFilters));
     dispatch(getUnpublishedJobsRequestAction(jobFilters));
-  }, [jobFilters]);
+  }, [jobFilters, token, isConnected]);
 
   // ✅ Debounce search by title, immediate for other filters
   useEffect(() => {
@@ -49,7 +53,6 @@ const JobsScreen = () => {
       prevFiltersRef.current.title !== jobFilters.title &&
       JSON.stringify({ ...prevFiltersRef.current, title: undefined }) === 
       JSON.stringify({ ...jobFilters, title: undefined });
-
     if (isTitleOnlyChange) {
       // Title changed, debounce the API call
       const timer = setTimeout(() => {
@@ -79,7 +82,7 @@ const JobsScreen = () => {
       );
       prevFiltersRef.current = jobFilters;
     }
-  }, [jobFilters, pagination.limit, activeTab, dispatch]);
+  }, [jobFilters, activeTab]);
 
   const handleApplyFilters = () => {
     dispatch(
@@ -115,7 +118,7 @@ const JobsScreen = () => {
         />
         <View style={styles.container}>
           <JobCardList />
-          <View style={{ position: 'relative' }}>
+          {/* <View style={{ position: 'relative' }}>
             <Pressable
               style={{
                 position: 'absolute',
@@ -125,7 +128,7 @@ const JobsScreen = () => {
             >
               <SvgXml xml={pluscircle} />
             </Pressable>
-          </View>
+          </View> */}
           <View>
           </View>
         </View>

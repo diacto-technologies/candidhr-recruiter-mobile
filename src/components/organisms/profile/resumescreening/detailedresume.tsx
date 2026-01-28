@@ -8,6 +8,7 @@ import { selectApplicationsDetailLoading, selectSelectedApplication } from "../.
 import { formatMonDDYYYY } from "../../../../utils/dateformatter";
 import Shimmer from "../../../atoms/shimmer";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { shadowStyles } from "../../../../theme/shadowcolor";
 
 interface WorkItem {
   title: string;
@@ -387,16 +388,17 @@ export default DetailedResume;
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.common.white,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: colors.gray[200],
     borderRadius: 12,
     padding: 16,
     gap: 20,
-    shadowColor: '#0A0D12',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
+    // shadowColor: '#0A0D12',
+    // shadowOffset: { width: 0, height: 1 },
+    // shadowOpacity: 0.05,
+    // shadowRadius: 3,
+    // elevation: 1,
+    ...shadowStyles.shadow_xs
   },
 
   title: {

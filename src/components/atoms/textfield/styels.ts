@@ -2,6 +2,7 @@ import { StyleSheet } from 'react-native';
 import { colors } from '../../../theme/colors';
 import { hexToRgb } from '../../../utils/hexToRgb';
 import { Fonts } from '../../../theme/fonts';
+import { shadowStyles } from '../../../theme/shadowcolor';
 
 export const useStyles = (props: any, isFocus: boolean, size: any) => {
 
@@ -28,16 +29,14 @@ export const useStyles = (props: any, isFocus: boolean, size: any) => {
       gap: 10,
       overflow: 'hidden',
       paddingHorizontal: 16,
-      shadowColor: '#0A0D12',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.6,
-      shadowRadius: 2,
-      elevation:0.8,
+      ...shadowStyles.xs
     },
     pressableDynamic: {
-      backgroundColor: props.textFieldColor
-        ? props.textFieldColor
-        : colors.base.white,
+      backgroundColor: props.disable
+        ? colors.gray[50]
+        : props.textFieldColor
+          ? props.textFieldColor
+          : colors.base.white,
       borderColor: props.isError
         ? hexToRgb(colors.error[400], 0.8)
         : isFocus
@@ -48,7 +47,8 @@ export const useStyles = (props: any, isFocus: boolean, size: any) => {
 
     // TextInput
     inputBase: {
-      color: colors.gray[900],
+      color: props.disable
+        ? colors.gray[500] : colors.gray[900],
       flex: 1,
       fontSize: 14,
       margin: 0,

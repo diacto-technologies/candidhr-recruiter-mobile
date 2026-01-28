@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { colors } from '../../../../theme/colors';
+import { shadowStyles } from '../../../../theme/shadowcolor';
 
 export const useStyles = () => {
     return StyleSheet.create({
@@ -18,15 +19,16 @@ export const useStyles = () => {
         shortListedCard: {
           backgroundColor: colors.common.white,
           borderRadius: 8,
-          borderWidth: 1,
+          borderWidth: 0.5,
           borderColor: colors.gray[300],
           paddingVertical: 10,
           paddingHorizontal: 14,
-          shadowColor: '#0A0D12',
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.05,
-          shadowRadius: 3,
-          elevation: 1,
+          // shadowColor: '#0A0D12',
+          // shadowOffset: { width: 0, height: 1 },
+          // shadowOpacity: 0.05,
+          // shadowRadius: 3,
+          // elevation: 1,
+          ...shadowStyles.shadow_xs,
           gap: 16,
           paddingTop: 16
         },
@@ -97,10 +99,11 @@ export const useStyles = () => {
         responsesCard: {
           backgroundColor: colors.common.white,
           borderRadius: 12,
-          borderWidth: 1,
+          borderWidth: 0.5,
           borderColor: colors.gray[200],
           padding: 16,
           marginTop: 16,
+          ...shadowStyles.shadow_xs
         },
       
         tagRow: {

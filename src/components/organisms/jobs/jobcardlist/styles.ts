@@ -1,6 +1,7 @@
 import { StyleSheet } from 'react-native';
 import { colors } from '../../../../theme/colors';
 import DeviceInfo from 'react-native-device-info';
+import { shadowStyles } from '../../../../theme/shadowcolor';
 
 
 export const useStyles = () => {
@@ -12,13 +13,9 @@ export const useStyles = () => {
             backgroundColor: colors.common.white,
             borderRadius: 12,
             padding: 16,
-            borderWidth: 1,
+            borderWidth: 0.5,
             borderColor: '#E5E7EB',
-            shadowColor: '#0A0D12',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 3,
-            elevation: 1,
+            ...shadowStyles.shadow_xs
         },
         row: { flexDirection: 'row', alignItems: 'center'},
         rowBetween: {flexDirection: 'row', justifyContent: 'space-between'},

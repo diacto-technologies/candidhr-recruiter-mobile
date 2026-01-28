@@ -13,5 +13,8 @@ export const profileApi = {
   updateAvatar: async (avatar: string): Promise<{ profile: Profile }> => {
     return apiClient.post(API_ENDPOINTS.PROFILE.AVATAR, { avatar });
   },
+  getUsers: async (page: number) => {
+    return apiClient.get(`${API_ENDPOINTS.USERS.LIST}?page=${page}`);
+  },
 };
 

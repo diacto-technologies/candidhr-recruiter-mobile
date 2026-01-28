@@ -21,6 +21,7 @@ import { getAssessmentDetailedReportRequestAction } from "../../../../features/a
 import { useAppDispatch } from "../../../../hooks/useAppDispatch";
 import CodingQuestionCard from "./codingquestioncard";
 import Divider from "../../../atoms/divider";
+import { shadowStyles } from "../../../../theme/shadowcolor";
 
 type QuestionType = {
   id: number;
@@ -426,10 +427,11 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.common.white,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: colors.gray[200],
     padding: 16,
     gap: 20,
+    ...shadowStyles.shadow_xs
   },
 
   topRow: {},

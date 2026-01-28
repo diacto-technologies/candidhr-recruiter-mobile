@@ -11,6 +11,7 @@ import Shimmer from "../../../atoms/shimmer";
 import { useAppSelector } from "../../../../hooks/useAppSelector";
 import { selectApplicationsDetailLoading } from "../../../../features/applications/selectors";
 import { getStatusStyles } from "../../../../screens/applications/applicant/helper";
+import { shadowStyles } from "../../../../theme/shadowcolor";
 
 interface SkillItem {
   title: string;
@@ -218,16 +219,17 @@ export default SkillScore;
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.common.white,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: colors.gray[200],
     borderRadius: 12,
     padding: 16,
     gap: 16,
-    shadowColor: '#0A0D12',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
+    // shadowColor: '#0A0D12',
+    // shadowOffset: { width: 0, height: 1 },
+    // shadowOpacity: 0.05,
+    // shadowRadius: 3,
+    // elevation: 1,
+    ...shadowStyles.shadow_xs
   },
 
   headerRow: {

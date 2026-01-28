@@ -3,6 +3,8 @@ import React, { FC, useState } from 'react';
 import Typography from '../typography';
 import { colors } from '../../../theme/colors';
 import { Fonts } from '../../../theme/fonts';
+import { shadowStyles } from '../../../theme/shadowcolor';
+import { Colors } from '../../../constants';
 
 type PhoneInputSize = 'Large' | 'Regular' | 'Medium' | 'Small' | 'Tab';
 
@@ -73,7 +75,7 @@ const PhoneInput: FC<PhoneInputProps> = ({
                             ? colors.brand[500]
                             : colors.gray[300],
                     borderWidth: isFocus && !disabled ? 2 : 1,
-                    backgroundColor: disabled ?  colors.base.white : colors.base.white,
+                    backgroundColor: disabled ?  colors.gray[50] : colors.base.white,
                 },
             ]}>
                 <View style={[styles.prefixContainer, { height }]}>
@@ -123,12 +125,13 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         overflow: 'hidden',
+        ...shadowStyles.xs
     },
     prefixContainer: {
         paddingHorizontal: 16,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor:colors.base.white
+        backgroundColor:colors.gray[50]
     },
     divider: {
         width: 1,
@@ -147,12 +150,14 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '400',
         fontStyle: 'normal',
+        color:colors.gray[900]
     },
     inputWithoutValue: {
         fontFamily: Fonts.InterRegular,
         fontSize: 16,
         fontWeight: '400',
         fontStyle: 'normal',
+        color:colors.gray[400]
     },
     inputDisabled: {
         color: colors.gray[500],

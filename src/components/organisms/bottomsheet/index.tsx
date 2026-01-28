@@ -29,6 +29,7 @@ const BottomSheet = ({
   const backdropOpacity = useRef(new Animated.Value(0)).current;
   const [modalVisible, setModalVisible] = useState(false);
   const styles = useStyles();
+  const SHEET_HEIGHT = screenHeight * 0.8;
 
   useEffect(() => {
     if (visible) {
@@ -80,9 +81,9 @@ const BottomSheet = ({
             activeOpacity={1}
             onPress={() => isClose()}
           />
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={[styles.sheetContainer, { maxHeight: screenHeight - (insetsTop + 0), marginBottom: 20 }]}
+          <View
+            // behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={[styles.sheetContainer, {height: SHEET_HEIGHT,maxHeight: SHEET_HEIGHT - (insetsTop + 0), marginBottom: insetsTop+6 }]}
           >
             <View style={{
               marginTop: 5,
@@ -129,7 +130,7 @@ const BottomSheet = ({
               </View>
             </View>
             {children}
-          </KeyboardAvoidingView>
+          </View>
         </View>
       </Modal>
     </Fragment>

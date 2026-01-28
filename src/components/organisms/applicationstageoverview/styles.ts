@@ -3,6 +3,7 @@ import { useRNSafeAreaInsets } from "../../../hooks/useRNSafeAreaInsets";
 import { windowWidth } from "../../../utils/devicelayout";
 import { colors } from "../../../theme/colors";
 import { Fonts } from "../../../theme/fonts";
+import { shadowStyles } from "../../../theme/shadowcolor";
 
 
 export const useStyles = () => {
@@ -13,8 +14,9 @@ export const useStyles = () => {
     card: {
       backgroundColor: colors.base.white,
       borderRadius: 12,
-      borderWidth: 1,
+      borderWidth: 0.5,
       borderColor: colors.gray["200"],
+      ...shadowStyles.shadow_xs
     },
 
     headerRow: {
