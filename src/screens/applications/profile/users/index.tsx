@@ -1,11 +1,13 @@
-import React, { Fragment, useRef, useState, useCallback } from 'react';
+import React, { Fragment, useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
   Animated,
   FlatList,
   ScrollView,
   Pressable,
-  StyleSheet,
+  LayoutChangeEvent,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
 } from 'react-native';
 import Typography from '../../../../components/atoms/typography';
 import { colors } from '../../../../theme/colors';
@@ -16,11 +18,35 @@ import { windowWidth } from '../../../../utils/devicelayout';
 import SearchBar from '../../../../components/atoms/searchbar';
 import Button from '../../../../components/atoms/button';
 import { SvgXml } from 'react-native-svg';
-import { Fonts } from '../../../../theme/fonts';
 import { useRNSafeAreaInsets } from '../../../../hooks/useRNSafeAreaInsets';
 import { sortIcon } from '../../../../assets/svg/sort';
-import { ThreeDotDropdown } from '../../../../components';
+import { useAppDispatch } from '../../../../hooks/useAppDispatch';
+import { useAppSelector } from '../../../../hooks/useAppSelector';
+import {
+  getUsersRequestAction,
+  getRolesRequestAction,
+  createUserRequestAction,
+  updateUserRequestAction,
+  deleteUserRequestAction,
+  selectRolesListItems,
+  selectUsersListItems,
+  selectUsersListLoading,
+  selectUsersListNext,
+  selectUsersListPage,
+} from '../../../../features/profile/users';
+import { API_ENDPOINTS } from '../../../../api/endpoints';
+import { formatDate } from '../../../../utils/constants';
+import { useStyles } from './styles';
 import { horizontalThreedotIcon } from '../../../../assets/svg/horizontalthreedoticon';
+import { AddUserModal, AddUserValues } from './AddUserModal';
+import { ConfirmModal } from '../../../../components';
+import {
+  UpdateUserRoleModal,
+  UpdateUserRoleValues,
+  UpdateUserRoleUser,
+} from './UpdateUserRoleModal';
+import { deleteIcon } from '../../../../assets/svg/deleteicon';
+import { editAvatarIcon } from '../../../../assets/svg/editavatar';
 interface User {
   id: string;
   name: string;
@@ -29,33 +55,46 @@ interface User {
   role: string;
 }
 
-// Mock data for demonstration
-const MOCK_USERS: User[] = [
-  { id: '1', name: 'Sachin patidar', email: 'jacob@diacto.com', invited_on: 'June 18, 2025', role: 'Admin' },
-  { id: '2', name: 'Rakshat amin', email: 'jacob@diacto.com', invited_on: 'June 18, 2025', role: 'Participant' },
-  { id: '3', name: 'Samta raka', email: 'jacob@diacto.com', invited_on: 'June 18, 2025', role: 'Admin G' },
-  { id: '4', name: 'Harsh vikram', email: 'jacob@diacto.com', invited_on: 'June 18, 2025', role: 'Participant' },
-  { id: '5', name: 'Aman sisodiya', email: 'jacob@diacto.com', invited_on: 'June 18, 2025', role: 'Editor' },
-  { id: '6', name: 'Pravin khandare', email: 'jacob@diacto.com', invited_on: 'June 18, 2025', role: 'View Only' },
-  { id: '7', name: 'Pravin khandare', email: 'jacob@diacto.com', invited_on: 'June 18, 2025', role: 'View Only' },
-  { id: '8', name: 'Pravin khandare', email: 'jacob@diacto.com', invited_on: 'June 18, 2025', role: 'View Only' },
-  { id: '9', name: 'Pravin khandare', email: 'jacob@diacto.com', invited_on: 'June 18, 2025', role: 'View Only' },
-  { id: '10', name: 'Pravin khandare', email: 'jacob@diacto.com', invited_on: 'June 18, 2025', role: 'View Only' },
-];
-
 const TRACK_WIDTH = 320;
 
 const Users = () => {
   const insets = useRNSafeAreaInsets();
+  const styles = useStyles();
+  const dispatch = useAppDispatch();
+  const apiUsers = useAppSelector(selectUsersListItems);
+  const usersLoading = useAppSelector(selectUsersListLoading);
+  const usersNext = useAppSelector(selectUsersListNext);
+  const usersPage = useAppSelector(selectUsersListPage);
+  const apiRoles = useAppSelector(selectRolesListItems);
   const scrollX = useRef(new Animated.Value(0)).current;
   const [contentWidth, setContentWidth] = useState(0);
   const [containerWidth, setContainerWidth] = useState(windowWidth - 40);
   const [searchText, setSearchText] = useState('');
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [addUserOpen, setAddUserOpen] = useState(false);
+  const [updateRoleOpen, setUpdateRoleOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UpdateUserRoleUser | null>(null);
+  const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<User | null>(null);
   const shadowOpacity = useRef(new Animated.Value(0)).current;
+  const fetchingNextRef = useRef(false);
 
-  // TODO: Replace with actual API data
-  const [users] = useState<User[]>(MOCK_USERS);
+  useEffect(() => {
+    dispatch(getUsersRequestAction(1));
+    dispatch(getRolesRequestAction(1));
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (!usersLoading) fetchingNextRef.current = false;
+  }, [usersLoading]);
+
+  const users: User[] = apiUsers.map((u) => ({
+    id: u.id,
+    name: u.name ?? '-',
+    email: u.email ?? '-',
+    invited_on: u.created_at ? formatDate(u.created_at) : '-',
+    role: u.role?.name ?? '-',
+  }));
 
   // Filter users based on search
   const filteredUsers = users.filter(
@@ -65,17 +104,37 @@ const Users = () => {
   );
 
   // Show/hide shadow based on scrollX
-  scrollX.addListener(({ value }) => {
-    Animated.timing(shadowOpacity, {
-      toValue: value > 0 ? 1 : 0,
-      duration: 180,
-      useNativeDriver: false,
-    }).start();
-  });
+  useEffect(() => {
+    const id = scrollX.addListener(({ value }) => {
+      Animated.timing(shadowOpacity, {
+        toValue: value > 0 ? 1 : 0,
+        duration: 180,
+        useNativeDriver: false,
+      }).start();
+    });
 
-  const onContainerLayout = (e: any) => {
+    return () => {
+      scrollX.removeListener(id);
+    };
+  }, [scrollX, shadowOpacity]);
+
+  const onContainerLayout = (e: LayoutChangeEvent) => {
     setContainerWidth(e.nativeEvent.layout.width);
   };
+
+  const handleVerticalScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      if (!usersNext || usersLoading || fetchingNextRef.current) return;
+
+      const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+      const paddingToBottom = 80;
+      if (layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom) {
+        fetchingNextRef.current = true;
+        dispatch(getUsersRequestAction((usersPage ?? 1) + 1));
+      }
+    },
+    [dispatch, usersLoading, usersNext, usersPage]
+  );
 
   const visibleWidth = containerWidth - 140;
   const scrollRange = Math.max(contentWidth - visibleWidth, 0);
@@ -92,14 +151,73 @@ const Users = () => {
   });
 
   const handleAddUsers = useCallback(() => {
-    // TODO: Implement add users functionality
-    console.log('Add users pressed');
+    setAddUserOpen(true);
   }, []);
+
+  const closeAddUser = useCallback((): void => {
+    setAddUserOpen(false);
+  }, []);
+
+  const submitAddUser = useCallback(
+    (values: AddUserValues): void => {
+      if (!values.name?.trim() || !values.email?.trim() || !values.role) return;
+      dispatch(
+        createUserRequestAction({
+          data: {
+            name: values.name.trim(),
+            email: values.email.trim(),
+            role_id: values.role,
+          },
+          refreshPage: 1,
+        })
+      );
+      closeAddUser();
+    },
+    [closeAddUser, dispatch]
+  );
 
   const handleSort = useCallback(() => {
     // TODO: Implement sort functionality
     console.log('Sort pressed');
   }, []);
+
+  const closeUpdateRole = useCallback((): void => {
+    setUpdateRoleOpen(false);
+    setSelectedUser(null);
+  }, []);
+
+  const submitUpdateRole = useCallback(
+    (values: UpdateUserRoleValues): void => {
+      const roleId = apiRoles.find((r) => r.name === values.role)?.id;
+      if (!values.userId || !roleId) return;
+
+      dispatch(
+        updateUserRequestAction({
+          endpoint: API_ENDPOINTS.USERS.ASSIGN_ROLE,
+          data: { user_id: values.userId, role_id: roleId },
+          refreshPage: 1,
+        })
+      );
+      closeUpdateRole();
+    },
+    [apiRoles, closeUpdateRole, dispatch]
+  );
+
+  const closeRemoveConfirm = useCallback(() => {
+    setRemoveConfirmOpen(false);
+    setRemoveTarget(null);
+  }, []);
+
+  const confirmRemove = useCallback(() => {
+    if (!removeTarget?.id) return;
+    dispatch(
+      deleteUserRequestAction({
+        endpoint: API_ENDPOINTS.USERS.DELETE(removeTarget.id),
+        refreshPage: 1,
+      })
+    );
+    closeRemoveConfirm();
+  }, [closeRemoveConfirm, dispatch, removeTarget?.id]);
 
   /** LEFT FIXED COLUMN - Name */
   const renderLeftColumn = ({ item, index }: { item: User; index: number }) => {
@@ -150,10 +268,12 @@ const Users = () => {
                 style={styles.dropdownItem}
                 onPress={() => {
                   setActiveMenuId(null);
-                  console.log('Remove', item.id);
+                  setRemoveTarget(item);
+                  setRemoveConfirmOpen(true);
                 }}
               >
-                <Typography color={colors.error[600]}>Remove</Typography>
+                <SvgXml xml={deleteIcon} style={{marginRight:5}} width={16} height={16}/>
+                <Typography variant="semiBoldTxtsm" color={colors.gray[700]}>Remove</Typography>
               </Pressable>
 
               <Pressable
@@ -161,9 +281,17 @@ const Users = () => {
                 onPress={() => {
                   setActiveMenuId(null);
                   console.log('Update', item.id);
+                  setSelectedUser({
+                    id: item.id,
+                    name: item.name,
+                    email: item.email,
+                    role: item.role,
+                  });
+                  setUpdateRoleOpen(true);
                 }}
               >
-                <Typography color={colors.brand[600]}>Update</Typography>
+                <SvgXml xml={editAvatarIcon} style={{marginRight:5}} width={16} height={16}/>
+                <Typography  variant="semiBoldTxtsm" color={colors.gray[700]}>Update</Typography>
               </Pressable>
             </View>
           )}
@@ -171,6 +299,7 @@ const Users = () => {
       </View>
     );
   };
+
 
 
   return (
@@ -202,6 +331,8 @@ const Users = () => {
             showsVerticalScrollIndicator={false}
             nestedScrollEnabled
             bounces={false}
+            onScroll={handleVerticalScroll}
+            scrollEventThrottle={16}
           >
             <View style={styles.tableContainer}>
               {/* Left Fixed Column */}
@@ -302,159 +433,32 @@ const Users = () => {
           Add users
         </Button>
       </View>
+
+      <AddUserModal visible={addUserOpen} onClose={closeAddUser} onSubmit={submitAddUser} />
+      <UpdateUserRoleModal
+        visible={updateRoleOpen}
+        user={selectedUser}
+        onClose={closeUpdateRole}
+        onSubmit={submitUpdateRole}
+        roleOptions={apiRoles.map((r) => r.name)}
+      />
+
+      <ConfirmModal
+        visible={removeConfirmOpen}
+        title="Confirm"
+        message={
+          removeTarget
+            ? `Are you sure you want\nto remove ${removeTarget.name}?`
+            : 'Are you sure you want to remove this user?'
+        }
+        confirmText="Remove"
+        cancelText="Cancel"
+        onConfirm={confirmRemove}
+        onCancel={closeRemoveConfirm}
+        onClose={closeRemoveConfirm}
+      />
     </Fragment>
   );
 };
 
 export default Users;
-
-const MIN_COL_WIDTH = windowWidth * 0.35;
-
-const styles = StyleSheet.create({
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    gap: 12,
-  },
-  searchContainer: {
-    flex: 1,
-  },
-  sortButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.gray[300],
-    backgroundColor: colors.base.white,
-    shadowColor: '#0A0D12',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  sortText: {
-    marginLeft: 8,
-  },
-
-  card: {
-    flex: 1,
-    backgroundColor: colors.base.white,
-    borderTopWidth: 1,
-    borderColor: colors.gray[200],
-  },
-
-  tableContainer: {
-    flexDirection: 'row',
-  },
-
-  headerRow: {
-    flexDirection: 'row',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderColor: colors.gray[200],
-    paddingLeft: 20,
-    backgroundColor: colors.gray[50],
-  },
-
-  headerText: {
-    minWidth: MIN_COL_WIDTH,
-    marginRight: 16,
-  },
-
-  row: {
-    flexDirection: 'row',
-    height: 73,
-    borderBottomWidth: 1,
-    borderColor: colors.gray[200],
-    paddingLeft: 20,
-    alignItems: 'center',
-  },
-
-  cell: {
-    fontFamily: Fonts.InterRegular,
-    fontSize: 14,
-    minWidth: MIN_COL_WIDTH,
-    marginRight: 16,
-  },
-
-  /** FIXED LEFT COLUMN */
-  leftFixedWrapper: {
-    width: '50%',
-    backgroundColor: colors.base.white,
-    borderRightWidth: 1,
-    borderColor: colors.gray[200],
-    zIndex: 10,
-  },
-
-  leftFixedColumn: {
-    height: 73,
-    paddingLeft: 20,
-    borderBottomWidth: 1,
-    borderColor: colors.gray[200],
-    justifyContent: 'center',
-  },
-
-  /** SCROLLBAR */
-  scrollTrack: {
-    paddingVertical: 10,
-  },
-  scrollThumb: {
-    height: 6,
-    backgroundColor: colors.mainColors.scrollBar,
-    borderRadius: 10,
-  },
-
-  paginationContainer: {
-    flexDirection: 'row',
-    borderColor: colors.gray[200],
-    alignSelf: 'center',
-  },
-
-  buttonContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    backgroundColor: colors.base.white,
-    borderTopWidth: 1,
-    borderTopColor: colors.gray[100],
-  },
-
-  addButton: {
-    width: '100%',
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: colors.brand[600],
-  },
-  actionCell: {
-    width: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-
-  dropdown: {
-    position: 'absolute',
-    top: 24,
-    right: 0,
-    width: 140,
-    backgroundColor: '#FFF',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.gray[200],
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 6,
-    zIndex: 999,
-  },
-
-  dropdownItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-  },
-
-});

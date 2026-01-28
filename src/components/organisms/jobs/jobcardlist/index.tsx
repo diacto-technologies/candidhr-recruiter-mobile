@@ -118,7 +118,7 @@ const JobCardList = () => {
           </>
         );
       }      
-    if (isTabLoading || (jobsList.length === 0)) {
+    if (isTabLoading || (loading && jobsList.length === 0)) {
         return (
             <>
                 {/* Tabs */}

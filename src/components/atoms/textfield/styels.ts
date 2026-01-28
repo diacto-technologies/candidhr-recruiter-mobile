@@ -29,7 +29,6 @@ export const useStyles = (props: any, isFocus: boolean, size: any) => {
       gap: 10,
       overflow: 'hidden',
       paddingHorizontal: 16,
-      ...shadowStyles.xs
     },
     pressableDynamic: {
       backgroundColor: props.disable
@@ -43,6 +42,7 @@ export const useStyles = (props: any, isFocus: boolean, size: any) => {
           ? colors.brand[500]
           : colors.gray[300],
       ...(props.multiline === true && { paddingVertical: 10 }),
+      ...shadowStyles.shadow_xs
     },
 
     // TextInput

@@ -17,6 +17,12 @@ export const API_ENDPOINTS = {
   },
   USERS: {
     LIST: '/core/users/list/',
+    CREATE: '/core/tenant/users/',
+    ASSIGN_ROLE: '/core/assign-role/',
+    DELETE: (id: string) => `/core/tenant/users/${id}/`,
+  },
+  ROLES: {
+    LIST: '/core/roles/',
   },
   // Jobs endpoints
   JOBS: {

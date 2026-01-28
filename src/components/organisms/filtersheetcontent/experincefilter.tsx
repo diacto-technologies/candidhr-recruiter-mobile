@@ -11,7 +11,7 @@ import { setJobFilters } from '../../../features/jobs/slice';
 const { width } = Dimensions.get('window');
 
 // Track = 80% of screen width
-const TRACK_WIDTH = width * 0.45;
+const TRACK_WIDTH = width * 0.48;
 const THUMB_SIZE = 26;
 
 const ExperienceFilter = () => {

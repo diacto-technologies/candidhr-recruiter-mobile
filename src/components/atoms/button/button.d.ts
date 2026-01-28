@@ -16,6 +16,7 @@ export interface IButton extends PressableProps {
   buttonColor?: string;        // background
   textColor?: string;          // text & loader
   borderColor?: string;        // fallback solid border
+  borderWidth?: number;        // solid border width (when provided)
 
   // New: Full customization for the modern style
   borderGradientOpacity?: number;   // opacity of white top gradient (0–1, default 0.12)

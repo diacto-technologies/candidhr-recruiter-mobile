@@ -15,12 +15,12 @@ import CustomSafeAreaView from '../../../components/atoms/customsafeareaview';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 // ✅ jobs module (job-names-list API)
 import {
-  getJobNameListRequestAction,
-  selectJobNameList,
-  selectJobNameListLoading,
-  selectJobNameListNext,
-  selectSelectedJob,
-  setSelectedJobAction,
+    getJobNameListRequestAction,
+    selectJobNameList,
+    selectJobNameListLoading,
+    selectJobNameListNext,
+    selectSelectedJob,
+    setSelectedJobAction,
 } from '../../../features/jobs';
 
 const Dashboard = () => {
@@ -30,24 +30,17 @@ const Dashboard = () => {
     const analyticsData = useAppSelector(selectAnalyticsData)
     const analyticsLoaded = useAppSelector(selectAnalyticsLoaded)
 
-    // ✅ Job search state
     const [openSearch, setOpenSearch] = useState(false);
     const [searchText, setSearchText] = useState('');
     const [page, setPage] = useState(1);
-    
-    // ✅ Ref to prevent double API calls when clearing
+
     const isClearingRef = useRef(false);
 
-    // ✅ jobs redux state
     const jobNameList = useAppSelector(selectJobNameList);
     const jobNameListNext = useAppSelector(selectJobNameListNext);
     const jobNameListLoading = useAppSelector(selectJobNameListLoading);
     const selectedJob = useAppSelector(selectSelectedJob);
 
-    // ✅ Initial data load
-    // Note: Using analyticsLoaded check means if user selects job and navigates away/back,
-    // analytics won't refresh if analyticsLoaded is still true.
-    // Optional: Use useFocusEffect from @react-navigation/native to always refresh on focus
     useEffect(() => {
         if (!profileLoaded) {
             dispatch(getProfileRequestAction());
@@ -75,13 +68,9 @@ const Dashboard = () => {
         }
     }, [openSearch, dispatch]);
 
-    // ✅ Show selectedJob title in input when opening search
-    // Only set when search first opens, not when user is typing/clearing
     const prevOpenSearchRef = useRef(false);
     useEffect(() => {
-        // Only set when search transitions from closed to open (not on every render)
         if (openSearch && !prevOpenSearchRef.current && selectedJob?.title) {
-            // Only set if text is empty (don't override user input)
             if (searchText === '') {
                 setSearchText(selectedJob.title);
             }
@@ -162,20 +151,33 @@ const Dashboard = () => {
         setTimeout(() => {
             isClearingRef.current = false;
         }, 300);
-    }, [dispatch]);
+    }, [dispatch, searchText]);
+
+    const handleSearchTextChange = useCallback(
+        (text: string) => {
+          if (text === '') {
+            handleSearchClear(); 
+            return;
+          }
+          setSearchText(text);
+        },
+        [handleSearchClear]
+      );
+      
+
 
     //   );
     return (
         <Fragment>
             <CustomSafeAreaView>
-                <Header 
-                    title='Dashboard' 
+                <Header
+                    title="Dashboard"
                     enableJobSearch={true}
                     jobNameList={jobNameList}
                     jobNameListLoading={jobNameListLoading}
                     jobNameListNext={jobNameListNext}
                     searchText={searchText}
-                    onSearchTextChange={setSearchText}
+                    onSearchTextChange={handleSearchTextChange}
                     openSearch={openSearch}
                     onSearchToggle={setOpenSearch}
                     onLoadMore={handleLoadMore}
@@ -183,6 +185,7 @@ const Dashboard = () => {
                     onSearchClear={handleSearchClear}
                     selectedJob={selectedJob}
                 />
+
                 <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false} bounces={false}>
                     <View style={styles.listContainer}>
                         <View style={styles.statGrid}>
@@ -268,7 +271,7 @@ const Dashboard = () => {
                                     value={String(analyticsData?.drop_off_rate ?? "0")}
                                     percentage="2.5%"
                                     subText="Greater than last month"
-                                   tooltipText="Percentage of candidates who started but did not complete the application or assessment process."               
+                                    tooltipText="Percentage of candidates who started but did not complete the application or assessment process."
                                 />
                             </View>
                         </View>

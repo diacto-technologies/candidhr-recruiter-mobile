@@ -82,7 +82,7 @@ const JobsScreen = () => {
       );
       prevFiltersRef.current = jobFilters;
     }
-  }, [jobFilters, activeTab]);
+  }, [jobFilters, activeTab, dispatch]);
 
   const handleApplyFilters = () => {
     dispatch(
