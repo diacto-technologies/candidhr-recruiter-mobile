@@ -21,6 +21,7 @@ import {
 } from "./slice";
 import { getUsersRequestAction } from "./actions";
 import type { CreateUserRequest as CreateUserRequestPayload } from "./types";
+import { showToastMessage } from "../../../utils/toast";
 
 function* getUsersWorker(action: { type: string; payload: { page: number } }): SagaIterator {
   try {
@@ -39,6 +40,7 @@ function* getRolesWorker(action: { type: string; payload: { page: number } }): S
     const page = action.payload?.page ?? 1;
     yield put(getRolesRequest({ page }));
     const response = yield call(rolesApi.list, page);
+    console.log(response,"getRolesWorkergetRolesWorkergetRolesWorker")
     yield put(getRolesSuccess({ page, response }));
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to fetch roles";
@@ -53,6 +55,7 @@ function* updateUserWorker(action: {
   try {
     yield put(updateUserRequest());
     yield call(usersApi.update, action.payload.endpoint, action.payload.data);
+    showToastMessage("User's role updated", 'success');
     yield put(updateUserSuccess());
     yield put(getUsersRequestAction(action.payload.refreshPage ?? 1));
   } catch (error: unknown) {
@@ -69,9 +72,11 @@ function* createUserWorker(action: {
     yield put(createUserRequest());
     yield call(usersApi.create, action.payload.data);
     yield put(createUserSuccess());
+    showToastMessage('User added successfully', 'success');
     yield put(getUsersRequestAction(action.payload.refreshPage ?? 1));
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Failed to create user";
+    const message =
+      error instanceof Error ? error.message : 'Failed to create user';
     yield put(createUserFailure(message));
   }
 }
@@ -84,6 +89,7 @@ function* deleteUserWorker(action: {
     yield put(deleteUserRequest());
     yield call(usersApi.remove, action.payload.endpoint);
     yield put(deleteUserSuccess());
+    showToastMessage('User removed successfully', 'success');
     yield put(getUsersRequestAction(action.payload.refreshPage ?? 1));
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to delete user";

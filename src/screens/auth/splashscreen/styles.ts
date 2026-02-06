@@ -47,7 +47,7 @@ export const useStyles = () => {
 
     footer: {
       position: "absolute",
-      bottom: 44,
+      bottom: 48,
       color: "white",
       opacity: 0.9,
       fontSize: 14,

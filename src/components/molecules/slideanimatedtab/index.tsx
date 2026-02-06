@@ -115,7 +115,7 @@ const SlideAnimatedTab: React.FC<Props> = ({
                 >
                   {item}
                 </Typography>
-                {count &&(
+                {typeof count === "number" &&(
                   <View
                     style={[
                       styles.countBadge,

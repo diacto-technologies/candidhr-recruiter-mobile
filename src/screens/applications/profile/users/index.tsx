@@ -5,6 +5,7 @@ import {
   FlatList,
   ScrollView,
   Pressable,
+  Modal,
   LayoutChangeEvent,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -39,7 +40,7 @@ import { formatDate } from '../../../../utils/constants';
 import { useStyles } from './styles';
 import { horizontalThreedotIcon } from '../../../../assets/svg/horizontalthreedoticon';
 import { AddUserModal, AddUserValues } from './AddUserModal';
-import { ConfirmModal } from '../../../../components';
+import { ConfirmModal, Shimmer } from '../../../../components';
 import {
   UpdateUserRoleModal,
   UpdateUserRoleValues,
@@ -56,6 +57,7 @@ interface User {
 }
 
 const TRACK_WIDTH = 320;
+const SHIMMER_ROWS = 8;
 
 const Users = () => {
   const insets = useRNSafeAreaInsets();
@@ -76,6 +78,13 @@ const Users = () => {
   const [selectedUser, setSelectedUser] = useState<UpdateUserRoleUser | null>(null);
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<User | null>(null);
+  const [dropdownLayout, setDropdownLayout] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
+  const rowTriggerRefs = useRef<Record<string, React.ComponentRef<typeof View> | null>>({});
   const shadowOpacity = useRef(new Animated.Value(0)).current;
   const fetchingNextRef = useRef(false);
 
@@ -87,6 +96,24 @@ const Users = () => {
   useEffect(() => {
     if (!usersLoading) fetchingNextRef.current = false;
   }, [usersLoading]);
+
+  // Measure trigger position when dropdown opens so we can render it in a Modal (avoids clipping in ScrollView)
+  useEffect(() => {
+    if (!activeMenuId) {
+      setDropdownLayout(null);
+      return;
+    }
+    const measure = () => {
+      const trigger = rowTriggerRefs.current[activeMenuId];
+      if (trigger && 'measureInWindow' in trigger && typeof trigger.measureInWindow === 'function') {
+        trigger.measureInWindow((x: number, y: number, w: number, h: number) => {
+          setDropdownLayout({ x, y, width: w, height: h });
+        });
+      }
+    };
+    const t = setTimeout(measure, 50);
+    return () => clearTimeout(t);
+  }, [activeMenuId]);
 
   const users: User[] = apiUsers.map((u) => ({
     id: u.id,
@@ -235,6 +262,68 @@ const Users = () => {
     );
   };
 
+  /** Shimmer for initial load - mimics table layout */
+  const renderUsersTableShimmer = () => (
+    <View style={styles.tableContainer}>
+      <View style={styles.leftFixedWrapper}>
+        <View style={styles.headerRow}>
+          <Typography
+            variant="semiBoldTxtxs"
+            style={styles.headerText}
+            color={colors.gray[500]}
+          >
+            Name
+          </Typography>
+        </View>
+        {Array.from({ length: SHIMMER_ROWS }).map((_, i) => (
+          <View
+            key={`shimmer-left-${i}`}
+            style={[
+              styles.leftFixedColumn,
+              { backgroundColor: i % 2 === 1 ? colors.neutrals.lightGray : '#FFF' },
+            ]}
+          >
+            <Shimmer width="70%" height={14} borderRadius={6} style={{ marginBottom: 8 }} />
+            <Shimmer width="55%" height={12} borderRadius={6} />
+          </View>
+        ))}
+      </View>
+      <View>
+        <View style={styles.headerRow}>
+          {['Invited on', 'Role', 'Action'].map((title, idx) => (
+            <Typography
+              key={idx}
+              variant="semiBoldTxtxs"
+              style={styles.headerText}
+              color={colors.gray[500]}
+            >
+              {title}
+            </Typography>
+          ))}
+        </View>
+        {Array.from({ length: SHIMMER_ROWS }).map((_, i) => (
+          <View
+            key={`shimmer-right-${i}`}
+            style={[
+              styles.row,
+              { backgroundColor: i % 2 === 1 ? colors.neutrals.lightGray : '#FFF' },
+            ]}
+          >
+            <View style={styles.cell}>
+              <Shimmer height={14} width="80%" borderRadius={6} />
+            </View>
+            <View style={styles.cell}>
+              <Shimmer height={14} width="60%" borderRadius={6} />
+            </View>
+            <View style={styles.actionCell}>
+              <Shimmer width={20} height={20} borderRadius={10} />
+            </View>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+
   /** RIGHT SCROLLABLE CELLS - Invited on, Role */
   const renderRightRow = ({ item, index }: { item: User; index: number }) => {
     const bg = index % 2 === 1 ? colors.neutrals.lightGray : '#FFF';
@@ -250,8 +339,14 @@ const Users = () => {
           {item.role}
         </Typography>
 
-        {/* ACTION COLUMN */}
-        <View style={styles.actionCell}>
+        {/* ACTION COLUMN - ref used to measure position for Modal dropdown */}
+        <View
+          ref={(r) => {
+            rowTriggerRefs.current[item.id] = r;
+          }}
+          style={styles.actionCell}
+          collapsable={false}
+        >
           <Pressable onPress={() => setActiveMenuId(isOpen ? null : item.id)}>
             <SvgXml
               xml={horizontalThreedotIcon}
@@ -260,41 +355,6 @@ const Users = () => {
               style={{ transform: [{ rotate: '90deg' }] }}
             />
           </Pressable>
-
-          {/* DROPDOWN */}
-          {isOpen && (
-            <View style={styles.dropdown}>
-              <Pressable
-                style={styles.dropdownItem}
-                onPress={() => {
-                  setActiveMenuId(null);
-                  setRemoveTarget(item);
-                  setRemoveConfirmOpen(true);
-                }}
-              >
-                <SvgXml xml={deleteIcon} style={{marginRight:5}} width={16} height={16}/>
-                <Typography variant="semiBoldTxtsm" color={colors.gray[700]}>Remove</Typography>
-              </Pressable>
-
-              <Pressable
-                style={styles.dropdownItem}
-                onPress={() => {
-                  setActiveMenuId(null);
-                  console.log('Update', item.id);
-                  setSelectedUser({
-                    id: item.id,
-                    name: item.name,
-                    email: item.email,
-                    role: item.role,
-                  });
-                  setUpdateRoleOpen(true);
-                }}
-              >
-                <SvgXml xml={editAvatarIcon} style={{marginRight:5}} width={16} height={16}/>
-                <Typography  variant="semiBoldTxtsm" color={colors.gray[700]}>Update</Typography>
-              </Pressable>
-            </View>
-          )}
         </View>
       </View>
     );
@@ -317,12 +377,12 @@ const Users = () => {
               onClear={() => setSearchText('')}
             />
           </View>
-          <Pressable style={styles.sortButton} onPress={handleSort}>
+          {/* <Pressable style={styles.sortButton} onPress={handleSort}>
             <SvgXml xml={sortIcon} width={20} height={20} />
             <Typography variant="semiBoldTxtsm" color={colors.gray[700]} style={styles.sortText}>
               Sort
             </Typography>
-          </Pressable>
+          </Pressable> */}
         </View>
 
         {/* Table */}
@@ -334,97 +394,104 @@ const Users = () => {
             onScroll={handleVerticalScroll}
             scrollEventThrottle={16}
           >
-            <View style={styles.tableContainer}>
-              {/* Left Fixed Column */}
-              <Animated.View
-                style={[
-                  styles.leftFixedWrapper,
-                  {
-                    shadowColor: '#0A0D12',
-                    shadowOffset: { width: 2, height: 0 },
-                    shadowOpacity: shadowOpacity.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, 0.06],
-                    }),
-                    shadowRadius: shadowOpacity.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, 10],
-                    }),
-                    elevation: shadowOpacity.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, 6],
-                    }),
-                  },
-                ]}
-              >
-                {/* LEFT COLUMN HEADER */}
-                <View style={styles.headerRow}>
-                  <Typography
-                    variant="semiBoldTxtxs"
-                    style={styles.headerText}
-                    color={colors.gray[500]}
-                  >
-                    Name
-                  </Typography>
-                </View>
-
-                <FlatList
-                  data={filteredUsers}
-                  renderItem={renderLeftColumn}
-                  keyExtractor={(item) => `left-${item.id}`}
-                  scrollEnabled={false}
-                />
-              </Animated.View>
-
-              {/* Right Scrollable Columns */}
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                scrollEventThrottle={16}
-                onContentSizeChange={(w) => setContentWidth(w)}
-                onScroll={Animated.event(
-                  [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-                  { useNativeDriver: false }
-                )}
-                bounces={false}
-              >
-                <View>
+            {usersLoading && apiUsers.length === 0 ? (
+              renderUsersTableShimmer()
+            ) : (
+              <View style={styles.tableContainer}>
+                {/* Left Fixed Column */}
+                <Animated.View
+                  style={[
+                    styles.leftFixedWrapper,
+                    {
+                      shadowColor: '#0A0D12',
+                      shadowOffset: { width: 2, height: 0 },
+                      shadowOpacity: shadowOpacity.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, 0.06],
+                      }),
+                      shadowRadius: shadowOpacity.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, 10],
+                      }),
+                      elevation: shadowOpacity.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, 6],
+                      }),
+                    },
+                  ]}
+                >
+                  {/* LEFT COLUMN HEADER */}
                   <View style={styles.headerRow}>
-                    {['Invited on', 'Role', "Action"].map((title, index) => (
-                      <Typography
-                        key={index}
-                        variant="semiBoldTxtxs"
-                        style={styles.headerText}
-                        color={colors.gray[500]}
-                      >
-                        {title}
-                      </Typography>
-                    ))}
+                    <Typography
+                      variant="semiBoldTxtxs"
+                      style={styles.headerText}
+                      color={colors.gray[500]}
+                    >
+                      Name
+                    </Typography>
                   </View>
 
                   <FlatList
                     data={filteredUsers}
-                    renderItem={renderRightRow}
-                    keyExtractor={(item) => `right-${item.id}`}
+                    renderItem={renderLeftColumn}
+                    keyExtractor={(item) => `left-${item.id}`}
                     scrollEnabled={false}
                   />
-                </View>
-              </ScrollView>
-            </View>
+                </Animated.View>
+
+                {/* Right Scrollable Columns */}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  scrollEventThrottle={16}
+                  onContentSizeChange={(w) => setContentWidth(w)}
+                  onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+                    { useNativeDriver: false }
+                  )}
+                  bounces={false}
+                  contentContainerStyle={{ overflow: 'visible' }}
+                >
+                  <View>
+                    <View style={styles.headerRow}>
+                      {['Invited on', 'Role', 'Action'].map((title, index) => (
+                        <Typography
+                          key={index}
+                          variant="semiBoldTxtxs"
+                          style={styles.headerText}
+                          color={colors.gray[500]}
+                        >
+                          {title}
+                        </Typography>
+                      ))}
+                    </View>
+
+                    <FlatList
+                      data={filteredUsers}
+                      renderItem={renderRightRow}
+                      keyExtractor={(item) => `right-${item.id}`}
+                      scrollEnabled={false}
+                    />
+                  </View>
+                </ScrollView>
+              </View>
+            )}
           </ScrollView>
         </View>
 
-        {/* Scroll indicator */}
-        <View style={styles.paginationContainer}>
-          <View style={[styles.scrollTrack, { width: TRACK_WIDTH - 250 }]}>
-            <Animated.View
-              style={[
-                styles.scrollThumb,
-                { width: THUMB_WIDTH, transform: [{ translateX }] },
-              ]}
-            />
+        {/* Scroll indicator - hide when showing shimmer */}
+        {!(usersLoading && apiUsers.length === 0) && (
+          <View style={styles.paginationContainer}>
+            <View style={[styles.scrollTrack, { width: TRACK_WIDTH - 250 }]}>
+              <Animated.View
+                style={[
+                  styles.scrollThumb,
+                  { width: THUMB_WIDTH, transform: [{ translateX }] },
+                ]}
+              />
+            </View>
           </View>
-        </View>
+        )}
       </CustomSafeAreaView>
 
       {/* Add Users Button */}
@@ -442,6 +509,89 @@ const Users = () => {
         onSubmit={submitUpdateRole}
         roleOptions={apiRoles.map((r) => r.name)}
       />
+
+      {/* Dropdown in Modal so it is not clipped by ScrollView (e.g. last row) */}
+      <Modal
+        visible={!!activeMenuId}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setActiveMenuId(null)}
+      >
+        <Pressable
+          style={styles.dropdownBackdrop}
+          onPress={() => setActiveMenuId(null)}
+        >
+          {dropdownLayout && (
+            <Pressable
+              style={[
+                styles.dropdown,
+                {
+                  position: 'absolute',
+                  left: dropdownLayout.x + dropdownLayout.width - 155,
+                  top: dropdownLayout.y + dropdownLayout.height-5,
+                },
+              ]}
+              onPress={() => {}}
+            >
+              {(() => {
+                const item = filteredUsers.find((u) => u.id === activeMenuId);
+                if (!item) return null;
+                return (
+                  <>
+                    <Pressable
+                      style={styles.dropdownItem}
+                      onPress={() => {
+                        setActiveMenuId(null);
+                        setRemoveTarget(item);
+                        setRemoveConfirmOpen(true);
+                      }}
+                    >
+                      <SvgXml
+                        xml={deleteIcon}
+                        style={{ marginRight: 5 }}
+                        width={16}
+                        height={16}
+                      />
+                      <Typography
+                        variant="semiBoldTxtsm"
+                        color={colors.gray[700]}
+                      >
+                        Remove
+                      </Typography>
+                    </Pressable>
+                    <Pressable
+                      style={styles.dropdownItem}
+                      onPress={() => {
+                        setActiveMenuId(null);
+                        setSelectedUser({
+                          id: item.id,
+                          name: item.name,
+                          email: item.email,
+                          role: item.role,
+                        });
+                        setUpdateRoleOpen(true);
+                      }}
+                    >
+                      <SvgXml
+                        xml={editAvatarIcon}
+                        style={{ marginRight: 5 }}
+                        width={16}
+                        height={16}
+                      />
+                      <Typography
+                        variant="semiBoldTxtsm"
+                        color={colors.gray[700]}
+                      >
+                        Update
+                      </Typography>
+                    </Pressable>
+                  </>
+                );
+              })()}
+            </Pressable>
+          )}
+        </Pressable>
+      </Modal>
 
       <ConfirmModal
         visible={removeConfirmOpen}

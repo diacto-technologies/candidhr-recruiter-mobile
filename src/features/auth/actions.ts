@@ -16,8 +16,9 @@ export const logoutRequestAction = () => ({
   type: AUTH_ACTION_TYPES.LOGOUT_REQUEST,
 });
 
-export const refreshTokenRequestAction = () => ({
+export const refreshTokenRequestAction = (refresh:string) => ({
   type: AUTH_ACTION_TYPES.REFRESH_TOKEN_REQUEST,
+  payload:refresh,
 });
 
 export const clearErrorAction = () => ({

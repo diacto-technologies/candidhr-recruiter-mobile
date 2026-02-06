@@ -94,7 +94,7 @@ const ApplicationStageChart: React.FC = () => {
                                 <View style={styles.tooltipArrow} />
                                 <View style={styles.tooltipContainer}>
                                     <Typography variant="semiBoldTxtxs" color={colors.base.white}>
-                                        {item.value.toString().padStart(2, '0')} Applicants
+                                        {item.value.toString().padStart(1, '0')} Applicants
                                     </Typography>
                                 </View>
                             </View>

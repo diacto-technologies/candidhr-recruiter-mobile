@@ -1,9 +1,7 @@
 import React, { Fragment, useEffect, useState, useCallback, useRef } from 'react';
-import { View, Pressable } from 'react-native';
+import { View} from 'react-native';
 import { SortingAndFilter, Header, JobCardList, BottomSheet, FilterSheetContent, StatusBar } from '../../../components';
 import { jobFiltersOption } from '../../../utils/dummaydata';
-import { SvgXml } from 'react-native-svg';
-import { pluscircle } from '../../../assets/svg/pluscircle';
 import { useStyles } from './styles';
 import CustomSafeAreaView from '../../../components/atoms/customsafeareaview';
 import { getJobsRequestAction, getPublishedJobsRequestAction, getUnpublishedJobsRequestAction } from '../../../features/jobs/actions';
@@ -43,34 +41,14 @@ const JobsScreen = () => {
   const prevFiltersRef = useRef(jobFilters);
   
   useEffect(() => {
+    if (!isConnected) return;
     dispatch(getPublishedJobsRequestAction(jobFilters));
     dispatch(getUnpublishedJobsRequestAction(jobFilters));
-  }, [jobFilters, token, isConnected]);
+  }, [token, isConnected,jobFilters]);
 
-  // ✅ Debounce search by title, immediate for other filters
   useEffect(() => {
-    const isTitleOnlyChange = 
-      prevFiltersRef.current.title !== jobFilters.title &&
-      JSON.stringify({ ...prevFiltersRef.current, title: undefined }) === 
-      JSON.stringify({ ...jobFilters, title: undefined });
-    if (isTitleOnlyChange) {
-      // Title changed, debounce the API call
-      const timer = setTimeout(() => {
-        dispatch(
-          getJobsRequestAction({
-            page: 1,
-            limit: pagination.limit,
-            append: false,
-            published: activeTab === "Published",
-            ...jobFilters,
-          })
-        );
-      }, 400);
-
-      prevFiltersRef.current = jobFilters;
-      return () => clearTimeout(timer);
-    } else {
-      // Other filters changed, call immediately
+    if (!isConnected) return;
+    const timer = setTimeout(() => {
       dispatch(
         getJobsRequestAction({
           page: 1,
@@ -81,10 +59,14 @@ const JobsScreen = () => {
         })
       );
       prevFiltersRef.current = jobFilters;
-    }
-  }, [jobFilters, activeTab, dispatch]);
+    }, 400);
+  
+    return () => clearTimeout(timer);
+  }, [jobFilters]);
+  
 
   const handleApplyFilters = () => {
+    if (!isConnected) return;
     dispatch(
       getJobsRequestAction({
         page: 1,
@@ -94,8 +76,14 @@ const JobsScreen = () => {
         ...jobFilters,
       })
     );
+  
+    // COUNTS (once)
+    dispatch(getPublishedJobsRequestAction(jobFilters));
+    dispatch(getUnpublishedJobsRequestAction(jobFilters));
+  
     setFilterSheet(false);
   };
+  
 
   return (
     <Fragment>

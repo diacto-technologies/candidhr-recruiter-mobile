@@ -7,7 +7,10 @@ export interface GetJobsRequestActionPayload extends GetJobsParams {
 
 export const getJobsRequestAction = (params?: GetJobsRequestActionPayload) => ({
   type: JOBS_ACTION_TYPES.GET_JOBS_REQUEST,
-  payload: params,
+  payload: {
+    ...(params ?? {}),
+    requestId: params?.requestId ?? Date.now(),
+  },
 })
 
 export const getJobDetailRequestAction = (id: string) => ({
@@ -41,12 +44,30 @@ export const clearErrorAction = () => ({
 
 export const getPublishedJobsRequestAction = (params?: GetJobsRequestActionPayload) => ({
   type: JOBS_ACTION_TYPES.GET_PUBLISHED_JOBS_REQUEST,
-  payload: params,
+  payload: {
+    ...(params ?? {}),
+    // Always count-only for tab badges; must never overwrite lists.
+    onlyCount: true,
+    published: true,
+    page: 1,
+    limit: 1,
+    append: false,
+    requestId: Date.now(),
+  },
 });
 
 export const getUnpublishedJobsRequestAction = (params?: GetJobsRequestActionPayload) => ({
   type: JOBS_ACTION_TYPES.GET_UNPUBLISHED_JOBS_REQUEST,
-  payload: params,
+  payload: {
+    ...(params ?? {}),
+    // Always count-only for tab badges; must never overwrite lists.
+    onlyCount: true,
+    published: false,
+    page: 1,
+    limit: 1,
+    append: false,
+    requestId: Date.now(),
+  },
 });
 
 export type GetJobNameListPayload = {

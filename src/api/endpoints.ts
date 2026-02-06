@@ -3,7 +3,7 @@ export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: '/core/token/', // Login endpoint: POST /token/
     LOGOUT: '/auth/logout',
-    REFRESH: '/auth/refresh',
+    REFRESH: '/core/token/refresh/',
     REGISTER: '/auth/register',
     ME: '/auth/me',
     FORGOT_PASSWORD: "/core/send-reset-password-email/",
@@ -21,7 +21,7 @@ export const API_ENDPOINTS = {
     ASSIGN_ROLE: '/core/assign-role/',
     DELETE: (id: string) => `/core/tenant/users/${id}/`,
   },
-  ROLES: {
+  ROLES:{
     LIST: '/core/roles/',
   },
   // Jobs endpoints

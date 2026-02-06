@@ -136,9 +136,13 @@ export const useStyles = () => {
       justifyContent: 'center',
       position: 'relative',
     },
+    dropdownBackdrop: {
+      flex: 1,
+      backgroundColor: 'transparent',
+    },
     dropdown: {
       position: 'absolute',
-      top: 18,
+      top: 10,
       right: 20,
       width: 140,
       backgroundColor: '#FFF',

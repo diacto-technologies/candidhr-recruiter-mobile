@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, FlatList, Pressable } from "react-native";
+import { View, FlatList, Pressable, Image } from "react-native";
 import { SvgXml } from "react-native-svg";
-import { Typography } from "../../../atoms";
+import { Button, IconButton, Typography } from "../../../atoms";
 import Divider from "../../../atoms/divider";
 import { navigate } from "../../../../utils/navigationUtils";
 import { useStyles } from "./styles";
@@ -10,7 +10,7 @@ import { useAppSelector } from "../../../../hooks/useAppSelector";
 import { useAppDispatch } from "../../../../hooks/useAppDispatch";
 import {
     selectJobs,
-    selectJobsLoading,
+    selectJobsListLoading,
     selectJobsPagination,
     selectJobsHasMore,
     selectPublishedCount,
@@ -30,13 +30,15 @@ import Shimmer from "../../../atoms/shimmer";
 import { setActiveTab } from "../../../../features/jobs/slice";
 import DeviceInfo from "react-native-device-info";
 import { useNetworkConnectivity } from "../../../../hooks/useNetworkConnectivity";
+import BackgroundPattern from "../../../atoms/backgroundpattern";
+import { Illustrations } from "../../../../assets/svg/illustrations";
 
 const JobCardList = () => {
     const tabs = ["Published", "Unpublished"];
     const activeTab = useAppSelector(selectJobsActiveTab);
 
     const jobsList = useAppSelector(selectJobs);
-    const loading = useAppSelector(selectJobsLoading);
+    const loading = useAppSelector(selectJobsListLoading);
     const pagination = useAppSelector(selectJobsPagination);
     const hasMore = useAppSelector(selectJobsHasMore);
     const publishedCount = useAppSelector(selectPublishedCount);
@@ -49,17 +51,17 @@ const JobCardList = () => {
     const styles = useStyles();
     const dispatch = useAppDispatch();
 
-    // useEffect(() => {
-    //     dispatch(
-    //         getJobsRequestAction({
-    //             page: 1,
-    //             limit: pagination.limit,
-    //             published: activeTab === 'Published',
-    //             append: false,
-    //             ...jobFilters
-    //         })
-    //     );
-    // }, [activeTab]);
+    useEffect(() => {
+        dispatch(
+            getJobsRequestAction({
+                page: 1,
+                limit: pagination.limit,
+                published: activeTab === 'Published',
+                append: false,
+                ...jobFilters
+            })
+        );
+    }, [activeTab]);
 
     const handleLoadMore = useCallback(() => {
         if (!isConnected || loading || !hasMore) return;
@@ -99,25 +101,26 @@ const JobCardList = () => {
     );
     if (!isConnected && jobsList.length === 0) {
         return (
-          <>
-            <View style={styles.tabContainer}>
-              <SlideAnimatedTab
-                tabs={tabs}
-                activeTab={activeTab}
-                onChangeTab={(label) =>
-                  dispatch(setActiveTab(label === "Published" ? "Published" : "Unpublished"))
-                }
-                countShow={true}
-              />
-              <View style={styles.bottomBorder} />
-            </View>
-      
-            <View style={{ alignItems: "center", marginTop: 60, paddingHorizontal: 16 }}>
-              <Typography variant="semiBoldTxtmd"> No results found</Typography>
-            </View>
-          </>
+            <>
+                <View style={styles.tabContainer}>
+                    <SlideAnimatedTab
+                        tabs={tabs}
+                        activeTab={activeTab}
+                        onChangeTab={(label) =>
+                            dispatch(setActiveTab(label === "Published" ? "Published" : "Unpublished"))
+                        }
+                        countShow={true}
+                    />
+                    <View style={styles.bottomBorder} />
+                </View>
+                <BackgroundPattern>
+                    <View style={{ alignItems: "center", marginTop: 60, paddingHorizontal: 16 }}>
+                        <Typography variant="semiBoldTxtmd">No results found</Typography>
+                    </View>
+                </BackgroundPattern>
+            </>
         );
-      }      
+    }
     if (isTabLoading || (loading && jobsList.length === 0)) {
         return (
             <>
@@ -126,7 +129,7 @@ const JobCardList = () => {
                     <SlideAnimatedTab
                         tabs={tabs}
                         activeTab={activeTab}
-                        onChangeTab={(label) =>{
+                        onChangeTab={(label) => {
                             dispatch(setActiveTab(label === "Published" ? "Published" : "Unpublished"))
                         }
                         }
@@ -138,7 +141,7 @@ const JobCardList = () => {
                 {/* Shimmer List */}
                 <View style={{ paddingHorizontal: 16, paddingVertical: 20 }}>
                     <FlatList
-                        data={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11,12,13,14,15,16,17,18,19,20]}
+                        data={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]}
                         keyExtractor={(item) => String(item)}
                         renderItem={() => renderShimmerCard()}
                         numColumns={isTablet ? 2 : 1}
@@ -156,9 +159,9 @@ const JobCardList = () => {
         <View style={styles.card}>
             <Pressable onPress={() => navigate("JobDetailScreen", { jobId: item.id })}>
                 <View style={styles.rowBetween}>
-                    <View style={{ flex: 1, flexDirection:'row', justifyContent:'space-between' }}>
+                    <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between' }}>
                         <Typography variant="semiBoldTxtmd">{item.title ?? ""}</Typography>
-                        <SvgXml xml={horizontalThreedotIcon} height={20} width={20} />
+                        {/* <SvgXml xml={horizontalThreedotIcon} height={20} width={20} /> */}
                     </View>
                 </View>
 
@@ -171,12 +174,12 @@ const JobCardList = () => {
                     </Typography>
                 </View>
 
-                <View style={{marginVertical:4}}>
-                <Divider
-                    height={1.2}
-                    marginVertical={8}
-                    color={colors.mainColors.borderColor}
-                />
+                <View style={{ marginVertical: 4 }}>
+                    <Divider
+                        height={1.2}
+                        marginVertical={8}
+                        color={colors.mainColors.borderColor}
+                    />
                 </View>
 
 
@@ -223,26 +226,36 @@ const JobCardList = () => {
                 />
                 <View style={styles.bottomBorder} />
             </View>
-            {!loading && !isTabLoading && jobsList.length === 0 && (
-                <View
-                    style={{
-                        alignItems: "center",
-                        marginTop: 60,
-                        paddingHorizontal: 16,
-                    }}
-                >
-                    <Typography variant="semiBoldTxtmd">
-                        No results found
-                    </Typography>
-                    <Typography
-                        variant="regularTxtsm"
-                        color={colors.gray[500]}
-                        style={{ marginTop: 6, textAlign: "center" }}
+            {/* {!loading && !isTabLoading && jobsList.length === 0 && (
+                <BackgroundPattern bgStyle={{
+                    height: '100%',
+                    width: '100%',
+                    top: 90,
+                }}>
+                    <View
+                        style={{
+                            flex: 1,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            paddingHorizontal: 16,
+                            zIndex: 999
+                        }}
                     >
-                        Try adjusting your search or filters
-                    </Typography>
-                </View>
-            )}
+                        <Typography variant="semiBoldTxtmd">
+                            No results found
+                        </Typography>
+
+                        <Typography
+                            variant="regularTxtsm"
+                            color={colors.gray[500]}
+                            style={{ marginTop: 6, textAlign: "center" }}
+                        >
+                            Try adjusting your search or filters
+                        </Typography>
+                    </View>
+                </BackgroundPattern>
+            )} */}
+
             {/* Job List */}
             <FlatList
                 data={jobsList}
@@ -252,6 +265,7 @@ const JobCardList = () => {
                     paddingHorizontal: 16,
                     paddingVertical: 16,
                     gap: 12,
+                    flexGrow: 1, // 👈 VERY IMPORTANT for centering
                 }}
                 initialNumToRender={10}
                 maxToRenderPerBatch={10}
@@ -259,14 +273,61 @@ const JobCardList = () => {
                 showsVerticalScrollIndicator={false}
                 onEndReached={handleLoadMore}
                 onEndReachedThreshold={0.5}
+                numColumns={isTablet ? 2 : 1}
+
+                ListEmptyComponent={
+                    !loading && !isTabLoading ? (
+                        <BackgroundPattern bgStyle={{
+                            height: '100%',
+                            width: '100%',
+                            top: -90,
+                            //zIndex: 10
+                        }}>
+                            <View style={{flex:1,alignSelf:'center',alignContent:'center',justifyContent:"center",}}>
+                                <View
+                                    style={{
+                                        alignItems: 'center',
+                                        paddingHorizontal: 16,
+                                        zIndex: 10,
+                                        marginBottom:10,
+                                    }}
+                                >
+                                    <SvgXml xml={Illustrations} style={{ zIndex: -1, }} />
+                                    <Typography variant="semiBoldTxtmd">
+                                        No results found
+                                    </Typography>
+
+                                    <Typography
+                                        variant="regularTxtsm"
+                                        color={colors.gray[500]}
+                                        style={{ textAlign: 'center' }}
+                                    >
+                                        Try adjusting your search or filters
+                                    </Typography>
+                                </View>
+                                <Button
+                                    buttonColor={colors.mainColors.slateBlue}
+                                    textColor={colors.common.white}
+                                    borderColor={colors.mainColors.borderColor}
+                                    borderRadius={8}
+                                    borderWidth={1}
+                                    size={'Medium'}
+                                    onPress={() => { }}
+                                >
+                                    Add new job
+                                </Button>
+                            </View>
+                        </BackgroundPattern >
+                    ) : null
+                }
+
                 ListFooterComponent={
                     loading && jobsList.length > 0 ? (
-                        <View style={{ paddingHorizontal: 16, paddingVertical: 10}}>
+                        <View style={{ paddingHorizontal: 16, paddingVertical: 10 }}>
                             <Shimmer width="100%" height={20} borderRadius={8} />
                         </View>
                     ) : null
                 }
-                numColumns={isTablet ? 2 : 1}
             />
         </>
     );

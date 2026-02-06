@@ -1,17 +1,19 @@
 import React from 'react';
-import { View, StyleSheet, Image, ImageBackground } from 'react-native';
-
+import { View, StyleSheet, Image, ImageBackground, ViewStyle } from 'react-native';
 type Props = {
   children: React.ReactNode;
+  bgStyle?: ViewStyle
+  containerStyle?: ViewStyle;
 };
 
-const BackgroundPattern: React.FC<Props> = ({ children }) => {
+const BackgroundPattern: React.FC<Props> = ({ children, bgStyle,
+  containerStyle}) => {
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, containerStyle]}>
       {/* Background Image */}
       <ImageBackground
         source={require('../../../assets/images/background.png')}
-        style={styles.bg}
+        style={[styles.bg, bgStyle]}
         resizeMode="contain"
       />
 
@@ -26,6 +28,7 @@ export default BackgroundPattern;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: '100%',
   },
   bg: {
     position: 'absolute',

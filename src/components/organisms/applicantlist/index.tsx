@@ -154,16 +154,16 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
           </View>
         </View>
 
-        <TouchableOpacity style={{ alignSelf: 'flex-start' }}>
-          <SvgXml xml={horizontalThreedotIcon} height={20} width={20} />
-        </TouchableOpacity>
+        <View style={{ alignSelf: 'flex-start' }}>
+          {/* <SvgXml xml={horizontalThreedotIcon} height={20} width={20} /> */}
+        </View>
       </View>
 
       {/* Applied For */}
       <Typography variant="regularTxtsm" color={colors.gray[600]}>
         Applied for :{' '}
         <Typography variant="mediumTxtsm" color={colors.gray[700]}>
-          {item?.job?.title ?? ""}
+          {item?.job?.title ?? "_"}
         </Typography>
       </Typography>
 

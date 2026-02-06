@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AuthState, User, LoginResponse, RegisterResponse } from "./types";
-import { stat } from "react-native-fs";
 
 const initialState: AuthState = {
   user: null,

@@ -21,7 +21,8 @@ import CustomSafeAreaView from "../../atoms/customsafeareaview";
 import Header from "../header";
 import { expandarrowsIcon } from "../../../assets/svg/expandarrows";
 import { useAppSelector } from "../../../hooks/useAppSelector";
-import { selectStageGraphOverview } from "../../../features/dashbaord/selectors";
+import { selectStageGraphOverview, selectStageGraphOverviewLoading } from "../../../features/dashbaord/selectors";
+import Shimmer from "../../atoms/shimmer";
 
 interface TableRow {
   job_name: string;
@@ -41,6 +42,53 @@ interface TableRow {
 
 
 const TRACK_WIDTH = 320;
+const SHIMMER_ROWS = 6;
+
+const ApplicationStageOverviewShimmer = () => {
+  const styles = useStyles();
+  return (
+    <View style={styles.card}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 }}>
+        <Shimmer width={220} height={22} borderRadius={6} />
+        <Shimmer width={24} height={24} borderRadius={6} />
+      </View>
+      <View style={{ flexDirection: "row" }}>
+        <View style={styles.leftFixedWrapper}>
+          <View style={styles.headerRow}>
+            <Shimmer width="80%" height={14} borderRadius={6} />
+          </View>
+          {Array.from({ length: SHIMMER_ROWS }).map((_, i) => (
+            <View key={`left-${i}`} style={[styles.leftFixedColumn, { backgroundColor: i % 2 === 1 ? colors.neutrals.lightGray : "#FFF" }]}>
+              <Shimmer width="85%" height={14} borderRadius={6} />
+            </View>
+          ))}
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} bounces={false}>
+          <View>
+            <View style={styles.headerRow}>
+              {Array.from({ length: 9 }).map((_, i) => (
+                <Shimmer key={i} width={72} height={14} borderRadius={6} style={styles.cell} />
+              ))}
+            </View>
+            {Array.from({ length: SHIMMER_ROWS }).map((_, rowIndex) => (
+              <View
+                key={`right-${rowIndex}`}
+                style={[styles.row, { backgroundColor: rowIndex % 2 === 1 ? colors.neutrals.lightGray : "#FFF" }]}
+              >
+                {Array.from({ length: 9 }).map((_, cellIndex) => (
+                  <Shimmer key={cellIndex} width={48} height={14} borderRadius={6} style={styles.cell} />
+                ))}
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+      </View>
+      <View style={styles.paginationContainer}>
+        <Shimmer width={80} height={16} borderRadius={6} />
+      </View>
+    </View>
+  );
+};
 
 const ApplicationStageOverview = () => {
   const styles = useStyles();
@@ -48,6 +96,7 @@ const ApplicationStageOverview = () => {
   const [contentWidth, setContentWidth] = useState(0);
   const [containerWidth, setContainerWidth] = useState(windowWidth - 40);
   const OverviewData = useAppSelector(selectStageGraphOverview);
+  const OverviewLoading = useAppSelector(selectStageGraphOverviewLoading);
   const data: TableRow[] = OverviewData?.results ?? [];
 
 
@@ -111,6 +160,10 @@ const ApplicationStageOverview = () => {
       </View>
     );
   };
+
+  if (OverviewLoading) {
+    return <ApplicationStageOverviewShimmer />;
+  }
 
   return (
     <Fragment>

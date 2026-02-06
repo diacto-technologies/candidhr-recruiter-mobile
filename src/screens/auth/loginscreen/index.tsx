@@ -44,9 +44,9 @@ const LoginScreen = () => {
   const loginPasswordRef = useRef<string>('');
 
   useEffect(() => {
-    // if (isAuthenticated && !previousAuthState.current && rememberMe) {
-    //   saveCredentialsToPasswordManager(loginEmailRef.current, loginPasswordRef.current);
-    // }
+    if (isAuthenticated && !previousAuthState.current && rememberMe) {
+      saveCredentialsToPasswordManager(loginEmailRef.current, loginPasswordRef.current);
+    }
 
     previousAuthState.current = isAuthenticated;
 

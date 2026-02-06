@@ -1,9 +1,7 @@
 import React, { Fragment, useState, useEffect, useCallback } from 'react';
 import {
   View,
-  StyleSheet,
   Pressable,
-  Image,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
@@ -19,7 +17,8 @@ import { SvgXml } from 'react-native-svg';
 import { colors } from '../../../../theme/colors';
 import { useAppDispatch } from '../../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../../hooks/useAppSelector';
-import { launchImageLibrary, Asset } from 'react-native-image-picker';
+import ImageCropPicker from 'react-native-image-crop-picker';
+import { Asset } from 'react-native-image-picker';
 import {
   selectProfile,
   selectProfileLoading,
@@ -27,10 +26,9 @@ import {
 import { updateProfileRequestAction, getProfileRequestAction } from '../../../../features/profile/actions';
 import { apiClient } from '../../../../api/client';
 import { API_ENDPOINTS } from '../../../../api/endpoints';
-import { Dropdown } from 'react-native-element-dropdown';
 import PhoneInput from '../../../../components/atoms/phonefield';
-import Profile from '..';
 import { editAvatarIcon } from '../../../../assets/svg/editavatar';
+import { SetProfilePhotoModal } from './SetProfilePhotoModal';
 import { useStyles } from './styles';
 
 
@@ -58,6 +56,7 @@ const AccountInfo = () => {
   
   // Local loading state for image upload
   const [isUploading, setIsUploading] = useState(false);
+  const [showSetProfileModal, setShowSetProfileModal] = useState(false);
 
   // Location options (can be fetched from API)
   const locationOptions: LocationOption[] = [
@@ -159,38 +158,68 @@ const AccountInfo = () => {
     }
   }, [dispatch, fullName, phoneNumber, location, selectedImage]);
 
-  const handleEditAvatar = useCallback(async () => {
+  const PROFILE_IMAGE_SIZE = 500;
+  const getCropOptions = () => ({
+    width: PROFILE_IMAGE_SIZE,
+    height: PROFILE_IMAGE_SIZE,
+    cropping: true,
+    cropperCircleOverlay: true,
+    aspectRatio: [1, 1] as [number, number],
+    includeBase64: false,
+  });
+
+  const openGalleryWithCrop = useCallback(async () => {
     try {
-      const result = await launchImageLibrary({
+      const result = await ImageCropPicker.openPicker({
+        ...getCropOptions(),
         mediaType: 'photo',
-        selectionLimit: 1,
-        quality: 0.8,
-        maxWidth: 500,
-        maxHeight: 500,
       });
-
-      // If user cancels
-      if (result.didCancel) {
-        return;
+      setSelectedImage({
+        uri: result.path,
+        fileName: result.path.split('/').pop() || `profile_${Date.now()}.jpg`,
+        type: result.mime || 'image/jpeg',
+      } as Asset);
+    } catch (error: any) {
+      if (error?.code !== 'E_PICKER_CANCELLED') {
+        showToastMessage(error?.message || 'Failed to pick image', 'error');
       }
-
-      // If error
-      if (result.errorCode) {
-        showToastMessage(result.errorMessage || 'Image selection failed', 'error');
-        return;
-      }
-
-      const asset = result.assets?.[0];
-      if (asset?.uri) {
-        setSelectedImage(asset);
-      }
-    } catch (error) {
-      showToastMessage('Failed to open image picker', 'error');
     }
+  }, []);
+
+  const openCameraWithCrop = useCallback(async () => {
+    try {
+      const result = await ImageCropPicker.openCamera({
+        ...getCropOptions(),
+        mediaType: 'photo',
+      });
+      setSelectedImage({
+        uri: result.path,
+        fileName: result.path.split('/').pop() || `profile_${Date.now()}.jpg`,
+        type: result.mime || 'image/jpeg',
+      } as Asset);
+    } catch (error: any) {
+      if (error?.code !== 'E_PICKER_CANCELLED') {
+        showToastMessage(error?.message || 'Failed to capture image', 'error');
+      }
+    }
+  }, []);
+
+  const handleEditAvatar = useCallback(() => {
+    setShowSetProfileModal(true);
+  }, []);
+
+  const closeSetProfileModal = useCallback(() => {
+    setShowSetProfileModal(false);
   }, []);
 
   return (
     <Fragment>
+      <SetProfilePhotoModal
+        visible={showSetProfileModal}
+        onClose={closeSetProfileModal}
+        onSelectGallery={openGalleryWithCrop}
+        onSelectCamera={openCameraWithCrop}
+      />
       <CustomSafeAreaView>
         <Header title="Account info" backNavigation={true} onBack={() => goBack()} />
 
@@ -266,6 +295,7 @@ const AccountInfo = () => {
                   editable={false}
                   style={styles.disabledField}
                   size="Medium"
+                  disable={true}
                 />
               </View>
 
@@ -332,6 +362,7 @@ const AccountInfo = () => {
                   placeholder="Role"
                   size="Medium"
                   editable={false}
+                  disable={true}
                   //style={styles.disabledField}
                 />
               </View>
