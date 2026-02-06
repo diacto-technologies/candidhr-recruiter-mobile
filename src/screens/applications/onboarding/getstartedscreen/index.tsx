@@ -51,7 +51,7 @@ const GetStartedScreen = () => {
           </Typography>
 
           {/* BUTTONS */}
-          <View style={{gap:12,paddingTop:40}}>
+          <View style={{gap:12,paddingTop:40,marginBottom:insets.bottom-20}}>
           <Button
             variant="contain"
             size='Medium'

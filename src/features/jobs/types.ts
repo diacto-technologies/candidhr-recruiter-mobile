@@ -116,6 +116,15 @@ export interface GetJobsParams {
   closeDate?: string;
   orderBy?: string;
   append?: boolean;
+  /**
+   * Client-only: used to ignore stale responses per tab.
+   */
+  requestId?: number;
+  /**
+   * Client-only flag: when true, reducer should update counts only
+   * and must NOT overwrite the tab job list.
+   */
+  onlyCount?: boolean;
 }
 // Redux state
 export interface JobsPagination {
@@ -169,18 +178,37 @@ export interface JobDetail {
 }
 
 export interface JobsState {
-  jobs: Job[];
   publishedJobs: Job[];
   unpublishedJobs: Job[];
   publishedCount: number;
   unpublishedCount: number;
   activeTab: string;
   selectedJob: JobDetail | null;
+  /**
+   * Global loading used by job-detail + mutations (not the tab lists).
+   */
   loading: boolean;
   error: string | null;
-  pagination: JobsPagination;
-  hasMore: boolean;
-  isTabLoading: boolean;
+  /**
+   * Tab list loading (separate from `loading`).
+   */
+  publishedListLoading: boolean;
+  unpublishedListLoading: boolean;
+  /**
+   * Tab "full refresh" shimmer (append=false).
+   */
+  publishedIsTabLoading: boolean;
+  unpublishedIsTabLoading: boolean;
+  /**
+   * Latest request guard per tab to prevent slow API races.
+   */
+  latestPublishedRequestId: number;
+  latestUnpublishedRequestId: number;
+
+  publishedPagination: JobsPagination;
+  unpublishedPagination: JobsPagination;
+  publishedHasMore: boolean;
+  unpublishedHasMore: boolean;
   filters: {
     title: string,
     experience: string,

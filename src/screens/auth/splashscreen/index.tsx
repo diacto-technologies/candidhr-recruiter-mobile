@@ -1,12 +1,10 @@
 import React, { Fragment, useEffect } from "react";
-import { View, Text, StyleSheet, Dimensions, useWindowDimensions, Image } from "react-native";
+import { View,useWindowDimensions, Image } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
 import { SvgXml } from "react-native-svg";
 import { colors } from "../../../theme/colors";
 import { candidHrLogo, candidHrTxt } from "../../../assets/svg/candidhrlogo";
 import { Typography } from "../../../components";
-import { bgLeftShap } from "../../../assets/svg/bgleftshap";
-import { bgRightShape } from "../../../assets/svg/bgrightshape";
 import { logoXML } from "../../../assets/svg/logoxml";
 import { navigate } from "../../../utils/navigationUtils";
 import { useStyles } from "./styles";

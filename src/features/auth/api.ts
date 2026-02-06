@@ -18,8 +18,10 @@ export const authApi = {
     return apiClient.post(API_ENDPOINTS.AUTH.LOGOUT);
   },
 
-  refreshToken: async (refreshToken: string): Promise<{ token: string; refreshToken: string }> => {
-    return apiClient.post(API_ENDPOINTS.AUTH.REFRESH, { refreshToken });
+  refreshToken: async (refresh: string) => {
+    return apiClient.post(API_ENDPOINTS.AUTH.REFRESH, {
+      refresh
+    })
   },
 
   getMe: async (): Promise<{ user: any }> => {

@@ -1,4 +1,4 @@
-import { call, put, takeLatest, select } from "redux-saga/effects";
+import { call, put, takeEvery, takeLatest, select } from "redux-saga/effects";
 import { AUTH_ACTION_TYPES } from "./constants";
 import {
   loginRequest,
@@ -20,10 +20,11 @@ import { authApi } from "./api";
 import { selectRefreshToken } from "./selectors";
 import { LoginRequest, LoginResponse, RegisterRequest } from "./types";
 import { getProfileRequest } from "../profile/slice";
-import { forgotPasswordFailureAction, forgotPasswordSuccessAction, resetPasswordFailureAction, resetPasswordSuccessAction } from "./actions";
+import { forgotPasswordFailureAction, forgotPasswordSuccessAction, refreshTokenRequestAction, resetPasswordFailureAction, resetPasswordSuccessAction } from "./actions";
 import { navigate } from "../../utils/navigationUtils";
 import { ToastAndroid } from "react-native";
 import { showToastMessage } from "../../utils/toast";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Worker sagas
 function* loginWorker(action: { type: string; payload: LoginRequest }): Generator<any, void, any> {
@@ -41,6 +42,9 @@ function* loginWorker(action: { type: string; payload: LoginRequest }): Generato
       tenant: response.tenant,
     };
     yield put(loginSuccess(mapped));
+    // Persist tokens so refresh works after app close/reopen (same keys as API client)
+    yield call([AsyncStorage, 'setItem'], 'accessToken', mapped.token);
+    yield call([AsyncStorage, 'setItem'], 'refreshToken', mapped.refreshToken);
     yield put(getProfileRequest(response.user_id));
   } catch (error: any) {
     // Log detailed error for debugging
@@ -74,6 +78,10 @@ function* registerWorker(action: { type: string; payload: RegisterRequest }): Ge
   }
 }
 
+function* clearTokensOnLogoutWorker(): Generator<any, void, any> {
+  yield call(AsyncStorage.multiRemove, ['accessToken', 'refreshToken']);
+}
+
 function* logoutWorker(): Generator<any, void, any> {
   try {
     yield put(logoutRequest());
@@ -92,9 +100,24 @@ function* refreshTokenWorker(): Generator<any, void, any> {
     if (!refreshToken) {
       throw new Error("No refresh token available");
     }
+    if (__DEV__) {
+      console.log("[Auth] Refresh token API called");
+    }
     const response = yield call(authApi.refreshToken, refreshToken);
-    yield put(refreshTokenSuccess(response));
+    console.log("[Auth] Refresh token API success", response.refresh);
+    if (__DEV__) {
+      console.log("[Auth] Refresh token API success", { access: !!response?.access });
+    }
+    yield put(
+      refreshTokenSuccess({
+        token: response.access,
+        refreshToken: response.refresh ?? refreshToken,
+      })
+    );
   } catch (error: any) {
+    if (__DEV__) {
+      console.log("[Auth] Refresh token API failed", error?.message);
+    }
     yield put(refreshTokenFailure(error.message || "Token refresh failed"));
     // If refresh fails, logout user
     yield put(logoutSuccess());
@@ -147,6 +170,7 @@ export function* authSaga() {
   yield takeLatest(AUTH_ACTION_TYPES.LOGIN_REQUEST, loginWorker);
   yield takeLatest(AUTH_ACTION_TYPES.REGISTER_REQUEST, registerWorker);
   yield takeLatest(AUTH_ACTION_TYPES.LOGOUT_REQUEST, logoutWorker);
+  yield takeEvery(logoutSuccess.type, clearTokensOnLogoutWorker);
   yield takeLatest(AUTH_ACTION_TYPES.REFRESH_TOKEN_REQUEST, refreshTokenWorker);
   yield takeLatest(AUTH_ACTION_TYPES.FORGOT_PASSWORD_REQUEST, forgotPasswordWorker);
   // Legacy watcher for backward compatibility

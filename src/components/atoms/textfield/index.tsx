@@ -55,8 +55,8 @@ const TextField = forwardRef((props: TextFieldProps, ref) => {
         }}
         style={[styles.pressableBase, styles.pressableDynamic]}
       >
-        {/* <View style={styles.topGlow} pointerEvents="none" />
-        <View style={styles.bottomShadow} pointerEvents="none" /> */}
+        {/* <View style={styles.topGlow} pointerEvents="none" /> */}
+        {/* <View style={styles.bottomShadow} pointerEvents="none" /> */}
         {renderNode(props.startIcon)}
         {props.startIcon && props.showDivider && (
           <View style={styles.verticalDivider} />

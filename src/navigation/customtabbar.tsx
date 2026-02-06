@@ -55,7 +55,7 @@ const CustomTabBar: FC<BottomTabBarProps> = (props) => {
     <View
       style={[
         styles.container,
-        { paddingBottom: bottom.bottom > 0 ? bottom.bottom : 10 }
+        { paddingBottom:bottom.bottom-5}
       ]}
     >
       {/* Tab Icons */}

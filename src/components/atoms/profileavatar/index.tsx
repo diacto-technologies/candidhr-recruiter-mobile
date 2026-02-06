@@ -56,6 +56,8 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
     width: size,
     height: size,
     borderRadius: innerBorderRadius,
+    borderWidth:2,
+    borderColor: 'rgba(0, 0, 0, 0.08)'
   };
 
   return (

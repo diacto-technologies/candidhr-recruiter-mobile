@@ -44,6 +44,8 @@ function* getJobsWorker(
         append: payload?.append ?? false,
         published: payload?.published ?? true,
         data: response,
+        requestId: payload?.requestId,
+        onlyCount: payload?.onlyCount,
       })
     );
   } catch (error: any) {
@@ -67,6 +69,8 @@ function* getPublishedJobsWorker(
         append: payload.append ?? false,
         published: true,
         data: response,
+        requestId: payload.requestId,
+        onlyCount: payload.onlyCount,
       })
     );
   } catch (error: any) {
@@ -91,6 +95,8 @@ function* getUnpublishedJobsWorker(
         append: payload.append ?? false,
         published: false,
         data: response,
+        requestId: payload.requestId,
+        onlyCount: payload.onlyCount,
       })
     );
   } catch (error: any) {

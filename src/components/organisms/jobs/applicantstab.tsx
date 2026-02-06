@@ -3,7 +3,7 @@ import { View, FlatList, StyleSheet } from "react-native";
 import ApplicantList from "../applicantlist";
 import SearchBar from "../../atoms/searchbar";
 import CustomSwitch from "../../atoms/switchbutton";
-import { Typography } from "../../atoms";
+import { Button, Typography } from "../../atoms";
 import Divider from "../../atoms/divider";
 import { colors } from "../../../theme/colors";
 import { useAppDispatch } from "../../../hooks/useAppDispatch";
@@ -19,6 +19,9 @@ import {
 
 import { getApplicationsRequestAction } from "../../../features/applications/actions";
 import { setApplicationsFilters } from "../../../features/applications/slice";
+import BackgroundPattern from "../../atoms/backgroundpattern";
+import { Illustrations } from "../../../assets/svg/illustrations";
+import { SvgXml } from "react-native-svg";
 
 const SKELETON_ROWS = 6;
 
@@ -120,7 +123,7 @@ const ApplicantsTab = () => {
       </View>
 
       <Divider />
-      {!loading && applications.length === 0 && (
+      {/* {!loading && applications.length === 0 && (
         <View
           style={{
             alignItems: "center",
@@ -139,7 +142,7 @@ const ApplicantsTab = () => {
             Try adjusting your search or filters
           </Typography>
         </View>
-      )}
+      )} */}
 
       {/* 📄List */}
       <FlatList
@@ -157,9 +160,10 @@ const ApplicantsTab = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: 16,
-          backgroundColor: colors.common.slightlygray,
           paddingVertical: 16,
           gap: 16,
+          flexGrow: 1, // 👈 REQUIRED for vertical centering
+          backgroundColor: colors.common.slightlygray,
         }}
         bounces={false}
         onEndReached={() => {
@@ -172,6 +176,52 @@ const ApplicantsTab = () => {
           onEndReachedCalledRef.current = false;
         }}
         onEndReachedThreshold={0.5}
+
+        ListEmptyComponent={
+          !loading ? (
+            <BackgroundPattern bgStyle={{
+              height: '100%',
+              width: '100%',
+              top: -90,
+              //zIndex: 10
+            }}>
+              <View style={{ flex: 1, alignSelf: 'center', alignContent: 'center', justifyContent: "center", }}>
+                <View
+                  style={{
+                    alignItems: 'center',
+                    paddingHorizontal: 16,
+                    zIndex: 10,
+                    marginBottom: 10,
+                  }}
+                >
+                  <SvgXml xml={Illustrations} style={{ zIndex: -1, }} />
+                  <Typography variant="semiBoldTxtmd">
+                    No results found
+                  </Typography>
+
+                  <Typography
+                    variant="regularTxtsm"
+                    color={colors.gray[500]}
+                    style={{ textAlign: 'center' }}
+                  >
+                    Try adjusting your search or filters
+                  </Typography>
+                </View>
+                {/* <Button
+                  buttonColor={colors.mainColors.slateBlue}
+                  textColor={colors.common.white}
+                  borderColor={colors.mainColors.borderColor}
+                  borderRadius={8}
+                  borderWidth={1}
+                  size={'Medium'}
+                  onPress={() => { }}
+                >
+                  Add new job
+                </Button> */}
+              </View>
+            </BackgroundPattern >
+          ) : null
+        }
       />
     </View>
   );

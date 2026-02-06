@@ -3,7 +3,7 @@ import { colors } from '../../../../theme/colors';
 
 export const useStyles = () => {
     return StyleSheet.create({
-        container: { paddingHorizontal: 16, paddingVertical: 20, gap: 3 },
+        container: { paddingHorizontal: 16, paddingTop:20, gap: 3 },
         title: { fontSize: 22, fontWeight: "700", color: "#111827" },
         subtitle: { marginTop: 4, fontSize: 14, color: "#6B7280" },
         row: { marginTop: 6, flexDirection: 'row', alignItems: 'center' },

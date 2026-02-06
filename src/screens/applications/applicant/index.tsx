@@ -1,6 +1,6 @@
 import React, { Fragment, useCallback, useEffect, useRef, useMemo, useState } from 'react';
 import { View, FlatList, useWindowDimensions } from 'react-native';
-import { Header, SortingAndFilter, ApplicantList, Shimmer, BottomSheet, FilterSheetContent, Typography } from '../../../components';
+import { Header, SortingAndFilter, ApplicantList, Shimmer, BottomSheet, FilterSheetContent, Typography, Button } from '../../../components';
 import { useRNSafeAreaInsets } from '../../../hooks/useRNSafeAreaInsets';
 import CustomSafeAreaView from '../../../components/atoms/customsafeareaview';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
@@ -19,6 +19,9 @@ import { applicantFiltersOption } from '../../../utils/dummaydata';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../../../theme/colors';
 import DeviceInfo from 'react-native-device-info';
+import BackgroundPattern from '../../../components/atoms/backgroundpattern';
+import { Illustrations } from '../../../assets/svg/illustrations';
+import { SvgXml } from 'react-native-svg';
 
 const SKELETON_ROWS = 20;
 
@@ -44,43 +47,49 @@ const ApplicantScreen = () => {
   const gap = 16;
   const availableWidth = width - horizontalPadding - gap * (numColumns - 1);
   const itemWidth = availableWidth / numColumns;
+  const debouncedName = useDebouncedValue(filters.name, 400);
 
-  const getApiParams = useCallback((page: number, append: boolean = false) => {
-    const params: any = {
-      page,
-      limit: pagination.limit,
-    };
+  function useDebouncedValue<T>(value: T, delay = 400): T {
+    const [debounced, setDebounced] = useState(value);
+  
+    useEffect(() => {
+      const timer = setTimeout(() => setDebounced(value), delay);
+      return () => clearTimeout(timer);
+    }, [value, delay]);
+  
+    return debounced;
+  }
 
-    if (append) {
-      params.append = true;
-    }
-
-    if (filters.name) params.applicantName = filters.name;
-    if (filters.email) params.email = filters.email;
-    if (filters.appliedFor) params.jobTitle = filters.appliedFor;
-    if (filters.contact) params.contact = filters.contact;
-    if (filters.sort) params.sort = filters.sort;
-
-    return params;
-  }, [filters, pagination.limit]);
-
-  const skipInitialFetch = useRef(true);
-
+  const getApiParams = useCallback(
+    (page: number, append = false) => {
+      const params: any = {
+        page,
+        limit: pagination.limit,
+      };
+  
+      if (append) params.append = true;
+      if (debouncedName) params.applicantName = debouncedName;
+      if (filters.email) params.email = filters.email;
+      if (filters.appliedFor) params.jobTitle = filters.appliedFor;
+      if (filters.contact) params.contact = filters.contact;
+      if (filters.sort) params.sort = filters.sort;
+  
+      return params;
+    },
+    [
+      debouncedName,
+      filters.email,
+      filters.appliedFor,
+      filters.contact,
+      filters.sort,
+      pagination.limit,
+    ]
+  );
+  
   useEffect(() => {
-    dispatch(getApplicationsRequestAction(getApiParams(1, false)));
-    skipInitialFetch.current = false;
-  }, [dispatch, getApiParams]);
-
-  // ✅ Debounce search by name
-  useEffect(() => {
-    if (skipInitialFetch.current) return;
-    
-    const timer = setTimeout(() => {
-      dispatch(getApplicationsRequestAction(getApiParams(1, false)));
-    }, 400);
-
-    return () => clearTimeout(timer);
-  }, [filters.name, dispatch, getApiParams]);
+    dispatch(getApplicationsRequestAction(getApiParams(1)));
+  }, [getApiParams]);
+  
 
   // // Refetch when filters or sort change (permanent fix - no setTimeout)
   // useEffect(() => {
@@ -123,7 +132,7 @@ const ApplicantScreen = () => {
   const handleLoadMore = useCallback(() => {
     if (loading || !hasMore) return;
     dispatch(getApplicationsRequestAction(getApiParams(pagination.page + 1, true)));
-  }, [dispatch, loading, hasMore, pagination.page, getApiParams]);
+  }, [loading, hasMore, pagination.page, getApiParams]);
 
 
   const dataSource: RowItem[] = useMemo(() => {
@@ -175,7 +184,7 @@ const ApplicantScreen = () => {
             setOpenSearch(false);
           }}
         />
-        {!loading && applications.length === 0 && (
+        {/* {!loading && applications.length === 0 && (
           <View
             style={{
               alignItems: "center",
@@ -194,12 +203,17 @@ const ApplicantScreen = () => {
               Try adjusting your search or filters
             </Typography>
           </View>
-        )}
+        )} */}
         <FlatList<RowItem>
           data={dataSource}
           renderItem={renderItem}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingVertical:16, paddingHorizontal:16, gap: 12 }}
+          contentContainerStyle={{
+            paddingVertical: 16,
+            paddingHorizontal: 16,
+            gap: 12,
+            flexGrow: 1, // 👈 REQUIRED for vertical centering
+          }}
           onEndReached={() => {
             if (!onEndReachedCalledRef.current) {
               handleLoadMore();
@@ -213,18 +227,73 @@ const ApplicantScreen = () => {
           initialNumToRender={10}
           maxToRenderPerBatch={10}
           windowSize={10}
-          ListFooterComponent={
-            loading && applications.length > 0
-              ? <Shimmer />
-              : null
-          }
           removeClippedSubviews={false}
+          numColumns={isTablet ? 2 : 1}
+
           keyExtractor={(item, index) => {
             if ((item as any).__skeleton) return `skeleton-${(item as any).__id ?? index}`;
             const id = (item as Application).id ?? 'no-id';
             return `app-${id}-${index}`;
           }}
-          numColumns={isTablet ? 2 : 1}
+
+          ListEmptyComponent={
+            !loading ? (
+              <BackgroundPattern
+                bgStyle={{
+                  height: '100%',
+                  width: '100%',
+                  top: -90,
+                }}
+              >
+                <View
+                  style={{
+                    flex: 1,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    paddingHorizontal: 16,
+                  }}
+                >
+                  <View
+                    style={{
+                      alignItems: 'center',
+                      marginBottom: 10,
+                      zIndex: 10,
+                    }}
+                  >
+                    <SvgXml xml={Illustrations} />
+                    <Typography variant="semiBoldTxtmd">
+                      No results found
+                    </Typography>
+                    <Typography
+                      variant="regularTxtsm"
+                      color={colors.gray[500]}
+                      style={{ textAlign: 'center' }}
+                    >
+                      Try adjusting your search or filters
+                    </Typography>
+                  </View>
+
+                  {/* <Button
+                    buttonColor={colors.mainColors.slateBlue}
+                    textColor={colors.common.white}
+                    borderColor={colors.mainColors.borderColor}
+                    borderRadius={8}
+                    borderWidth={1}
+                    size="Medium"
+                    onPress={() => {
+                      // optional: navigate to job/applicant creation
+                    }}
+                  >
+                    Add new job
+                  </Button> */}
+                </View>
+              </BackgroundPattern>
+            ) : null
+          }
+
+          ListFooterComponent={
+            loading && applications.length > 0 ? <Shimmer /> : null
+          }
         />
       </CustomSafeAreaView>
       <SortingAndFilter

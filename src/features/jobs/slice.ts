@@ -2,7 +2,6 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { JobsState, Job, CreateJobRequest, UpdateJobRequest, JobsListApiResponse, GetJobsParams, JobDetail, JobNamesListApiResponse } from "./types";
 
 const initialState: JobsState = {
-  jobs: [],
   publishedJobs: [],
   unpublishedJobs: [],
   selectedJob: null,
@@ -11,12 +10,24 @@ const initialState: JobsState = {
   loading: false,
   error: null,
   activeTab: "Published",
-  pagination: {
+  publishedListLoading: false,
+  unpublishedListLoading: false,
+  publishedIsTabLoading: false,
+  unpublishedIsTabLoading: false,
+  latestPublishedRequestId: 0,
+  latestUnpublishedRequestId: 0,
+  publishedPagination: {
     page: 1,
     limit: 10,
     total: 0,
   },
-  hasMore: true,
+  unpublishedPagination: {
+    page: 1,
+    limit: 10,
+    total: 0,
+  },
+  publishedHasMore: true,
+  unpublishedHasMore: true,
   filters: {
     title: "",
     experience: "",
@@ -31,7 +42,6 @@ const initialState: JobsState = {
   jobNameListPage: 1,
   jobNameListNext: null,
   jobNameListSearch: "",
-  isTabLoading: false
 };
 
 
@@ -43,9 +53,23 @@ const jobsSlice = createSlice({
       state,
       _action: PayloadAction<GetJobsParams | undefined>
     ) => {
-      state.loading = true;
       state.error = null;
-      state.isTabLoading = _action.payload?.append === false;
+
+      // Count-only requests should not affect list loading UI.
+      if (_action.payload?.onlyCount) return;
+
+      const published = _action.payload?.published ?? true;
+      const requestId = _action.payload?.requestId ?? Date.now();
+
+      if (published) {
+        state.latestPublishedRequestId = requestId;
+        state.publishedListLoading = true;
+        state.publishedIsTabLoading = _action.payload?.append === false;
+      } else {
+        state.latestUnpublishedRequestId = requestId;
+        state.unpublishedListLoading = true;
+        state.unpublishedIsTabLoading = _action.payload?.append === false;
+      }
     },
     getJobsSuccess: (
       state,
@@ -55,12 +79,11 @@ const jobsSlice = createSlice({
         published: boolean;
         data: JobsListApiResponse;
         onlyCount?: boolean;
+        requestId?: number;
       }>
     ) => {
-      const { page, append, data, published, onlyCount } = action.payload;
-
-      state.loading = false;
-      state.isTabLoading = false;
+      const { page, append, data, published, onlyCount, requestId } =
+        action.payload;
 
       // ✅ COUNT ONLY MODE
       if (onlyCount) {
@@ -72,12 +95,44 @@ const jobsSlice = createSlice({
         return; // ⛔ DO NOT TOUCH JOB LIST
       }
 
-      // ✅ LIST MODE
-      state.pagination.page = page;
-      state.pagination.total = data.count;
+      // ✅ LIST MODE (guard against stale responses)
+      if (published) {
+        if (
+          typeof requestId === "number" &&
+          requestId !== state.latestPublishedRequestId
+        ) {
+          return;
+        }
 
-      state.jobs = append ? [...state.jobs, ...data.results] : data.results;
-      state.hasMore = state.jobs.length < data.count;
+        state.publishedListLoading = false;
+        state.publishedIsTabLoading = false;
+
+        state.publishedPagination.page = page;
+        state.publishedPagination.total = data.count;
+
+        state.publishedJobs = append
+          ? [...state.publishedJobs, ...data.results]
+          : data.results;
+        state.publishedHasMore = state.publishedJobs.length < data.count;
+      } else {
+        if (
+          typeof requestId === "number" &&
+          requestId !== state.latestUnpublishedRequestId
+        ) {
+          return;
+        }
+
+        state.unpublishedListLoading = false;
+        state.unpublishedIsTabLoading = false;
+
+        state.unpublishedPagination.page = page;
+        state.unpublishedPagination.total = data.count;
+
+        state.unpublishedJobs = append
+          ? [...state.unpublishedJobs, ...data.results]
+          : data.results;
+        state.unpublishedHasMore = state.unpublishedJobs.length < data.count;
+      }
 
       if (published) {
         state.publishedCount = data.count;
@@ -87,9 +142,11 @@ const jobsSlice = createSlice({
     },
 
     getJobsFailure: (state, action: PayloadAction<string>) => {
-      state.loading = false;
       state.error = action.payload;
-      state.isTabLoading = false;
+      state.publishedListLoading = false;
+      state.unpublishedListLoading = false;
+      state.publishedIsTabLoading = false;
+      state.unpublishedIsTabLoading = false;
     },
     getJobDetailRequest: (state, _action: PayloadAction<string>) => {
       state.loading = true;
@@ -110,8 +167,15 @@ const jobsSlice = createSlice({
     },
     createJobSuccess: (state, action: PayloadAction<Job>) => {
       state.loading = false;
-      state.jobs.unshift(action.payload);
-      state.pagination.total += 1;
+      if (action.payload.published) {
+        state.publishedJobs.unshift(action.payload);
+        state.publishedCount += 1;
+        state.publishedPagination.total += 1;
+      } else {
+        state.unpublishedJobs.unshift(action.payload);
+        state.unpublishedCount += 1;
+        state.unpublishedPagination.total += 1;
+      }
       state.error = null;
     },
     createJobFailure: (state, action: PayloadAction<string>) => {
@@ -124,10 +188,31 @@ const jobsSlice = createSlice({
     },
     updateJobSuccess: (state, action: PayloadAction<JobDetail>) => {
       state.loading = false;
-      const index = state.jobs.findIndex((job) => job.id === action.payload.id);
-      if (index !== -1) {
-        state.jobs[index] = action.payload;
+
+      // Update in whichever list it exists, and move lists if published status changed.
+      const inPublishedIdx = state.publishedJobs.findIndex(
+        (job) => job.id === action.payload.id
+      );
+      const inUnpublishedIdx = state.unpublishedJobs.findIndex(
+        (job) => job.id === action.payload.id
+      );
+
+      if (action.payload.published) {
+        if (inUnpublishedIdx !== -1) {
+          state.unpublishedJobs.splice(inUnpublishedIdx, 1);
+          state.publishedJobs.unshift(action.payload as any);
+        } else if (inPublishedIdx !== -1) {
+          state.publishedJobs[inPublishedIdx] = action.payload as any;
+        }
+      } else {
+        if (inPublishedIdx !== -1) {
+          state.publishedJobs.splice(inPublishedIdx, 1);
+          state.unpublishedJobs.unshift(action.payload as any);
+        } else if (inUnpublishedIdx !== -1) {
+          state.unpublishedJobs[inUnpublishedIdx] = action.payload as any;
+        }
       }
+
       if (state.selectedJob?.id === action.payload.id) {
         state.selectedJob = action.payload;
       }
@@ -143,11 +228,34 @@ const jobsSlice = createSlice({
     },
     deleteJobSuccess: (state, action: PayloadAction<string>) => {
       state.loading = false;
-      state.jobs = state.jobs.filter((job) => job.id !== action.payload);
+      const beforePub = state.publishedJobs.length;
+      const beforeUnpub = state.unpublishedJobs.length;
+
+      state.publishedJobs = state.publishedJobs.filter(
+        (job) => job.id !== action.payload
+      );
+      state.unpublishedJobs = state.unpublishedJobs.filter(
+        (job) => job.id !== action.payload
+      );
+
+      if (state.publishedJobs.length !== beforePub) {
+        state.publishedCount = Math.max(0, state.publishedCount - 1);
+        state.publishedPagination.total = Math.max(
+          0,
+          state.publishedPagination.total - 1
+        );
+      }
+      if (state.unpublishedJobs.length !== beforeUnpub) {
+        state.unpublishedCount = Math.max(0, state.unpublishedCount - 1);
+        state.unpublishedPagination.total = Math.max(
+          0,
+          state.unpublishedPagination.total - 1
+        );
+      }
+
       if (state.selectedJob?.id === action.payload) {
         state.selectedJob = null;
       }
-      state.pagination.total -= 1;
       state.error = null;
     },
     deleteJobFailure: (state, action: PayloadAction<string>) => {
@@ -165,6 +273,12 @@ const jobsSlice = createSlice({
         ...state.filters,
         ...action.payload
       };
+
+      // UX: when filters change, reset pagination + hasMore so load-more never gets stuck.
+      state.publishedPagination.page = 1;
+      state.unpublishedPagination.page = 1;
+      state.publishedHasMore = true;
+      state.unpublishedHasMore = true;
     },
     clearJobFilters: (state) => {
       state.filters = {
@@ -176,6 +290,12 @@ const jobsSlice = createSlice({
         closeDate: "",
         closeDateTo: "",
       };
+
+      // UX: reset pagination + hasMore after clearing filters.
+      state.publishedPagination.page = 1;
+      state.unpublishedPagination.page = 1;
+      state.publishedHasMore = true;
+      state.unpublishedHasMore = true;
     },
     setActiveTab: (state, action: PayloadAction<"Published" | "Unpublished">) => {
       state.activeTab = action.payload;

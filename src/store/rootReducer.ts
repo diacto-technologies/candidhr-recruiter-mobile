@@ -6,6 +6,7 @@ import { dashboardReducer } from "../features/dashbaord";
 // import profileReducer from "../features/profile/slice";
 import jobsReducer from "../features/jobs/slice";
 import applicationsReducer from "../features/applications/slice";
+import { usersReducer } from "../features/profile/users";
 
 const rootReducer = combineReducers({
   auth: authReducer,
@@ -13,6 +14,7 @@ const rootReducer = combineReducers({
   dashboard: dashboardReducer,
   jobs: jobsReducer,
   applications: applicationsReducer,
+  users: usersReducer,
 });
 
 export default rootReducer;

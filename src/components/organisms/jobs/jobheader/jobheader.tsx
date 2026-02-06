@@ -66,7 +66,8 @@ const JobHeader = () => {
       <View style={{ gap: 10 }}>
         <View style={styles.row}>
           <SvgXml xml={locationIcon} />
-          <Typography variant="regularTxtsm" color={colors.gray[600]} style={{ paddingLeft: 8 }}>{jobs?.location + "," + jobs?.owner?.state ?? ""}</Typography>
+          <Typography variant="regularTxtsm" color={colors.gray[600]} style={{ paddingLeft: 8 }}>{jobs?.location + ","}</Typography>
+          <Typography variant="regularTxtsm" color={colors.gray[600]}>{ jobs?.owner?.state  ?? ""}</Typography>
         </View>
         <View style={styles.chipRow}>
           <View style={[styles.chip, { backgroundColor: colors.brand[50], borderColor: colors.brand[200] }]}>

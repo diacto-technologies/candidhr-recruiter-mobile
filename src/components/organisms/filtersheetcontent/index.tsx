@@ -102,26 +102,30 @@ const FilterSheetContent: React.FC<Props> = ({
                   }}
                 >
                   <Typography variant="mediumTxtsm" color={colors.gray[700]}>
-                    {value}
+                    {key === 'experience'
+                      ? Number(value) === 0
+                        ? value +" "+'Fresher'
+                        : `${value} ${Number(value) === 1 ? 'Year' : 'Years'}`
+                      : value}
                   </Typography>
                   <TouchableOpacity
-                   onPress={() => {
-                    if (mode === "applicant") {
-                      dispatch(
-                        setApplicationsFilters({
-                          ...filters,
-                          [key]: "",
-                        })
-                      );
-                    } else {
-                      dispatch(
-                        setJobFilters({
-                          ...jobFilters,
-                          [key]: "",
-                        })
-                      );
-                    }
-                  }}
+                    onPress={() => {
+                      if (mode === "applicant") {
+                        dispatch(
+                          setApplicationsFilters({
+                            ...filters,
+                            [key]: "",
+                          })
+                        );
+                      } else {
+                        dispatch(
+                          setJobFilters({
+                            ...jobFilters,
+                            [key]: "",
+                          })
+                        );
+                      }
+                    }}
                     style={{ marginLeft: 2 }}
                   >
                     <Icon
@@ -146,14 +150,14 @@ const FilterSheetContent: React.FC<Props> = ({
 
               return (
                 <TouchableOpacity
-                key={index}
-                onPress={() => setSelectedTab(item)}
-                style={[
-                  styles.tabItem,
-                  index === 0 && styles.firstTabItem,
-                  isActive && styles.activeTabItem,
-                ]}
-              >
+                  key={index}
+                  onPress={() => setSelectedTab(item)}
+                  style={[
+                    styles.tabItem,
+                    index === 0 && styles.firstTabItem,
+                    isActive && styles.activeTabItem,
+                  ]}
+                >
                   {isActive && (
                     <Animated.View
                       style={[
@@ -239,7 +243,7 @@ const FilterSheetContent: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   container: {
-    flex:1,
+    flex: 1,
     flexShrink: 1,
     //maxHeight: '90%',
     borderLeftWidth: 2,
@@ -252,7 +256,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   content: {
-    flex:1,
+    flex: 1,
     flexDirection: 'row',
     flexShrink: 1,
   },

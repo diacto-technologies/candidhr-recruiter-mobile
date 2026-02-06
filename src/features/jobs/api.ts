@@ -18,7 +18,6 @@ export const jobsApi = {
     }
   
     if (params?.experience) {
-      console.log(params?.experience,"experienceexperienceexperienceexperience")
       queryParams.append("experience__in", String(params.experience));
     }
   

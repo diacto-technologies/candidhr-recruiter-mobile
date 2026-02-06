@@ -5,11 +5,13 @@ import { profileSaga } from '../features/profile/saga';
 import { dashbaordSaga } from '../features/dashbaord/saga';
 import { jobsSaga } from '../features/jobs/saga';
 import { applicationsSaga } from '../features/applications/saga';
+import { usersSaga } from '../features/profile/users';
 
 export default function* rootSaga() {
   yield all([
     authSaga(),
     profileSaga(),
+    usersSaga(),
     dashbaordSaga(),
     jobsSaga(),
     applicationsSaga(),

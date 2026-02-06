@@ -5,7 +5,8 @@ const selectJobsState = (state: RootState) => state.jobs;
 
 export const selectJobs = createSelector(
   [selectJobsState],
-  (jobs) => jobs.jobs
+  (jobs) =>
+    jobs.activeTab === "Published" ? jobs.publishedJobs : jobs.unpublishedJobs
 );
 
 export const selectSelectedJob = createSelector(
@@ -18,6 +19,14 @@ export const selectJobsLoading = createSelector(
   (jobs) => jobs.loading
 );
 
+export const selectJobsListLoading = createSelector(
+  [selectJobsState],
+  (jobs) =>
+    jobs.activeTab === "Published"
+      ? jobs.publishedListLoading
+      : jobs.unpublishedListLoading
+);
+
 export const selectJobsError = createSelector(
   [selectJobsState],
   (jobs) => jobs.error
@@ -25,12 +34,16 @@ export const selectJobsError = createSelector(
 
 export const selectJobsPagination = createSelector(
   [selectJobsState],
-  (jobs) => jobs.pagination
+  (jobs) =>
+    jobs.activeTab === "Published"
+      ? jobs.publishedPagination
+      : jobs.unpublishedPagination
 );
 
 export const selectJobsHasMore = createSelector(
   [selectJobsState],
-  (jobs) => jobs.hasMore
+  (jobs) =>
+    jobs.activeTab === "Published" ? jobs.publishedHasMore : jobs.unpublishedHasMore
 );
 
 export const selectPublishedCount = createSelector(
@@ -66,7 +79,10 @@ export const selectJobsActiveTab = createSelector(
 
 export const selectIsTabLoading = createSelector(
   [selectJobsState],
-  (jobs) => jobs.isTabLoading
+  (jobs) =>
+    jobs.activeTab === "Published"
+      ? jobs.publishedIsTabLoading
+      : jobs.unpublishedIsTabLoading
 );
 
 export const selectJobNameList = createSelector(
