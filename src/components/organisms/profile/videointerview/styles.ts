@@ -124,6 +124,7 @@ export const useStyles = () => {
           overflow: "hidden",
           marginTop: 16,
           position: "relative",
+          // Remove fixed height, let aspectRatio handle it
         },
       
         videoPreview: {

@@ -11,10 +11,10 @@ export const useStyles = () => {
             padding: 16,
             borderWidth: 0.5,
             borderColor: colors.gray['200'],
-            gap:20,
+            gap: 20,
             ...shadowStyles.shadow_xs
         },
-    
+
         xAxisLabel: {
             fontSize: 12,
             fontFamily: Fonts.InterRegular,
@@ -38,7 +38,7 @@ export const useStyles = () => {
             borderTopColor: 'transparent',
             borderBottomColor: 'transparent',
         },
-    
+
         tooltipContainer: {
             backgroundColor: colors.base.black,
             paddingHorizontal: 14,
@@ -47,5 +47,17 @@ export const useStyles = () => {
             justifyContent: 'center',
             alignItems: 'center',
         },
+        gridLines: {
+            marginTop: 16,
+            height: 164,
+            justifyContent: 'flex-end',
+            position: 'relative'
+        },
+        barLables:{ 
+            flexDirection: 'row', 
+            justifyContent: 'space-around', 
+            alignItems: 'flex-end', 
+            paddingHorizontal: 20 
+        }
     });
 };

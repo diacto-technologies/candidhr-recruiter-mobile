@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { View, StyleSheet, TouchableOpacity, Image, Alert, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Image, Alert, ScrollView, Dimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../../../../theme/colors';
 import Typography from '../../../atoms/typography';
 import { SvgXml } from 'react-native-svg';
@@ -41,12 +42,25 @@ export default function VideoInterview() {
   const [responseDropdownOpen, setResponseDropdownOpen] = useState(false);
   const [transcriptionView, setTranscriptionView] = useState<'continuous' | 'bytime'>('continuous');
   const [currentTime, setCurrentTime] = useState(0);
+  const [screenData, setScreenData] = useState(Dimensions.get('window'));
 
   const dispatch = useAppDispatch();
   const styles = useStyles();
   const applicant = useAppSelector(selectSelectedApplication);
   const PersonalityScreeningList = useAppSelector(selectPersonalityScreeningList)
   const responses = useAppSelector(selectPersonalityScreeningResponses);
+
+  // Detect orientation
+  const { width, height } = screenData;
+  const isLandscape = width > height;
+
+  // Listen for dimension changes (orientation changes)
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener('change', ({ window }) => {
+      setScreenData(window);
+    });
+    return () => subscription?.remove();
+  }, []);
 
   useEffect(() => {
     if (!applicant?.id || !applicant?.job?.id) return;

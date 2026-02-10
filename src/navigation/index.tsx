@@ -1,6 +1,6 @@
-import { View, Text } from 'react-native'
-import React, { FC } from 'react'
-import { NavigationContainer } from '@react-navigation/native'
+import { View, Text, Linking } from 'react-native'
+import React, { FC, useEffect } from 'react'
+import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { navigationRef } from '../utils/navigationUtils'
 import LoginScreen from '../screens/auth/loginscreen'
@@ -13,17 +13,45 @@ import ForgetPasswordScreen from '../screens/auth/forgetpassword'
 import ContactUsScreen from '../screens/auth/contactus'
 import CheckMailScreen from '../screens/auth/checkmail'
 import CreateNewPasswordScreen from '../screens/auth/createnewpassword'
-import ApplicationOverviewDetails from '../screens/applications/dashboard/ApplicationStageOverviewDetails'
+import ApplicationOverviewDetails from '../screens/applications/dashboard/applicationstageoverviewdetails'
 import AccountInfo from '../screens/applications/profile/accountinfo'
 import CompanyInfo from '../screens/applications/profile/companyinfo'
 import Users from '../screens/applications/profile/users'
 import linking from './linking'
 import OrgnizationalSwitch from '../screens/auth/orgnizationalswitch'
+import { useTheme } from '../hooks/useTheme'
 
-const Stack= createNativeStackNavigator()
-const Navigation:FC = () => {
+const Stack = createNativeStackNavigator()
+const Navigation: FC = () => {
+  const theme = useTheme();
+  const isDarkMode = theme === 'dark';
+
+  const navigationTheme = isDarkMode
+    ? {
+      ...DarkTheme,
+      colors: {
+        ...DarkTheme.colors,
+        background: '#303030',
+        card: '#303030',
+      },
+    }
+    : DefaultTheme;
+
+  useEffect(() => {
+    Linking.getInitialURL().then(url => {
+      console.log('Initial URL:', url);
+    });
+
+    const sub = Linking.addEventListener('url', ({ url }) => {
+      console.log('Incoming URL:', url);
+    });
+
+    return () => sub.remove();
+  }, []);
+
+
   return (
-    <NavigationContainer ref={navigationRef} linking={linking}>
+    <NavigationContainer ref={navigationRef} linking={linking} theme={navigationTheme}>
       <Stack.Navigator initialRouteName='SplashScreen' screenOptions={{ headerShown: false }}>
         <Stack.Screen name='SplashScreen' component={SplashScreen} />
         <Stack.Screen name='OrgnizationalSwitch' component={OrgnizationalSwitch} options={{ animation: 'fade', statusBarStyle: 'dark' }} />

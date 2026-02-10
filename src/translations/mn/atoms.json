@@ -1,0 +1,10 @@
+{
+  "button": {
+    "submit": "Илгээх",
+    "continue": "Үргэлжлүүлэх",
+    "save": "Хадгалах"
+  },
+  "input": {
+    "searchPlaceholder": "Хайх"
+  }
+}

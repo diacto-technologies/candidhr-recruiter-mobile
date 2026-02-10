@@ -1,0 +1,17 @@
+{
+  "setting": "Тохиргоо",
+  "users": "Хэрэглэгчид",
+  "manageRoles": "Эрх удирдах",
+  "companyInfo": "Компанийн мэдээлэл",
+  "templates": "Загварууд",
+  "privacyPolicy": "Нууцлалын бодлого",
+  "termsConditions": "Үйлчилгээний нөхцөл",
+  "logout": "Гарах",
+  "language": "Хэл",
+  "selectLanguage": "Хэл сонгох",
+  "displayPreference": "Дэлгэцийн тохиргоо",
+  "selectDisplayPreference": "Дэлгэцийн тохиргоо сонгох",
+  "deviceSettings": "Төхөөрөмжийн тохиргоо",
+  "darkMode": "Харанхуй горим",
+  "lightMode": "Гэрэлтэй горим"
+}

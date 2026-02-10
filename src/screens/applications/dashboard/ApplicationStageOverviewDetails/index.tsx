@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useRef, useState } from "react";
+import React, { Fragment, useRef, useState } from "react";
 import {
   View,
   Animated,
@@ -13,29 +13,11 @@ import CustomSafeAreaView from "../../../../components/atoms/customsafeareaview"
 import Header from "../../../../components/organisms/header";
 import { goBack } from "../../../../utils/navigationUtils";
 import { windowWidth } from "../../../../utils/devicelayout";
-import { selectStageGraphOverview, selectStageGraphOverviewLoading } from "../../../../features/dashbaord/selectors";
+import { selectStageGraphOverview} from "../../../../features/dashbaord/selectors";
 import { useAppSelector } from "../../../../hooks/useAppSelector";
-import { useRoute } from "@react-navigation/native";
-import { useAppDispatch } from "../../../../hooks/useAppDispatch";
-import { getApplicationDetailRequestAction } from "../../../../features/applications/actions";
 import { useNetworkConnectivity } from "../../../../hooks/useNetworkConnectivity";
-
-interface TableRow {
-  job_name: string;
-  total_applicants: number;
-  close_date: string;
-  is_closed: boolean;
-
-  stages: {
-    resume_screening: number;
-    assessment_test: number;
-    video_interview: number;
-    hired: number;
-    reject: number;
-    on_hold: number;
-  };
-}
-const TRACK_WIDTH = 320;
+import { tabelTitle, TRACK_WIDTH } from "./applicantionoverview.config";
+import { TableRow } from "./application";
 
 const ApplicationStageOverview = () => {
   const styles = useStyles();
@@ -43,10 +25,8 @@ const ApplicationStageOverview = () => {
   const [contentWidth, setContentWidth] = useState(0);
   const [containerWidth, setContainerWidth] = useState(windowWidth - 40);
   const OverviewData = useAppSelector(selectStageGraphOverview);
-  const OverviewLoading = useAppSelector(selectStageGraphOverviewLoading);
   const data: TableRow[] = OverviewData?.results ?? [];
   const shadowOpacity = useRef(new Animated.Value(0)).current;
-  const route = useRoute();
   
   // Monitor network connectivity
   useNetworkConnectivity();
@@ -175,17 +155,7 @@ const ApplicationStageOverview = () => {
               >
                 <View>
                   <View style={styles.headerRow}>
-                    {[
-                      "Total applicants",
-                      "Resume screening",
-                      "Assessment",
-                      "Video interview",
-                      "Hired",
-                      "Rejected",
-                      "On hold",
-                      "Close date",
-                      "Status",
-                    ].map((title, index) => (
+                    {tabelTitle.map((title, index) => (
                       <Typography
                         key={index}
                         variant="semiBoldTxtxs"

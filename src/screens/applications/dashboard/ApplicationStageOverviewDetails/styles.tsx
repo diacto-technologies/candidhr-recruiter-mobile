@@ -47,8 +47,6 @@ export const useStyles = () => {
       minWidth: MIN_COL_WIDTH,
       marginRight: 16,
     },
-
-    /** FIXED LEFT COLUMN */
     leftFixedWrapper: {
       width: '50%',
       backgroundColor: colors.base.white,

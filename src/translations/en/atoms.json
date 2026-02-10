@@ -1,0 +1,10 @@
+{
+  "button": {
+    "submit": "Submit",
+    "continue": "Continue",
+    "save": "Save"
+  },
+  "input": {
+    "searchPlaceholder": "Search"
+  }
+}

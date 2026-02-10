@@ -38,7 +38,7 @@ const ApplicationStageChart: React.FC = () => {
           <View style={styles.container}>
             <Typography variant="semiBoldTxtlg">Application per stage</Typography>
       
-            <View style={{ marginTop: 16, height: 164, justifyContent: 'flex-end', position: 'relative' }}>
+            <View style={styles.gridLines}>
               {/* Grid lines */}
               <View style={{ position: 'absolute', left: 0, right: 0, top: 0 }}>
                 {[0, 1, 2, 3, 4].map((_, i) => (
@@ -47,7 +47,7 @@ const ApplicationStageChart: React.FC = () => {
               </View>
       
               {/* Bars + Labels */}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end', paddingHorizontal: 20 }}>
+              <View style={styles.barLables}>
                 {[85, 130, 95, 60, 75].map((height, index) => (
                   <View key={index} style={{ alignItems: 'center', gap: 8 }}>
                     <Shimmer width={32} height={height} borderRadius={5} />

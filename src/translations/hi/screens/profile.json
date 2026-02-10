@@ -1,0 +1,17 @@
+{
+  "setting": "सेटिंग",
+  "users": "उपयोगकर्ता",
+  "manageRoles": "भूमिकाएं प्रबंधित करें",
+  "companyInfo": "कंपनी की जानकारी",
+  "templates": "टेम्प्लेट",
+  "privacyPolicy": "गोपनीयता नीति",
+  "termsConditions": "नियम और शर्तें",
+  "logout": "लॉगआउट",
+  "language": "भाषा",
+  "selectLanguage": "भाषा चुनें",
+  "displayPreference": "प्रदर्शन वरीयता",
+  "selectDisplayPreference": "प्रदर्शन वरीयता चुनें",
+  "deviceSettings": "डिवाइस सेटिंग्स",
+  "darkMode": "डार्क मोड",
+  "lightMode": "लाइट मोड"
+}

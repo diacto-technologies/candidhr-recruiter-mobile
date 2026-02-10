@@ -1,11 +1,7 @@
 import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { Header, Button, StatusBar, StatCard, ApplicationStageChart, FeatureConsumptionChart, ApplicationStageOverview, SortingAndFilter, BottomSheet } from '../../../components';
-import { colors } from '../../../theme/colors';
-import { useRNSafeAreaInsets } from '../../../hooks/useRNSafeAreaInsets';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, ScrollView } from 'react-native';
+import { Header, StatCard, ApplicationStageChart, FeatureConsumptionChart, ApplicationStageOverview } from '../../../components';
 import { useStyles } from './styles';
-import { selectRefreshToken, selectToken, tenant } from '../../../features/auth/selectors';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { getProfileRequestAction } from '../../../features/profile/actions';
 import { getAnalyticsRequestAction, getFeatureConsumptionRequestAction, getStageGraphOverviewRequestAction, getStageGraphRequestAction, getWeeklyGraphRequestAction } from '../../../features/dashbaord/actions';
@@ -13,7 +9,6 @@ import { selectAnalyticsData, selectAnalyticsLoaded } from '../../../features/da
 import { selectProfileLoading } from '../../../features/profile';
 import CustomSafeAreaView from '../../../components/atoms/customsafeareaview';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
-// ✅ jobs module (job-names-list API)
 import {
     getJobNameListRequestAction,
     selectJobNameList,
@@ -54,7 +49,6 @@ const Dashboard = () => {
         }
     }, [profileLoaded, analyticsLoaded])
 
-    // ✅ fetch first page when opening search
     useEffect(() => {
         if (openSearch) {
             setPage(1);
@@ -77,6 +71,7 @@ const Dashboard = () => {
         }
         prevOpenSearchRef.current = openSearch;
     }, [openSearch, selectedJob]);
+
     useEffect(() => {
         if (!openSearch) return;
 
@@ -110,19 +105,13 @@ const Dashboard = () => {
         );
     }, [jobNameListNext, jobNameListLoading, page, searchText, dispatch]);
 
-    // ✅ on job select
     const handleSelectJob = useCallback(
         (item: any) => {
             console.log(item, "itemitemitemitemitemitem")
-            // item should be { id, title }
-            dispatch(setSelectedJobAction(item)); // store selected job in jobs slice
-
-            // ✅ Ensure the selected job title is visible in search bar
+            dispatch(setSelectedJobAction(item));
             if (item?.title) {
                 setSearchText(item.title);
             }
-
-            // ✅ refresh dashboard analytics based on selected job
             dispatch(getAnalyticsRequestAction(item.id));
             dispatch(getStageGraphRequestAction(item.id));
             dispatch(getFeatureConsumptionRequestAction(item.id));
@@ -134,14 +123,12 @@ const Dashboard = () => {
         [dispatch]
     );
 
-    // ✅ handle search clear
     const handleSearchClear = useCallback(() => {
         isClearingRef.current = true;
 
         setSearchText('');
         setPage(1);
         setOpenSearch(false);
-        // Clear selected job and reload default analytics
         dispatch(setSelectedJobAction(null));
         dispatch(getAnalyticsRequestAction());
         dispatch(getStageGraphRequestAction());
@@ -155,17 +142,14 @@ const Dashboard = () => {
 
     const handleSearchTextChange = useCallback(
         (text: string) => {
-          if (text === '') {
-            handleSearchClear(); 
-            return;
-          }
-          setSearchText(text);
+            if (text === '') {
+                handleSearchClear();
+                return;
+            }
+            setSearchText(text);
         },
         [handleSearchClear]
-      );
-      
-
-
+    );
     //   );
     return (
         <Fragment>
@@ -185,7 +169,6 @@ const Dashboard = () => {
                     onSearchClear={handleSearchClear}
                     selectedJob={selectedJob}
                 />
-
                 <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false} bounces={false}>
                     <View style={styles.listContainer}>
                         <View style={styles.statGrid}>

@@ -1,0 +1,11 @@
+{
+  "form": {
+    "email": "ईमेल पत्ता",
+    "password": "पासवर्ड",
+    "confirmPassword": "पासवर्डची पुष्टी करा"
+  },
+  "validation": {
+    "required": "हे फील्ड आवश्यक आहे",
+    "invalidEmail": "अवैध ईमेल पत्ता"
+  }
+}

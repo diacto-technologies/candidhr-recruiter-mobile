@@ -48,6 +48,7 @@ import {
 } from './UpdateUserRoleModal';
 import { deleteIcon } from '../../../../assets/svg/deleteicon';
 import { editAvatarIcon } from '../../../../assets/svg/editavatar';
+import { USERS_TABLE_HEADERS } from './usersTable.config';
 interface User {
   id: string;
   name: string;
@@ -290,7 +291,7 @@ const Users = () => {
       </View>
       <View>
         <View style={styles.headerRow}>
-          {['Invited on', 'Role', 'Action'].map((title, idx) => (
+          {USERS_TABLE_HEADERS.map((title, idx) => (
             <Typography
               key={idx}
               variant="semiBoldTxtxs"

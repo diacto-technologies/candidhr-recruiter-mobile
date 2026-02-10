@@ -71,8 +71,6 @@ export default function ApplicantDetails() {
       application?.resume?.certifications
     )
   );
-
-  // Dynamic tabs based on available data - permanent fix
   const tabs = useMemo(() => {
     const baseTabs = ['Profile Info'];
 
@@ -91,7 +89,6 @@ export default function ApplicantDetails() {
     return baseTabs;
   }, [hasAssessments, hasVideoInterview,hasResumeScreening]);
 
-  // Ensure activeTab is valid when tabs change
   useEffect(() => {
     if (!tabs.includes(activeTab)) {
       setActiveTab(tabs[0] || 'Profile Info');

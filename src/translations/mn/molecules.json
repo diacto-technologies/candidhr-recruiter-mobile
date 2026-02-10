@@ -1,0 +1,11 @@
+{
+  "form": {
+    "email": "Имэйл хаяг",
+    "password": "Нууц үг",
+    "confirmPassword": "Нууц үгээ баталгаажуулах"
+  },
+  "validation": {
+    "required": "Энэ талбар шаардлагатай",
+    "invalidEmail": "Буруу имэйл хаяг"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "button": {
+    "submit": "सबमिट करा",
+    "continue": "सुरू ठेवा",
+    "save": "जतन करा"
+  },
+  "input": {
+    "searchPlaceholder": "शोधा"
+  }
+}

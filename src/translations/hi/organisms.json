@@ -1,0 +1,8 @@
+{
+  "header": {
+    "welcome": "स्वागत है, {{name}}"
+  },
+  "footer": {
+    "copyright": "© 2026 आपकी कंपनी"
+  }
+}

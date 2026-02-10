@@ -1,0 +1,17 @@
+{
+  "setting": "Setting",
+  "users": "Users",
+  "manageRoles": "Manage roles",
+  "companyInfo": "Company info",
+  "templates": "Templates",
+  "privacyPolicy": "Privacy policy",
+  "termsConditions": "Terms & conditions",
+  "logout": "Logout",
+  "language": "Language",
+  "selectLanguage": "Select Language",
+  "displayPreference": "Display Preference",
+  "selectDisplayPreference": "Select Display Preference",
+  "deviceSettings": "Device Settings",
+  "darkMode": "Dark Mode",
+  "lightMode": "Light Mode"
+}

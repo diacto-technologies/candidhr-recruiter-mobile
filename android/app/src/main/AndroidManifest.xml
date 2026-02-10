@@ -19,6 +19,8 @@
         android:name=".MainActivity"
         android:label="@string/app_name"
         android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode"
+        android:screenOrientation="fullSensor"
+        android:resizeableActivity="true"
         android:launchMode="singleTask"
         android:windowSoftInputMode="adjustResize"
         android:exported="true">
@@ -26,6 +28,16 @@
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
+       <intent-filter android:autoVerify="true">
+       <action android:name="android.intent.action.VIEW" />
+
+        <category android:name="android.intent.category.DEFAULT" />
+    <category android:name="android.intent.category.BROWSABLE" />
+     <data
+        android:scheme="https"
+        android:host="app.candidhr.ai" 
+        android:pathPrefix="/app/candidate/"/>
+   </intent-filter>
       </activity>
     </application>
 </manifest>
