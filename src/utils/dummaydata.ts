@@ -15,7 +15,17 @@ export const jobFiltersOption = [
     'Close Date',
     'Created By',
 ]
-
+export const assessmentAssignedData = [
+    'Applicant',
+    'Email',
+    'Job Title',
+    'Assessments',
+    'Avg Percentage',
+    'Assigned By',
+    'Assigned At',
+    'Valid Till',
+    'Status'
+]
 export const JobList = [
     {
         id: '1',
@@ -108,3 +118,62 @@ export const menuItems = [
     //     name: 'Video Interview',
     // },
 ]
+export const assessments = [
+    {
+      id: '1',
+      title: 'Coding assessment',
+      createdBy: 'om maurya',
+      questions: 30,
+      duration: '05 min.',
+      status: 'Published',
+    },
+    {
+      id: '2',
+      title: 'Python with fastAPI',
+      createdBy: 'om maurya',
+      questions: 30,
+      duration: '05 min.',
+      status: 'Unpublished',
+    },
+    {
+      id: '3',
+      title: 'Backend test',
+      createdBy: 'om maurya',
+      questions: 30,
+      duration: '05 min.',
+      status: 'Unpublished',
+    },
+    {
+      id: '4',
+      title: 'Creative coding',
+      createdBy: 'om maurya',
+      questions: 30,
+      duration: '05 min.',
+      status: 'Published',
+    },
+  ];
+  export const assignedAssessments = [
+    {
+      id: '1',
+      name: 'Jacob Johns',
+      email: 'jacobjohns345@gmail.com',
+      job: 'Frontend developer',
+      assignedBy: 'Deepak patel',
+      assignedDate: 'Aug 16, 2025',
+      status: 'Shortlisted',
+      statusColor: '#22C55E',
+      profile: 'https://randomuser.me/api/portraits/men/32.jpg',
+    },
+    {
+      id: '2',
+      name: 'Jacob Johns',
+      email: 'jacobjohns345@gmail.com',
+      job: 'Frontend developer',
+      assignedBy: 'Deepak patel',
+      assignedDate: 'Aug 16, 2025',
+      status: 'Rejected',
+      statusColor: '#EF4444',
+      profile: 'https://randomuser.me/api/portraits/men/45.jpg',
+    },
+  ];
+  

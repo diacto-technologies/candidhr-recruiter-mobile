@@ -1,81 +1,36 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { View, FlatList, Pressable, Image } from "react-native";
+import React from "react";
+import { View, FlatList, Pressable} from "react-native";
 import { SvgXml } from "react-native-svg";
-import { Button, IconButton, Typography } from "../../../atoms";
+import { Button, Typography } from "../../../atoms";
 import Divider from "../../../atoms/divider";
-import { navigate } from "../../../../utils/navigationUtils";
 import { useStyles } from "./styles";
 import { Job } from "../../../../features/jobs";
-import { useAppSelector } from "../../../../hooks/useAppSelector";
-import { useAppDispatch } from "../../../../hooks/useAppDispatch";
-import {
-    selectJobs,
-    selectJobsListLoading,
-    selectJobsPagination,
-    selectJobsHasMore,
-    selectPublishedCount,
-    selectUnpublishedCount,
-    selectJobFilters,
-    selectJobsActiveTab,
-    selectIsTabLoading,
-} from "../../../../features/jobs/selectors";
-import { getJobsRequestAction } from "../../../../features/jobs/actions";
 import { formatMonDDYYYY } from "../../../../utils/dateformatter";
 import { eyeVisibleIcon } from "../../../../assets/svg/eyevisible";
 import { userApplicationIcon } from "../../../../assets/svg/userapplicationicon";
-import { horizontalThreedotIcon } from "../../../../assets/svg/horizontalthreedoticon";
 import { colors } from "../../../../theme/colors";
 import SlideAnimatedTab from "../../../molecules/slideanimatedtab";
 import Shimmer from "../../../atoms/shimmer";
-import { setActiveTab } from "../../../../features/jobs/slice";
 import DeviceInfo from "react-native-device-info";
-import { useNetworkConnectivity } from "../../../../hooks/useNetworkConnectivity";
 import BackgroundPattern from "../../../atoms/backgroundpattern";
 import { Illustrations } from "../../../../assets/svg/illustrations";
+import { JobCardListProps } from "./jobcardlist";
 
-const JobCardList = () => {
-    const tabs = ["Published", "Unpublished"];
-    const activeTab = useAppSelector(selectJobsActiveTab);
-
-    const jobsList = useAppSelector(selectJobs);
-    const loading = useAppSelector(selectJobsListLoading);
-    const pagination = useAppSelector(selectJobsPagination);
-    const hasMore = useAppSelector(selectJobsHasMore);
-    const publishedCount = useAppSelector(selectPublishedCount);
-    const unpublishedCount = useAppSelector(selectUnpublishedCount);
-    const jobFilters = useAppSelector(selectJobFilters);
-    const isTabLoading = useAppSelector(selectIsTabLoading);
+const JobCardList: React.FC<JobCardListProps> = ({
+    tabs,
+    activeTab,
+    jobsList,
+    loading,
+    isTabLoading,
+    publishedCount,
+    unpublishedCount,
+    isConnected,
+    onChangeTab,
+    onLoadMore,
+    onJobPress,
+}) => {
     const isTablet = DeviceInfo.isTablet();
-    const isConnected = useNetworkConnectivity();
-
     const styles = useStyles();
-    const dispatch = useAppDispatch();
-
-    useEffect(() => {
-        dispatch(
-            getJobsRequestAction({
-                page: 1,
-                limit: pagination.limit,
-                published: activeTab === 'Published',
-                append: false,
-                ...jobFilters
-            })
-        );
-    }, [activeTab]);
-
-    const handleLoadMore = useCallback(() => {
-        if (!isConnected || loading || !hasMore) return;
-
-        dispatch(
-            getJobsRequestAction({
-                page: pagination.page + 1,
-                limit: pagination.limit,
-                published: activeTab === "Published",
-                append: true,
-                ...jobFilters,
-            })
-        );
-    }, [isConnected, loading, hasMore, pagination.page, pagination.limit, activeTab, jobFilters]);
 
 
     const renderShimmerCard = () => (
@@ -99,28 +54,26 @@ const JobCardList = () => {
             </View>
         </View>
     );
-    if (!isConnected && jobsList.length === 0) {
-        return (
-            <>
-                <View style={styles.tabContainer}>
-                    <SlideAnimatedTab
-                        tabs={tabs}
-                        activeTab={activeTab}
-                        onChangeTab={(label) =>
-                            dispatch(setActiveTab(label === "Published" ? "Published" : "Unpublished"))
-                        }
-                        countShow={true}
-                    />
-                    <View style={styles.bottomBorder} />
-                </View>
-                <BackgroundPattern>
-                    <View style={{ alignItems: "center", marginTop: 60, paddingHorizontal: 16 }}>
-                        <Typography variant="semiBoldTxtmd">No results found</Typography>
-                    </View>
-                </BackgroundPattern>
-            </>
-        );
-    }
+    // if (!isConnected && jobsList.length === 0) {
+    //     return (
+    //         <>
+    //             <View style={styles.tabContainer}>
+    //                 <SlideAnimatedTab
+    //                     tabs={tabs}
+    //                     activeTab={activeTab}
+    //                     onChangeTab={onChangeTab}
+    //                     countShow={true}
+    //                 />
+    //                 <View style={styles.bottomBorder} />
+    //             </View>
+    //             <BackgroundPattern>
+    //                 <View style={{ alignItems: "center", marginTop: 60, paddingHorizontal: 16 }}>
+    //                     <Typography variant="semiBoldTxtmd">No results found</Typography>
+    //                 </View>
+    //             </BackgroundPattern>
+    //         </>
+    //     );
+    // }
     if (isTabLoading || (loading && jobsList.length === 0)) {
         return (
             <>
@@ -129,10 +82,7 @@ const JobCardList = () => {
                     <SlideAnimatedTab
                         tabs={tabs}
                         activeTab={activeTab}
-                        onChangeTab={(label) => {
-                            dispatch(setActiveTab(label === "Published" ? "Published" : "Unpublished"))
-                        }
-                        }
+                        onChangeTab={onChangeTab}
                         countShow={true}
                     />
                     <View style={styles.bottomBorder} />
@@ -157,7 +107,7 @@ const JobCardList = () => {
 
     const renderItem = ({ item }: { item: Job }) => (
         <View style={styles.card}>
-            <Pressable onPress={() => navigate("JobDetailScreen", { jobId: item.id })}>
+            <Pressable onPress={() => onJobPress(item.id)}>
                 <View style={styles.rowBetween}>
                     <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between' }}>
                         <Typography variant="semiBoldTxtmd">{item.title ?? ""}</Typography>
@@ -217,12 +167,9 @@ const JobCardList = () => {
                         Published: publishedCount,
                         Unpublished: unpublishedCount,
                     }}
-
                     tabs={tabs}
                     activeTab={activeTab}
-                    onChangeTab={(label) =>
-                        dispatch(setActiveTab(label === "Published" ? "Published" : "Unpublished"))
-                    }
+                    onChangeTab={onChangeTab}
                 />
                 <View style={styles.bottomBorder} />
             </View>
@@ -271,7 +218,7 @@ const JobCardList = () => {
                 maxToRenderPerBatch={10}
                 windowSize={10}
                 showsVerticalScrollIndicator={false}
-                onEndReached={handleLoadMore}
+                onEndReached={onLoadMore}
                 onEndReachedThreshold={0.5}
                 numColumns={isTablet ? 2 : 1}
 

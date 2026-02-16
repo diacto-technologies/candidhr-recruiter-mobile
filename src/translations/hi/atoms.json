@@ -1,0 +1,10 @@
+{
+  "button": {
+    "submit": "सबमिट करें",
+    "continue": "जारी रखें",
+    "save": "सहेजें"
+  },
+  "input": {
+    "searchPlaceholder": "खोजें"
+  }
+}

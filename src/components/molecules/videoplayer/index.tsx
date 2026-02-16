@@ -2,16 +2,18 @@ import React, { useRef, useState, useEffect } from "react";
 import {
   View,
   TouchableOpacity,
-  StyleSheet,
   ActivityIndicator,
   Text,
+  Dimensions,
+  Modal,
+  Platform,
 } from "react-native";
 import Video from "react-native-video";
 import Slider from "@react-native-community/slider";
 import Orientation from "react-native-orientation-locker";
 import { SvgXml } from "react-native-svg";
 import { useNavigation } from "@react-navigation/native";
-
+import { SafeAreaView } from "react-native-safe-area-context";
 import { videoButton } from "../../../assets/svg/videobutton";
 import { sounIcon } from "../../../assets/svg/sound";
 import { pauseVideoIcon } from "../../../assets/svg/pausevideo";
@@ -19,6 +21,7 @@ import { expandIcon } from "../../../assets/svg/expand";
 import { playVideoIcon } from "../../../assets/svg/playvideoIcon";
 import { muteVolumeIcon } from "../../../assets/svg/mutevoulme";
 import { colors } from "../../../theme/colors";
+import { styles } from "./styles";
 
 interface VideoPlayerBoxProps {
   source: string;
@@ -26,6 +29,8 @@ interface VideoPlayerBoxProps {
     currentTime: number;
     playableDuration: number;
   }) => void;
+  fullscreen?: boolean;
+  resizeMode?: "contain" | "cover" | "stretch";
 }
 
 const formatTime = (seconds?: number) => {
@@ -40,58 +45,52 @@ const formatTime = (seconds?: number) => {
 export default function VideoPlayerBox({
   source,
   onProgress,
+  fullscreen: externalFullscreen,
+  resizeMode = "contain",
 }: VideoPlayerBoxProps) {
   const videoRef = useRef<React.ElementRef<typeof Video>>(null);
   const navigation = useNavigation<any>();
+  const { width, height } = Dimensions.get('window');
+  const isLandscape = width > height;
 
   const [isPaused, setIsPaused] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
-  const [fullscreen, setFullscreen] = useState(false);
+  const [internalFullscreen, setInternalFullscreen] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const hasSource = Boolean(source);
+  const fullscreen = externalFullscreen !== undefined ? externalFullscreen : internalFullscreen;
 
   const togglePlayPause = () => setIsPaused((prev) => !prev);
   const toggleMute = () => setIsMuted((prev) => !prev);
 
   const enterFullscreen = () => {
+    if (externalFullscreen === undefined) {
+      setInternalFullscreen(true);
+    }
     Orientation.lockToLandscape();
-    navigation.setOptions({ statusBarHidden: true });
-    setFullscreen(true);
-    videoRef.current?.presentFullscreenPlayer();
+    // Status bar will be handled by Modal's presentationStyle on iOS
+    // For Android, we use statusBarTranslucent prop on Modal
   };
 
   const exitFullscreen = () => {
+    if (externalFullscreen === undefined) {
+      setInternalFullscreen(false);
+    }
     Orientation.unlockAllOrientations();
-    navigation.setOptions({ statusBarHidden: false });
-    setFullscreen(false);
-    videoRef.current?.dismissFullscreenPlayer();
   };
 
   const toggleFullscreen = () => {
     fullscreen ? exitFullscreen() : enterFullscreen();
   };
 
-  const onFullscreenPlayerWillPresent = () => {
-    Orientation.lockToLandscape();
-    navigation.setOptions({ statusBarHidden: true });
-    setFullscreen(true);
-  };
-
-  const onFullscreenPlayerWillDismiss = () => {
-    Orientation.unlockAllOrientations();
-    navigation.setOptions({ statusBarHidden: false });
-    setFullscreen(false);
-  };
-
   useEffect(() => {
     return () => {
       Orientation.unlockAllOrientations();
-      navigation.setOptions({ statusBarHidden: false });
     };
-  }, [navigation]);
+  }, []);
 
   const onLoad = (data: any) => {
     setDuration(data.duration || 0);
@@ -110,7 +109,7 @@ export default function VideoPlayerBox({
     videoRef.current?.seek(0);
   };
 
-  return (
+  const videoContent = (
     <View style={[styles.container, fullscreen && styles.fullscreen]}>
       {!hasSource && (
         <View style={styles.noVideoBox}>
@@ -125,18 +124,20 @@ export default function VideoPlayerBox({
           <Video
             ref={videoRef}
             source={{ uri: source }}
-            style={styles.video}
+            style={[styles.video, fullscreen && styles.videoFullscreen]}
             paused={isPaused}
             muted={isMuted}
-            resizeMode="contain"
-            fullscreen={fullscreen}
+            resizeMode={resizeMode}
+            fullscreen={false}
+            fullscreenAutorotate={true}
             fullscreenOrientation="landscape"
             onLoad={onLoad}
             onProgress={handleProgress}
             onEnd={onEnd}
-            onFullscreenPlayerWillPresent={onFullscreenPlayerWillPresent}
-            onFullscreenPlayerWillDismiss={onFullscreenPlayerWillDismiss}
             progressUpdateInterval={500}
+            ignoreSilentSwitch="ignore"
+            playInBackground={false}
+            playWhenInactive={false}
           />
 
           {loading && (
@@ -153,8 +154,8 @@ export default function VideoPlayerBox({
           )}
 
           {!loading && (
-            <View style={styles.controls}>
-              <TouchableOpacity onPress={togglePlayPause}>
+            <View style={[styles.controls, fullscreen && styles.controlsFullscreen]}>
+              <TouchableOpacity onPress={togglePlayPause} style={styles.controlButton}>
                 {isPaused ? (
                   <SvgXml xml={pauseVideoIcon} />
                 ) : (
@@ -162,7 +163,7 @@ export default function VideoPlayerBox({
                 )}
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={toggleMute}>
+              <TouchableOpacity onPress={toggleMute} style={styles.controlButton}>
                 {isMuted ? (
                   <SvgXml xml={muteVolumeIcon} />
                 ) : (
@@ -170,12 +171,12 @@ export default function VideoPlayerBox({
                 )}
               </TouchableOpacity>
 
-              <Text style={styles.timeText}>
+              <Text style={[styles.timeText, fullscreen && styles.timeTextFullscreen]}>
                 {formatTime(currentTime)} / {formatTime(duration)}
               </Text>
 
               <Slider
-                style={{ flex: 1, marginHorizontal: 8 }}
+                style={styles.slider}
                 minimumValue={0}
                 maximumValue={duration}
                 value={currentTime}
@@ -187,7 +188,7 @@ export default function VideoPlayerBox({
                 }
               />
 
-              <TouchableOpacity onPress={toggleFullscreen}>
+              <TouchableOpacity onPress={toggleFullscreen} style={styles.controlButton}>
                 <SvgXml xml={expandIcon} />
               </TouchableOpacity>
             </View>
@@ -196,69 +197,30 @@ export default function VideoPlayerBox({
       )}
     </View>
   );
-}
 
-const styles = StyleSheet.create({
-  container: {
-    width: "100%",
-    height: 180,
-    borderRadius: 14,
-    overflow: "hidden",
-    backgroundColor: "#000",
-  },
-  fullscreen: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: "100%",
-    width: "100%",
-    zIndex: 9999,
-    borderRadius: 0,
-  },
-  video: {
-    width: "100%",
-    height: "100%",
-  },
-  noVideoBox: {
-    width: "100%",
-    height: "100%",
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 20,
-  },
-  noVideoText: {
-    color: "#444",
-    fontSize: 14,
-    textAlign: "center",
-  },
-  bigPlayButton: {
-    position: "absolute",
-    alignSelf: "center",
-    top: "40%",
-  },
-  loader: {
-    position: "absolute",
-    top: "45%",
-    left: "45%",
-  },
-  controls: {
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.45)",
-  },
-  timeText: {
-    color: "#fff",
-    fontSize: 12,
-    marginHorizontal: 6,
-    minWidth: 80,
-    textAlign: "center",
-  },
-});
+  return (
+    <>
+      {!fullscreen && videoContent}
+      <Modal
+        visible={fullscreen}
+        transparent={false}
+        animationType="fade"
+        supportedOrientations={['landscape', 'landscape-left', 'landscape-right']}
+        onRequestClose={exitFullscreen}
+        statusBarTranslucent={Platform.OS === 'android'}
+        presentationStyle={Platform.OS === 'ios' ? 'fullScreen' : undefined}
+      >
+        <View style={styles.modalContent}>
+          <SafeAreaView 
+            edges={Platform.OS === 'ios' ? ['bottom'] : ['left', 'right', 'bottom']} 
+            style={styles.safeAreaContainer}
+          >
+            <View style={styles.fullscreenWrapper}>
+              {videoContent}
+            </View>
+          </SafeAreaView>
+        </View>
+      </Modal>
+    </>
+  );
+}

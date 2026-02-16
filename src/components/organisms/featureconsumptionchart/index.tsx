@@ -1,24 +1,19 @@
-// FeatureConsumptionChart.tsx
 import React, { Fragment, useState } from 'react';
 import { View } from 'react-native';
 import { BarChart } from 'react-native-gifted-charts';
 import { colors } from '../../../theme/colors';
 import Typography from '../../atoms/typography';
 import { useStyles } from './styles';
-import { useAppSelector } from '../../../hooks/useAppSelector';
-import {
-    selectFeatureConsumption,
-    selectFeatureConsumptionLoading,
-} from '../../../features/dashbaord/selectors';
 import { screenWidth } from '../../../utils/devicelayout';
 import { buildBarData } from './helpers';
 import Shimmer from '../../atoms/shimmer';
-import { BarItem } from './featureconsumptionchart';
+import { BarItem, FeatureConsumptionChartProps, featureData as FeatureData } from './featureconsumptionchart';
 
-const FeatureConsumptionChart: React.FC = () => {
+const FeatureConsumptionChart: React.FC<FeatureConsumptionChartProps> = ({
+    featureData,
+    loading,
+}) => {
     const styles = useStyles();
-    const featureData = useAppSelector(selectFeatureConsumption);
-    const loading = useAppSelector(selectFeatureConsumptionLoading);
     const [selectedIndex, setSelectedIndex] = useState<number>(-1);
 
    const barData = buildBarData(featureData, selectedIndex);

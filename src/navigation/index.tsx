@@ -1,29 +1,60 @@
-import { View, Text } from 'react-native'
-import React, { FC } from 'react'
-import { NavigationContainer } from '@react-navigation/native'
+import { View, Text, Linking } from 'react-native'
+import React, { FC, useEffect } from 'react'
+import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { navigationRef } from '../utils/navigationUtils'
 import LoginScreen from '../screens/auth/loginscreen'
 import SplashScreen from '../screens/auth/splashscreen'
 import UserBottomTab from './bottomtabs'
-import JobDetailScreen from '../screens/applications/jobs/jobdetailscreen'
-import ApplicantDetails from '../screens/applications/applicant/applicantDetails'
+import ApplicantDetails from '../screens/applications/applicantdetails'
 import GetStartedScreen from '../screens/applications/onboarding/getstartedscreen'
 import ForgetPasswordScreen from '../screens/auth/forgetpassword'
 import ContactUsScreen from '../screens/auth/contactus'
 import CheckMailScreen from '../screens/auth/checkmail'
 import CreateNewPasswordScreen from '../screens/auth/createnewpassword'
-import ApplicationOverviewDetails from '../screens/applications/dashboard/ApplicationStageOverviewDetails'
 import AccountInfo from '../screens/applications/profile/accountinfo'
 import CompanyInfo from '../screens/applications/profile/companyinfo'
 import Users from '../screens/applications/profile/users'
 import linking from './linking'
 import OrgnizationalSwitch from '../screens/auth/orgnizationalswitch'
+import { useTheme } from '../hooks/useTheme'
+import JobDetailScreen from '../screens/applications/jobdetails'
+import ApplicationStageOverview from '../components/organisms/applicationstageoverview'
+import ApplicationOverviewDetails from '../screens/applications/applicationstageoverviewdetails'
+import AssessmentScreen from '../screens/applications/services/assessment'
+import VideoInterviewScreen from '../screens/applications/services/videoInterview'
 
-const Stack= createNativeStackNavigator()
-const Navigation:FC = () => {
+const Stack = createNativeStackNavigator()
+const Navigation: FC = () => {
+  const theme = useTheme();
+  const isDarkMode = theme === 'dark';
+
+  const navigationTheme = isDarkMode
+    ? {
+      ...DarkTheme,
+      colors: {
+        ...DarkTheme.colors,
+        background: '#303030',
+        card: '#303030',
+      },
+    }
+    : DefaultTheme;
+
+  useEffect(() => {
+    Linking.getInitialURL().then(url => {
+      console.log('Initial URL:', url);
+    });
+
+    const sub = Linking.addEventListener('url', ({ url }) => {
+      console.log('Incoming URL:', url);
+    });
+
+    return () => sub.remove();
+  }, []);
+
+
   return (
-    <NavigationContainer ref={navigationRef} linking={linking}>
+    <NavigationContainer ref={navigationRef} linking={linking} theme={navigationTheme}>
       <Stack.Navigator initialRouteName='SplashScreen' screenOptions={{ headerShown: false }}>
         <Stack.Screen name='SplashScreen' component={SplashScreen} />
         <Stack.Screen name='OrgnizationalSwitch' component={OrgnizationalSwitch} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
@@ -45,6 +76,8 @@ const Navigation:FC = () => {
         <Stack.Screen name='AccountInfo' component={AccountInfo} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
         <Stack.Screen name='CompanyInfo' component={CompanyInfo} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
         <Stack.Screen name='Users' component={Users} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
+        <Stack.Screen name='AssessmentScreen' component={AssessmentScreen} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
+        <Stack.Screen name='VideoInterviewScreen' component={VideoInterviewScreen} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
       </Stack.Navigator>
     </NavigationContainer>
   )

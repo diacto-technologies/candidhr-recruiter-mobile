@@ -1,0 +1,8 @@
+{
+  "header": {
+    "welcome": "Welcome, {{name}}"
+  },
+  "footer": {
+    "copyright": "© 2026 Your Company"
+  }
+}

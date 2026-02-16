@@ -3,7 +3,6 @@ import { colors } from '../../../theme/colors';
 import { useRNSafeAreaInsets } from '../../../hooks/useRNSafeAreaInsets';
 import DeviceInfo from "react-native-device-info";
 
-
 export const useStyles = () => {
     const { insetsBottom, insetsTop } = useRNSafeAreaInsets();
     const { width } = useWindowDimensions();

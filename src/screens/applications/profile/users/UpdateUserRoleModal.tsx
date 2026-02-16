@@ -13,6 +13,7 @@ import { useStyles } from './styles';
 import { Button, CommonDropdown } from '../../../../components';
 import { closeIcon } from '../../../../assets/svg/closeicon';
 import { SvgXml } from 'react-native-svg';
+import { DEFAULT_ROLE_OPTIONS } from './usersTable.config';
 
 export interface UpdateUserRoleValues {
   userId: string;
@@ -33,8 +34,6 @@ interface UpdateUserRoleModalProps {
   onSubmit: (values: UpdateUserRoleValues) => void;
   roleOptions?: string[];
 }
-
-const DEFAULT_ROLE_OPTIONS = ['Admin', 'Recruiter', 'Hiring manager'];
 
 export const UpdateUserRoleModal: React.FC<UpdateUserRoleModalProps> = ({
   visible,

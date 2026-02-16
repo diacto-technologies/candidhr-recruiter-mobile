@@ -1,0 +1,11 @@
+{
+  "form": {
+    "email": "Email Address",
+    "password": "Password",
+    "confirmPassword": "Confirm Password"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidEmail": "Invalid email address"
+  }
+}

@@ -48,6 +48,8 @@ import {
 } from './UpdateUserRoleModal';
 import { deleteIcon } from '../../../../assets/svg/deleteicon';
 import { editAvatarIcon } from '../../../../assets/svg/editavatar';
+import { USERS_TABLE_HEADERS } from './usersTable.config';
+import { selectProfile } from '../../../../features/profile/selectors';
 interface User {
   id: string;
   name: string;
@@ -87,6 +89,7 @@ const Users = () => {
   const rowTriggerRefs = useRef<Record<string, React.ComponentRef<typeof View> | null>>({});
   const shadowOpacity = useRef(new Animated.Value(0)).current;
   const fetchingNextRef = useRef(false);
+  const userPermission = useAppSelector(selectProfile);
 
   useEffect(() => {
     dispatch(getUsersRequestAction(1));
@@ -290,7 +293,7 @@ const Users = () => {
       </View>
       <View>
         <View style={styles.headerRow}>
-          {['Invited on', 'Role', 'Action'].map((title, idx) => (
+          {USERS_TABLE_HEADERS.map((title, idx) => (
             <Typography
               key={idx}
               variant="semiBoldTxtxs"
@@ -339,7 +342,6 @@ const Users = () => {
           {item.role}
         </Typography>
 
-        {/* ACTION COLUMN - ref used to measure position for Modal dropdown */}
         <View
           ref={(r) => {
             rowTriggerRefs.current[item.id] = r;
@@ -347,14 +349,16 @@ const Users = () => {
           style={styles.actionCell}
           collapsable={false}
         >
-          <Pressable onPress={() => setActiveMenuId(isOpen ? null : item.id)}>
-            <SvgXml
-              xml={horizontalThreedotIcon}
-              width={20}
-              height={20}
-              style={{ transform: [{ rotate: '90deg' }] }}
-            />
-          </Pressable>
+          {userPermission?.is_admin &&
+            <Pressable onPress={() => setActiveMenuId(isOpen ? null : item.id)}>
+              <SvgXml
+                xml={horizontalThreedotIcon}
+                width={20}
+                height={20}
+                style={{ transform: [{ rotate: '90deg' }] }}
+              />
+            </Pressable>
+          }
         </View>
       </View>
     );
@@ -454,7 +458,11 @@ const Users = () => {
                 >
                   <View>
                     <View style={styles.headerRow}>
-                      {['Invited on', 'Role', 'Action'].map((title, index) => (
+                      {[
+                        'Invited on',
+                        'Role',
+                        ...(userPermission?.is_admin ? ['Action'] : []),
+                      ].map((title, index) => (
                         <Typography
                           key={index}
                           variant="semiBoldTxtxs"
@@ -496,9 +504,11 @@ const Users = () => {
 
       {/* Add Users Button */}
       <View style={[styles.buttonContainer, { paddingBottom: insets.insetsBottom + 16 }]}>
-        <Button onPress={handleAddUsers} style={styles.addButton}>
-          Add users
-        </Button>
+        {userPermission?.is_admin &&
+          <Button onPress={handleAddUsers} style={styles.addButton}>
+            Add users
+          </Button>
+        }
       </View>
 
       <AddUserModal visible={addUserOpen} onClose={closeAddUser} onSubmit={submitAddUser} />
@@ -528,10 +538,10 @@ const Users = () => {
                 {
                   position: 'absolute',
                   left: dropdownLayout.x + dropdownLayout.width - 155,
-                  top: dropdownLayout.y + dropdownLayout.height-5,
+                  top: dropdownLayout.y + dropdownLayout.height - 5,
                 },
               ]}
-              onPress={() => {}}
+              onPress={() => { }}
             >
               {(() => {
                 const item = filteredUsers.find((u) => u.id === activeMenuId);

@@ -86,9 +86,12 @@ const ApplicantScreen = () => {
     ]
   );
   
-  useEffect(() => {
-    dispatch(getApplicationsRequestAction(getApiParams(1)));
-  }, [getApiParams]);
+  useFocusEffect(
+    useCallback(() => {
+      dispatch(getApplicationsRequestAction(getApiParams(1)));
+    }, [dispatch, getApiParams])
+  );
+  
   
 
   // // Refetch when filters or sort change (permanent fix - no setTimeout)

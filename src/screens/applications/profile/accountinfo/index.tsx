@@ -31,12 +31,6 @@ import { editAvatarIcon } from '../../../../assets/svg/editavatar';
 import { SetProfilePhotoModal } from './SetProfilePhotoModal';
 import { useStyles } from './styles';
 
-
-interface LocationOption {
-  label: string;
-  value: string;
-}
-
 const AccountInfo = () => {
   const dispatch = useAppDispatch();
   const profile = useAppSelector(selectProfile);
@@ -53,20 +47,10 @@ const AccountInfo = () => {
 
   // Selected image state for avatar upload
   const [selectedImage, setSelectedImage] = useState<Asset | null>(null);
-  
+
   // Local loading state for image upload
   const [isUploading, setIsUploading] = useState(false);
   const [showSetProfileModal, setShowSetProfileModal] = useState(false);
-
-  // Location options (can be fetched from API)
-  const locationOptions: LocationOption[] = [
-    { label: 'Pune, Maharashtra', value: 'pune_maharashtra' },
-    { label: 'Mumbai, Maharashtra', value: 'mumbai_maharashtra' },
-    { label: 'Bangalore, Karnataka', value: 'bangalore_karnataka' },
-    { label: 'Delhi, NCR', value: 'delhi_ncr' },
-    { label: 'Chennai, Tamil Nadu', value: 'chennai_tamilnadu' },
-    { label: 'Hyderabad, Telangana', value: 'hyderabad_telangana' },
-  ];
 
   // Initialize form with profile data
   useEffect(() => {
@@ -88,16 +72,16 @@ const AccountInfo = () => {
     // Use FormData when there's an image to upload - call API directly to avoid Redux serialization issue
     if (selectedImage?.uri) {
       const formData = new FormData();
-      
+
       // Append text fields - only append if they have values
       if (fullName?.trim()) {
         formData.append('name', fullName.trim());
       }
-      
+
       if (location?.trim()) {
         formData.append('country', location.trim());
       }
-      
+
       if (phoneNumber && phoneNumber.trim()) {
         const parsedContact = parseInt(phoneNumber.replace(/\s/g, ''), 10);
         if (!isNaN(parsedContact)) {
@@ -106,10 +90,10 @@ const AccountInfo = () => {
       }
 
       // Append the image file
-      const imageUri = Platform.OS === 'ios' 
-        ? selectedImage.uri?.replace('file://', '') 
+      const imageUri = Platform.OS === 'ios'
+        ? selectedImage.uri?.replace('file://', '')
         : selectedImage.uri;
-        
+
       formData.append('profile_pic', {
         uri: imageUri,
         name: selectedImage.fileName || `profile_${Date.now()}.jpg`,
@@ -235,34 +219,18 @@ const AccountInfo = () => {
           >
             {/* Avatar Section */}
             <View style={styles.avatarSection}>
-               <View style={styles.avatarContainer}>
-                {/* {profile?.profile_pic ? (
-                  <Image
-                    source={{ uri: profile.profile_pic }}
-                    style={styles.avatar}
-                  />
-                ) : (
-                  <View style={styles.avatarPlaceholder}>
-                    <Typography variant="semiBoldTxtxl" color={colors.gray[700]}>
-                      {fullName?.charAt(0)?.toUpperCase() || 'U'}
-                    </Typography>
-                  </View>
-                )}
+              <View style={styles.avatarContainer}>
+                <ProfileAvatar
+                  imageUrl={selectedImage?.uri || profile?.profile_pic}
+                  name={profile?.name}
+                  size={96}
+                  fontVariant="semiBoldDxs"
+                  outerSize={16}
+                />
                 <Pressable style={styles.editAvatarButton} onPress={handleEditAvatar}>
-                  <SvgXml xml={editAvatarIcon} width={32} height={32} />
-                </Pressable> */}
-             
-              <ProfileAvatar
-                imageUrl={selectedImage?.uri || profile?.profile_pic}
-                name={profile?.name}
-                size={96}
-                fontVariant="semiBoldDxs"
-                outerSize={16}
-              />
-               <Pressable style={styles.editAvatarButton} onPress={handleEditAvatar}>
                   <SvgXml xml={editAvatarIcon} width={20} height={20} />
                 </Pressable>
-                </View> 
+              </View>
             </View>
 
             {/* Form Fields */}
@@ -321,35 +289,14 @@ const AccountInfo = () => {
                 <Typography variant="mediumTxtsm" color={colors.gray[700]} style={styles.label}>
                   Location
                 </Typography>
-                {/* <View style={styles.dropdownContainer}> */}
-                {/* <Dropdown
-                    style={styles.dropdown}
-                    placeholderStyle={styles.placeholderStyle}
-                    selectedTextStyle={styles.selectedTextStyle}
-                    data={locationOptions}
-                    maxHeight={300}
-                    labelField="label"
-                    valueField="value"
-                    placeholder="Select location"
-                    value={locationOptions.find(opt => opt.label === location)?.value}
-                    onChange={(item) => {
-                      setLocation(item.label);
-                    }}
-                    renderRightIcon={() => (
-                      <SvgXml xml={chevronDownIcon} width={20} height={20} />
-                    )}
-                  /> */}
                 <TextField
                   value={location}
                   onChangeText={setLocation}
                   placeholder="Enter your location"
                   keyboardType="default"
                   autoCapitalize="none"
-                  //editable={false}
-                  //style={styles.disabledField}
                   size="Medium"
                 />
-                {/* </View> */}
               </View>
 
               {/* Role */}
@@ -363,12 +310,9 @@ const AccountInfo = () => {
                   size="Medium"
                   editable={false}
                   disable={true}
-                  //style={styles.disabledField}
                 />
               </View>
             </View>
-
-            {/* <View style={styles.bottomSpacer} /> */}
             <View style={styles.buttonContainer}>
               <Button
                 onPress={handleSave}

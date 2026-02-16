@@ -22,6 +22,23 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>com.apple.developer.associated-domains</key>
+    <array>
+    <string>applinks:app.candidhr.ai</string>
+   </array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>candidhr</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>candidhr</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSApplicationQueriesSchemes</key>
@@ -39,11 +56,11 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-     <string>We need camera access to capture and upload images.</string>
-    <key>NSPhotoLibraryUsageDescription</key>
-    <string>We need access to your photo library to upload and manage images.</string>
+	<string>We need camera access to capture and upload images.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We need access to your photo library to upload and manage images.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UIAppFonts</key>

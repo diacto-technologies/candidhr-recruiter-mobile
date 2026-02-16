@@ -1,89 +1,111 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 
-export const useStyles = () => {
-    return StyleSheet.create({
-        container: {
-            width: "100%",
-            height: 180,
-            borderRadius: 12,
-            overflow: "hidden",
-        },
-        video: {
-            width: "100%",
-            height: "100%",
-        },
-
-        /* CENTER BIG PLAY BUTTON */
-        playButton: {
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: [{ translateX: -60 }, { translateY: -60 }],
-            zIndex: 20,
-        },
-
-        playCircle: {
-            width: 10,
-            height: 10,
-            borderRadius: 60,
-            backgroundColor: "rgba(255,255,255,0.45)",
-            justifyContent: "center",
-            alignItems: "center",
-        },
-
-        /* BOTTOM LEFT CONTROL ICONS */
-        bottomLeft: {
-            position: "absolute",
-            left: 20,
-            bottom: 20,
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 28,
-            zIndex: 20,
-        },
-
-        /* BOTTOM RIGHT FULLSCREEN ICON */
-        bottomRight: {
-            position: "absolute",
-            right: 20,
-            bottom: 20,
-            zIndex: 20,
-        },
-        seekBar: {
-            width: "98%",
-            position: "absolute",
-            bottom: 5,
-            left: 5,
-        },
-
-        controlBar: {
-            position: "absolute",
-            bottom: 40,
-            left: 15,
-            right: 15,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-        },
-        volumeSliderContainer: {
-            position: "absolute",
-            left: 130,
-            bottom: -30,
-            width:50,
-            height:170,
-            borderRadius: 10,
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 999,
-        },
-
-        rotateWrapper: {
-            transform: [{ rotate: "360deg" }],   // flip slider vertically
-        },
-
-        verticalSlider: {
-            width: 150,      // becomes height because of rotation
-            height: 40,
-        },
-    });
-};
+export const styles = StyleSheet.create({
+    modalContent: {
+      flex: 1,
+      backgroundColor: "#000",
+    },
+    safeAreaContainer: {
+      flex: 1,
+      backgroundColor: "#000",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    fullscreenWrapper: {
+      flex: 1,
+      width: "100%",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    container: {
+      width: "100%",
+      aspectRatio: 16 / 9,
+      borderRadius: 14,
+      overflow: "hidden",
+      backgroundColor: "#000",
+      alignSelf: "center",
+    },
+    fullscreen: {
+      flex: 1,
+      width: "100%",
+      height: "100%",
+      borderRadius: 0,
+      aspectRatio: undefined,
+      alignSelf: "stretch",
+    },
+    video: {
+      width: "100%",
+      height: "100%",
+    },
+    videoFullscreen: {
+      width: "100%",
+      height: "100%",
+    },
+    noVideoBox: {
+      width: "100%",
+      height: "100%",
+      backgroundColor: "#fff",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 20,
+    },
+    noVideoText: {
+      color: "#444",
+      fontSize: 14,
+      textAlign: "center",
+    },
+    bigPlayButton: {
+      position: "absolute",
+      alignSelf: "center",
+      top: "40%",
+    },
+    loader: {
+      position: "absolute",
+      top: "45%",
+      left: "45%",
+    },
+    controls: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      width: "100%",
+      paddingHorizontal: 10,
+      //paddingVertical: 8,
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "rgba(0,0,0,0.45)",
+      zIndex: 1000,
+      elevation: 5,
+    },
+    controlsFullscreen: {
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: "100%",
+      paddingHorizontal: Platform.OS === 'ios' ? 20 : 20,
+      //paddingVertical: Platform.OS === 'ios' ? 16 : 16,
+      //paddingBottom: Platform.OS === 'ios' ? 16: 16,
+      backgroundColor: "rgba(0,0,0,0.7)",
+      marginHorizontal: 0,
+    },
+    controlButton: {
+      padding: 4,
+    },
+    slider: {
+      flex: 1,
+      marginHorizontal: 8,
+      height: 40,
+    },
+    timeText: {
+      color: "#fff",
+      fontSize: 12,
+      marginHorizontal: 6,
+      minWidth: 80,
+      textAlign: "center",
+    },
+    timeTextFullscreen: {
+      fontSize: Platform.OS === 'ios' ? 14 : 14,
+      minWidth: 100,
+    },
+  });

@@ -20,3 +20,8 @@ export interface featureData {
         completed_count: number;
     };
 }
+
+export interface FeatureConsumptionChartProps {
+    featureData: FeatureData | null;
+    loading: boolean;
+}

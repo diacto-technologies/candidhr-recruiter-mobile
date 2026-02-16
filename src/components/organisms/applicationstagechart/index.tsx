@@ -1,44 +1,33 @@
-// ApplicationStageChart.tsx
 import React, { Fragment, useState } from 'react';
-import { View } from 'react-native'; // Removed unused Text, StyleSheet, ViewStyle, TextStyle
+import { View } from 'react-native';
 import { BarChart } from 'react-native-gifted-charts';
 import { colors } from '../../../theme/colors';
 import { screenWidth } from '../../../utils/devicelayout';
 import Typography from '../../atoms/typography';
 import { useStyles } from './styles';
-import { useAppSelector } from '../../../hooks/useAppSelector';
-import {selectApplicantStageGraphLoading, selectApplicantStageGraphResults } from '../../../features/dashbaord/selectors';
-import { buildBarData, getMaxValueFromStageData } from './helpers'; // Added your helper
+import { buildBarData, getMaxValueFromStageData } from './helpers';
 import Shimmer from '../../atoms/shimmer';
+import type { ApplicationStageChartProps, BarItem, stageDataInterface } from './applicationstagechart';
 
-interface BarItem {
-    value: number;
-    label: string;
-    frontColor: string;
-    gradientColor?: string;
-}
-
-const ApplicationStageChart: React.FC = () => {
+const ApplicationStageChart: React.FC<ApplicationStageChartProps> = ({
+    stageData,
+    loading,
+}) => {
     const styles = useStyles();
-    const stageData = useAppSelector(selectApplicantStageGraphResults);
-    const stageDataLoading = useAppSelector(selectApplicantStageGraphLoading);
     const [selectedIndex, setSelectedIndex] = useState<number>(-1);
-
-    const barData = buildBarData(stageData, selectedIndex); // Use your helper
-    const maxValueFromAPI = getMaxValueFromStageData(stageData); // Use your helper
-
-    // ✅ Responsive Spacing (fixed calculation)
-    const barCount = barData.length; // Use barData.length, not buildBarData.length
-    const availableWidth = screenWidth - 10; // Account for padding
+    const barData = buildBarData(stageData, selectedIndex);
+    const maxValueFromAPI = getMaxValueFromStageData(stageData);
+    const barCount = barData.length;
+    const availableWidth = screenWidth - 10;
     const barWidth = 32;
     const dynamicSpacing = Math.max(20, (availableWidth - barCount * barWidth) / (barCount + 1));
     
-    if (stageDataLoading) {
+    if (loading) {
         return (
           <View style={styles.container}>
             <Typography variant="semiBoldTxtlg">Application per stage</Typography>
       
-            <View style={{ marginTop: 16, height: 164, justifyContent: 'flex-end', position: 'relative' }}>
+            <View style={styles.gridLines}>
               {/* Grid lines */}
               <View style={{ position: 'absolute', left: 0, right: 0, top: 0 }}>
                 {[0, 1, 2, 3, 4].map((_, i) => (
@@ -47,7 +36,7 @@ const ApplicationStageChart: React.FC = () => {
               </View>
       
               {/* Bars + Labels */}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end', paddingHorizontal: 20 }}>
+              <View style={styles.barLables}>
                 {[85, 130, 95, 60, 75].map((height, index) => (
                   <View key={index} style={{ alignItems: 'center', gap: 8 }}>
                     <Shimmer width={32} height={height} borderRadius={5} />
