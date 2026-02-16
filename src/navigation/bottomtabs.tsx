@@ -19,9 +19,9 @@ const UserBottomTab: React.FC = () => {
         tabBarHideOnKeyboard: true
       }}
     >
-      {can(PERMISSIONS.VIEW_DASHBOARD) && (
+      {/* {can(PERMISSIONS.VIEW_DASHBOARD) && ( */}
         <Tab.Screen name="Dashboard" component={Dashboard} />
-      )}
+      {/* )} */}
       <Tab.Screen name="JobsScreen" component={JobsScreen} />
       <Tab.Screen name="ApplicantScreen" component={ApplicantScreen} />
       <Tab.Screen name="Profile" component={Profile} options={{ tabBarStyle: { display: 'none' } }} />

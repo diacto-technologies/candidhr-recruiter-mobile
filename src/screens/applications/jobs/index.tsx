@@ -140,15 +140,15 @@ const JobsScreen = () => {
       })
     );
   };
-  if (!can(PERMISSIONS.VIEW_JOB)) {
-    return (
-      <CustomSafeAreaView>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <Text>You don't have permission to view Jobs</Text>
-        </View>
-      </CustomSafeAreaView>
-    );
-  }
+  // if (!can(PERMISSIONS.VIEW_JOB)) {
+  //   return (
+  //     <CustomSafeAreaView>
+  //       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+  //         <Text>You don't have permission to view Jobs</Text>
+  //       </View>
+  //     </CustomSafeAreaView>
+  //   );
+  // }
   return (
     <CustomSafeAreaView>
       <Header
