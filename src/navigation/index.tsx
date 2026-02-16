@@ -6,20 +6,23 @@ import { navigationRef } from '../utils/navigationUtils'
 import LoginScreen from '../screens/auth/loginscreen'
 import SplashScreen from '../screens/auth/splashscreen'
 import UserBottomTab from './bottomtabs'
-import JobDetailScreen from '../screens/applications/jobs/jobdetailscreen'
-import ApplicantDetails from '../screens/applications/applicant/applicantDetails'
+import ApplicantDetails from '../screens/applications/applicantdetails'
 import GetStartedScreen from '../screens/applications/onboarding/getstartedscreen'
 import ForgetPasswordScreen from '../screens/auth/forgetpassword'
 import ContactUsScreen from '../screens/auth/contactus'
 import CheckMailScreen from '../screens/auth/checkmail'
 import CreateNewPasswordScreen from '../screens/auth/createnewpassword'
-import ApplicationOverviewDetails from '../screens/applications/dashboard/applicationstageoverviewdetails'
 import AccountInfo from '../screens/applications/profile/accountinfo'
 import CompanyInfo from '../screens/applications/profile/companyinfo'
 import Users from '../screens/applications/profile/users'
 import linking from './linking'
 import OrgnizationalSwitch from '../screens/auth/orgnizationalswitch'
 import { useTheme } from '../hooks/useTheme'
+import JobDetailScreen from '../screens/applications/jobdetails'
+import ApplicationStageOverview from '../components/organisms/applicationstageoverview'
+import ApplicationOverviewDetails from '../screens/applications/applicationstageoverviewdetails'
+import AssessmentScreen from '../screens/applications/services/assessment'
+import VideoInterviewScreen from '../screens/applications/services/videoInterview'
 
 const Stack = createNativeStackNavigator()
 const Navigation: FC = () => {
@@ -73,6 +76,8 @@ const Navigation: FC = () => {
         <Stack.Screen name='AccountInfo' component={AccountInfo} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
         <Stack.Screen name='CompanyInfo' component={CompanyInfo} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
         <Stack.Screen name='Users' component={Users} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
+        <Stack.Screen name='AssessmentScreen' component={AssessmentScreen} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
+        <Stack.Screen name='VideoInterviewScreen' component={VideoInterviewScreen} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
       </Stack.Navigator>
     </NavigationContainer>
   )

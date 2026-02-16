@@ -52,6 +52,9 @@ export const API_ENDPOINTS = {
     PERSONALITY_SCREENING_RESPONSES: (screening_id: string) =>
       `/personality-screening/${screening_id}/responses/`,
   },
+  ASSESSMENTS:{
+    LIST: "/assessments/v1/list/"
+  },
   DASHBOARD: {
     ANALYTICS: "/analytics/details/",
     APPLICANT_STAGE_GRAPH: "/analytics/applicants-stage-graph/",

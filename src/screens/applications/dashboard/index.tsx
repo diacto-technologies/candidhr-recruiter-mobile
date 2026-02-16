@@ -5,7 +5,7 @@ import { useStyles } from './styles';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { getProfileRequestAction } from '../../../features/profile/actions';
 import { getAnalyticsRequestAction, getFeatureConsumptionRequestAction, getStageGraphOverviewRequestAction, getStageGraphRequestAction, getWeeklyGraphRequestAction } from '../../../features/dashbaord/actions';
-import { selectAnalyticsData, selectAnalyticsLoaded } from '../../../features/dashbaord/selectors';
+import { selectAnalyticsData, selectAnalyticsLoaded, selectApplicantStageGraphLoading, selectApplicantStageGraphResults, selectFeatureConsumption, selectFeatureConsumptionLoading, selectStageGraphOverview, selectStageGraphOverviewLoading } from '../../../features/dashbaord/selectors';
 import { selectProfileLoading } from '../../../features/profile';
 import CustomSafeAreaView from '../../../components/atoms/customsafeareaview';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
@@ -17,13 +17,20 @@ import {
     selectSelectedJob,
     setSelectedJobAction,
 } from '../../../features/jobs';
+import { navigate } from '../../../utils/navigationUtils';
 
 const Dashboard = () => {
     const dispatch = useAppDispatch();
     const styles = useStyles();
     const profileLoaded = useAppSelector(selectProfileLoading);
-    const analyticsData = useAppSelector(selectAnalyticsData)
-    const analyticsLoaded = useAppSelector(selectAnalyticsLoaded)
+    const analyticsData = useAppSelector(selectAnalyticsData);
+    const analyticsLoaded = useAppSelector(selectAnalyticsLoaded);
+    const stageData = useAppSelector(selectApplicantStageGraphResults);
+    const stageDataLoading = useAppSelector(selectApplicantStageGraphLoading);
+    const featureData = useAppSelector(selectFeatureConsumption);
+    const featureLoading = useAppSelector(selectFeatureConsumptionLoading);
+    const stageGraphOverview = useAppSelector(selectStageGraphOverview);
+    const stageGraphOverviewLoading = useAppSelector(selectStageGraphOverviewLoading);
 
     const [openSearch, setOpenSearch] = useState(false);
     const [searchText, setSearchText] = useState('');
@@ -259,9 +266,18 @@ const Dashboard = () => {
                             </View>
                         </View>
                         <ApplicationStageChart
+                            stageData={stageData}
+                            loading={stageDataLoading}
                         />
-                        <FeatureConsumptionChart />
-                        <ApplicationStageOverview />
+                        <FeatureConsumptionChart
+                            featureData={featureData}
+                            loading={featureLoading}
+                        />
+                        <ApplicationStageOverview
+                            overview={stageGraphOverview}
+                            loading={stageGraphOverviewLoading}
+                            onViewMore={() => navigate('ApplicationOverviewDetails')}
+                        />
                     </View>
                 </ScrollView>
             </CustomSafeAreaView>

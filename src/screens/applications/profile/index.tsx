@@ -49,6 +49,7 @@ const Profile = () => {
     dispatch({ type: PROFILE_ACTION_TYPES.GET_PROFILE_REQUEST });
   }, [dispatch]);
 
+  console.log(profile,"profileprofileprofileprofileprofile")
   const handleLogout = async () => {
     try {
       await removeTokens();

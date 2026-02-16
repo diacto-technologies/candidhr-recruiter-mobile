@@ -1,7 +1,6 @@
-import React, { Fragment, useRef, useState } from "react";
+import React, { Fragment, useEffect, useRef, useState } from "react";
 import {
   View,
-  StyleSheet,
   Animated,
   TouchableOpacity,
   LayoutChangeEvent,
@@ -12,37 +11,11 @@ import { colors } from "../../../theme/colors";
 import Typography from "../../atoms/typography";
 import { windowWidth } from "../../../utils/devicelayout";
 import { SvgXml } from "react-native-svg";
-import { leftArrowIcon } from "../../../assets/svg/leftarrow";
-import { rightArrowIcon } from "../../../assets/svg/rightarrow";
 import { useStyles } from "./styles";
-import Icon from "../../atoms/vectoricon";
-import { goBack, navigate } from "../../../utils/navigationUtils";
-import CustomSafeAreaView from "../../atoms/customsafeareaview";
-import Header from "../header";
 import { expandarrowsIcon } from "../../../assets/svg/expandarrows";
-import { useAppSelector } from "../../../hooks/useAppSelector";
-import { selectStageGraphOverview, selectStageGraphOverviewLoading } from "../../../features/dashbaord/selectors";
 import Shimmer from "../../atoms/shimmer";
-
-interface TableRow {
-  job_name: string;
-  total_applicants: number;
-  close_date: string;
-  is_closed: boolean;
-
-  stages: {
-    resume_screening: number;
-    assessment_test: number;
-    video_interview: number;
-    hired: number;
-    reject: number;
-    on_hold: number;
-  };
-}
-
-
-const TRACK_WIDTH = 320;
-const SHIMMER_ROWS = 6;
+import { ApplicationStageOverviewProps, TableRow } from "./applicationstage";
+import { APPLICATION_STAGE_OVERVIEW_COLUMNS, SHIMMER_ROWS, TRACK_WIDTH } from "./config";
 
 const ApplicationStageOverviewShimmer = () => {
   const styles = useStyles();
@@ -90,26 +63,34 @@ const ApplicationStageOverviewShimmer = () => {
   );
 };
 
-const ApplicationStageOverview = () => {
+const ApplicationStageOverview: React.FC<ApplicationStageOverviewProps> = ({
+  overview,
+  loading,
+  onViewMore,
+}) => {
   const styles = useStyles();
   const scrollX = useRef(new Animated.Value(0)).current;
   const [contentWidth, setContentWidth] = useState(0);
   const [containerWidth, setContainerWidth] = useState(windowWidth - 40);
-  const OverviewData = useAppSelector(selectStageGraphOverview);
-  const OverviewLoading = useAppSelector(selectStageGraphOverviewLoading);
-  const data: TableRow[] = OverviewData?.results ?? [];
+  const data: TableRow[] = overview?.results ?? [];
 
 
   const shadowOpacity = useRef(new Animated.Value(0)).current;
 
   // show/hide shadow based on scrollX
-  scrollX.addListener(({ value }) => {
-    Animated.timing(shadowOpacity, {
-      toValue: value > 0 ? 1 : 0,
-      duration: 180,
-      useNativeDriver: false,
-    }).start();
-  });
+  useEffect(() => {
+    const id = scrollX.addListener(({ value }) => {
+      Animated.timing(shadowOpacity, {
+        toValue: value > 0 ? 1 : 0,
+        duration: 180,
+        useNativeDriver: false,
+      }).start();
+    });
+  
+    return () => {
+      scrollX.removeListener(id);
+    };
+  }, [scrollX, shadowOpacity]);
 
   const onContainerLayout = (e: LayoutChangeEvent) => {
     setContainerWidth(e.nativeEvent.layout.width);
@@ -161,7 +142,7 @@ const ApplicationStageOverview = () => {
     );
   };
 
-  if (OverviewLoading) {
+  if (loading) {
     return <ApplicationStageOverviewShimmer />;
   }
 
@@ -172,7 +153,7 @@ const ApplicationStageOverview = () => {
           <Typography variant="semiBoldTxtlg">
             Application Stage Overview
           </Typography>
-          <TouchableOpacity onPress={() => navigate('ApplicationOverviewDetails')}>
+          <TouchableOpacity onPress={onViewMore}>
             <SvgXml xml={expandarrowsIcon} />
           </TouchableOpacity>
         </View>
@@ -237,17 +218,7 @@ const ApplicationStageOverview = () => {
             >
               <View>
                 <View style={styles.headerRow}>
-                  {[
-                    "Total applicants",
-                    "Reviewed",
-                    "Assessment",
-                    "Video interview",
-                    "Hired",
-                    "Rejected",
-                    "On hold",
-                    "Close date",
-                    "Status",
-                  ].map((title, index) => (
+                  {APPLICATION_STAGE_OVERVIEW_COLUMNS.map((title, index) => (
                     <Typography
                       key={index}
                       variant="semiBoldTxtxs"
@@ -270,7 +241,7 @@ const ApplicationStageOverview = () => {
           </View>
         </ScrollView>
         <View style={styles.paginationContainer}>
-          <TouchableOpacity onPress={() => navigate('ApplicationOverviewDetails')}>
+          <TouchableOpacity onPress={onViewMore}>
             <Typography variant="semiBoldTxtsm" color={colors.brand[700]}>
               View more
             </Typography>

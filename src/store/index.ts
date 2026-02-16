@@ -8,7 +8,7 @@ import rootSaga from "./rootSaga";
 const persistConfig = {
   key: "root",
   storage: AsyncStorage,
-  whitelist: ["auth", "language", "theme"], // Persist auth, language, and theme slices
+  whitelist: ["auth", "language", "theme", "profile"], // Persist auth, language, theme, and profile (for permissions)
   blacklist: [], // Add slices you don't want to persist
 };
 

@@ -9,6 +9,7 @@ import applicationsReducer from "../features/applications/slice";
 import { usersReducer } from "../features/profile/users";
 import languageReducer from "../features/language/slice";
 import themeReducer from "../features/theme/slice";
+import assessmentsReducer from "../features/assessments/slice";
 
 const rootReducer = combineReducers({
   auth: authReducer,
@@ -19,6 +20,7 @@ const rootReducer = combineReducers({
   users: usersReducer,
   language: languageReducer,
   theme: themeReducer,
+  assessments: assessmentsReducer
 });
 
 export default rootReducer;

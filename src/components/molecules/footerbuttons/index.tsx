@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, StyleProp, ViewStyle } from "react-native";
 import Button from "../../atoms/button";
 import { colors } from "../../../theme/colors";
 import { useRNSafeAreaInsets } from "../../../hooks/useRNSafeAreaInsets";
@@ -7,16 +7,24 @@ import { useRNSafeAreaInsets } from "../../../hooks/useRNSafeAreaInsets";
 interface FooterButtonsProps {
   leftButtonProps: React.ComponentProps<typeof Button>;
   rightButtonProps: React.ComponentProps<typeof Button>;
+  footerStyle?: StyleProp<ViewStyle>;
 }
 
 const FooterButtons: React.FC<FooterButtonsProps> = ({
   leftButtonProps,
   rightButtonProps,
+  footerStyle,
 }) => {
   const insets = useRNSafeAreaInsets();
 
   return (
-    <View style={[styles.footer, { paddingBottom: insets.insetsBottom+16, paddingTop:16}]}>
+    <View
+      style={[
+        styles.footer,
+        { paddingBottom: insets.insetsBottom+5, paddingTop: 16 },
+        footerStyle, // 👈 merge custom style
+      ]}
+    >
       <View style={{ flex: 1 }}>
         <Button {...leftButtonProps} />
       </View>
@@ -27,6 +35,7 @@ const FooterButtons: React.FC<FooterButtonsProps> = ({
     </View>
   );
 };
+
 
 export default FooterButtons;
 

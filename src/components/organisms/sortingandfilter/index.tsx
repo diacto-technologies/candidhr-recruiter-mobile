@@ -14,8 +14,13 @@ interface Props {
   options: string[];
   onPressFilter: () => void;
   selectedTab: string;
-  setSelectedTab: (tab: string) => void;
+  setSelectedTab?: (tab: string) => void;
   onItemPress: (item: string) => void;
+
+  containerStyle?: any;
+  filterButtonStyle?: any;
+  chipStyle?: any;
+  activeChipStyle?: any;
 }
 
 const SortingAndFilter: FC<Props> = ({
@@ -23,70 +28,82 @@ const SortingAndFilter: FC<Props> = ({
   options,
   onPressFilter,
   selectedTab,
-  setSelectedTab,
-  onItemPress
+  onItemPress,
+  containerStyle,
+  filterButtonStyle,
+  chipStyle,
+  activeChipStyle,
 }) => {
 
   const dispatch = useAppDispatch();
   const filters = useAppSelector(selectApplicationsFilters);
 
   return (
-    <Fragment>
-      <View style={{
-        flexDirection: 'row',
-        paddingVertical: 12,
-        backgroundColor: colors.common.white,
-        borderBottomWidth: 1,
-        borderColor: colors.gray[200],
-        elevation: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 3,
-      }}>
-        <Pressable
-          onPress={onPressFilter}
-          style={{
+    <View
+      style={[
+        {
+          flexDirection: 'row',
+          paddingVertical: 12,
+          backgroundColor: colors.common.white,
+          borderBottomWidth: 1,
+          borderColor: colors.gray[200],
+          // elevation: 10,
+          // shadowColor: '#000',
+          // shadowOffset: { width: 0, height: 2 },
+          // shadowOpacity: 0.15,
+          // shadowRadius: 3,
+        },
+        containerStyle,
+      ]}
+    >
+      {/* Filter Button */}
+      <Pressable
+        onPress={onPressFilter}
+        style={[
+          {
             flexDirection: 'row',
             alignItems: 'center',
             gap: 8,
             paddingHorizontal: 8,
-          }}
-        >
-          <View style={{ position: 'relative' }}>
-            <SvgXml xml={filterIcon} color={colors.brand[500]} />
-            <View
-              style={{
-                position: 'absolute',
-                top: 1,
-                left: 0,
-                height: 7,
-                width: 7,
-                borderRadius: 4,
-                backgroundColor: colors.brand[500],
-              }}
-            />
-          </View>
+          },
+          filterButtonStyle,
+        ]}
+      >
+        <View style={{ position: 'relative' }}>
+          <SvgXml xml={filterIcon} color={colors.brand[500]} />
+          <View
+            style={{
+              position: 'absolute',
+              top: 1,
+              left: 0,
+              height: 7,
+              width: 7,
+              borderRadius: 4,
+              backgroundColor: colors.brand[500],
+            }}
+          />
+        </View>
 
-          <Typography variant="H4" style={{ color: '#535862' }}>
-            {title}
-          </Typography>
-        </Pressable>
+        <Typography variant="H4" style={{ color: '#535862' }}>
+          {title}
+        </Typography>
+      </Pressable>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {options?.map((item, index) => {
+      {/* Chips */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {options?.map((item, index) => {
 
-            const isSortable = item === 'Applied' || item === 'Last Update';
-            const isSortActive = filters.sortBy === item;
-            const dir = filters.sortDir;
+          const isSortable = item === 'Applied' || item === 'Last Update';
+          const isSortActive = filters.sortBy === item;
+          const dir = filters.sortDir;
+          const isActive = item === selectedTab;
 
-            const isActive = item === selectedTab;
-
-            return (
-              <TouchableOpacity
-                key={index}
-                onPress={() => onItemPress(item)}
-                style={{
+          return (
+            <TouchableOpacity
+              key={index}
+              onPress={() => onItemPress(item)}
+              style={[
+                {
                   flexDirection: 'row',
                   alignItems: 'center',
                   paddingVertical: 4,
@@ -97,30 +114,32 @@ const SortingAndFilter: FC<Props> = ({
                   backgroundColor: isActive ? colors.brand[50] : colors.gray[50],
                   marginRight: 8,
                   gap: 8,
-                }}
+                },
+                chipStyle,
+                isActive && activeChipStyle,
+              ]}
+            >
+              <Typography
+                variant="P1M"
+                color={isActive ? colors.brand[700] : colors.gray[700]}
               >
+                {item}
+              </Typography>
 
-                <Typography
-                  variant="P1M"
-                  color={isActive ? colors.brand[700] : colors.gray[700]}
-                >
-                  {item}
+              {isSortable && (
+                <Typography variant="regularTxtxs" color={colors.gray[500]}>
+                  {isSortActive
+                    ? (dir === 'desc' ? '▼' : '▲')
+                    : '▲'}
                 </Typography>
-                {isSortable && (
-                  <Typography variant="regularTxtxs" color={colors.gray[500]}>
-                    {isSortActive
-                      ? (dir === 'desc' ? '▼' : '▲')
-                      : '▲'}
-                  </Typography>
-                )}
-
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
-    </Fragment>
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    </View>
   );
 };
+
 
 export default SortingAndFilter;

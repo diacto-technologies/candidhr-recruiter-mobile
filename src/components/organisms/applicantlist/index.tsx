@@ -1,9 +1,7 @@
-// components/ApplicantCard/index.tsx
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View,
   Image,
-  TouchableOpacity,
   Pressable,
   Animated,
   StyleSheet,
@@ -13,17 +11,12 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import { navigate } from '../../../utils/navigationUtils';
 import { useStyles } from './styles';
-import { ProfileAvatar, Typography } from '../../atoms';
+import { Typography } from '../../atoms';
 import { colors } from '../../../theme/colors';
 import Divider from '../../atoms/divider';
 import { Application } from '../../../features/applications/types';
 import { formatMonDDYYYY } from '../../../utils/dateformatter';
 import { getStatusColor } from './helper';
-import { useAppDispatch } from '../../../hooks/useAppDispatch';
-import { setApplicationsFilters } from '../../../features/applications/slice';
-import { useFocusEffect } from '@react-navigation/native';
-import { SvgXml } from 'react-native-svg';
-import { horizontalThreedotIcon } from '../../../assets/svg/horizontalthreedoticon';
 
 interface ApplicantCardProps {
   item?: Application | null;
@@ -131,18 +124,18 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
       {/* Top Row - Avatar + Name */}
       <View style={styles.rowBetween}>
         <View style={styles.row}>
-        <View style={[styles.borderWrapper]}>
-          {item?.candidate?.profile_pic ?
-            <Image
-              source={{ uri: item?.candidate?.profile_pic }}
-              style={styles.avatar}
-              resizeMode="cover"
-            />
-            :
-            // <View style={[styles.initialCircle]}>
+          <View style={[styles.borderWrapper]}>
+            {item?.candidate?.profile_pic ?
+              <Image
+                source={{ uri: item?.candidate?.profile_pic }}
+                style={styles.avatar}
+                resizeMode="cover"
+              />
+              :
+              // <View style={[styles.initialCircle]}>
               <Typography variant="semiBoldTxtlg" color={colors?.gray[700]} style={{ paddingRight: 5 }}> {(item?.candidate?.name?.trim()?.[0] ?? "").toUpperCase()}</Typography>
-            // </View>
-          }
+              // </View>
+            }
           </View>
           <View style={{ marginLeft: 12 }}>
             <Typography variant="semiBoldTxtmd">

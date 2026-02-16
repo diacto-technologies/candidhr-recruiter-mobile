@@ -14,3 +14,8 @@ export interface stageDataInterface {
     hired: number;
     scheduled_final_interview: number;
 }
+
+export interface ApplicationStageChartProps {
+    stageData: stageDataInterface | null;
+    loading: boolean;
+}
