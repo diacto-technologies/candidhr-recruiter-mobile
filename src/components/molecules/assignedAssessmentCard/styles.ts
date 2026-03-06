@@ -39,6 +39,8 @@ export const useStyles = () => {
       backgroundColor: colors.gray[100],
       alignItems: 'center',
       justifyContent: 'center',
+      borderWidth:1,
+      borderColor:'#00000014'
     },
 
     avatar: {
@@ -69,8 +71,8 @@ export const useStyles = () => {
     },
 
     statusDot: {
-      width: 8,
-      height: 8,
+      width: 6,
+      height: 6,
       borderRadius: 4,
     },
   });

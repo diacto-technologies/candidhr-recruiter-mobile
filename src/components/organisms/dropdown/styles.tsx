@@ -55,6 +55,45 @@ export const styles = StyleSheet.create({
         minHeight: 48,
     },
 
+    dropdownCompact: {
+        minHeight: 40,
+    },
+
+    wrapperCompact: {
+        alignSelf: 'center',
+    },
+
+    containerCompact: {
+        paddingLeft: 10,
+        paddingRight: 8,
+        minHeight: 40,
+    },
+
+    placeholderStyleHidden: {
+        color: 'transparent',
+        fontSize: 1,
+        height: 0,
+    },
+
+    customSelectedDisplayCompact: {
+        paddingLeft: 52,
+        paddingRight: 32,
+    },
+
+    selectedTextStyleCompact: {
+        fontSize: 14,
+    },
+
+    placeholderStyleCompact: {
+        fontSize: 14,
+    },
+
+    statusDotCompact: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+    },
+
     optionsContainer: {
         borderRadius: 8,
         borderColor: colors.gray[300],

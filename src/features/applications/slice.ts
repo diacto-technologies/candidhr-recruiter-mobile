@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ApplicationsState, Application, ApplicationsListResponse, ApplicationResponseItem, ResumeScreeningResponseItem, AssessmentLog, AssessmentReport, AssessmentDetailedReport, ScreeningAssessment, PersonalityScreeningResponse } from "./types";
+import { ApplicationsState, Application, ApplicationsListResponse, ApplicationResponseItem, ResumeScreeningResponseItem, AssessmentLog, AssessmentReport, AssessmentDetailedReport, ScreeningAssessment, PersonalityScreeningResponse, ApplicationStage, ReasonCategory, ReasonListItem } from "./types";
 
 const initialState: ApplicationsState = {
   applications: [],
@@ -8,6 +8,15 @@ const initialState: ApplicationsState = {
   assessmentLogs: [],
   personalityScreeningList: [],
   personalityScreeningResponses: [],
+  reasonCategoryList: [],
+  loadingReasonCategoryList: false,
+  reasonCategoryListError: null,
+  reasonList: [],
+  loadingReasonList: false,
+  reasonListError: null,
+  applicationReasonsList: [],
+  loadingApplicationReasonsList: false,
+  applicationReasonsListError: null,
   assessmentReport: null,
   assessmentDetailedReport: null,
   selectedApplication: null,
@@ -16,6 +25,11 @@ const initialState: ApplicationsState = {
   loadingApplicationDetail: false,
   loadingAssessment: false,
   loadingPersonality: false,
+  loadingResumeScreeningResponses: false,
+  loadingMarkSessionReviewed: false,
+  loadingParseResume: false,
+  loadingUpdateStageStatus: false,
+  applicationStages: [],
   error: null,
   pagination: {
     page: 1,
@@ -30,7 +44,11 @@ const initialState: ApplicationsState = {
     contact: '',
     sortBy: 'Applied',
     sortDir: 'desc',
-    sort: "-applied_at"
+    sort: "-applied_at",
+    latestStageStatus: '',
+    source: '',
+    status: '',
+    latestStageName: '',
   },
 };
 
@@ -169,6 +187,8 @@ const applicationsSlice = createSlice({
     getAssessmentLogsRequest: (state) => {
       state.loading = true;
       state.error = null;
+      state.assessmentLogs = [];
+      state.assessmentReport = null;
     },
 
     getAssessmentLogsSuccess: (
@@ -184,6 +204,47 @@ const applicationsSlice = createSlice({
       action: PayloadAction<string>
     ) => {
       state.loading = false;
+      state.error = action.payload;
+      state.assessmentLogs = [];
+      state.assessmentReport = null;
+    },
+
+    markSessionAsReviewedRequest: (state, _action: PayloadAction<string>) => {
+      state.loadingMarkSessionReviewed = true;
+      state.error = null;
+    },
+
+    markSessionAsReviewedSuccess: (
+      state,
+      action: PayloadAction<{ sessionId: string; data: { session_status: string; action_taken_by: any; action_taken_at: string } }>
+    ) => {
+      state.loadingMarkSessionReviewed = false;
+      const { sessionId, data } = action.payload;
+      const log = state.assessmentLogs.find((l) => l.id === sessionId);
+      if (log) {
+        log.session_status = data.session_status;
+        log.action_taken_by = data.action_taken_by;
+        log.action_taken_at = data.action_taken_at;
+      }
+    },
+
+    markSessionAsReviewedFailure: (state, action: PayloadAction<string>) => {
+      state.loadingMarkSessionReviewed = false;
+      state.error = action.payload;
+    },
+
+    parseResumeRequest: (state, _action: PayloadAction<string>) => {
+      state.loadingParseResume = true;
+      state.error = null;
+    },
+
+    parseResumeSuccess: (state) => {
+      state.loadingParseResume = false;
+      state.error = null;
+    },
+
+    parseResumeFailure: (state, action: PayloadAction<string>) => {
+      state.loadingParseResume = false;
       state.error = action.payload;
     },
 
@@ -241,12 +302,12 @@ const applicationsSlice = createSlice({
       state.loading = false;
       state.error = null;
       state.personalityScreeningList = action.payload;
-    
+
       if (action.payload.length === 0) {
         state.personalityScreeningResponses = [];
       }
     },
-    
+
 
     getPersonalityScreeningListFailure: (
       state,
@@ -284,26 +345,39 @@ const applicationsSlice = createSlice({
       state.filters = { ...state.filters, ...action.payload };
     },
 
-    setSort: (state, action: PayloadAction<{
-      sortBy: 'Applied' | 'Last Update',
-      sortDir: 'asc' | 'desc'
-    }>) => {
+    setSort: (
+      state,
+      action: PayloadAction<{
+        sortBy: string;
+        sortDir: 'asc' | 'desc';
+      }>
+    ) => {
+      const { sortBy, sortDir } = action.payload;
 
-      state.filters.sortBy = action.payload.sortBy;
-      state.filters.sortDir = action.payload.sortDir;
+      state.filters.sortBy = sortBy;
+      state.filters.sortDir = sortDir;
 
-      if (action.payload.sortBy === 'Applied') {
-        state.filters.sort =
-          action.payload.sortDir === 'desc'
-            ? '-applied_at'
-            : 'applied_at';
-      } else {
-        state.filters.sort =
-          action.payload.sortDir === 'desc'
-            ? '-last_updated'
-            : 'last_updated';
+      // 🔥 UI → API FIELD MAP
+      const fieldMap: Record<string, string> = {
+        'Applied': 'applied_at',
+        'Resume Score': 'resume_score',
+        'Last Update': 'last_updated',
+        'Applicant name': 'applicant_name',
+      };
+
+      const backendField = fieldMap[sortBy];
+
+      if (!backendField) {
+        state.filters.sort = '';
+        return;
       }
+
+      state.filters.sort =
+        sortDir === 'desc'
+          ? `-${backendField}`
+          : backendField;
     },
+
     resetPersonalityScreeningState: (state) => {
       state.personalityScreeningList = [];
       state.personalityScreeningResponses = [];
@@ -311,6 +385,111 @@ const applicationsSlice = createSlice({
       state.assessmentDetailedReport = null;
       state.loading = false;
       state.error = null;
+    },
+
+    getApplicationStagesRequest: (state) => {
+      state.loading = true;
+    },
+
+    getApplicationStagesSuccess: (
+      state,
+      action: PayloadAction<ApplicationStage[]>
+    ) => {
+      state.loading = false;
+      state.applicationStages = action.payload;
+    },
+
+    getApplicationStagesFailure: (
+      state,
+      action: PayloadAction<string>
+    ) => {
+      state.loading = false;
+      state.error = action.payload;
+    },
+
+    getReasonCategoryListRequest: (state) => {
+      state.loadingReasonCategoryList = true;
+      state.reasonCategoryListError = null;
+    },
+
+    getReasonCategoryListSuccess: (
+      state,
+      action: PayloadAction<ReasonCategory[]>
+    ) => {
+      state.loadingReasonCategoryList = false;
+      state.reasonCategoryList = action.payload;
+      state.reasonCategoryListError = null;
+    },
+
+    getReasonCategoryListFailure: (
+      state,
+      action: PayloadAction<string>
+    ) => {
+      state.loadingReasonCategoryList = false;
+      state.reasonCategoryList = [];
+      state.reasonCategoryListError = action.payload;
+    },
+
+    getReasonListRequest: (state) => {
+      state.loadingReasonList = true;
+      state.reasonListError = null;
+    },
+
+    getReasonListSuccess: (
+      state,
+      action: PayloadAction<ReasonListItem[]>
+    ) => {
+      state.loadingReasonList = false;
+      state.reasonList = action.payload;
+      state.reasonListError = null;
+    },
+
+    getReasonListFailure: (
+      state,
+      action: PayloadAction<string>
+    ) => {
+      state.loadingReasonList = false;
+      state.reasonList = [];
+      state.reasonListError = action.payload;
+    },
+
+    getApplicationReasonsListRequest: (state) => {
+      state.loadingApplicationReasonsList = true;
+      state.applicationReasonsListError = null;
+    },
+    getApplicationReasonsListSuccess: (
+      state,
+      action: PayloadAction<unknown[]>
+    ) => {
+      state.loadingApplicationReasonsList = false;
+      state.applicationReasonsList = action.payload ?? [];
+      state.applicationReasonsListError = null;
+    },
+    getApplicationReasonsListFailure: (
+      state,
+      action: PayloadAction<string>
+    ) => {
+      state.loadingApplicationReasonsList = false;
+      state.applicationReasonsList = [];
+      state.applicationReasonsListError = action.payload;
+    },
+
+    updateStageStatusRequest: (state) => {
+      state.loadingUpdateStageStatus = true;
+      state.error = null;
+    },
+
+    updateStageStatusSuccess: (state) => {
+      state.loadingUpdateStageStatus = false;
+      state.error = null;
+    },
+
+    updateStageStatusFailure: (
+      state,
+      action: PayloadAction<string>
+    ) => {
+      state.loadingUpdateStageStatus = false;
+      state.error = action.payload;
     },
   },
 });
@@ -353,6 +532,27 @@ export const {
   getPersonalityScreeningResponsesFailure,
   setApplicationsFilters,
   resetPersonalityScreeningState,
+  getApplicationStagesRequest,
+  getApplicationStagesSuccess,
+  getApplicationStagesFailure,
+  getReasonCategoryListRequest,
+  getReasonCategoryListSuccess,
+  getReasonCategoryListFailure,
+  getReasonListRequest,
+  getReasonListSuccess,
+  getReasonListFailure,
+  getApplicationReasonsListRequest,
+  getApplicationReasonsListSuccess,
+  getApplicationReasonsListFailure,
+  updateStageStatusRequest,
+  updateStageStatusSuccess,
+  updateStageStatusFailure,
+  markSessionAsReviewedRequest,
+  markSessionAsReviewedSuccess,
+  markSessionAsReviewedFailure,
+  parseResumeRequest,
+  parseResumeSuccess,
+  parseResumeFailure,
   setSort
 } = applicationsSlice.actions;
 

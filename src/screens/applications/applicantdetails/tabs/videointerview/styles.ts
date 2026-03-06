@@ -314,5 +314,11 @@ export const useStyles = () => {
         transcriptionTimestamp: {
           marginTop: 2,
         },
+         reviewRow: {
+            flexDirection: "row",
+            //justifyContent: "space-between",
+            alignItems: "center",
+            marginTop: 12,
+        },
     });
 };

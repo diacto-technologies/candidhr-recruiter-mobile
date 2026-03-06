@@ -19,7 +19,8 @@ const StatCard = ({ title, value, percentage, subText, onPressInfo,tooltipText }
   const analyticsLoading = useAppSelector(selectAnalyticsLoading)
   return (
     <View style={styles.card}>
-      <View style={styles.rowBetween}>
+      <>
+      {/* <View style={styles.rowBetween}>
         {analyticsLoading ? (
           <Shimmer style={{ width: 150, height: 24 }} />
         ) : (
@@ -34,7 +35,8 @@ const StatCard = ({ title, value, percentage, subText, onPressInfo,tooltipText }
         <InfoTooltip text={`${tooltipText}`}>
           <SvgXml xml={infoIcon} />
         </InfoTooltip>
-      </View>
+      </View> */}
+      </>
 
       {/* Main Value */}
       <View style={{ gap: 4 }}>
@@ -51,10 +53,10 @@ const StatCard = ({ title, value, percentage, subText, onPressInfo,tooltipText }
         )}
         {/* Percentage Row */}
         <View style={styles.row}>
-          <SvgXml xml={arrowDownGreenIcon} />
-          <Typography variant="semiBoldTxtxs" color={colors.success['500']}>
-            {percentage}
-          </Typography>
+          {/* <SvgXml xml={arrowDownGreenIcon} /> */}
+            <Typography variant="regularTxtsm" style={styles.title} color={colors.gray["600"]} numberOfLines={2}>
+              {title}
+            </Typography>
 
           <Typography variant="regularTxtxs" color={colors.gray['600']}>
             {subText}

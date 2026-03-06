@@ -17,25 +17,15 @@ import type {
 const formatDuration = (minutes: number): string => {
   const n = Number(minutes);
   if (Number.isNaN(n) || n < 0) return '—';
-  if (n < 1) return '< 1 min';
-  if (n < 60) return `${Math.round(n)} min`;
-  const hrs = Math.floor(n / 60);
-  const mins = Math.round(n % 60);
-  return mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`;
+  return `${n.toFixed(2)} min`;
 };
 
 function getAvatarUris(item: Assessment): string[] {
-  const uris: string[] = [];
-  const creatorPic = item.created_by?.profile_pic;
-  if (typeof creatorPic === 'string' && creatorPic.length > 0) {
-    uris.push(creatorPic);
-  }
-  const shared = Array.isArray(item.users_shared_with) ? item.users_shared_with : [];
-  for (let i = 0; i < Math.min(2, shared.length); i++) {
-    const pic = (shared[i] as AssessmentSharedUser)?.profile_pic;
-    if (typeof pic === 'string' && pic.length > 0) uris.push(pic);
-  }
-  return uris;
+  if (!Array.isArray(item.users_shared_with)) return [];
+
+  return item.users_shared_with
+    .map(user => user?.profile_pic)
+    .filter((pic): pic is string => typeof pic === 'string' && pic.length > 0);
 }
 
 interface AssessmentCardProps {
@@ -44,23 +34,33 @@ interface AssessmentCardProps {
 
 const AssessmentCard = ({ item }: AssessmentCardProps) => {
   const styles = useStyles();
-  const status = item.is_published ? 'Published' : 'Draft';
-  const createdByName =
-    (item.created_by?.name && String(item.created_by.name).trim()) || 'Unknown';
-  const avatarUris = getAvatarUris(item);
+  const status = item.is_published ? 'Published' : 'Not Published';
+  const createdByName = (item.users_shared_with[0]?.name && String(item.created_by.name).trim()) || 'Unknown';
   const sharedLength = Array.isArray(item.users_shared_with)
     ? item.users_shared_with.length
     : 0;
   const extraCount = Math.max(0, sharedLength - 2);
   const durationMinutes =
     typeof item.time_duration_in_minutes === 'number' &&
-    !Number.isNaN(item.time_duration_in_minutes)
+      !Number.isNaN(item.time_duration_in_minutes)
       ? item.time_duration_in_minutes
       : 0;
   const questionCount =
     typeof item.total_question === 'number' && !Number.isNaN(item.total_question)
       ? item.total_question
       : 0;
+
+   const getInitials = (name?: string) => {
+        if (!name) return 'U';
+      
+        return name
+          .trim()
+          .split(' ')
+          .filter(Boolean)
+          .slice(0, 2)
+          .map(word => word.charAt(0).toUpperCase())
+          .join('');
+      };
 
   return (
     <Card style={styles.card} onPress={() => navigate('CompanyInfo')}>
@@ -96,17 +96,24 @@ const AssessmentCard = ({ item }: AssessmentCardProps) => {
       <View>
         <View style={styles.rowBetween}>
           <View style={styles.avatarGroup}>
-            {avatarUris.length > 0 ? (
-              avatarUris.slice(0, 3).map((uri, index) => (
+            {item.users_shared_with?.slice(0, 3).map((user, index) => (
+              user.profile_pic ? (
                 <Image
-                  key={`${item.id}-avatar-${index}`}
-                  source={{ uri }}
+                  key={user.id ?? index}
+                  source={{ uri: user.profile_pic }}
                   style={[styles.avatar, { marginLeft: index === 0 ? 0 : -12 }]}
                 />
-              ))
-            ) : (
-             <></>
-            )}
+              ) : (
+                <View
+                  key={user.id ?? index}
+                  style={[styles.avatar, styles.initialAvatar, { marginLeft: index === 0 ? 0 : -12 }]}
+                >
+                  <Typography variant="semiBoldTxtxs">
+                   {getInitials(user.name)}
+                  </Typography>
+                </View>
+              )
+            ))}
             {extraCount > 0 && (
               <View style={[styles.avatar, styles.moreAvatar]}>
                 <Typography variant="semiBoldTxtxs" color={colors.gray[600]}>

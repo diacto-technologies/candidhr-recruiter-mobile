@@ -1,17 +1,20 @@
 import { GestureResponderEvent } from 'react-native';
+import type { ChangeStatusModalProps } from '../changeStatusModal';
 
 export interface IHeader {
-  title?: string; // optional (default "Checkout")
-  onBack?: (event?: GestureResponderEvent) => void; // optional back press callback
-  backNavigation?:boolean;
-  edit?:boolean;
-  threedot?:boolean;
-  borderCondition?:boolean;
+  title?: string;
+  onBack?: (event?: GestureResponderEvent) => void;
+  backNavigation?: boolean;
+  edit?: boolean;
+  threedot?: boolean;
+  borderCondition?: boolean;
   showTitle?: boolean;
-  // Simple search icon (just shows icon with callback, no dropdown)
+
+  // Simple search icon
   showSearchIcon?: boolean;
   onSearchIconPress?: () => void;
-  // Job search related props (passed from parent component)
+
+  // Job search related props
   enableJobSearch?: boolean;
   jobNameList?: any[];
   jobNameListLoading?: boolean;
@@ -28,4 +31,16 @@ export interface IHeader {
   onSimpleSearch?: (text: string) => void;
   onSimpleClear?: () => void;
   simpleSearchPlaceholder?: string;
+
+  // ✅ Status Dropdown Props
+  statusDropdown?: boolean;
+  statusOptions?: any[];
+  statusLabelKey?: string;
+  statusValueKey?: string;
+  statusValue?: string;
+  onStatusSelect?: (item: any) => void;
+  /** When true, selecting a status from dropdown opens ChangeStatusModal (with optional custom message / hide Add reason) */
+  statusOpenModalOnSelect?: boolean;
+  /** Props for ChangeStatusModal when opened from header (e.g. hideAddReason, initialEmailMessage) */
+  statusChangeStatusModalProps?: Omit<ChangeStatusModalProps, 'visible' | 'onClose'>;
 }

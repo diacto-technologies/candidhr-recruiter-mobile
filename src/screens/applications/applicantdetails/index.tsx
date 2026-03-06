@@ -17,9 +17,9 @@ import { telePhoneIcon } from '../../../assets/svg/telephone';
 import { fileIcon } from '../../../assets/svg/file';
 import CustomSafeAreaView from '../../../components/atoms/customsafeareaview';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
-import { getApplicationDetailRequestAction, getApplicationResponsesRequestAction, getAssessmentLogsRequestAction, getResumeScreeningResponsesRequestAction, getPersonalityScreeningListRequestAction } from '../../../features/applications/actions';
+import { getApplicationDetailRequestAction, getApplicationResponsesRequestAction, getAssessmentLogsRequestAction, getResumeScreeningResponsesRequestAction, getPersonalityScreeningListRequestAction, getApplicationStagesRequestAction, updateApplicationStatusRequestAction } from '../../../features/applications/actions';
 import { useRoute } from '@react-navigation/native';
-import { selectApplicationsDetailLoading, selectAssessmentLogs, selectPersonalityScreeningList, selectSelectedApplication } from '../../../features/applications/selectors';
+import { selectApplicationsDetailLoading, selectApplicationStages, selectAssessmentLogs, selectPersonalityScreeningList, selectSelectedApplication } from '../../../features/applications/selectors';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { showToastMessage } from '../../../utils/toast';
 import DeviceInfo from 'react-native-device-info';
@@ -30,23 +30,29 @@ import ResumeScreening from './tabs/resumescreening';
 import VideoInterview from './tabs/videointerview';
 
 export default function ApplicantDetails() {
-  const styles = useStyles();
-  const [activeTab, setActiveTab] = useState('Profile Info');
-  const [resumeModalVisible, setResumeModalVisible] = useState(false);
   const route = useRoute();
+  const { application_id, job_id, tab, } = route.params as { application_id: string, job_id: string, tab: string };
+  const styles = useStyles();
+  const [activeTab, setActiveTab] = useState(!tab ? 'Profile Info' : tab);
+  const [resumeModalVisible, setResumeModalVisible] = useState(false);
   const dispatch = useAppDispatch();
   const selectedApplication = useAppSelector(selectSelectedApplication);
-  const { application_id, job_id } = route.params as { application_id: string, job_id: string };
-
-  // Fetch all required data on mount
-  useEffect(() => {
-    dispatch(resetPersonalityScreeningState());
-    dispatch(getApplicationDetailRequestAction(application_id));
-    dispatch(getApplicationResponsesRequestAction({ application_id, job_id }));
-    dispatch(getResumeScreeningResponsesRequestAction(application_id));
-    dispatch(getAssessmentLogsRequestAction(application_id));
-    dispatch(getPersonalityScreeningListRequestAction({ application_id, job_id }));
-  }, [application_id, job_id, dispatch]);
+  const selectApplicationStage = useAppSelector(selectApplicationStages)
+  // Status options for dropdown – API-only statuses (e.g. "Applied") are not in the list; they still show as selected when coming from API
+  const STATUS_OPTIONS = [
+    { id: "shortlisted", name: "Shortlisted" },
+    { id: "rejected", name: "Rejected" },
+    { id: "on_hold", name: "On Hold" },
+    { id: "interview_scheduled", name: "Interview Scheduled" },
+    { id: "final_interview", name: "Final Interview" },
+    { id: "hired", name: "Hired" },
+    { id: "offer_extended", name: "Offer Extended" },
+    { id: "offer_accepted", name: "Offer Accepted" },
+    { id: "offer_rejected", name: "Offer Rejected" },
+    { id: "not_selected", name: "Not Selected" },
+    { id: "withdrawn", name: "Withdrawn" },
+    { id: "archived", name: "Archived" },
+  ];
 
   // Get resume URL from selected application
   const resumeUrl = selectedApplication?.resume?.resume_file || null;
@@ -65,47 +71,85 @@ export default function ApplicantDetails() {
     (
       application.resume.resume_score ||
       application.resume.resume_json ||
-      application.resume.ai_summary_json||
+      application.resume.ai_summary_json ||
       application?.resume?.work_experience ||
-      application?.resume?.projects || 
+      application?.resume?.projects ||
       application?.resume?.education ||
       application?.resume?.certifications
     )
   );
+  const stages = useAppSelector(selectApplicationStages);
   const tabs = useMemo(() => {
     const baseTabs = ['Profile Info'];
+    const stageTabMap: Record<string, string> = {
+      resume_screening: 'Resume Screening',
+      assessment: 'Assessments',
+      automated_video_interview:
+        'Automated Video Interview',
+    };
+    stages?.forEach(stage => {
+      const tabName =
+        stageTabMap[stage.stage_type];
 
-    if (hasResumeScreening) {
-      baseTabs.push('Resume Screening');
-    }
-    
-    if (hasAssessments) {
-      baseTabs.push('Assessments');
-    }
-    
-    if (hasVideoInterview) {
-      baseTabs.push('Automated Video Interview');
-    }
-    
+      if (
+        tabName &&
+        !baseTabs.includes(tabName)
+      ) {
+        baseTabs.push(tabName);
+      }
+    });
     return baseTabs;
-  }, [hasAssessments, hasVideoInterview,hasResumeScreening]);
+  }, [stages]);
+
+  useEffect(() => {
+    dispatch(resetPersonalityScreeningState());
+    dispatch(getApplicationStagesRequestAction(application_id));
+    dispatch(getApplicationDetailRequestAction(application_id));
+    dispatch(getApplicationResponsesRequestAction({ application_id, job_id }));
+    dispatch(getResumeScreeningResponsesRequestAction(application_id));
+    dispatch(getPersonalityScreeningListRequestAction({ application_id, job_id }));
+  }, [application_id, job_id]);
+
+  useEffect(() => {
+    if (!stages?.length) return;
+    if (activeTab === 'Profile Info') return;
+
+    const stageTypeMap: Record<string, string> = {
+      'Resume Screening': 'resume_screening',
+      'Assessments': 'assessment',
+      'Automated Video Interview': 'automated_video_interview',
+    };
+
+    const stageType = stageTypeMap[activeTab];
+    if (!stageType) return;
+
+    const stage = stages.find(
+      s => s.stage_type === stageType
+    );
+
+    if (stage?.id) {
+      dispatch(getAssessmentLogsRequestAction(stage.id));
+    }
+
+  }, [activeTab, stages]);
 
   useEffect(() => {
     if (!tabs.includes(activeTab)) {
-      setActiveTab(tabs[0] || 'Profile Info');
+      setActiveTab(tabs[0]);
     }
-  }, [tabs, activeTab]);
+  }, [tabs]);
+
 
   const renderTab = () => {
     switch (activeTab) {
       case 'Profile Info':
         return <ProfileInfo />;
       case 'Resume Screening':
-        return hasResumeScreening ? <ResumeScreening /> : <View />;
+        return <ResumeScreening />;
       case 'Assessments':
-        return hasAssessments ? <Assessment /> : <View />;
+        return <Assessment />;
       case 'Automated Video Interview':
-        return hasVideoInterview ? <VideoInterview /> : <View />;
+        return <VideoInterview />;
       default:
         return <View />;
     }
@@ -151,10 +195,35 @@ export default function ApplicantDetails() {
   return (
     <Fragment>
       <CustomSafeAreaView>
-        <Header backNavigation={true} onBack={() => goBack()}/>
+        <Header
+          backNavigation={true}
+          onBack={() => goBack()}
+          statusDropdown={true}
+          // threedot={true}
+          statusOptions={STATUS_OPTIONS}
+          statusLabelKey="name"
+          statusValueKey="id"
+          statusValue={application?.status ?? ''}
+          onStatusSelect={(item) => {
+            dispatch(updateApplicationStatusRequestAction({ id: application_id, status: item.id }));
+          }}
+          statusOpenModalOnSelect={true}
+          statusChangeStatusModalProps={{
+            applicantName: candidateName,
+            currentStatus: application?.status ?? null,
+            newStatusOptions: STATUS_OPTIONS,
+            onUpdateStatus: (selectedStatusId) => {
+              // selectedStatusId is the STATUS_OPTIONS id (e.g. "on_hold") — sent as ?status=on_hold
+              dispatch(updateApplicationStatusRequestAction({ id: application_id, status: selectedStatusId }));
+              dispatch(getApplicationDetailRequestAction(application_id));
+            },
+            hideAddReason: true,
+            initialEmailMessage: 'Hi {{candidate_name}},\n\nYour application status has been updated to "{{application_status}}".\n\nThanks,\n{{company}}',
+          }}
+        />
         <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} bounces={false}>
           <View style={styles.subContainer}>
-            <ProfileCart 
+            <ProfileCart
               application={application}
               loading={loading} />
             <View style={styles.tabContainer}>

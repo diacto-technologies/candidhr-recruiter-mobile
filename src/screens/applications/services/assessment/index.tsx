@@ -7,7 +7,7 @@ import Header from '../../../../components/organisms/header'
 import SlideAnimatedTab from '../../../../components/molecules/slideanimatedtab'
 import FooterButtons from '../../../../components/molecules/footerbuttons'
 import AssessmentCard from '../../../../components/molecules/assessmentcard'
-import AssignedAssessmentCard from '../../../../components/molecules/assignedAssessmentCard'
+import AssignedAssessmentCard, { AssignedAssessmentCardShimmer } from '../../../../components/molecules/assignedAssessmentCard'
 import PrebuildAssessmentCard from '../../../../components/molecules/assessmentprebuild'
 import BottomSheet from '../../../../components/organisms/bottomsheet'
 import FilterSheetContent from '../../../../components/organisms/filtersheetcontent'
@@ -20,22 +20,26 @@ import { plusIcon } from '../../../../assets/svg/plus'
 import { colors } from '../../../../theme/colors'
 import {
   assessmentAssignedData,
-  assignedAssessments,
-  jobFiltersOption,
 } from '../../../../utils/dummaydata'
 import { goBack } from '../../../../utils/navigationUtils'
 import { useRNSafeAreaInsets } from '../../../../hooks/useRNSafeAreaInsets'
 import { useAppDispatch } from '../../../../hooks/useAppDispatch'
 import { useAppSelector } from '../../../../hooks/useAppSelector'
-import { getAssessmentsRequestAction } from '../../../../features/assessments/actions'
+import { getAssessmentsRequestAction, getAssessmentsAssignedRequestAction } from '../../../../features/assessments/actions'
 import {
   selectAssessments,
   selectAssessmentsLoading,
   selectAssessmentsHasMore,
   selectAssessmentsPagination,
+  selectAssignedAssessments,
+  selectAssignedAssessmentFilters,
+  selectAssignedAssessmentsLoading,
+  selectAssignedAssessmentsHasMore,
+  selectAssignedAssessmentsPagination,
 } from '../../../../features/assessments/selectors'
-import type { Assessment } from '../../../../features/assessments/types'
+import type { Assessment, AssignedAssessment } from '../../../../features/assessments/types'
 import { useStyles } from './styles'
+import { clearAssignedAssessmentFilters } from '../../../../features/assessments/slice'
 
 
 const ASSESSMENT_TABS = ['My company', 'Prebuild', 'Assigned'] as const
@@ -94,9 +98,6 @@ const ASSIGNED_FOOTER_STYLE = {
   shadowRadius: 3,
 } as const
 
-// -----------------------------------------------------------------------------
-// In-file shimmer (used only here; extract to AssessmentCardShimmer.tsx if reused)
-// -----------------------------------------------------------------------------
 const AssessmentCardShimmer: React.FC = () => (
   <Card style={{ marginBottom: 12, padding: 16 }}>
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -134,6 +135,12 @@ const AssessmentScreen: React.FC = () => {
   const hasMore = useAppSelector(selectAssessmentsHasMore)
   const pagination = useAppSelector(selectAssessmentsPagination)
 
+  const assignedAssessments = useAppSelector(selectAssignedAssessments)
+  const assignedFilters = useAppSelector(selectAssignedAssessmentFilters)
+  const assignedLoading = useAppSelector(selectAssignedAssessmentsLoading)
+  const assignedHasMore = useAppSelector(selectAssignedAssessmentsHasMore)
+  const assignedPagination = useAppSelector(selectAssignedAssessmentsPagination)
+
   const isMyCompany = activeTab === TAB_KEYS.MY_COMPANY
   const isAssigned = activeTab === TAB_KEYS.ASSIGNED
   const isPrebuild = activeTab === TAB_KEYS.PREBUILD
@@ -144,13 +151,48 @@ const AssessmentScreen: React.FC = () => {
     dispatch(getAssessmentsRequestAction({ page: PAGINATION.INITIAL_PAGE, append: false }))
   }, [dispatch])
 
+  useEffect(() => {
+    if (
+      isAssigned &&
+      !assignedLoading &&
+      assignedAssessments.length === 0
+    ) {
+      dispatch(
+        getAssessmentsAssignedRequestAction({
+          page: PAGINATION.INITIAL_PAGE,
+          append: false,
+          o: '-assigned_at',
+        })
+      )
+    }
+  }, [dispatch, isAssigned])
+  
+
   const loadMoreMyCompany = useCallback(() => {
     if (!hasMore || loading) return
     dispatch(getAssessmentsRequestAction({ page: pagination.page + 1, append: true }))
   }, [hasMore, loading, pagination.page, dispatch])
 
-  const handleClearFilters = useCallback(() => setSelectedFilter(null), [])
-  const handleApplyFilters = useCallback(() => setFilterSheetOpen(false), [])
+  const handleClearFilters = useCallback(() => {
+    if (isAssigned) {
+      dispatch(clearAssignedAssessmentFilters())
+    }
+    setSelectedFilter(null)
+  }, [dispatch, isAssigned])
+
+  const handleApplyFilters = useCallback(() => {
+    if (isAssigned) {
+      dispatch(
+        getAssessmentsAssignedRequestAction({
+          page: PAGINATION.INITIAL_PAGE,
+          append: false,
+          o: '-assigned_at',
+          ...assignedFilters,
+        })
+      )
+    }
+    setFilterSheetOpen(false)
+  }, [dispatch, isAssigned, assignedFilters])
   const handleOpenFilter = useCallback((item?: FilterOption) => {
     if (item != null) setSelectedFilter(item)
     setFilterSheetOpen(true)
@@ -161,7 +203,23 @@ const AssessmentScreen: React.FC = () => {
     []
   )
   const renderAssignedItem = useCallback(
-    ({ item }: { item: (typeof assignedAssessments)[number] }) => <AssignedAssessmentCard item={item} />,
+    ({ item }: { item: AssignedAssessment }) => (
+      console.log(item?.status_text,""),
+      <AssignedAssessmentCard
+        item={{
+          id: item.id,
+          name: item.application.name ?? '',
+          email: item.email,
+          job: item.job?.title ?? '',
+          assignedBy: item.assigned_by.name,
+          assignedDate: new Date(item.assigned_at).toLocaleDateString(),
+          status: item.status_text,
+          statusColor: undefined,
+          profile: item.assigned_by.profile_pic ?? '',
+          application_id:item?.application?.id
+        }}
+      />
+    ),
     []
   )
 
@@ -170,7 +228,8 @@ const AssessmentScreen: React.FC = () => {
     return (
       <View style={{ paddingTop: 8 }}>
         {Array.from({ length: SHIMMER_COUNTS.FOOTER }, (_, i) => (
-          <AssessmentCardShimmer key={i} />
+          // <AssessmentCardShimmer key={i} />
+          <Shimmer  height={12} borderRadius={6} key={i}/>
         ))}
       </View>
     )
@@ -187,6 +246,43 @@ const AssessmentScreen: React.FC = () => {
       ),
     [loading]
   )
+
+  const renderAssignedListFooter = useCallback(() => {
+    if (!assignedLoading || assignedAssessments.length === 0) return null
+    return (
+      <View style={{ paddingTop: 8 }}>
+        {Array.from({ length: SHIMMER_COUNTS.FOOTER }, (_, i) => (
+          <AssignedAssessmentCardShimmer key={i} />
+        ))}
+      </View>
+    )
+  }, [assignedLoading, assignedAssessments.length])
+
+  const renderAssignedListEmpty = useCallback(
+    () =>
+      !assignedLoading ? null : (
+        <View style={{ paddingTop: 8 }}>
+          {Array.from({ length: SHIMMER_COUNTS.EMPTY_LIST }, (_, i) => (
+            <AssignedAssessmentCardShimmer key={i} />
+          ))}
+        </View>
+      ),
+    [assignedLoading]
+  )
+
+  const loadMoreAssigned = useCallback(() => {
+    if (!assignedHasMore || assignedLoading) return
+    const nextPage = (assignedPagination.page || 1) + 1
+
+    dispatch(
+      getAssessmentsAssignedRequestAction({
+        page: nextPage,
+        append: true,
+        o: '-assigned_at',
+        ...assignedFilters,
+      })
+    )
+  }, [assignedHasMore, assignedLoading, assignedPagination.page, dispatch, assignedFilters])
 
   return (
     <CustomSafeAreaView>
@@ -206,7 +302,7 @@ const AssessmentScreen: React.FC = () => {
           <View style={[tabPanelStyle(isMyCompany), { flex: 1 }]}>
             <FlatList
               data={assessmentsList}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item, index) => `${item.id}-${index}`}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ padding: 16 }}
               onEndReached={loadMoreMyCompany}
@@ -222,9 +318,13 @@ const AssessmentScreen: React.FC = () => {
           <View style={[tabPanelStyle(isAssigned), { flex: 1 }]}>
             <FlatList
               data={assignedAssessments}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item, index) => `${item.id}-${index}`}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ padding: 16 }}
+              onEndReached={loadMoreAssigned}
+              onEndReachedThreshold={PAGINATION.END_REACHED_THRESHOLD}
+              ListFooterComponent={renderAssignedListFooter}
+              ListEmptyComponent={renderAssignedListEmpty}
               renderItem={renderAssignedItem}
             />
           </View>
@@ -275,10 +375,10 @@ const AssessmentScreen: React.FC = () => {
                 onApply={handleApplyFilters}
                 selectedTab={selectedFilter ?? ''}
                 setSelectedTab={(tab) => setSelectedFilter(tab as FilterOption)}
-                filtersConfig={jobFiltersOption}
+                filtersConfig={assessmentAssignedData}
                 onClearAll={handleClearFilters}
                 job_Id={undefined}
-                mode="job"
+                mode="assessments"
               />
             </BottomSheet>
           </View>

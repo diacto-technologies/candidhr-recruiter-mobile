@@ -44,5 +44,11 @@ export const useStyles = () => {
             borderRadius: 30,
             backgroundColor: colors.success[500],
         },
+        reviewRow: {
+            flexDirection: "row",
+            //justifyContent: "space-between",
+            alignItems: "center",
+            marginTop: 12,
+        },
     })
 }

@@ -7,7 +7,7 @@ import { useAppSelector } from '../../../hooks/useAppSelector';
 import { selectApplicationsFilters, selectApplicationsPagination } from '../../../features/applications/selectors';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { getApplicationsRequestAction } from '../../../features/applications/actions';
-import { setApplicationsFilters } from '../../../features/applications/slice';
+import { setApplicationsFilters, setSort } from '../../../features/applications/slice';
 import Icon from '../../atoms/vectoricon';
 import ExperienceFilter from './experincefilter';
 import DateFilter from './datefilter';
@@ -15,6 +15,11 @@ import TextSearchFilter from './textSearchFilter';
 import { getJobsRequestAction } from '../../../features/jobs/actions';
 import { selectJobFilters, selectJobsActiveTab } from '../../../features/jobs/selectors';
 import { setJobFilters } from '../../../features/jobs/slice';
+import { selectAssignedAssessmentFilters } from '../../../features/assessments/selectors';
+import { setAssignedAssessmentFilters } from '../../../features/assessments/slice';
+import { selectPersonalityScreeningFilters } from '../../../features/personalityScreening/selectors';
+import { setFilters as setPersonalityScreeningFilters } from '../../../features/personalityScreening/slice';
+import DropdownFilter from './dropdownfilter';
 
 interface Props {
   onCancel: () => void;
@@ -24,8 +29,14 @@ interface Props {
   selectedTab: string;
   setSelectedTab: (tab: string) => void;
   filtersConfig: string[];
-  mode: "job" | "applicant";
+  mode: "job" | "applicant" | "assessments" | 'videoInterview';
 }
+const sortOptions = [
+  { label: 'Applicant name', value: 'Applicant name' },
+  { label: 'Resume Score', value: 'Resume Score' },
+  { label: 'Applied On', value: 'Applied' },
+  { label: 'Last Updated', value: 'Last Update' },
+];
 
 const FilterSheetContent: React.FC<Props> = ({
   onCancel,
@@ -40,12 +51,60 @@ const FilterSheetContent: React.FC<Props> = ({
 
   const slideAnim = useRef(new Animated.Value(0)).current;
   const indicatorY = useRef(new Animated.Value(0)).current;
+  const [sortExpanded, setSortExpanded] = useState(false);
 
   const dispatch = useAppDispatch();
   const filters = useAppSelector(selectApplicationsFilters);
   const jobFilters = useAppSelector(selectJobFilters);
+  const assessmentFilters = useAppSelector(selectAssignedAssessmentFilters);
+  const personalityScreeningFilters = useAppSelector(selectPersonalityScreeningFilters);
   const pagination = useAppSelector(selectApplicationsPagination);
   const activeTab = useAppSelector(selectJobsActiveTab);
+
+ const labelMap: Record<string, Record<string, string>> = {
+  source: {
+    application_form: "Form",
+    imported_using_bulk_resume_upload: "Bulk Import",
+  },
+
+  status: {
+    applied: "Applied",
+    in_progress: "In Progress",
+    shortlisted: "Shortlisted",
+    rejected: "Rejected",
+    on_hold: "On Hold",
+    interview_scheduled: "Interview Scheduled",
+    final_interview: "Final Interview",
+    hired: "Hired",
+    offer_extended: "Offer Extended",
+    offer_accepted: "Offer Accepted",
+    offer_rejected: "Offer Rejected",
+    not_selected: "Not Selected",
+    withdrawn: "Withdrawn",
+    archived: "Archived",
+  },
+
+  latestStageName: {
+    resume_screening: "Resume Screening",
+    assessment: "Assessment",
+    automated_video_interview: "Automated Video Interview",
+  },
+
+  latestStageStatus: {
+    approved: "Approved",
+    not_approved: "Not Approved",
+    approval_pending: "Pending",
+  },
+};
+
+  const activeFilters =
+    mode === 'job'
+      ? jobFilters
+      : mode === 'assessments'
+        ? assessmentFilters
+        : mode === 'videoInterview'
+          ? personalityScreeningFilters
+          : filters;
 
   const hiddenTabs = ['Applied', 'Last Update'];
 
@@ -76,9 +135,8 @@ const FilterSheetContent: React.FC<Props> = ({
 
         <View style={{ marginVertical: 16 }}>
           <FlatList
-            data={Object.entries(mode === 'job' ? jobFilters : filters).filter(
-              ([key, value]) =>
-                !!value && !['sort', 'sortBy', 'sortDir'].includes(key)
+            data={Object.entries(activeFilters).filter(
+              ([key, value]) => !!value && !['sort', 'sortBy', 'sortDir'].includes(key)
             )}
             keyExtractor={([key]) => key}
             horizontal
@@ -104,26 +162,20 @@ const FilterSheetContent: React.FC<Props> = ({
                   <Typography variant="mediumTxtsm" color={colors.gray[700]}>
                     {key === 'experience'
                       ? Number(value) === 0
-                        ? value +" "+'Fresher'
+                        ? value + " " + 'Fresher'
                         : `${value} ${Number(value) === 1 ? 'Year' : 'Years'}`
-                      : value}
+                      : labelMap[key]?.[value] || value}
                   </Typography>
                   <TouchableOpacity
                     onPress={() => {
                       if (mode === "applicant") {
-                        dispatch(
-                          setApplicationsFilters({
-                            ...filters,
-                            [key]: "",
-                          })
-                        );
+                        dispatch(setApplicationsFilters({ ...filters, [key]: "" }));
+                      } else if (mode === "job") {
+                        dispatch(setJobFilters({ ...jobFilters, [key]: "" }));
+                      } else if (mode === "videoInterview") {
+                        dispatch(setPersonalityScreeningFilters({ [key]: "" }));
                       } else {
-                        dispatch(
-                          setJobFilters({
-                            ...jobFilters,
-                            [key]: "",
-                          })
-                        );
+                        dispatch(setAssignedAssessmentFilters({ [key]: "" }));
                       }
                     }}
                     style={{ marginLeft: 2 }}
@@ -144,7 +196,7 @@ const FilterSheetContent: React.FC<Props> = ({
         <View style={styles.content}>
 
           {/* LEFT TABS */}
-          <View style={styles.leftTabsContainer}>
+          <ScrollView style={styles.leftTabsContainer}>
             {visibleTabs.map((item, index) => {
               const isActive = selectedTab === item;
 
@@ -176,24 +228,259 @@ const FilterSheetContent: React.FC<Props> = ({
                 </TouchableOpacity>
               );
             })}
-          </View>
+          </ScrollView>
 
           {/* RIGHT CONTENT */}
           <View style={{ flex: 1, flexShrink: 1 }}>
             <Animated.View style={{ flex: 1, transform: [{ translateX: slideAnim }] }}>
               <ScrollView contentContainerStyle={{ flexGrow: 0 }}>
 
-                {selectedTab === 'Name' && <TextSearchFilter mode="applicant" field="name" placeholder="Search by 'Name' " />}
-                {selectedTab === 'Email' && <TextSearchFilter mode="applicant" field="email" placeholder="Search by 'Email'" />}
-                {selectedTab === 'Applied For' && <TextSearchFilter mode="applicant" field="appliedFor" placeholder="Search by 'Applied For'" />}
-                {selectedTab === 'Contact' && <TextSearchFilter mode="applicant" field="contact" placeholder="Search by 'Contact'" />}
+                {mode === 'applicant' && (
+                  <>
+                    {selectedTab === 'Sort' && (
+                      <View style={styles.sortByBlock}>
+                        <TouchableOpacity
+                          style={styles.sortByHeader}
+                          onPress={() => setSortExpanded((e) => !e)}
+                          activeOpacity={0.7}
+                        >
+                          <View style={styles.sortBySummaryWrap}>
+                            <Typography variant="P1M" color={colors.gray[700]}>
+                              Sort by
+                            </Typography>
+                            <View style={styles.sortBySummary}>
+                              <Typography
+                                variant="P1M"
+                                color={colors.gray[800]}
+                                numberOfLines={1}
+                                style={styles.sortByLabel}
+                              >
+                                {sortOptions.find((o) => o.value === filters.sortBy)?.label ?? 'Applied On'}
+                              </Typography>
+                              <Typography variant="P1M" color={colors.gray[600]}>
+                                {' , '}
+                                {filters.sortDir === 'asc' ? 'Asc' : 'Des'}
+                              </Typography>
+                            </View>
+                          </View>
+                          <Icon
+                            name={sortExpanded ? 'chevron-up' : 'chevron-down'}
+                            size={20}
+                            color={colors.gray[600]}
+                            iconFamily="Feather"
+                          />
+                        </TouchableOpacity>
 
-                {selectedTab === 'Title' && <TextSearchFilter mode="job" field="title" placeholder="Search by 'Title'" />}
-                {selectedTab === 'Experience' && <ExperienceFilter />}
-                {selectedTab === 'Employment Type' && <TextSearchFilter mode="job" field="employmentType" placeholder="Search by 'Employee Type' " />}
-                {selectedTab === 'Location' && <TextSearchFilter mode="job" field="location" placeholder="Search by 'Location' " />}
-                {selectedTab === 'Close Date' && <DateFilter />}
-                {selectedTab === 'Created By' && <TextSearchFilter mode="job" field="createdBy" placeholder="Search by 'Created By' " />}
+                        {sortExpanded && (
+                          <View style={styles.sortByExpanded}>
+                            <Typography variant="P1M" color={colors.gray[700]} style={styles.sortBySectionTitle}>
+                              Sort By
+                            </Typography>
+                            {sortOptions.map((option) => {
+                              const isSelected = filters.sortBy === option.value;
+                              return (
+                                <TouchableOpacity
+                                  key={option.value}
+                                  onPress={() =>
+                                    dispatch(
+                                      setSort({
+                                        sortBy: option.value,
+                                        sortDir: (filters.sortDir ?? 'desc') as 'asc' | 'desc',
+                                      })
+                                    )
+                                  }
+                                  style={[styles.radioRow, isSelected && styles.radioRowSelected]}
+                                  activeOpacity={0.7}
+                                >
+                                  <Typography variant="P1M" color={colors.gray[800]}>
+                                    {option.label}
+                                  </Typography>
+                                  <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
+                                    {isSelected && <View style={styles.radioInner} />}
+                                  </View>
+                                </TouchableOpacity>
+                              );
+                            })}
+
+                            <Typography variant="P1M" color={colors.gray[700]} style={styles.sortBySectionTitle}>
+                              Order
+                            </Typography>
+                            {[
+                              { dir: 'asc' as const, label: '↑ Ascending' },
+                              { dir: 'desc' as const, label: '↓ Descending' },
+                            ].map(({ dir, label }) => {
+                              const isSelected = filters.sortDir === dir;
+                              return (
+                                <TouchableOpacity
+                                  key={dir}
+                                  onPress={() =>
+                                    dispatch(
+                                      setSort({
+                                        sortBy: filters.sortBy,
+                                        sortDir: dir,
+                                      })
+                                    )
+                                  }
+                                  style={[styles.radioRow, isSelected && styles.radioRowSelected]}
+                                  activeOpacity={0.7}
+                                >
+                                  <Typography variant="P1M" color={colors.gray[800]}>
+                                    {label}
+                                  </Typography>
+                                  <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
+                                    {isSelected && <View style={styles.radioInner} />}
+                                  </View>
+                                </TouchableOpacity>
+                              );
+                            })}
+                          </View>
+                        )}
+                      </View>
+                    )}
+                    {selectedTab === 'Name' && <TextSearchFilter mode="applicant" field="name" placeholder="Search by 'Name' " />}
+                    {selectedTab === 'Source' && <DropdownFilter
+                      mode="applicant"
+                      field="source"
+                      placeholder="All"
+                      options={[
+                        { label: "Form", value: "application_form" },
+                        { label: "Bulk Import", value: "imported_using_bulk_resume_upload" },
+                      ]}
+                      labelKey="label"
+                      valueKey="value"
+                    />}
+                    {selectedTab === 'Applied For' && <TextSearchFilter mode="applicant" field="appliedFor" placeholder="Search by 'Applied For'" />}
+                    {selectedTab === 'Status' && <DropdownFilter
+                      mode="applicant"
+                      field="status"
+                      placeholder="All"
+                      options={[
+                        { label: "Applied ", value: "applied" },
+                        { label: "In Progress", value: "in_progress" },
+                        { label: "Shortlisted", value: "shortlisted" },
+                        { label: "Rejected", value: "rejected" },
+                        { label: "On Hold", value: "on_hold" },
+                        { label: "Interview Scheduled", value: "interview_scheduled" },
+                        { label: "Final Interview", value: "final_interview" },
+                        { label: "Hired", value: "hired" },
+                        { label: "Offer Extended", value: "offer_extended" },
+                        { label: "Offer Accepted", value: "offer_accepted" },
+                        { label: "Offer Rejected", value: "offer_rejected" },
+                        { label: "Not Selected", value: "not_selected" },
+                        { label: "Withdrawn", value: "withdrawn" },
+                        { label: "Archived", value: "archived" },
+                      ]}
+                      labelKey="label"
+                      valueKey="value"
+                    />}
+                    {selectedTab === 'Stage' && (
+                      <DropdownFilter
+                        mode="applicant"
+                        field="latestStageName"
+                        placeholder="All"
+                        options={[
+                          { label: "Resume Screening", value: "resume_screening" },
+                          { label: "Assessment", value: "assessment" },
+                          { label: "Automated Video Interview", value: "automated_video_interview" },
+                        ]}
+                      />
+                    )}
+
+                    {selectedTab === 'Approved' && (
+                      <DropdownFilter
+                        mode="applicant"
+                        field="latestStageStatus"
+                        placeholder="All"
+                        options={[
+                          { label: "Approved", value: "approved" },
+                          { label: "Not Approved", value: "not_approved" },
+                          { label: "Pending", value: "approval_pending" },
+                        ]}
+                      />
+                    )}
+                  </>
+                )}
+
+                {mode === 'job' && (
+                  <>
+                    {selectedTab === 'Title' && <TextSearchFilter mode="job" field="title" placeholder="Search by 'Title'" />}
+                    {selectedTab === 'Experience' && <ExperienceFilter />}
+                    {selectedTab === 'Employment Type' && <TextSearchFilter mode="job" field="employmentType" placeholder="Search by 'Employee Type' " />}
+                    {selectedTab === 'Location' && <TextSearchFilter mode="job" field="location" placeholder="Search by 'Location' " />}
+                    {selectedTab === 'Close Date' && <DateFilter />}
+                    {selectedTab === 'Created By' && <TextSearchFilter mode="job" field="createdBy" placeholder="Search by 'Created By' " />}
+                  </>
+                )}
+
+                {mode === 'assessments' && (
+                  <>
+                    {selectedTab === 'Applicant' && <TextSearchFilter mode="assessments" field="applicant_name__icontains" placeholder="Search by 'Applicant' " />}
+                    {selectedTab === 'Email' && <TextSearchFilter mode="assessments" field="candidate_email__icontains" placeholder="Search by 'Email'" />}
+                    {selectedTab === 'Job Title' && <TextSearchFilter mode="assessments" field="job__title__icontains" placeholder="Search by 'Job Title'" />}
+                    {selectedTab === 'Avg Percentage' && <TextSearchFilter mode="assessments" field="average_percentage__in" placeholder="Search by 'Avg Percentage'" />}
+                    {selectedTab === 'Assigned By' && <TextSearchFilter mode="assessments" field="assigned_by__name__icontains" placeholder="Search by 'Assigned By'" />}
+                    {selectedTab === 'Status' && <TextSearchFilter mode="assessments" field="status_text" placeholder="Search by 'Status'" />}
+                  </>
+                )}
+
+                {mode === 'videoInterview' && (
+                  <>
+                    {selectedTab === 'Applicant' && (
+                      <TextSearchFilter
+                        mode="videoInterview"
+                        field="applicant_name__icontains"
+                        placeholder="Search by 'Applicant'"
+                      />
+                    )}
+
+                    {selectedTab === 'Email' && (
+                      <TextSearchFilter
+                        mode="videoInterview"
+                        field="candidate_email__icontains"
+                        placeholder="Search by 'Email'"
+                      />
+                    )}
+
+                    {selectedTab === 'Job Name' && (
+                      <TextSearchFilter
+                        mode="videoInterview"
+                        field="job__title__icontains"
+                        placeholder="Search by 'Job Title'"
+                      />
+                    )}
+
+                    {selectedTab === 'Assigned By' && (
+                      <TextSearchFilter
+                        mode="videoInterview"
+                        field="assigned_by__name__icontains"
+                        placeholder="Search by 'Assigned By'"
+                      />
+                    )}
+
+                    {mode === 'videoInterview' && selectedTab === 'Status' && (
+                      <DropdownFilter
+                        mode="videoInterview"
+                        field="status_text"
+                        placeholder="All"
+                        options={[
+                          { label: "All", value: "" },
+                          { label: "Assigned", value: "Assigned" },
+                          { label: "Link Opened", value: "Link Opened" },
+                          { label: "Started", value: "Started" },
+                          { label: "Completed", value: "Completed" },
+                          { label: "Shortlisted", value: "Shortlisted" },
+                          { label: "Hired", value: "Hired" },
+                          { label: "Scheduled Final Interview", value: "Scheduled Final Interview" },
+                          { label: "Revoked", value: "Revoked" },
+                          { label: "Rejected", value: "Rejected" },
+                          { label: "On Hold", value: "On Hold" },
+                        ]}
+                        labelKey="label"
+                        valueKey="value"
+                      />
+                    )}
+                  </>
+                )}
 
                 {/* 
                 {![...filtersConfig].includes(selectedTab) && (
@@ -262,6 +549,7 @@ const styles = StyleSheet.create({
   },
   leftTabsContainer: {
     width: 124,
+    flexGrow: 0,
     backgroundColor: colors.gray[50],
     gap: 10,
     borderTopRightRadius: 20,
@@ -300,7 +588,80 @@ const styles = StyleSheet.create({
     columnGap: 12,
     borderBottomRightRadius: 16,
     borderBottomLeftRadius: 16,
-  }
+  },
+  sortByBlock: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  sortByHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.gray[200],
+    backgroundColor: colors.common.white,
+  },
+  sortBySummaryWrap: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    minWidth: 0,
+  },
+  sortBySummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    minWidth: 0,
+  },
+  sortByLabel: {
+    flexShrink: 1,
+  },
+  sortByExpanded: {
+    marginTop: 16,
+    gap: 4,
+  },
+  sortBySectionTitle: {
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  radioRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.gray[200],
+    backgroundColor: colors.common.white,
+    marginBottom: 4,
+  },
+  radioRowSelected: {
+    borderColor: colors.brand[400],
+    backgroundColor: colors.brand[50],
+  },
+  radioOuter: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: colors.gray[300],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioOuterSelected: {
+    borderColor: colors.brand[500],
+  },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.brand[500],
+  },
 });
 
 export default FilterSheetContent;

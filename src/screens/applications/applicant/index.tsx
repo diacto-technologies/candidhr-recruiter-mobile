@@ -66,13 +66,23 @@ const ApplicantScreen = () => {
         page,
         limit: pagination.limit,
       };
-  
       if (append) params.append = true;
       if (debouncedName) params.applicantName = debouncedName;
       if (filters.email) params.email = filters.email;
       if (filters.appliedFor) params.jobTitle = filters.appliedFor;
       if (filters.contact) params.contact = filters.contact;
       if (filters.sort) params.sort = filters.sort;
+      if (filters.latestStageStatus)
+        params.latestStageStatus = filters.latestStageStatus;
+  
+      if (filters.source)
+        params.source = filters.source;
+  
+      if (filters.status)
+        params.status = filters.status;
+  
+      if (filters.latestStageName)
+        params.latestStageName = filters.latestStageName;
   
       return params;
     },
@@ -82,6 +92,10 @@ const ApplicantScreen = () => {
       filters.appliedFor,
       filters.contact,
       filters.sort,
+      filters.latestStageStatus,
+      filters.source,
+      filters.status,
+      filters.latestStageName,
       pagination.limit,
     ]
   );
@@ -110,7 +124,16 @@ const ApplicantScreen = () => {
   };
 
   const handleClearAllFilters = () => {
-    dispatch(setApplicationsFilters({ name: "", email: "", appliedFor: "", contact: "" }));
+    dispatch(setApplicationsFilters({
+      name: "",
+      email: "",
+      appliedFor: "",
+      contact: "",
+      latestStageStatus: "",
+      source: "",
+      status: "",
+      latestStageName: "",
+    }));
     setFilterSheet(false);
   };
 

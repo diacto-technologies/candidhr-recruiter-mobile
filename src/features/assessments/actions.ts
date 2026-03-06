@@ -1,5 +1,9 @@
 import { ASSESSMENTS_ACTION_TYPES } from "./constants";
-import { GetAssessmentsListPayload } from "./types";
+import {
+  AssignedFilterParams,
+  GetAssessmentsListPayload,
+  GetAssignedAssessmentsPayload,
+} from "./types";
 
 export const getAssessmentsRequestAction = (payload?: GetAssessmentsListPayload) => ({
   type: ASSESSMENTS_ACTION_TYPES.GET_ASSESSMENTS_REQUEST,
@@ -7,4 +11,11 @@ export const getAssessmentsRequestAction = (payload?: GetAssessmentsListPayload)
     page: payload?.page ?? 1,
     append: payload?.append ?? false,
   },
+});
+
+export const getAssessmentsAssignedRequestAction = (
+  payload?: GetAssignedAssessmentsPayload
+) => ({
+  type: ASSESSMENTS_ACTION_TYPES.GET_ASSIGNED_ASSESSMENTS_REQUEST,
+  payload,
 });

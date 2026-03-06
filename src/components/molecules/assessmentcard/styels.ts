@@ -62,5 +62,10 @@ export const useStyles = () => {
             marginLeft: -8,
         },
 
+        initialAvatar: {
+            backgroundColor: colors.gray[200], // or any brand color
+            justifyContent: 'center',
+            alignItems: 'center',
+          },
     })
 }
