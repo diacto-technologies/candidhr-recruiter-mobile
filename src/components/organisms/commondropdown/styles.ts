@@ -68,7 +68,30 @@ export const styles = StyleSheet.create({
     bottom: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    pointerEvents: 'none',
+    pointerEvents: 'box-none',
+  },
+
+  chipsScroll: {
+    flexGrow: 0,
+  },
+
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.gray[200],
+    backgroundColor: colors.gray[50],
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginRight: 8,
+  },
+
+  chipText: {
+    fontFamily: Fonts.InterMedium,
+    fontSize: 14,
+    color: colors.gray[900],
+    marginRight: 8,
   },
 
   placeholderStyle: {

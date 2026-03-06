@@ -20,6 +20,13 @@ export const useStyles = () => {
           subEditcontainer:{
             flexDirection:'row',
             columnGap:12
+          },
+          subEditcontainerWithDropdown: {
+            alignItems: 'center',
+          },
+          statusDropdownWrapper: {
+            minWidth: 180,
+            maxWidth: 200,
           }
     });
 };

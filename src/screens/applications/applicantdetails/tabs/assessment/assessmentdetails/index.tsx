@@ -4,6 +4,7 @@ import {
   ScrollView,
   ViewStyle,
   TouchableOpacity,
+  Image
 } from "react-native";
 import { useAppSelector } from "../../../../../../hooks/useAppSelector";
 import {
@@ -19,8 +20,12 @@ import Ring from "../../../../../../components/atoms/ring";
 import Divider from "../../../../../../components/atoms/divider";
 import VideoPlayerBox from "../../../../../../components/molecules/videoplayer";
 import { useStyles } from "./styles";
+import { SvgXml } from "react-native-svg";
+import { arrowDown } from "../../../../../../assets/svg/arrowdown";
+import SnapshotModal from "../../../../../../components/molecules/snapshotmodal";
 
 type QuestionType = {
+  isCorrect: boolean;
   id: number;
   time: string;
   difficulty: "Easy" | "Medium" | "Hard";
@@ -33,6 +38,14 @@ type QuestionType = {
     isSelected: boolean;
   }[];
   description?: string;
+  aiScore?: number;
+  aiNote?: string;
+  aiBreakdown?: {
+    label: string;
+    note: string;
+    score: number;
+  }[];
+  aiRelevanceReason?: string;
 };
 
 type AssessmentCard = {
@@ -72,7 +85,11 @@ const formatQuestionType = (type?: string) => {
 const AssessmentsDetails = ({ style }: Props) => {
   const styles = useStyles();
   const [selectedAssessmentIndex, setSelectedAssessmentIndex] = useState(0);
+  const [expandedAI, setExpandedAI] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>("QUESTIONS");
+  const [visibleCount, setVisibleCount] = useState(5);
+  const [snapshotModalVisible, setSnapshotModalVisible] = useState(false);
+  const [selectedSnapshot, setSelectedSnapshot] = useState<string | null>(null);
   const dispatch = useAppDispatch();
   const assessmentDetailedReport = useAppSelector(
     selectAssessmentDetailedReport
@@ -97,22 +114,22 @@ const AssessmentsDetails = ({ style }: Props) => {
 
   useEffect(() => {
     if (!assessmentDetailedReport) return;
-  
+
     const hasQuestions =
       (assessmentDetailedReport?.answers?.length ?? 0) > 0;
-  
+
     const hasCoding =
       (assessmentDetailedReport?.submissions?.length ?? 0) > 0;
-  
+
     if (!hasQuestions && hasCoding) {
       setActiveTab("CODING");
     }
-    else{
+    else {
       setActiveTab("QUESTIONS");
     }
   }, [assessmentDetailedReport]);
 
-  
+
   const handleAssessmentSelect = (
     assessmentLogId: string,
     assessmentId: string,
@@ -145,6 +162,7 @@ const AssessmentsDetails = ({ style }: Props) => {
 
         return {
           id: index + 1,
+          isCorrect: Boolean(item.correct),
           time: `${item.duration} / ${item.question.time_limit} Sec.`,
           difficulty: formatDifficulty(
             item.question?.difficulty?.difficulty
@@ -166,14 +184,16 @@ const AssessmentsDetails = ({ style }: Props) => {
 
           description:
             item.question?.type === "text"
-              ? "No response available."
+              ? item.text?.trim() || "No response available."
               : undefined,
+
+          aiScore: item.ai_score,
+          aiNote: item.ai_note,
+          aiBreakdown: item.ai_breakdown,
+          aiRelevanceReason: item.ai_relevance_reason,
         };
       }
     ) ?? [];
-
-    console.log(assessmentDetailedReport?.result?.proctoring?.video_file,"assessmentDetailedReport?.result?.proctoring?.video_file")
-
   return (
     <View style={[styles.container, style]}>
       <Typography variant="semiBoldTxtlg" color={colors.gray[900]}>
@@ -367,9 +387,184 @@ const AssessmentsDetails = ({ style }: Props) => {
                   </View>
                 )}
                 {q.description && (
-                  <Typography variant="regularTxtsm" color={colors.gray[600]}>
-                    {q.description}
-                  </Typography>
+                  <View
+                    style={{
+                      padding: 12,
+                      borderRadius: 8,
+                      backgroundColor: q.isCorrect
+                        ? colors.success[50]
+                        : colors.error[50],
+                      borderWidth: 1,
+                      borderColor: q.isCorrect
+                        ? colors.success[200]
+                        : colors.error[200],
+                    }}
+                  >
+                    <Typography
+                      variant="regularTxtsm"
+                      color={
+                        q.isCorrect
+                          ? colors.success[700]
+                          : colors.error[700]
+                      }
+                    >
+                      {q.description}
+                    </Typography>
+                  </View>
+                )}
+                {/* 🔥 AI SECTION FOR TEXT QUESTIONS */}
+                {q.type === "Text" && q.aiScore !== undefined && (
+                  <View
+                    style={{
+                      marginTop: 12,
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: colors.brand[100],
+                      backgroundColor: colors.brand[25],
+                      overflow: "hidden",
+                    }}
+                  >
+                    {/* HEADER (Clickable) */}
+                    <TouchableOpacity
+                      onPress={() =>
+                        setExpandedAI(expandedAI === q.id ? null : q.id)
+                      }
+                      style={{
+                        padding: 16,
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        // alignItems: "center",
+                        marginRight: 10
+                      }}
+                    >
+                      <View>
+                        <Typography
+                          variant="semiBoldTxtmd"
+                          color={colors.gray[600]}
+                        >
+                          AI Score
+                        </Typography>
+
+                        <Typography
+                          variant="semiBoldTxtxl"
+                          color={colors.brand[600]}
+                        >
+                          {q.aiScore?.toFixed(2)}
+                        </Typography>
+
+                        {q.aiNote && (
+                          <Typography
+                            variant="regularTxtsm"
+                            color={colors.gray[600]}
+                          >
+                            {q.aiNote}
+                          </Typography>
+                        )}
+                      </View>
+
+                      <SvgXml
+                        xml={arrowDown}
+                        width={20}
+                        height={20}
+                        style={{
+                          transform: [
+                            { rotate: expandedAI === q.id ? "180deg" : "0deg" },
+                          ],
+                        }}
+                      />
+                    </TouchableOpacity>
+
+                    {/* EXPANDABLE CONTENT */}
+                    {expandedAI === q.id && (
+                      <View style={{ padding: 16, gap: 16 }}>
+                        {/* BREAKDOWN */}
+                        {q.aiBreakdown?.length > 0 && (
+                          <View style={{ gap: 12 }}>
+                            <Typography
+                              variant="semiBoldTxtmd"
+                              color={colors.gray[900]}
+                            >
+                              Breakdown
+                            </Typography>
+
+                            {q.aiBreakdown.map((b: any, i: number) => (
+                              <View
+                                key={i}
+                                style={{
+                                  padding: 12,
+                                  borderRadius: 10,
+                                  backgroundColor: colors.base.white,
+                                  gap: 8,
+                                  borderColor: colors.gray[200],
+                                  borderWidth: 1,
+                                }}
+                              >
+                                <View>
+                                  <Typography
+                                    variant="semiBoldTxtsm"
+                                    color={colors.gray[900]}
+                                  >
+                                    {b.label}
+                                  </Typography>
+
+                                  <Typography
+                                    variant="regularTxtsm"
+                                    color={colors.gray[600]}
+                                  >
+                                    {b.note}
+                                  </Typography>
+                                </View>
+
+                                <View
+                                  style={{
+                                    height: 6,
+                                    backgroundColor: colors.gray[200],
+                                    borderRadius: 4,
+                                    overflow: "hidden",
+                                  }}
+                                >
+                                  <View
+                                    style={{
+                                      width: `${(b.score ?? 0) * 100}%`,
+                                      height: 6,
+                                      backgroundColor: colors.brand[600],
+                                    }}
+                                  />
+                                </View>
+                              </View>
+                            ))}
+                          </View>
+                        )}
+
+                        {/* RELEVANCE */}
+                        {q.aiRelevanceReason && (
+                          <View
+                            style={{
+                              padding: 12,
+                              borderRadius: 10,
+                              backgroundColor: colors.base.white,
+                              borderColor: colors.gray[200],
+                              borderWidth: 1,
+                            }}
+                          >
+                            <Typography
+                              variant="semiBoldTxtsm"
+                              color={colors.gray[900]}
+                            >
+                              Why relevance was judged this way
+                            </Typography>
+
+                            <Typography
+                              variant="regularTxtsm"
+                              color={colors.gray[700]}
+                            >
+                              {q.aiRelevanceReason}
+                            </Typography>
+                          </View>
+                        )}
+                      </View>
+                    )}
+                  </View>
                 )}
               </View>
             </View>
@@ -413,86 +608,138 @@ const AssessmentsDetails = ({ style }: Props) => {
               ""
             }
           />
+          {/* ================= GAZE SNAPSHOTS ================= */}
+          {assessmentDetailedReport?.result?.proctoring?.gaze_snapshots?.length > 0 && (
+            <View style={{ marginTop: 24, gap: 16 }}>
+              {/* Header */}
+              <View style={{ gap: 2 }}>
+                <View style={{flexDirection:'row'}}>
+                <Typography
+                  variant="semiBoldTxtlg"
+                  color={colors.gray[900]}
+                >
+                  Gaze snapshots
+                </Typography>
+                <View
+                style={{
+                  paddingHorizontal: 14,
+                  //paddingVertical: 6,
+                  borderRadius: 20,
+                  backgroundColor: colors.gray[100],
+                  alignSelf:'center'
+                }}
+              >
+                <Typography
+                  variant="mediumTxtsm"
+                  color={colors.gray[700]}
+                >
+                  {
+                    assessmentDetailedReport?.result?.proctoring?.gaze_snapshots
+                      ?.length
+                  }{" "}
+                  captured
+                </Typography>
+              </View>
+              </View>
+                <Typography
+                  variant="regularTxtsm"
+                  color={colors.gray[600]}
+                >
+                  Extreme gaze moments from the proctoring video.
+                </Typography>
+              </View>
+              {/* Grid */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  gap: 10,
+                }}
+              >
+                {assessmentDetailedReport?.result?.proctoring?.gaze_snapshots
+                  ?.slice(0, visibleCount)
+                  .map((snapshot) => (
+                    <TouchableOpacity
+                      key={snapshot.id}
+                      onPress={() => {
+                        setSelectedSnapshot(snapshot.image);
+                        setSnapshotModalVisible(true);
+                      }}
+                      style={{
+                        width: "48%",
+                        aspectRatio: 1.6,
+                        borderRadius: 16,
+                        overflow: "hidden",
+                        backgroundColor: colors.gray[100],
+                        // marginBottom: 16,
+                        // marginRight: index % 2 === 0 ? "4%" : 0,
+                      }}
+                    >
+                      <Image
+                        source={{ uri: snapshot.image }}
+                        style={{ width: "100%", height: "100%" }}
+                        resizeMode="cover"
+                      />
+                    </TouchableOpacity>
+                  ))}
+
+                {/* Show More Card */}
+                {assessmentDetailedReport?.result?.proctoring?.gaze_snapshots
+                  ?.length > visibleCount && (
+                    <TouchableOpacity
+                      onPress={() => setVisibleCount((prev) => prev + 5)}
+                      style={{
+                        width: "48%",
+                        aspectRatio: 1.6,
+                        borderRadius: 16,
+                        borderWidth: 1,
+                        borderStyle: "dashed",
+                        borderColor: colors.brand[300],
+                        justifyContent: "center",
+                        alignItems: "center",
+                        backgroundColor: colors.brand[50],
+                        //gap: 6,
+                      }}
+                    >
+                      <Typography
+                        variant="semiBoldTxtlg"
+                        color={colors.brand[600]}
+                      >
+                        +
+                      </Typography>
+
+                      <Typography
+                        variant="semiBoldTxtsm"
+                        color={colors.brand[600]}
+                      >
+                        Show next 5
+                      </Typography>
+
+                      <Typography
+                        variant="regularTxtsm"
+                        color={colors.brand[700]}
+                      >
+                        {assessmentDetailedReport?.result?.proctoring
+                          ?.gaze_snapshots.length - visibleCount}{" "}
+                        more
+                      </Typography>
+                    </TouchableOpacity>
+                  )}
+              </View>
+            </View>
+          )}
         </View>
       )}
+      <SnapshotModal
+        visible={snapshotModalVisible}
+        imageUri={selectedSnapshot}
+        onClose={() => {
+          setSnapshotModalVisible(false);
+          setSelectedSnapshot(null);
+        }}
+      />
     </View>
   );
 };
 
 export default AssessmentsDetails;
-
-// const styles = StyleSheet.create({
-//   container: {
-//     backgroundColor: colors.common.white,
-//     borderRadius: 12,
-//     borderWidth: 0.5,
-//     borderColor: colors.gray[200],
-//     padding: 16,
-//     gap: 20,
-//     ...shadowStyles.shadow_xs
-//   },
-
-//   topRow: {},
-
-//   topCard: {
-//     marginRight: 12,
-//   },
-
-//   topCardInner: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     borderRadius: 10,
-//     padding: 12,
-//     borderWidth: 2,
-//     borderColor: colors.brand[500],
-//     gap: 12,
-//   },
-
-//   videoSection: {
-//     gap: 8,
-//   },
-
-//   qCard: {
-//     borderWidth: 1,
-//     borderColor: colors.gray[200],
-//     borderRadius: 12,
-//     marginBottom: 12,
-//     backgroundColor: colors.common.white,
-//   },
-
-//   qCardTop: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     alignItems: "center",
-//     backgroundColor: colors.gray[50],
-//     borderTopRightRadius: 12,
-//     borderTopLeftRadius: 12,
-//     padding: 12,
-//   },
-
-//   topChips: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     gap: 6,
-//   },
-
-//   smallChip: {
-//     paddingHorizontal: 8,
-//     paddingVertical: 2,
-//     borderRadius: 999,
-//     borderWidth: 1,
-//   },
-
-//   optionRow: {
-//     flexDirection: "row",
-//     flexWrap: "wrap",
-//     gap: 8,
-//   },
-
-//   optionChip: {
-//     paddingHorizontal: 12,
-//     paddingVertical: 4,
-//     borderRadius: 8,
-//     borderWidth: 1,
-//   },
-// });

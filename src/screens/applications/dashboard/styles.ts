@@ -29,7 +29,7 @@ export const useStyles = () => {
         },
 
         statItem: {
-            width: isTablet ? "49.5%" : "100%",
+            width: "48%",
             marginBottom: 12,
         },
         chartGrid: {

@@ -1,7 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { Dropdown as ElementDropdown } from 'react-native-element-dropdown';
+import {
+  Dropdown as ElementDropdown,
+  MultiSelect as ElementMultiSelect,
+} from 'react-native-element-dropdown';
 
 import Typography from '../../atoms/typography';
 import { colors } from '../../../theme/colors';
@@ -24,6 +27,7 @@ const CommonDropdown = ({
   searchField = 'name',
   mode = 'default',
   dropdownPosition = 'bottom',
+  multiSelect = false,
 }: CommonDropdownProps) => {
   const [isFocused, setIsFocused] = useState(false);
 
@@ -37,7 +41,42 @@ const CommonDropdown = ({
     }));
   }, [options, labelKey, valueKey, usernameKey]);
 
-  const selectedItem = items.find((i) => i.value === value);
+  const multiValues = useMemo(() => {
+    if (!multiSelect) return [];
+    return Array.isArray(value) ? value : value != null && value !== '' ? [value] : [];
+  }, [multiSelect, value]);
+
+  const selectedItem = !multiSelect ? items.find((i) => i.value === value) : undefined;
+  const selectedItems = useMemo(() => {
+    if (!multiSelect) return [];
+    const set = new Set(multiValues);
+    return items.filter((i) => set.has(i.value));
+  }, [items, multiSelect, multiValues]);
+
+  const selectedValuesSet = useMemo(() => new Set(multiValues), [multiValues]);
+
+  const handleRemoveChip = (chipValue: any) => {
+    if (!multiSelect) return;
+    const nextValues = multiValues.filter((v) => v !== chipValue);
+    const nextOptions = items
+      .filter((i) => nextValues.includes(i.value))
+      .map((i) => i.original);
+    onChange(nextValues, nextOptions);
+  };
+
+  const normalizeMultiOnChange = (next: any) => {
+    if (Array.isArray(next)) {
+      // Some versions return an array of values, others return array of objects.
+      if (next.length > 0 && typeof next[0] === 'object' && next[0] != null) {
+        const values = next
+          .map((x) => (x?.value !== undefined ? x.value : x?.[valueKey]))
+          .filter((v) => v !== undefined);
+        return values;
+      }
+      return next;
+    }
+    return next != null && next !== '' ? [next] : [];
+  };
 
   return (
     <View style={[styles.wrapper, { zIndex: isFocused ? 999 : 1 }]}>
@@ -49,73 +88,169 @@ const CommonDropdown = ({
         ]}
       >
         <View style={styles.selectedValueContainer}>
-          <ElementDropdown
-            data={items}
-            value={value}
-            labelField="label"
-            valueField="value"
-            placeholder=""
-            disable={!!disabled}
-            style={styles.dropdown}
-            containerStyle={styles.optionsContainer}
-            selectedTextStyle={styles.selectedTextStyleHidden}
-            activeColor={colors.brand[50]}
-            mode={mode as any}
-            dropdownPosition={dropdownPosition as any}
-            search={searchable}
-            searchPlaceholder={searchPlaceholder}
-            searchField={searchField}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            onChange={(item) => onChange(item.value, item.original)}
-            renderItem={(item) => {
-              const isSelected = item.value === value;
+          {multiSelect ? (
+            <ElementMultiSelect
+              data={items}
+              value={multiValues}
+              labelField="label"
+              valueField="value"
+              placeholder=""
+              disable={!!disabled}
+              style={styles.dropdown}
+              containerStyle={styles.optionsContainer}
+              selectedTextStyle={styles.selectedTextStyleHidden as any}
+              selectedStyle={{ height: 0, width: 0, opacity: 0 } as any}
+              activeColor={colors.brand[50]}
+              mode={mode as any}
+              dropdownPosition={dropdownPosition as any}
+              search={searchable}
+              searchPlaceholder={searchPlaceholder}
+              searchField={searchField as any}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              renderSelectedItem={() => <View style={{ height: 0, width: 0 }} />}
+              onChange={(next) => {
+                const nextValues = normalizeMultiOnChange(next);
+                const nextOptions = items
+                  .filter((i) => nextValues.includes(i.value))
+                  .map((i) => i.original);
+                onChange(nextValues, nextOptions);
+              }}
+              renderItem={(item) => {
+                const isSelected = selectedValuesSet.has(item.value);
 
-              return (
-                <View
-                  style={[
-                    styles.optionItem,
-                    isSelected && styles.selectedOptionItem,
-                  ]}
-                >
-                  <Typography style={styles.optionNameText} numberOfLines={1}>
-                    {item.name}
-                  </Typography>
+                return (
+                  <View
+                    style={[
+                      styles.optionItem,
+                      isSelected && styles.selectedOptionItem,
+                    ]}
+                  >
+                    <Typography style={styles.optionNameText} numberOfLines={1}>
+                      {item.name}
+                    </Typography>
 
-                  <View style={styles.rightContainer}>
-                    {!!item.username && (
-                      <Typography style={styles.usernameText}>
-                        {item.username}
-                      </Typography>
-                    )}
+                    <View style={styles.rightContainer}>
+                      {!!item.username && (
+                        <Typography style={styles.usernameText}>
+                          {item.username}
+                        </Typography>
+                      )}
 
-                    {isSelected && (
-                      <Ionicons
-                        name="checkmark"
-                        size={20}
-                        color={colors.brand[600]}
-                        style={styles.checkIcon}
-                      />
-                    )}
+                      {isSelected && (
+                        <Ionicons
+                          name="checkmark"
+                          size={20}
+                          color={colors.brand[600]}
+                          style={styles.checkIcon}
+                        />
+                      )}
+                    </View>
                   </View>
-                </View>
-              );
-            }}
+                );
+              }}
+              renderRightIcon={() => (
+                <Ionicons
+                  name={isFocused ? 'chevron-up' : 'chevron-down'}
+                  size={20}
+                  color={colors.gray[500]}
+                  style={{ marginRight: 12 }}
+                />
+              )}
+            />
+          ) : (
+            <ElementDropdown
+              data={items}
+              value={value}
+              labelField="label"
+              valueField="value"
+              placeholder=""
+              disable={!!disabled}
+              style={styles.dropdown}
+              containerStyle={styles.optionsContainer}
+              selectedTextStyle={styles.selectedTextStyleHidden}
+              activeColor={colors.brand[50]}
+              mode={mode as any}
+              dropdownPosition={dropdownPosition as any}
+              search={searchable}
+              searchPlaceholder={searchPlaceholder}
+              searchField={searchField}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              onChange={(item) => onChange(item.value, item.original)}
+              renderItem={(item) => {
+                const isSelected = item.value === value;
 
-            /* 🔥 RIGHT SIDE ARROW */
-            renderRightIcon={() => (
-              <Ionicons
-                name={isFocused ? 'chevron-up' : 'chevron-down'}
-                size={20}
-                color={colors.gray[500]}
-                style={{ marginRight: 12 }}
-              />
-            )}
-          />
+                return (
+                  <View
+                    style={[
+                      styles.optionItem,
+                      isSelected && styles.selectedOptionItem,
+                    ]}
+                  >
+                    <Typography style={styles.optionNameText} numberOfLines={1}>
+                      {item.name}
+                    </Typography>
+
+                    <View style={styles.rightContainer}>
+                      {!!item.username && (
+                        <Typography style={styles.usernameText}>
+                          {item.username}
+                        </Typography>
+                      )}
+
+                      {isSelected && (
+                        <Ionicons
+                          name="checkmark"
+                          size={20}
+                          color={colors.brand[600]}
+                          style={styles.checkIcon}
+                        />
+                      )}
+                    </View>
+                  </View>
+                );
+              }}
+              renderRightIcon={() => (
+                <Ionicons
+                  name={isFocused ? 'chevron-up' : 'chevron-down'}
+                  size={20}
+                  color={colors.gray[500]}
+                  style={{ marginRight: 12 }}
+                />
+              )}
+            />
+          )}
 
 
           {/* ✅ Custom Selected / Placeholder Display */}
-          {selectedItem ? (
+          {multiSelect ? (
+            <View style={styles.customSelectedDisplay}>
+              {selectedItems.length > 0 ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.chipsScroll}
+                >
+                  {selectedItems.map((chip) => (
+                    <Pressable
+                      key={`${chip.value}`}
+                      onPress={() => handleRemoveChip(chip.value)}
+                      style={styles.chip}
+                      hitSlop={6}
+                    >
+                      <Text style={styles.chipText} numberOfLines={1}>
+                        {chip.name}
+                      </Text>
+                      <Ionicons name="close" size={16} color={colors.gray[400]} />
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              ) : (
+                <Text style={styles.placeholderStyle}>{placeholder}</Text>
+              )}
+            </View>
+          ) : selectedItem ? (
             <View style={styles.customSelectedDisplay}>
               <Typography
                 style={styles.selectedTextStyle}

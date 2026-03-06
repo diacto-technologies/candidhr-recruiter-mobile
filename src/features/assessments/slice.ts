@@ -1,8 +1,10 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import {
-  Assessment,
   AssessmentListResponse,
   AssessmentsState,
+  AssignedAssessmentListResponse,
+  GetAssignedAssessmentsPayload,
+  AssignedAssessmentFilters,
 } from "./types";
 
 const initialState: AssessmentsState = {
@@ -14,6 +16,19 @@ const initialState: AssessmentsState = {
     total: 0,
   },
   hasMore: true,
+  assigned: {
+    assignedList: [],
+    loading: false,
+    error: null,
+    filters: {},
+    pagination: {
+      page: 1,
+      total: 0,
+      next: null,
+      previous: null,
+    },
+    hasMore: true,
+  },
 };
 
 const assessmentsSlice = createSlice({
@@ -52,16 +67,75 @@ const assessmentsSlice = createSlice({
         ? [...state.assessments, ...results]
         : results;
 
-      state.hasMore =
-        state.assessments.length < (data.count ?? 0);
+      state.hasMore = state.assessments.length < (data.count ?? 0);
     },
 
-    getAssessmentsFailure: (
+    getAssessmentsFailure: (state, action: PayloadAction<string>) => {
+      state.loading = false;
+      state.error = action.payload;
+    },
+
+    getAssignedAssessmentsRequest: (
+      state,
+      action: PayloadAction<GetAssignedAssessmentsPayload & { page: number }>
+    ) => {
+      const { page, append } = action.payload;
+      state.assigned.loading = true;
+      state.assigned.error = null;
+      state.assigned.pagination.page = page;
+
+      if (!append) {
+        state.assigned.assignedList = [];
+      }
+    },
+
+    getAssignedAssessmentsSuccess: (
+      state,
+      action: PayloadAction<{
+        page: number;
+        append?: boolean;
+        data: AssignedAssessmentListResponse;
+      }>
+    ) => {
+      const { page, append, data } = action.payload;
+      const results = data.results ?? [];
+
+      state.assigned.loading = false;
+      state.assigned.pagination = {
+        page,
+        total: data.count ?? 0,
+        next: data.next ?? null,
+        previous: data.previous ?? null,
+      };
+
+      state.assigned.assignedList = append
+        ? [...state.assigned.assignedList, ...results]
+        : results;
+
+      state.assigned.hasMore =
+        state.assigned.assignedList.length < (data.count ?? 0);
+    },
+
+    getAssignedAssessmentsFailure: (
       state,
       action: PayloadAction<string>
     ) => {
-      state.loading = false;
-      state.error = action.payload;
+      state.assigned.loading = false;
+      state.assigned.error = action.payload;
+    },
+
+    setAssignedAssessmentFilters: (
+      state,
+      action: PayloadAction<Partial<AssignedAssessmentFilters>>
+    ) => {
+      state.assigned.filters = {
+        ...state.assigned.filters,
+        ...action.payload,
+      };
+    },
+
+    clearAssignedAssessmentFilters: (state) => {
+      state.assigned.filters = {};
     },
   },
 });
@@ -70,6 +144,11 @@ export const {
   getAssessmentsRequest,
   getAssessmentsSuccess,
   getAssessmentsFailure,
+  getAssignedAssessmentsRequest,
+  getAssignedAssessmentsSuccess,
+  getAssignedAssessmentsFailure,
+  setAssignedAssessmentFilters,
+  clearAssignedAssessmentFilters,
 } = assessmentsSlice.actions;
 
 export default assessmentsSlice.reducer;

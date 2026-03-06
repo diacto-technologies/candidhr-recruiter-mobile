@@ -181,10 +181,10 @@ const Dashboard = () => {
                         <View style={styles.statGrid}>
                             <View style={styles.statItem}>
                                 <StatCard
-                                    title="Appliacnts"
+                                    title="Total Applications"
                                     value={String(analyticsData?.total_applicants ?? 0)}
-                                    percentage="2.5%"
-                                    subText="Greater than last month"
+                                    percentage=""
+                                    subText=""
                                     tooltipText="Total number of applicants"
                                 />
                             </View>
@@ -193,8 +193,8 @@ const Dashboard = () => {
                                 <StatCard
                                     title="Total Jobs"
                                     value={String(analyticsData?.total_jobs ?? 0)}
-                                    percentage="2.5%"
-                                    subText="Greater than last month"
+                                    percentage=""
+                                    subText=""
                                     onPressInfo={() => console.log("Info clicked")}
                                     tooltipText="Total number of job postings currently on the platform."
                                 />
@@ -204,8 +204,8 @@ const Dashboard = () => {
                                 <StatCard
                                     title="Applicant to Assessment Ratio"
                                     value={String(analyticsData?.assessment_ratio ?? 0)}
-                                    percentage="2.5%"
-                                    subText="Greater than last month"
+                                    percentage=""
+                                    subText=""
                                     onPressInfo={() => console.log("Info clicked")}
                                     tooltipText="How many applicants proceed from application to assessment."
                                 />
@@ -215,8 +215,8 @@ const Dashboard = () => {
                                 <StatCard
                                     title="Applicant to Interview Ratio"
                                     value={String(analyticsData?.personality_screening_ratio ?? 0)}
-                                    percentage="2.5%"
-                                    subText="Greater than last month"
+                                    percentage=""
+                                    subText=""
                                     onPressInfo={() => console.log("Info clicked")}
                                     tooltipText="Percentage of applicants who reached the interview stage."
                                 />
@@ -226,8 +226,8 @@ const Dashboard = () => {
                                 <StatCard
                                     title="Days to Fill"
                                     value={String(analyticsData?.close_fill ?? 0)}
-                                    percentage="2.5%"
-                                    subText="Greater than last month"
+                                    percentage=""
+                                    subText=""
                                     onPressInfo={() => console.log("Info clicked")}
                                     tooltipText="Average days taken to close a job after it was posted."
                                 />
@@ -237,8 +237,8 @@ const Dashboard = () => {
                                 <StatCard
                                     title="Job Views"
                                     value={String(analyticsData?.job_views ?? 0)}
-                                    percentage="2.5%"
-                                    subText="Greater than last month"
+                                    percentage=""
+                                    subText=""
                                     onPressInfo={() => console.log("Info clicked")}
                                     tooltipText="Total number of views."
                                 />
@@ -248,8 +248,8 @@ const Dashboard = () => {
                                 <StatCard
                                     title="Active Candidates"
                                     value={String(analyticsData?.active_applications ?? 0)}
-                                    percentage="2.5%"
-                                    subText="Greater than last month"
+                                    percentage=""
+                                    subText=""
                                     onPressInfo={() => console.log("Info clicked")}
                                     tooltipText="Candidates who are actively in the hiring process pipeline (Not rejected or hired yet)."
                                 />
@@ -259,8 +259,8 @@ const Dashboard = () => {
                                 <StatCard
                                     title="Drop-off Rate"
                                     value={String(analyticsData?.drop_off_rate ?? "0")}
-                                    percentage="2.5%"
-                                    subText="Greater than last month"
+                                    percentage=""
+                                    subText=""
                                     tooltipText="Percentage of candidates who started but did not complete the application or assessment process."
                                 />
                             </View>

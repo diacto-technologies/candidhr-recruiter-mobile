@@ -30,21 +30,23 @@ const CustomTabBar: FC<BottomTabBarProps> = (props) => {
 
   const [dropdownVisible, setDropdownVisible] = useState(false);
 
-  const handleLogout = async () => {
-    try {
-      await removeTokens();
-      dispatch(logoutSuccess());
-      await persistor.purge();
-    } catch (_) {
-      // Ignore errors during cleanup
-    }
-    resetAndNavigate('GetStartedScreen');
-  };
+  const menuItemsWithHandlers = [
+    {
+      name: "Assessment",
+      onPress: () => {
+        setDropdownVisible(false);
+        navigation.navigate("AssessmentScreen");
+      },
+    },
+    {
+      name: "Video interview",
+      onPress: () => {
+        setDropdownVisible(false);
+        navigation.navigate("VideoInterviewScreen");
+      },
+    },
+  ];
 
-  const menuItemsWithHandlers = menuItems.map((item) => ({
-    ...item,
-    onPress: item.name === "Logout" ? handleLogout : () => {},
-  }));
 
   // hide on profile
   if (state.routes[state.index].name === "Profile") {
@@ -55,7 +57,7 @@ const CustomTabBar: FC<BottomTabBarProps> = (props) => {
     <View
       style={[
         styles.container,
-        { paddingBottom:bottom.bottom-5}
+        { paddingBottom: bottom.bottom - 5 }
       ]}
     >
       {/* Tab Icons */}
@@ -91,7 +93,7 @@ const CustomTabBar: FC<BottomTabBarProps> = (props) => {
         visible={dropdownVisible}
         onClose={() => setDropdownVisible(false)}
         menuItems={menuItemsWithHandlers}
-        top={bottom.top+40}
+        top={bottom.top + 40}
         right={40}
       />
     </View>
@@ -126,3 +128,4 @@ const styles = StyleSheet.create({
 });
 
 export default CustomTabBar;
+

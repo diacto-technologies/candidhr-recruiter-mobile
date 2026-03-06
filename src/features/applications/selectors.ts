@@ -89,9 +89,54 @@ export const selectApplicationsFilters = createSelector(
   (applications) => applications.filters
 );
 
+export const selectApplicationStages = createSelector(
+  [(state: RootState) => state.applications],
+  state => state.applicationStages
+);
 
+export const selectMarkSessionReviewedLoading = createSelector(
+  [(state: RootState) => state.applications],
+  state => state.loadingMarkSessionReviewed ?? false
+);
 
+export const selectParseResumeLoading = createSelector(
+  [(state: RootState) => state.applications],
+  state => state.loadingParseResume ?? false
+);
 
+export const selectUpdateStageStatusLoading = createSelector(
+  [(state: RootState) => state.applications],
+  state => state.loadingUpdateStageStatus ?? false
+);
 
+export const selectReasonCategoryList = createSelector(
+  [selectApplicationsState],
+  (state) => state.reasonCategoryList ?? []
+);
+
+export const selectReasonCategoryListLoading = createSelector(
+  [selectApplicationsState],
+  (state) => state.loadingReasonCategoryList ?? false
+);
+
+export const selectReasonCategoryListError = createSelector(
+  [selectApplicationsState],
+  (state) => state.reasonCategoryListError ?? null
+);
+
+export const selectReasonList = createSelector(
+  [selectApplicationsState],
+  (state) => state.reasonList ?? []
+);
+
+export const selectReasonListLoading = createSelector(
+  [selectApplicationsState],
+  (state) => state.loadingReasonList ?? false
+);
+
+export const selectReasonListError = createSelector(
+  [selectApplicationsState],
+  (state) => state.reasonListError ?? null
+);
 
 

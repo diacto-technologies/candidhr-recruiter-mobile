@@ -1,3 +1,23 @@
+/** Reason category for status-change reasons (from notifications category-list API) */
+export interface ReasonCategory {
+  id: string;
+  name: string;
+}
+
+/** Single reason/notification from GET /notifications/v1/filter (for dropdown) */
+export interface ReasonListItem {
+  id: string;
+  note: string;
+  category: string;
+  status: string;
+  usage_count?: number;
+  created_at?: string;
+  last_used?: string | null;
+  visibility?: string;
+  favorite_status?: boolean;
+  created_by?: Record<string, unknown>;
+}
+
 export interface ApplicationsState {
   applications: Application[];
   applicationResponses: ApplicationResponseItem[];
@@ -8,8 +28,21 @@ export interface ApplicationsState {
   selectedApplication: Application | null;
   personalityScreeningList: ScreeningAssessment[];
   personalityScreeningResponses: PersonalityScreeningResponse[];
+  /** Reason categories from GET /notifications/v1/category-list/ */
+  reasonCategoryList: ReasonCategory[];
+  loadingReasonCategoryList: boolean;
+  reasonCategoryListError: string | null;
+  /** Reason list from GET /notifications/v1/filter (for dropdown) */
+  reasonList: ReasonListItem[];
+  loadingReasonList: boolean;
+  reasonListError: string | null;
+  /** Application reasons from GET /notifications/v1/reasons/application-reasons/list/ */
+  applicationReasonsList: unknown[];
+  loadingApplicationReasonsList: boolean;
+  applicationReasonsListError: string | null;
   loading: boolean;
   error: string | null;
+  applicationStages: ApplicationStage[];
   pagination: {
     page: number;
     limit: number;
@@ -22,13 +55,24 @@ export interface ApplicationsState {
     contact: string,
     sortBy: string,
     sortDir: string,
-    sort: string   
+    sort: string,
+    latestStageStatus: string;
+    source: string;
+    status: string;
+    latestStageName: string; 
   },
   loadingApplications: boolean;
   loadingApplicationDetail: boolean;
   loadingAssessment: boolean;
   loadingPersonality: boolean;
-  loadingResumeScreeningResponses:boolean;
+  loadingResumeScreeningResponses: boolean;
+  loadingMarkSessionReviewed: boolean;
+  loadingParseResume: boolean;
+  loadingUpdateStageStatus: boolean;
+}
+
+export interface ParseResumeResponse {
+  message: string;
 }
 
 export interface CreateApplicationRequest {
@@ -41,7 +85,32 @@ export interface CreateApplicationRequest {
 
 export interface UpdateApplicationStatusRequest {
   id: string;
-  status: 'pending' | 'reviewing' | 'accepted' | 'rejected';
+  status: string; // e.g. on_hold, shortlisted, rejected, hired, etc.
+}
+
+/** Payload for PATCH /applications/v1/stages/{stageId}/{status}/ */
+export interface UpdateStageStatusPayload {
+  status: string;
+  reviewed_by: {
+    id: string;
+    name: string;
+    email: string;
+    profile_pic: string | null;
+  };
+  reviewed_at: string;
+  is_status_overridden_by_user: boolean;
+}
+
+/** Action payload for update stage status (stageId + status in URL; applicationId for refetch) */
+export interface UpdateStageStatusRequest {
+  stageId: string;
+  status: string;
+  applicationId: string;
+  jobId?: string;
+  /** Optional: attach reasons to this stage status change */
+  reasonIds?: string[];
+  /** Optional: used by notifications reasons API (e.g. "Resume Screening") */
+  contentType?: string;
 }
 
 export interface Application {
@@ -82,7 +151,7 @@ export interface Application {
 
   resume?: ResumeData;
   applied_at: string;
-  last_updated?: string;
+  last_updated?: any;
   status: string;
   workflow_status?: string;
   source?: string;
@@ -203,6 +272,10 @@ export interface GetApplicationsParams {
   sort?: string;
   jobId?: string;
   reset?: boolean;
+  latestStageStatus?: string;
+  source?: string;
+  status?: string;
+  latestStageName?: string;
 }
 
 export interface GetApplicationsSagaAction {
@@ -417,6 +490,11 @@ export interface AiQuestionnaire {
 }
 
 export interface AssessmentLog {
+  completed_at: string | number | null | undefined;
+  content_type: string;
+  content_id: string;
+  progress_status: string;
+  session_status: string;
   id: string;
   status_text: string;
   updated_at: string | null;
@@ -426,10 +504,19 @@ export interface AssessmentLog {
   updated_by: string | null;
   workflow_last_status: string | null;
   workflow_status_updated_at: string | null;
+  action_taken_by?: { id: string; name: string; email: string; profile_pic?: string } | null;
+  action_taken_at?: string | null;
+}
+
+export interface SessionReviewedResponse {
+  session_status: string;
+  progress_status: string;
+  action_taken_by: { id: string; name: string; email: string; profile_pic?: string };
+  action_taken_at: string;
 }
 
 export interface AssessmentLogApiResponse {
-  assessmentlogs: AssessmentLog[];
+  results: AssessmentLog[];
 }
 
 export interface AssessmentTimeline {
@@ -526,6 +613,7 @@ export interface AssessmentSubmission {
 }
 
 export interface AssessmentResultSummary {
+  gaze_snapshots: any;
   id: string;
   assessment_type: string;
   score: number;
@@ -961,6 +1049,7 @@ export interface TranscriptionSegment {
 
 
 export interface PersonalityScreeningResponse {
+  text: string;
   id: string;
   screening_id: string;
   application: string;
@@ -976,5 +1065,37 @@ export interface PersonalityScreeningResponse {
   started: string,
   created_at: string;
   submitted_at: string;
+}
+
+export interface ApplicationStage {
+  id: string;
+  stage_type: string;
+  stage_name: string;
+  status: string;
+  application: string;
+   reviewed_by: Reviewer | null;
+  reviewed_at: string | null;
+
+  workflow_last_status: string | null;
+  workflow_status_updated_at: string | null;
+
+  executed_by_workflow: boolean;
+  has_been_updated_by_workflow: boolean;
+  is_status_overridden_by_user: boolean;
+
+  created_at: string;
+  updated_at: string | null;
+}
+export interface Reviewer {
+  id: string;
+  name: string;
+  email: string;
+  profile_pic: string | null;
+  reviewed_by: Reviewer | null;
+}
+
+export interface ApplicationStagesResponse {
+  count: number;
+  results: ApplicationStage[];
 }
 

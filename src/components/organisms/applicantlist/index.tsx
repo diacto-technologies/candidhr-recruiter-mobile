@@ -17,6 +17,7 @@ import Divider from '../../atoms/divider';
 import { Application } from '../../../features/applications/types';
 import { formatMonDDYYYY } from '../../../utils/dateformatter';
 import { getStatusColor } from './helper';
+import { capitalizeFirstLetter } from '../../../utils/stringUtils';
 
 interface ApplicantCardProps {
   item?: Application | null;
@@ -133,16 +134,16 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
               />
               :
               // <View style={[styles.initialCircle]}>
-              <Typography variant="semiBoldTxtlg" color={colors?.gray[700]} style={{ paddingRight: 5 }}> {(item?.candidate?.name?.trim()?.[0] ?? "").toUpperCase()}</Typography>
+              <Typography variant="semiBoldTxtlg" color={colors?.gray[700]} style={{ paddingRight: 5 }}> {(item?.name?.trim()?.[0] ?? "?").toUpperCase()}</Typography>
               // </View>
             }
           </View>
           <View style={{ marginLeft: 12 }}>
             <Typography variant="semiBoldTxtmd">
-              {item?.name ?? (item?.id ? "****" + String(item.id).slice(-4) : '')}
+              {item?.name ?? (item?.id ? "?" : '')}
             </Typography>
             <Typography variant="regularTxtsm" color={colors.gray[600]}>
-              Applied on : {formatMonDDYYYY(item?.applied_at)}
+              Applied on : {item?.applied_at?formatMonDDYYYY(item?.applied_at):"_"}
             </Typography>
           </View>
         </View>
@@ -166,14 +167,14 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
       <View style={styles.rowBetween}>
         <View style={{ flex: 1 }}>
           <Typography variant="regularTxtsm" color={colors.gray[500]}>
-            {item?.stage_name ?? ""}
+            {item?.latest_stage?.stage_name ?? "_"}
           </Typography>
         </View>
-        {item?.stages?.latest_status &&
+        {item?.status &&
           <View style={styles.statusBadge}>
-            <View style={[styles.statusDot, { backgroundColor: getStatusColor(item?.stages?.latest_status) }]} />
+            <View style={[styles.statusDot, { backgroundColor: getStatusColor(item?.status_label) }]} />
             <Typography variant="mediumTxtxs" color={colors.gray[700]}>
-              {item?.stages?.latest_status ?? ""}
+              {item?.status_label ?? "_"}
             </Typography>
           </View>
         }

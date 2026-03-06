@@ -48,6 +48,7 @@ export const formatRelevance = (
   if (!relevance) return "_";
 
   const map: Record<RelevanceLevel, string> = {
+    matched: "Matched",
     high: "Highly relevant",
     medium: "Relevant",
     low: "Low",
@@ -64,6 +65,11 @@ export const relevanceStyleMap: Record<
     backgroundColor: string;
   }
 > = {
+  matched: {
+    textColor: colors.success[900],
+    borderColor: colors.success[200],
+    backgroundColor: colors.success[100],
+  },
   high: {
     textColor: colors.success[700],
     borderColor: colors.success[200],
@@ -92,6 +98,21 @@ export const getRelevanceStyles = (
       backgroundColor: colors.gray[50],
     };
 };
+
+const RELEVANCE_ORDER: RelevanceLevel[] = ["matched", "high", "medium", "low"];
+
+const sortByRelevance = <T extends { relevance?: RelevanceLevel }>(
+  items: T[]
+): T[] =>
+  [...(items ?? [])].sort((a, b) => {
+    const ai = a.relevance
+      ? RELEVANCE_ORDER.indexOf(a.relevance)
+      : RELEVANCE_ORDER.length;
+    const bi = b.relevance
+      ? RELEVANCE_ORDER.indexOf(b.relevance)
+      : RELEVANCE_ORDER.length;
+    return ai - bi;
+  });
 
 const DetailedResumeShimmer = () => {
   return (
@@ -163,7 +184,7 @@ const DetailedResume = () => {
       </View>
 
       {resume?.work_experience?.length ? (
-        resume.work_experience.map((item, index) => (
+        sortByRelevance(resume.work_experience).map((item, index) => (
           <View key={index} style={styles.block}>
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
@@ -226,7 +247,7 @@ const DetailedResume = () => {
       </View>
 
       {resume?.projects?.length ? (
-        resume.projects.map((item, index) => (
+        sortByRelevance(resume.projects).map((item, index) => (
           <View key={index} style={styles.block}>
             <View style={styles.row}>
               <View style={{flex:1}}>
@@ -281,7 +302,7 @@ const DetailedResume = () => {
       </View>
 
       {resume?.education?.length ? (
-        resume.education.map((item, index) => (
+        sortByRelevance(resume.education).map((item, index) => (
           <View key={index} style={styles.block}>
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
@@ -321,6 +342,10 @@ const DetailedResume = () => {
               {formatMonDDYYYY(item?.startDate)} –{" "}
               {formatMonDDYYYY(item?.endDate)}
             </Typography>
+
+            <Typography variant="regularTxtsm" color={colors.gray[600]}>
+             Percentage: {item?.percent}%
+            </Typography>
           </View>
         ))
       ) : (
@@ -340,7 +365,7 @@ const DetailedResume = () => {
       </View>
 
       {resume?.certifications?.length ? (
-        resume.certifications.map((item, index) => (
+        sortByRelevance(resume.certifications).map((item, index) => (
           <View key={index} style={styles.block}>
             <View style={styles.row}>
               <View style={{flex:1}}>

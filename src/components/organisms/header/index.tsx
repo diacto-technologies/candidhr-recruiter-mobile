@@ -9,6 +9,7 @@ import { horizontalThreedotIcon } from '../../../assets/svg/horizontalthreedotic
 import { searchIcon } from '../../../assets/svg/search';
 import { useStyles } from './styles';
 import SearchBar from '../../atoms/searchbar';
+import StatusDropdown from '../dropdown/statusDropdown';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -38,6 +39,14 @@ const Header = ({
   onSimpleSearch,
   onSimpleClear,
   simpleSearchPlaceholder = "Search",
+  statusDropdown = false,
+  statusOptions = [],
+  statusLabelKey = 'name',
+  statusValueKey = 'id',
+  statusValue,
+  onStatusSelect,
+  statusOpenModalOnSelect = false,
+  statusChangeStatusModalProps,
 }: IHeader) => {
   const styles = useStyles();
 
@@ -94,8 +103,23 @@ const Header = ({
             </Pressable>
           )}
 
-          {/* ✅ Right side icons */}
-          <View style={styles.subEditcontainer}>
+          {/* ✅ Right side: status dropdown + icons */}
+          <View style={[styles.subEditcontainer, statusDropdown && styles.subEditcontainerWithDropdown]}>
+            {statusDropdown && (
+              <View style={styles.statusDropdownWrapper}>
+                <StatusDropdown
+                  label="Status"
+                  options={statusOptions}
+                  labelKey={statusLabelKey}
+                  valueKey={statusValueKey}
+                  setValue={statusValue}
+                  onSelect={onStatusSelect}
+                  compact
+                  openModalOnSelect={statusOpenModalOnSelect}
+                  changeStatusModalProps={statusChangeStatusModalProps}
+                />
+              </View>
+            )}
             {showSearchIcon && !enableJobSearch && (
               <Pressable onPress={onSearchIconPress}>
                 <SvgXml xml={searchIcon} />

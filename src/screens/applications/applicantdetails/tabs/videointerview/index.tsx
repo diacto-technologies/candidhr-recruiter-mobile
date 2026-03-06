@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { View,TouchableOpacity, Image, ScrollView, Dimensions} from 'react-native';
+import { View, TouchableOpacity, Image, ScrollView, Dimensions } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
-import { getPersonalityScreeningListRequestAction, getPersonalityScreeningResponsesRequestAction } from '../../../../../features/applications/actions';
-import { selectPersonalityScreeningList, selectPersonalityScreeningResponses, selectSelectedApplication } from '../../../../../features/applications/selectors';
+import { getPersonalityScreeningListRequestAction, getPersonalityScreeningResponsesRequestAction, markSessionAsReviewedRequestAction } from '../../../../../features/applications/actions';
+import { selectApplicationStages, selectAssessmentLogs, selectMarkSessionReviewedLoading, selectPersonalityScreeningList, selectPersonalityScreeningResponses, selectSelectedApplication } from '../../../../../features/applications/selectors';
 import { useAppSelector } from '../../../../../hooks/useAppSelector';
 import { useStyles } from "./styles";
 import Dropdown from '../../../../../components/organisms/dropdown';
@@ -18,6 +18,11 @@ import { TranscriptionSegment } from '../../../../../features/applications/types
 import { getStatusColor } from '../../../../../components/organisms/applicantlist/helper';
 import { copyIcon } from '../../../../../assets/svg/copy';
 import CopyText from '../../../../../components/molecules/copyText';
+import StatusDropdown from '../../../../../components/organisms/dropdown/statusDropdown';
+import Card from '../../../../../components/atoms/card';
+import Button from '../../../../../components/atoms/button';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { getApprovalStageStatusOptions } from '../stageStatusOptions';
 
 export default function VideoInterview() {
   const [activeTab, setActiveTab] = useState("Articulation");
@@ -27,12 +32,16 @@ export default function VideoInterview() {
   const [transcriptionView, setTranscriptionView] = useState<'continuous' | 'bytime'>('continuous');
   const [currentTime, setCurrentTime] = useState(0);
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
+  const [selectedStageStatus, setSelectedStageStatus] = useState<string | null>(null);
 
   const dispatch = useAppDispatch();
   const styles = useStyles();
   const applicant = useAppSelector(selectSelectedApplication);
   const PersonalityScreeningList = useAppSelector(selectPersonalityScreeningList)
+  const assessmentLogs = useAppSelector(selectAssessmentLogs);
   const responses = useAppSelector(selectPersonalityScreeningResponses);
+  const stages = useAppSelector(selectApplicationStages);
+  const loadingMarkReviewed = useAppSelector(selectMarkSessionReviewedLoading);
 
   // Detect orientation
   const { width, height } = screenData;
@@ -66,16 +75,27 @@ export default function VideoInterview() {
   }, [selectedSession]);
 
   useEffect(() => {
-    if (PersonalityScreeningList?.length && !selectedSession) {
-      setSelectedSession(PersonalityScreeningList[0].id);
+    if (!assessmentLogs?.length) return;
+
+    setSelectedSession(prev => {
+      const exists = assessmentLogs.some(item => item.content_id === prev);
+      return exists ? prev : assessmentLogs[0].content_id;
+    });
+
+  }, [assessmentLogs]);
+
+  useEffect(() => {
+    const stageStatus = stages?.find(s => s.stage_type === "automated_video_interview")?.status;
+    if (stageStatus) {
+      setSelectedStageStatus(stageStatus);
     }
-  }, [PersonalityScreeningList]);
+  }, [stages]);
 
   const sessionOptions =
-    PersonalityScreeningList?.map((item, index) => ({
-      id: item.id,
+    assessmentLogs?.map((item, index) => ({
+      id: item.content_id,
       name: `Automated Video Interview`,
-      status_text: item?.status_text ?? "—",
+      status_text: item?.session_status ?? "—",
       raw: item,
     })) ?? [];
 
@@ -228,38 +248,155 @@ export default function VideoInterview() {
 
   const selectedResponse = responses[activeIndex];
 
+  const assessmentStatus =
+    stages?.find(stage => stage.stage_type === "automated_video_interview")?.status
+      ?.replace("_", " ")
+      ?.replace(/\b\w/g, c => c.toUpperCase());
+
+  const currentSessionLog = useMemo(
+    () => assessmentLogs?.find((item) => item.content_id === selectedSession) ?? null,
+    [assessmentLogs, selectedSession]
+  );
+  const isReviewed = currentSessionLog?.session_status === 'reviewed';
+
+  const videoStage = useMemo(
+    () => stages?.find((s) => s.stage_type === 'automated_video_interview'),
+    [stages]
+  );
+  const currentStageStatus = videoStage?.status ?? null;
+  const STAGE_STATUS_OPTIONS = useMemo(() => {
+    return getApprovalStageStatusOptions(currentStageStatus);
+  }, [currentStageStatus]);
 
   return (
     <View style={styles.container}>
-      {/* <View style={{ zIndex: 9999 }}>
+      <View style={{ zIndex: 9999 }}>
         <StatusDropdown
-          label="Status"
-          options={STATUS_OPTIONS}
+          label="Stages"
+          options={STAGE_STATUS_OPTIONS}
           labelKey="name"
           valueKey="id"
-          setValue={currentStatusId}
-          onSelect={(item) => {
-            // TODO: Add API call to update status here
-            // The status will be updated for the current selectedSession
+          setValue={selectedStageStatus ?? currentStageStatus}
+          onSelect={(item) => setSelectedStageStatus(item?.id)}
+          openModalOnSelect
+          changeStatusModalProps={{
+            applicantName: applicant?.candidate?.name,
+            entityId: videoStage?.id,
+            currentStatus: currentStageStatus,
+            newStatusOptions: STAGE_STATUS_OPTIONS,
+            stageId: videoStage?.id ?? undefined,
+            applicationId: applicant?.id ?? undefined,
+            contentType: "Automated Video Interview",
+            onUpdateStatus: (newStatusId) => {
+              setSelectedStageStatus(newStatusId);
+            },
           }}
-        />
-      </View> */}
-      <View style={{ zIndex: 1000 }}>
-        <Dropdown
-          label="Session"
-          dropdownLabel="Session"
-          options={sessionOptions}
-          labelKey="name"
-          valueKey="id"
-          statusKey="status_text"
-          setValue={selectedSession}
-          onSelect={(item) => {
-            setSelectedSession(item?.id);
-          }}
-          onChangeText={() => { }}
         />
       </View>
-      <View style={styles.shortListedCard}>
+      <View style={{ zIndex: 1000 }}>
+        <Card style={{ gap: 4 }}>
+          <Typography variant="regularTxtxs" style={{ backgroundColor: colors?.brand['200'], borderTopEndRadius: 12, borderTopStartRadius: 12, padding: 5 }} numberOfLines={2}>
+            Stage was {assessmentStatus} by{" "}
+            {stages?.find(s => s.stage_type === "automated_video_interview")?.reviewed_by?.name ??
+              "Workflow"}{" "}
+            on{" "}
+            {formatMonDDYYYY(
+              stages?.find(s => s.stage_type === "automated_video_interview")?.reviewed_at ??
+              stages?.find(s => s.stage_type === "automated_video_interview")
+                ?.workflow_status_updated_at,
+              "DD MMM YYYY HH:mm",
+              "IST"
+            )}
+          </Typography>
+          <View style={{ paddingHorizontal: 16, paddingVertical: 10 }}>
+            <Dropdown
+              label="Session"
+              dropdownLabel="Session"
+              options={sessionOptions}
+              labelKey="name"
+              valueKey="id"
+              statusKey="status_text"
+              setValue={selectedSession}
+              onSelect={(item) => {
+                setSelectedSession(item?.id);
+              }}
+              onChangeText={() => { }}
+            />
+            <View style={styles.reviewRow}>
+              <Typography variant="regularTxtxs" style={{ flex: 1 }}>
+                {assessmentLogs
+                  ?.find(item => item.content_id === selectedSession)
+                  ?.action_taken_by?.name ? (
+                  <>
+                    Reviewed by{" "}
+                    {
+                      assessmentLogs.find(item => item.content_id === selectedSession)
+                        ?.action_taken_by?.name
+                    }{" "}
+                    ·{" "}
+                    {formatMonDDYYYY(
+                      assessmentLogs.find(item => item.content_id === selectedSession)
+                        ?.action_taken_at,
+                      "DD MMM YYYY HH:mm",
+                      "IST"
+                    )}
+                  </>
+                ) : assessmentLogs?.find(item => item.content_id === selectedSession)
+                  ?.workflow_status_updated_at ? (
+                  <>
+                    Reviewed by Workflow ·{" "}
+                    {formatMonDDYYYY(
+                      assessmentLogs.find(item => item.content_id === selectedSession)
+                        ?.workflow_status_updated_at,
+                      "DD MMM YYYY HH:mm",
+                      "IST"
+                    )}
+                  </>
+                ) : assessmentLogs?.find(item => item.content_id === selectedSession)
+                  ?.updated_at ? (
+                  <>
+                    ·{" "}
+                    {formatMonDDYYYY(
+                      assessmentLogs.find(item => item.content_id === selectedSession)
+                        ?.updated_at,
+                      "DD MMM YYYY HH:mm",
+                      "IST"
+                    )}
+                  </>
+                ) : null}
+              </Typography>
+              <Button
+                variant="outline"
+                borderRadius={20}
+                borderWidth={1}
+                borderColor={isReviewed ? colors.success[200] : colors.brand[200]}
+                buttonColor={isReviewed ? colors.success[400] : colors.brand[25]}
+                textColor={isReviewed ? colors.success[700] : colors.brand[700]}
+                startIcon={
+                  <Ionicons
+                    name="checkmark"
+                    size={14}
+                    color={isReviewed ? colors.success[700] : colors.brand[700]}
+                  />
+                }
+                size={30}
+                paddingHorizontal={10}
+                style={{ flex: 1 }}
+                textVariant="mediumTxtxs"
+                onPress={() => {
+                  if (currentSessionLog?.id && !isReviewed && !loadingMarkReviewed) {
+                    dispatch(markSessionAsReviewedRequestAction(currentSessionLog.id));
+                  }
+                }}
+                disabled={!currentSessionLog?.id || isReviewed || loadingMarkReviewed}
+              >
+                {loadingMarkReviewed ? 'Marking…' : isReviewed ? 'Review completed' : 'Mark as Reviewed'}
+              </Button>
+            </View>
+          </View>
+        </Card>
+      </View>
+      {/* <View style={styles.shortListedCard}>
         <View style={styles.rowBetween}>
           <View style={styles.row}>
             <View style={[styles.statusDot, { backgroundColor: getStatusColor(PersonalityScreeningList?.find(item => item.id === selectedSession)?.status_text ?? "_") }]} />
@@ -273,8 +410,7 @@ export default function VideoInterview() {
           </View>
           <SvgXml xml={arrowDown} />
         </View>
-      </View>
-
+      </View> */}
       {/* TIMELINE */}
       {/* <CustomTimeline
         progress={50}
@@ -286,9 +422,11 @@ export default function VideoInterview() {
         ]}
       /> */}
       {responses.length === 0 ? (
-        <View style={{ flex: 1,
+        <View style={{
+          flex: 1,
           justifyContent: 'center',
-          alignItems: 'center',}}>
+          alignItems: 'center',
+        }}>
           <Typography variant="regularTxtmd" color={colors.gray[600]}>
             No responses available.
           </Typography>

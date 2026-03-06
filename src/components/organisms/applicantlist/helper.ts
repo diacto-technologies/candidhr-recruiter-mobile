@@ -3,6 +3,9 @@ import { colors } from "../../../theme/colors";
 export const getStatusColor = (status?: string) => {
   switch (status) {
     case "Applied":
+      return colors.gray[500];
+
+    case "In Progress":
       return colors.blue[500];
 
     case "Rejected":
@@ -32,6 +35,26 @@ export const getStatusColor = (status?: string) => {
     case "Completed":
       return colors.success[500];
 
+    case "Published":
+      return colors.success[500];
+
+    case "Not Published":
+      return colors.error[500]
+
+    case "Archived":
+      return colors.gray[500]
+
+    case "Not Selected":
+      return colors.error[500]
+
+    case "Offer Rejected":
+      return colors.error[500]
+
+    case "Offer Accepted":
+      return colors.success[500]
+
+    case "Offer Final Interview":
+      return colors.blue[700]
 
     default:
       return "";

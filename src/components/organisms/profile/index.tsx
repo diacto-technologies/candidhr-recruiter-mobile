@@ -128,7 +128,7 @@ const ProfileCart: React.FC<Props> = ({ application, loading }) => {
       <View style={styles.photoWrapper}>
         <ProfileAvatar
           imageUrl={candidate?.profile_pic}
-          name={candidate?.name}
+          name={application?.name ?? "?"}
           size={88}
           fontVariant="semiBoldDxs"
           outerSize={16}
@@ -140,8 +140,8 @@ const ProfileCart: React.FC<Props> = ({ application, loading }) => {
         <View style={{ gap: 4 }}>
           {/* Name OR Application ID */}
           <Typography variant="semiBoldDxs">
-            {candidate?.name
-              ? candidate.name
+            {application?.name
+              ? application.name
               : `Application ID: ****${String(application?.id ?? '').slice(-4)}`}
           </Typography>
 

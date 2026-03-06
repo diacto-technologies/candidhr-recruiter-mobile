@@ -7,7 +7,6 @@ export const useStyles = () => {
     card: {
       flex: 1,
       width: '100%',
-      height: 140,
       backgroundColor: colors.base.white,
       padding: 16,
       borderRadius: 12,
@@ -28,7 +27,7 @@ export const useStyles = () => {
       alignItems: 'center',
     },
     title: {
-      marginLeft: 8,
+      //marginLeft: 8,
     },
     percent: {
       marginLeft: 6,

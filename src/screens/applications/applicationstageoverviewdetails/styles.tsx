@@ -3,7 +3,7 @@ import { useRNSafeAreaInsets } from "../../../hooks/useRNSafeAreaInsets";
 import { windowWidth } from "../../../utils/devicelayout";
 import { colors } from "../../../theme/colors";
 import { Fonts } from "../../../theme/fonts";
-
+import { LEFT_COLUMN_WIDTH } from "./config";
 
 export const useStyles = () => {
   const MIN_COL_WIDTH = windowWidth * 0.35;
@@ -28,6 +28,10 @@ export const useStyles = () => {
       backgroundColor: colors.gray[50],
     },
 
+    leftHeaderRow: {
+      paddingLeft: 12,
+    },
+
     headerText: {
       minWidth: MIN_COL_WIDTH,
       marginRight: 16,
@@ -49,17 +53,20 @@ export const useStyles = () => {
       marginRight: 16,
     },
     leftFixedWrapper: {
-      width: '50%',
+      width: LEFT_COLUMN_WIDTH,
       backgroundColor: colors.base.white,
       borderRightWidth: 1,
       borderColor: colors.gray[200],
       zIndex: 10,
     },
 
+    leftHeaderText: {
+      flex: 1,
+    },
+
     leftFixedColumn: {
-      height: 73,   
-      //paddingVertical: 24,
-      paddingLeft: 20,
+      height: 73,
+      paddingLeft: 12,
       borderBottomWidth: 1,
       borderColor: colors.gray[200],
       justifyContent: "center",

@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { useStyles } from "./styles";
 import { selectStageGraphOverview} from "../../../features/dashbaord/selectors";
-import { tabelTitle, TRACK_WIDTH } from "./config";
+import { tabelTitle, TRACK_WIDTH, LEFT_COLUMN_WIDTH } from "./config";
 import { TableRow } from "./application";
 import { useAppSelector } from "../../../hooks/useAppSelector";
 import { windowWidth } from "../../../utils/devicelayout";
@@ -43,7 +43,7 @@ const ApplicationOverviewDetails = () => {
     setContainerWidth(e.nativeEvent.layout.width);
   };
 
-  const visibleWidth = containerWidth - 140;
+  const visibleWidth = containerWidth - LEFT_COLUMN_WIDTH;
   const scrollRange = Math.max(contentWidth - visibleWidth, 0);
 
   const THUMB_WIDTH =
@@ -124,10 +124,10 @@ const ApplicationOverviewDetails = () => {
                 ]}
               >
                 {/* LEFT COLUMN HEADER */}
-                <View style={styles.headerRow}>
+                <View style={[styles.headerRow, styles.leftHeaderRow]}>
                   <Typography
                     variant="semiBoldTxtxs"
-                    style={styles.headerText}
+                    style={styles.leftHeaderText}
                     color={colors.gray[500]}
                   >
                     Job title

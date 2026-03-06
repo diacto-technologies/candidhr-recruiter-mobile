@@ -1,5 +1,5 @@
 import { APPLICATIONS_ACTION_TYPES } from "./constants";
-import { CreateApplicationRequest, UpdateApplicationStatusRequest, Application, GetApplicationsParams, GetApplicationResponsesParams, ResumeScreeningResponseItem, AssessmentLog, AssessmentReport, AssessmentDetailedReport, ScreeningAssessment, PersonalityScreeningResponse} from "./types";
+import { CreateApplicationRequest, UpdateApplicationStatusRequest, Application, GetApplicationsParams, GetApplicationResponsesParams, ResumeScreeningResponseItem, AssessmentLog, AssessmentReport, AssessmentDetailedReport, ScreeningAssessment, PersonalityScreeningResponse, SessionReviewedResponse, UpdateStageStatusRequest } from "./types";
 
 export const getApplicationsRequestAction = (params?: GetApplicationsParams) => ({
   type: APPLICATIONS_ACTION_TYPES.GET_APPLICATIONS_REQUEST,
@@ -141,4 +141,63 @@ export const getPersonalityScreeningResponsesFailure = (
 ) => ({
   type: APPLICATIONS_ACTION_TYPES.GET_PERSONALITY_RESPONSES_FAILURE,
   payload,
+});
+
+export const getApplicationStagesRequestAction = (applicationId: string) => ({
+  type: APPLICATIONS_ACTION_TYPES.GET_APPLICATION_STAGES_REQUEST,
+  payload: applicationId,
+});
+
+export const markSessionAsReviewedRequestAction = (sessionId: string) => ({
+  type: APPLICATIONS_ACTION_TYPES.MARK_SESSION_REVIEWED_REQUEST,
+  payload: sessionId,
+});
+
+export const markSessionAsReviewedSuccess = (payload: {
+  sessionId: string;
+  data: SessionReviewedResponse;
+}) => ({
+  type: APPLICATIONS_ACTION_TYPES.MARK_SESSION_REVIEWED_SUCCESS,
+  payload,
+});
+
+export const markSessionAsReviewedFailure = (payload: string) => ({
+  type: APPLICATIONS_ACTION_TYPES.MARK_SESSION_REVIEWED_FAILURE,
+  payload,
+});
+
+export const parseResumeRequestAction = (applicationId: string) => ({
+  type: APPLICATIONS_ACTION_TYPES.PARSE_RESUME_REQUEST,
+  payload: applicationId,
+});
+
+export const parseResumeSuccess = () => ({
+  type: APPLICATIONS_ACTION_TYPES.PARSE_RESUME_SUCCESS,
+});
+
+export const parseResumeFailure = (payload: string) => ({
+  type: APPLICATIONS_ACTION_TYPES.PARSE_RESUME_FAILURE,
+  payload,
+});
+
+/** Fetches reason categories from /notifications/v1/category-list/ for change-status modal */
+export const getReasonCategoryListRequestAction = () => ({
+  type: APPLICATIONS_ACTION_TYPES.GET_REASON_CATEGORY_LIST_REQUEST,
+});
+
+/** Fetches reason list from /notifications/v1/filter for change-status dropdown */
+export const getReasonListRequestAction = (page: number = 1) => ({
+  type: APPLICATIONS_ACTION_TYPES.GET_REASON_LIST_REQUEST,
+  payload: { page },
+});
+
+/** PATCH stage status (approved/not_approved etc.); refetches application + stages on success */
+export const updateStageStatusRequestAction = (payload: UpdateStageStatusRequest) => ({
+  type: APPLICATIONS_ACTION_TYPES.UPDATE_STAGE_STATUS_REQUEST,
+  payload,
+});
+
+/** GET application reasons list; uses selectSelectedApplication for application.id and job.id */
+export const getApplicationReasonsListRequestAction = () => ({
+  type: APPLICATIONS_ACTION_TYPES.GET_APPLICATION_REASONS_LIST_REQUEST,
 });

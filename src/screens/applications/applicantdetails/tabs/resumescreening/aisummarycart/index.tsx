@@ -22,9 +22,10 @@ interface Props {
     education: string;
     experience: string[];
     certifications: string[];
+    applicantDetails:string;
   };
   risks: string[];
-  isloading:boolean
+  isloading: boolean
 }
 
 interface ResumeSkill {
@@ -102,7 +103,7 @@ const AiSummary = ({
   const [expanded, setExpanded] = useState(false);
   const application = useAppSelector(selectSelectedApplication);
   if (isloading) {
-    return <AiSummaryShimmer/>
+    return <AiSummaryShimmer />
   }
   return (
     <View style={styles.card}>
@@ -144,14 +145,48 @@ const AiSummary = ({
         </View>
       </View>
 
+      <Divider color={colors.gray[200]} />
+
+      {/* Narrative Summary */}
+      <View style={styles.narrativeBox}>
+        <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>
+          Recruiter Recommendation
+        </Typography>
+        <View style={{ position: "relative" }}>
+          <Typography
+            variant="regularTxtsm"
+            color={colors.gray[600]}
+            style={{ lineHeight: 20, flexShrink: 1 }}
+            numberOfLines={expanded ? undefined : 4}
+          >
+            {quickFacts.applicantDetails}
+          </Typography>
+          {summary?.length > 120 && (
+            <TouchableOpacity
+              onPress={() => setExpanded(!expanded)}
+              style={{ alignSelf: "flex-end" }}
+            >
+              <Typography
+                variant="semiBoldTxtsm"
+                color={colors.brand[600]}
+              >
+                {expanded ? "read less" : "read more"}
+              </Typography>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
       {/* Divider */}
       <Divider color={colors.gray[200]} />
 
       {/* Match Score */}
-      <Typography variant="semiBoldTxtmd" color={"#1F2937"}>Match score</Typography>
-      <Typography variant="regularTxtsm" color={colors.gray[600]}>
-        Fit against job requirements
-      </Typography>
+      <View>
+        <Typography variant="semiBoldTxtmd" color={"#1F2937"}>Match Score</Typography>
+        <Typography variant="regularTxtsm" color={colors.gray[600]}>
+          Fit against job requirements
+        </Typography>
+      </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <View style={styles.progressBar}>
           <View
@@ -164,12 +199,14 @@ const AiSummary = ({
       </View>
       <Divider />
       {/* Job Readiness */}
-      <Typography variant="semiBoldTxtmd" color={"#1F2937"}>
-        Job Readiness
-      </Typography>
-      <Typography variant="regularTxtsm" color={colors.gray[600]}>
-        On-the-job capability
-      </Typography>
+      <View>
+        <Typography variant="semiBoldTxtmd" color={"#1F2937"}>
+          Job Readiness
+        </Typography>
+        <Typography variant="regularTxtsm" color={colors.gray[600]}>
+          On-the-job capability
+        </Typography>
+      </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <View style={styles.progressBar}>
           <View
@@ -281,15 +318,24 @@ const AiSummary = ({
         <Typography variant="regularTxtsm" color={colors.gray[600]}>
           Relevant experience
         </Typography>
-        {quickFacts.experience.map((item, index) => (
+        {quickFacts.experience.length > 0 ? (
+          quickFacts.experience.map((item, index) => (
+            <Typography
+              key={index}
+              variant="semiBoldTxtsm"
+              color={colors.gray[900]}
+            >
+              • {item}
+            </Typography>
+          ))
+        ) : (
           <Typography
-            key={index}
             variant="semiBoldTxtsm"
             color={colors.gray[900]}
           >
-            • {item}
+            Not provided
           </Typography>
-        ))}
+        )}
       </View>
 
       <View>

@@ -11,7 +11,13 @@ export interface CommonDropdownProps {
 
   /** Controlled value (matches valueKey in options) */
   value: any;
-  onChange: (value: any, option: CommonDropdownOption) => void;
+  onChange: (value: any, option?: CommonDropdownOption | CommonDropdownOption[]) => void;
+
+  /**
+   * When true, allows selecting multiple values.
+   * `value` should be an array, and `onChange` will receive an array.
+   */
+  multiSelect?: boolean;
 
   labelKey?: string;
   valueKey?: string;
