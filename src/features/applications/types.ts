@@ -40,6 +40,12 @@ export interface ApplicationsState {
   applicationReasonsList: unknown[];
   loadingApplicationReasonsList: boolean;
   applicationReasonsListError: string | null;
+  /** POST /notifications/v1/reasons/application-reasons/add/ */
+  loadingAddApplicationReasons: boolean;
+  addApplicationReasonsError: string | null;
+  /** PATCH /notifications/v1/reasons/application-reasons/{id}/update/ */
+  loadingUpdateApplicationReason?: boolean;
+  updateApplicationReasonError?: string | null;
   loading: boolean;
   error: string | null;
   applicationStages: ApplicationStage[];
@@ -48,6 +54,7 @@ export interface ApplicationsState {
     limit: number;
     total: number;
   };
+  hasMore: boolean;
   filters: {
     name: string,
     email: string,
@@ -59,7 +66,7 @@ export interface ApplicationsState {
     latestStageStatus: string;
     source: string;
     status: string;
-    latestStageName: string; 
+    latestStageName: string;
   },
   loadingApplications: boolean;
   loadingApplicationDetail: boolean;
@@ -69,6 +76,33 @@ export interface ApplicationsState {
   loadingMarkSessionReviewed: boolean;
   loadingParseResume: boolean;
   loadingUpdateStageStatus: boolean;
+  loadingExportApplications: boolean;
+  exportApplicationsError: string | null;
+  loadingExportApplicantPdf: boolean;
+  exportApplicantPdfError: string | null;
+  performanceReport: PerformanceReportResponse | null;
+  loadingPerformanceReport: boolean,
+  performanceReportError: string | null;
+  assessmentOptions:AssessmentOption[];
+  /** Tracks which application the paginated list belongs to */
+  assessmentOptionsApplicationId?: string | null;
+  /** Next page to request (starts at 1, increments on success) */
+  assessmentOptionsPage: number;
+  assessmentOptionsHasMore: boolean;
+  loadingAssessmentOptions: boolean;
+  assessmentOptionsError: string | null;
+}
+
+export interface AssessmentOption {
+  id: string;
+  status: string;
+  updated_at: string;
+  created_at: string;
+  job_title: string;
+  assessments_count: number;
+  updated_by: string | null;
+  workflow_last_status: string | null;
+  workflow_status_updated_at: string | null;
 }
 
 export interface ParseResumeResponse {
@@ -111,6 +145,12 @@ export interface UpdateStageStatusRequest {
   reasonIds?: string[];
   /** Optional: used by notifications reasons API (e.g. "Resume Screening") */
   contentType?: string;
+  /** Optional: if true, send status update email */
+  emailCandidate?: boolean;
+  /** Optional: email subject (required when emailCandidate true) */
+  subject?: string;
+  /** Optional: email message (required when emailCandidate true) */
+  message?: string;
 }
 
 export interface Application {
@@ -122,16 +162,16 @@ export interface Application {
     email: string;
     contact?: string | number | null;
     profile_pic?: string | null; // ✅ allows null
-    notice_period_in_months:number,
+    notice_period_in_months: number,
     location?: {
       city?: string | null;
       state?: string | null;
       country?: string | null;
       country_code?: string | null;
     };
-    github:string,
-    linkedin:string,
-    personal_website:string,
+    github: string,
+    linkedin: string,
+    personal_website: string,
   };
 
   job: {
@@ -252,13 +292,13 @@ export interface ApplicationsPagination {
   total: number;
 }
 
-export interface ApplicationsState {
-  applications: Application[];
-  selectedApplication: Application | null;
-  loading: boolean;
-  error: string | null;
-  pagination: ApplicationsPagination;
-  hasMore: boolean;
+/** Payload for PATCH share users with an application */
+export interface UpdateApplicationShareRequest {
+  applicationId: string;
+  /** Full user objects as expected by backend `users_shared_with` */
+  users: unknown[];
+  /** When true, show "Removed User" toast instead of generic success */
+  isRemoval?: boolean;
 }
 
 export interface GetApplicationsParams {
@@ -827,6 +867,100 @@ export interface AssessmentReportApiResponse {
   assessmentlog: AssessmentReport;
 }
 
+export interface PerformanceReportResponse {
+  candidate_info: {
+    name: string;
+    email: string;
+    phone: string;
+    application_id: string;
+    candidate_id: string;
+  };
+
+  assessment_info: {
+    assignment_id: string;
+    job_title: string;
+    job_id: string;
+    blueprint_name: string;
+    status: string;
+    assigned_at: string;
+    started_at: string;
+    completed_at: string;
+    valid_from: string;
+    valid_to: string;
+  };
+
+  overall_performance: {
+    score: number;
+    total_marks: number;
+    percentage: number;
+    grade: string;
+    passed: boolean;
+    passing_threshold: number;
+    rank: number;
+    percentile: number;
+    total_questions: number;
+    questions_answered: number;
+    correct_answers: number;
+    wrong_answers: number;
+    partially_correct: number;
+    unanswered: number;
+    accuracy: number;
+  };
+
+  section_performance: {
+    total_sections: number;
+    sections: Array<{
+      section_name: string;
+      score: number;
+      max_score: number;
+      percentage: number;
+      total_questions: number;
+      questions_answered: number;
+      questions_correct: number;
+      questions_wrong: number;
+      time_taken: number;
+      difficulty: string;
+      performance_rating: string;
+    }>;
+  };
+
+  question_analysis: {
+    total_questions_attempted: number;
+    questions: Array<{
+      question_id: string;
+      question_text: string;
+      question_type: string;
+      difficulty: string;
+      points: number;
+      score_obtained: number;
+      is_correct: boolean;
+      answer_provided: string;
+      status: string;
+      time_spent: number;
+    }>;
+  };
+
+  time_analytics: {
+    total_time_taken: number;
+    total_time_taken_formatted: string;
+    average_time_per_question: number;
+  };
+
+  proctoring_summary: {
+    total_violations: number;
+    integrity_score: number;
+    integrity_status: string;
+    video_url: string;
+    thumbnail_url: string;
+  };
+
+  recommendations: {
+    recommendation: string;
+    confidence_level: string;
+    suggested_next_steps: string;
+  };
+}
+
 export interface DetailedAssessment {
   id: string;
   title: string;
@@ -1073,7 +1207,7 @@ export interface ApplicationStage {
   stage_name: string;
   status: string;
   application: string;
-   reviewed_by: Reviewer | null;
+  reviewed_by: Reviewer | null;
   reviewed_at: string | null;
 
   workflow_last_status: string | null;
@@ -1099,3 +1233,24 @@ export interface ApplicationStagesResponse {
   results: ApplicationStage[];
 }
 
+export interface AssessmentOption {
+  id: string;
+  status: string;
+  updated_at: string;
+  created_at: string;
+  job_title: string;
+  assessments_count: number;
+  updated_by: string | null;
+  workflow_last_status: string | null;
+  workflow_status_updated_at: string | null;
+}
+
+export interface AssessmentOptionsReportResponse {
+  assessmentlogs: AssessmentOption[];
+
+  // pagination (safe optional for future/backend update)
+  page?: number;
+  page_size?: number;
+  total?: number;
+  total_pages?: number;
+}

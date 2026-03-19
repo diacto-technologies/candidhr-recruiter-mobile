@@ -1,6 +1,6 @@
 import { apiClient } from "../../api/client";
 import { API_ENDPOINTS } from "../../api/endpoints";
-import { CreateApplicationRequest, UpdateApplicationStatusRequest, Application, GetApplicationsParams, ApplicationsListResponse, ApplicationDetailResponse, GetApplicationResponsesParams, ApplicationResponsesApiResponse, ResumeScreeningApiResponse, AssessmentLogApiResponse, AssessmentReportApiResponse, AssessmentDetailedReportApiResponse, ScreeningAssessment, PersonalityScreeningResponse, ApplicationStagesResponse, SessionReviewedResponse, ReasonCategory, ReasonListItem, UpdateStageStatusPayload } from "./types";
+import { CreateApplicationRequest, UpdateApplicationStatusRequest, Application, GetApplicationsParams, ApplicationsListResponse, ApplicationDetailResponse, GetApplicationResponsesParams, ApplicationResponsesApiResponse, ResumeScreeningApiResponse, AssessmentLogApiResponse, AssessmentReportApiResponse, AssessmentDetailedReportApiResponse, ScreeningAssessment, PersonalityScreeningResponse, ApplicationStagesResponse, SessionReviewedResponse, ReasonCategory, ReasonListItem, UpdateStageStatusPayload, PerformanceReportResponse, AssessmentOptionsReportResponse } from "./types";
 
 export const applicationsApi = {
   // getApplications: async (params?: GetApplicationsParams): Promise<ApplicationsListResponse> => {
@@ -77,8 +77,85 @@ getApplications: async (
   return res?.data ?? res;
 },
 
+  exportApplicationsCsv: async (
+    params?: GetApplicationsParams
+  ): Promise<{ csv: string; filename: string }> => {
+    const query = new URLSearchParams();
+
+    // Server supports paging for export; keep page for consistency
+    if (params?.page) query.append("page", String(params.page));
+
+    // SEARCH / FILTERS (match web request keys)
+    if (params?.applicantName)
+      query.append("applicant_name__icontains", params.applicantName);
+    if (params?.email)
+      query.append("candidate_email__icontains", params.email);
+    if (params?.contact)
+      query.append("candidate__contact__icontains", params.contact);
+    if (params?.jobTitle)
+      query.append("job__title__icontains", params.jobTitle);
+
+    if (params?.source)
+      query.append("source__icontains", params.source);
+    if (params?.status)
+      query.append("status__icontains", params.status);
+    if (params?.latestStageName)
+      query.append("latest_stage_name", params.latestStageName);
+    if (params?.latestStageStatus)
+      query.append("latest_stage_status", params.latestStageStatus);
+
+    // SORTING (same as filter list)
+    if (params?.sort) query.append("o", params.sort);
+
+    const qs = query.toString();
+    const url = qs
+      ? `${API_ENDPOINTS.APPLICATIONS.EXPORT}?${qs}`
+      : API_ENDPOINTS.APPLICATIONS.EXPORT;
+
+    const response = await apiClient.getResponse(url);
+    const csv = await response.text();
+
+    const contentDisposition = response.headers.get('content-disposition') ?? '';
+    const match = contentDisposition.match(/filename="?([^"]+)"?/i);
+    const filename = (match?.[1] ?? 'applications_export.csv').trim();
+
+    return { csv, filename };
+  },
+
+  /**
+   * GET /applications/v1/{id}/profile/pdf/
+   * Returns a PDF file (binary). Callers should use `apiClient.getResponse`.
+   */
+  getApplicantProfilePdfResponse: async (applicationId: string): Promise<Response> => {
+    const response = await apiClient.getResponse(
+      API_ENDPOINTS.APPLICATIONS.PROFILE_PDF(applicationId),
+      {
+        headers: {
+          Accept: 'application/pdf',
+        },
+      }
+    );
+    return response;
+  },
+
   getApplicationDetail: async (id: string): Promise<{ application: ApplicationDetailResponse }> => {
     return apiClient.get(API_ENDPOINTS.APPLICATIONS.DETAIL(id));
+  },
+
+  /**
+   * PATCH /applications/v1/{id}/share/
+   * Updates `users_shared_with` for a given application.
+   */
+  updateApplicationShare: async (
+    applicationId: string,
+    usersSharedWith: unknown[]
+  ): Promise<unknown> => {
+    const url = API_ENDPOINTS.APPLICATIONS.SHARE(applicationId);
+    const payload = { users_shared_with: usersSharedWith };
+    // console.log('[applicationsApi.updateApplicationShare] PATCH', url, payload);
+    const res = await apiClient.patch(url, payload);
+    console.log('[applicationsApi.updateApplicationShare] success', res?.data ?? res);
+    return res?.data ?? res;
   },
 
   createApplication: async (data: CreateApplicationRequest): Promise<{ application: Application }> => {
@@ -144,6 +221,14 @@ getApplications: async (
     return res?.data ?? res;
   },
 
+  getPerformanceReport: async (
+    assessmentLogId: string
+  ): Promise<PerformanceReportResponse> => {
+    const url = API_ENDPOINTS.APPLICATIONS.PERFORMANCE_REPORT(assessmentLogId);
+    const res = await apiClient.get(url);
+    return res?.data ?? res;
+  },
+
   getAssessmentDetailedReport: async (
     assessmentLogId: string,
     assessmentId: string
@@ -153,6 +238,17 @@ getApplications: async (
       assessmentId
     );
     const res = await apiClient.get(url);
+    return res?.data ?? res;
+  },
+
+  getAssessmentOptionsReport: async (
+    application_id: string,
+    page: number = 1
+  ): Promise<AssessmentOptionsReportResponse> => {
+    const url = `/assessments/v2/assignment-options/?application_id=${application_id}&page=${page}`;
+  
+    const res = await apiClient.get(url);
+  
     return res?.data ?? res;
   },
 
@@ -229,8 +325,8 @@ getApplications: async (
     const params = new URLSearchParams({ job_id: jobId, application_id: applicationId });
     const url = `${API_ENDPOINTS.NOTIFICATIONS.APPLICATION_REASONS_LIST}?${params.toString()}`;
     const res = await apiClient.get(url);
-    const data = res?.data ?? res;
-    return Array.isArray(data) ? data : [];
+    const raw = res?.data ?? res?.results ?? res;
+    return Array.isArray(raw) ? raw : [];
   },
 
   /**
@@ -239,12 +335,25 @@ getApplications: async (
    */
   addApplicationReasons: async (payload: {
     application: string;
-    job: string;
+    job_id: string;
     content_type: string;
     object_id: string;
     reason: string[];
   }): Promise<unknown> => {
     const res = await apiClient.post(API_ENDPOINTS.NOTIFICATIONS.APPLICATION_REASONS_ADD, payload);
+    return res?.data ?? res;
+  },
+
+  /**
+   * PATCH /notifications/v1/reasons/application-reasons/{id}/update/
+   * Backend uses this to mark a reason as deleted (message="Deleted").
+   */
+  updateApplicationReason: async (
+    id: string,
+    payload: { message: string }
+  ): Promise<unknown> => {
+    const url = API_ENDPOINTS.NOTIFICATIONS.APPLICATION_REASONS_UPDATE(id);
+    const res = await apiClient.patch(url, payload);
     return res?.data ?? res;
   },
 
@@ -259,6 +368,8 @@ getApplications: async (
     sent: number;
     to: string;
     detail: string;
+    subject?: string;
+    message?: string;
   }): Promise<unknown> => {
     const res = await apiClient.post(API_ENDPOINTS.APPLICATIONS.SEND_EMAIL, payload);
     return res?.data ?? res;

@@ -210,15 +210,17 @@ export interface JobsState {
   publishedHasMore: boolean;
   unpublishedHasMore: boolean;
   filters: {
-    title: string,
-    experience: string,
-    employmentType: string,
-    location: string,
-    owner_name: string,
-    closeDate: string,
-    closeDateTo: string,
-
-  }
+    title: string;
+    experience: string;
+    employmentType: string;
+    location: string;
+    owner_name: string;
+    closeDate: string;
+    closeDateTo: string;
+    sortBy: string;
+    sortDir: "asc" | "desc";
+    orderBy: string;
+  };
   jobNameList: JobNameItem[];
   jobNameListLoading: boolean;
   jobNameListPage: number;

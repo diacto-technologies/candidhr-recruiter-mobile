@@ -23,6 +23,7 @@ import ApplicationStageOverview from '../components/organisms/applicationstageov
 import ApplicationOverviewDetails from '../screens/applications/applicationstageoverviewdetails'
 import AssessmentScreen from '../screens/applications/services/assessment'
 import VideoInterviewScreen from '../screens/applications/services/videoInterview'
+import CommentsScreen from '../screens/applications/comments'
 
 const Stack = createNativeStackNavigator()
 const Navigation: FC = () => {
@@ -63,6 +64,7 @@ const Navigation: FC = () => {
         <Stack.Screen name='JobDetailScreen' component={JobDetailScreen} options={{ animation: 'fade' }} />
         <Stack.Screen name='UserBottomTab' component={UserBottomTab} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
         <Stack.Screen name='ApplicantDetails' component={ApplicantDetails} options={{ animation: 'fade' }} />
+        <Stack.Screen name='Comments' component={CommentsScreen} options={{ animation: 'fade' }} />
         <Stack.Screen name='GetStartedScreen' component={GetStartedScreen} options={{
           animation: 'fade',
           headerShown: false,

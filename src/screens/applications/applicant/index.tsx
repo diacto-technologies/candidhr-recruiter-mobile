@@ -1,10 +1,10 @@
 import React, { Fragment, useCallback, useEffect, useRef, useMemo, useState } from 'react';
 import { View, FlatList, useWindowDimensions } from 'react-native';
-import { Header, SortingAndFilter, ApplicantList, Shimmer, BottomSheet, FilterSheetContent, Typography, Button } from '../../../components';
+import { Header, SortingAndFilter, ApplicantList, Shimmer, BottomSheet, FilterSheetContent, Typography, Button, ThreeDotDropdown } from '../../../components';
 import { useRNSafeAreaInsets } from '../../../hooks/useRNSafeAreaInsets';
 import CustomSafeAreaView from '../../../components/atoms/customsafeareaview';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
-import { getApplicationsRequestAction } from '../../../features/applications/actions';
+import { exportApplicationsRequestAction, getApplicationsRequestAction } from '../../../features/applications/actions';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import {
   selectApplications,
@@ -31,6 +31,7 @@ const ApplicantScreen = () => {
   const [filterSheet, setFilterSheet] = useState(false);
   const [selectedTab, setSelectedTab] = useState('Name');
   const [openSearch, setOpenSearch] = useState(false);
+  const [threeDotOpen, setThreeDotOpen] = useState(false);
   const inset = useRNSafeAreaInsets();
   const dispatch = useAppDispatch();
   const applications = useAppSelector(selectApplications);
@@ -181,34 +182,25 @@ const ApplicantScreen = () => {
     []
   );
 
+  const threeDotMenuItems = useMemo(
+    () => [
+      {
+        name: 'Export to CSV',
+        onPress: () => {
+          dispatch(exportApplicationsRequestAction({ params: getApiParams(1, false), mode: 'download' }));
+        },
+      },
+    ],
+    [dispatch, getApiParams]
+  );
+
   return (
     <Fragment>
       <CustomSafeAreaView>
         <Header
           title="Applicants"
-          enableJobSearch={true}
-          simpleSearch={true}
-          simpleSearchPlaceholder="Search by name"
-          openSearch={openSearch}
-          onSearchToggle={setOpenSearch}
-          searchText={filters?.name || ''}
-          onSimpleSearch={(text) => {
-            dispatch(
-              setApplicationsFilters({
-                ...filters,
-                name: text, // ✅ search applicant by name
-              })
-            );
-          }}
-          onSimpleClear={() => {
-            dispatch(
-              setApplicationsFilters({
-                ...filters,
-                name: "",
-              })
-            );
-            setOpenSearch(false);
-          }}
+          threedot
+          onThreeDotPress={() => setThreeDotOpen(true)}
         />
         {/* {!loading && applications.length === 0 && (
           <View
@@ -322,6 +314,13 @@ const ApplicantScreen = () => {
           }
         />
       </CustomSafeAreaView>
+      <ThreeDotDropdown
+        visible={threeDotOpen}
+        onClose={() => setThreeDotOpen(false)}
+        menuItems={threeDotMenuItems}
+        top={100}
+        right={20}
+      />
       <SortingAndFilter
         title="Filters"
         options={applicantFiltersOption}

@@ -111,7 +111,7 @@ const JobsScreen = () => {
   };
 
   const handleChangeTab = (label: string) => {
-    const tab = label === "Published" ? "Published" : "Unpublished";
+    const tab = label === "Published" ? "Published" : "Draft";
     dispatch(setActiveTab(tab));
 
     if (!isConnected) return;

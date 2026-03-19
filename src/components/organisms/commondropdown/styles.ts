@@ -110,9 +110,9 @@ export const styles = StyleSheet.create({
   },
 
   optionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
     paddingVertical: 10,
     paddingHorizontal: 16,
   },
@@ -129,9 +129,11 @@ export const styles = StyleSheet.create({
   },
 
   rightContainer: {
+    marginTop: 2,
     flexDirection: 'row',
     alignItems: 'center',
-    flexShrink: 0,
+    justifyContent: 'space-between',
+    width: '100%',
   },
 
   checkIcon: {
@@ -142,6 +144,8 @@ export const styles = StyleSheet.create({
     fontFamily: Fonts.InterMedium,
     fontSize: 14,
     color: colors.gray[500],
+    flexShrink: 1,
+    flex: 1,
   },
 
   error: {

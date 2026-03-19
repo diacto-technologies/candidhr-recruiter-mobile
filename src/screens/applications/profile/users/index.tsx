@@ -49,6 +49,7 @@ import {
 import { deleteIcon } from '../../../../assets/svg/deleteicon';
 import { editAvatarIcon } from '../../../../assets/svg/editavatar';
 import { USERS_TABLE_HEADERS } from './usersTable.config';
+import { DropdownMenu } from '../../../../components/molecules/dropdownmenu';
 import { selectProfile } from '../../../../features/profile/selectors';
 interface User {
   id: string;
@@ -520,88 +521,47 @@ const Users = () => {
         roleOptions={apiRoles.map((r) => r.name)}
       />
 
-      {/* Dropdown in Modal so it is not clipped by ScrollView (e.g. last row) */}
-      <Modal
+      <DropdownMenu
         visible={!!activeMenuId}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setActiveMenuId(null)}
-      >
-        <Pressable
-          style={styles.dropdownBackdrop}
-          onPress={() => setActiveMenuId(null)}
-        >
-          {dropdownLayout && (
-            <Pressable
-              style={[
-                styles.dropdown,
-                {
-                  position: 'absolute',
-                  left: dropdownLayout.x + dropdownLayout.width - 155,
-                  top: dropdownLayout.y + dropdownLayout.height - 5,
-                },
-              ]}
-              onPress={() => { }}
-            >
-              {(() => {
-                const item = filteredUsers.find((u) => u.id === activeMenuId);
-                if (!item) return null;
-                return (
-                  <>
-                    <Pressable
-                      style={styles.dropdownItem}
-                      onPress={() => {
-                        setActiveMenuId(null);
-                        setRemoveTarget(item);
-                        setRemoveConfirmOpen(true);
-                      }}
-                    >
-                      <SvgXml
-                        xml={deleteIcon}
-                        style={{ marginRight: 5 }}
-                        width={16}
-                        height={16}
-                      />
-                      <Typography
-                        variant="semiBoldTxtsm"
-                        color={colors.gray[700]}
-                      >
-                        Remove
-                      </Typography>
-                    </Pressable>
-                    <Pressable
-                      style={styles.dropdownItem}
-                      onPress={() => {
-                        setActiveMenuId(null);
-                        setSelectedUser({
-                          id: item.id,
-                          name: item.name,
-                          email: item.email,
-                          role: item.role,
-                        });
-                        setUpdateRoleOpen(true);
-                      }}
-                    >
-                      <SvgXml
-                        xml={editAvatarIcon}
-                        style={{ marginRight: 5 }}
-                        width={16}
-                        height={16}
-                      />
-                      <Typography
-                        variant="semiBoldTxtsm"
-                        color={colors.gray[700]}
-                      >
-                        Update
-                      </Typography>
-                    </Pressable>
-                  </>
-                );
-              })()}
-            </Pressable>
-          )}
-        </Pressable>
-      </Modal>
+        onClose={() => setActiveMenuId(null)}
+        iconWidth={20}
+        iconHight={20}
+        position={
+          dropdownLayout
+            ? {
+                left: dropdownLayout.x + dropdownLayout.width - 140,
+                top: dropdownLayout.y + dropdownLayout.height - 5,
+              }
+            : { left: 0, top: 0 }
+        }
+        items={(() => {
+          const item = filteredUsers.find((u) => u.id === activeMenuId);
+          if (!item) return [];
+          return [
+            {
+              label: 'Remove',
+              icon: deleteIcon,
+              onPress: () => {
+                setRemoveTarget(item);
+                setRemoveConfirmOpen(true);
+              },
+            },
+            {
+              label: 'Update',
+              icon: editAvatarIcon,
+              onPress: () => {
+                setSelectedUser({
+                  id: item.id,
+                  name: item.name,
+                  email: item.email,
+                  role: item.role,
+                });
+                setUpdateRoleOpen(true);
+              },
+            },
+          ];
+        })()}
+      />
 
       <ConfirmModal
         visible={removeConfirmOpen}

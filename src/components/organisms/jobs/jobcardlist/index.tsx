@@ -1,5 +1,5 @@
 import React from "react";
-import { View, FlatList, Pressable} from "react-native";
+import { View, FlatList, Pressable, Touchable, TouchableOpacity } from "react-native";
 import { SvgXml } from "react-native-svg";
 import { Button, Typography } from "../../../atoms";
 import Divider from "../../../atoms/divider";
@@ -14,7 +14,8 @@ import Shimmer from "../../../atoms/shimmer";
 import DeviceInfo from "react-native-device-info";
 import BackgroundPattern from "../../../atoms/backgroundpattern";
 import { Illustrations } from "../../../../assets/svg/illustrations";
-import { JobCardListProps } from "./jobcardlist";
+import { horizontalThreedotIcon } from "../../../../assets/svg/horizontalthreedoticon";
+import { heartIcon } from "../../../../assets/svg/heart";
 
 const JobCardList: React.FC<JobCardListProps> = ({
     tabs,
@@ -24,10 +25,13 @@ const JobCardList: React.FC<JobCardListProps> = ({
     isTabLoading,
     publishedCount,
     unpublishedCount,
+    favouritesCount,
     isConnected,
     onChangeTab,
     onLoadMore,
     onJobPress,
+    favouriteJobIds = [],
+    onToggleFavourite,
 }) => {
     const isTablet = DeviceInfo.isTablet();
     const styles = useStyles();
@@ -83,6 +87,11 @@ const JobCardList: React.FC<JobCardListProps> = ({
                         tabs={tabs}
                         activeTab={activeTab}
                         onChangeTab={onChangeTab}
+                        counts={{
+                            Published: publishedCount,
+                            Draft: unpublishedCount,
+                            Favourites: favouritesCount,
+                        }}
                         countShow={true}
                     />
                     <View style={styles.bottomBorder} />
@@ -111,7 +120,7 @@ const JobCardList: React.FC<JobCardListProps> = ({
                 <View style={styles.rowBetween}>
                     <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between' }}>
                         <Typography variant="semiBoldTxtmd">{item.title ?? ""}</Typography>
-                        {/* <SvgXml xml={horizontalThreedotIcon} height={20} width={20} /> */}
+                        <SvgXml xml={horizontalThreedotIcon} height={20} width={20} />
                     </View>
                 </View>
 
@@ -123,7 +132,24 @@ const JobCardList: React.FC<JobCardListProps> = ({
                         {formatMonDDYYYY(item.close_date ?? 0)}
                     </Typography>
                 </View>
-
+                <TouchableOpacity onPress={() => onToggleFavourite(item.id)}>
+                  <SvgXml
+                    xml={heartIcon}
+                    height={20}
+                    width={20}
+                    style={{ alignSelf: "flex-end" }}
+                    color={
+                      favouriteJobIds?.includes?.(item.id)
+                        ? colors.warning[400]
+                        : colors.gray[300]
+                    }
+                    fill={
+                      favouriteJobIds?.includes?.(item.id)
+                        ? colors.warning[400]
+                        : colors.gray[300]
+                    }
+                  />
+                </TouchableOpacity>
                 <View style={{ marginVertical: 4 }}>
                     <Divider
                         height={1.2}
@@ -165,7 +191,8 @@ const JobCardList: React.FC<JobCardListProps> = ({
                 <SlideAnimatedTab
                     counts={{
                         Published: publishedCount,
-                        Unpublished: unpublishedCount,
+                        Draft: unpublishedCount,
+                        Favourites: favouritesCount,
                     }}
                     tabs={tabs}
                     activeTab={activeTab}
@@ -230,13 +257,13 @@ const JobCardList: React.FC<JobCardListProps> = ({
                             top: -90,
                             //zIndex: 10
                         }}>
-                            <View style={{flex:1,alignSelf:'center',alignContent:'center',justifyContent:"center",}}>
+                            <View style={{ flex: 1, alignSelf: 'center', alignContent: 'center', justifyContent: "center", }}>
                                 <View
                                     style={{
                                         alignItems: 'center',
                                         paddingHorizontal: 16,
                                         zIndex: 10,
-                                        marginBottom:10,
+                                        marginBottom: 10,
                                     }}
                                 >
                                     <SvgXml xml={Illustrations} style={{ zIndex: -1, }} />

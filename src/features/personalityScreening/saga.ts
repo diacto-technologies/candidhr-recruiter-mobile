@@ -12,6 +12,24 @@ import type {
   PersonalityScreeningFilters,
 } from "./types";
 
+const VIDEO_INTERVIEW_SORT_FIELD_MAP: Record<string, string> = {
+  Applicant: "applicant_name",
+  Email: "candidate_email",
+  "Assigned On": "assigned_at",
+  "Expires On": "expired_at",
+};
+
+function getOrderParam(filters: PersonalityScreeningFilters): string {
+  const { sortBy, sortDir } = filters;
+  if (sortBy && sortDir) {
+    const field = VIDEO_INTERVIEW_SORT_FIELD_MAP[sortBy];
+    if (field) {
+      return sortDir === "desc" ? `-${field}` : field;
+    }
+  }
+  return DEFAULT_ORDER;
+}
+
 function* getListWorker(
   action: { type: string; payload?: GetPersonalityScreeningListPayload }
 ): Generator<any, void, any> {
@@ -22,10 +40,12 @@ function* getListWorker(
       selectPersonalityScreeningFilters
     )) as PersonalityScreeningFilters;
 
+    const orderBy = getOrderParam(filters);
+    const { sortBy, sortDir, ...restFilters } = filters;
     const params = {
-      ...filters,
+      ...restFilters,
       page,
-      o: DEFAULT_ORDER,
+      o: orderBy,
     };
 
     yield put(getListRequest({ page, append, ...payload }));

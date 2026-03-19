@@ -10,7 +10,7 @@ export const jobsApi = {
     queryParams.append("limit", (params?.limit && params.limit > 0 ? params.limit : 10).toString());
   
     if (typeof params?.published === "boolean") {
-      queryParams.append("published__icontains", String(params.published));
+      queryParams.append("published", String(params.published));
     }
   
     if (params?.title) {

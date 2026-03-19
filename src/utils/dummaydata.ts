@@ -13,6 +13,7 @@ export const applicantFiltersOption = [
 ]
 
 export const jobFiltersOption = [
+    'Sort',
     'Title',
     'Experience',
     'Employment Type',

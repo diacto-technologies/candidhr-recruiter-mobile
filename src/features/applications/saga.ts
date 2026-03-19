@@ -1,9 +1,21 @@
 import { call, put, select, takeLatest } from "redux-saga/effects";
+import { Platform } from "react-native";
+import RNFS from "react-native-fs";
+import Share from "react-native-share";
+import ReactNativeBlobUtil from "react-native-blob-util";
+import { config } from "../../config";
+import { API_ENDPOINTS } from "../../api/endpoints";
 import { APPLICATIONS_ACTION_TYPES } from "./constants";
 import {
   getApplicationsRequest,
   getApplicationsSuccess,
   getApplicationsFailure,
+  exportApplicationsRequest,
+  exportApplicationsSuccess,
+  exportApplicationsFailure,
+  // exportApplicantPdfRequest,
+  // exportApplicantPdfSuccess,
+  // exportApplicantPdfFailure,
   getApplicationDetailRequest,
   getApplicationDetailSuccess,
   getApplicationDetailFailure,
@@ -50,17 +62,37 @@ import {
   getApplicationReasonsListRequest,
   getApplicationReasonsListSuccess,
   getApplicationReasonsListFailure,
+  addApplicationReasonsRequest,
+  addApplicationReasonsSuccess,
+  addApplicationReasonsFailure,
+  updateApplicationReasonRequest,
+  updateApplicationReasonSuccess,
+  updateApplicationReasonFailure,
   updateStageStatusRequest,
   updateStageStatusSuccess,
   updateStageStatusFailure,
+  getPerformanceReportRequest,
+  getPerformanceReportSuccess,
+  getPerformanceReportFailure,
+  getAssessmentOptionsReportSuccess,
+  getAssessmentOptionsReportFailure,
+  getAssessmentOptionsReportRequest,
 } from "./slice";
 import { applicationsApi } from "./api";
-import { AssessmentDetailedReportApiResponse, AssessmentLogApiResponse, AssessmentReportApiResponse, GetApplicationResponsesParams, GetApplicationsSagaAction, PersonalityScreeningResponse, ResumeScreeningApiResponse, ScreeningAssessment, SessionReviewedResponse } from "./types";
-import { getAssessmentDetailedReportRequestAction, getAssessmentReportRequestAction, getApplicationDetailRequestAction, getApplicationStagesRequestAction } from "./actions";
+import { AssessmentDetailedReportApiResponse, AssessmentLogApiResponse, AssessmentReportApiResponse, GetApplicationResponsesParams, GetApplicationsParams, GetApplicationsSagaAction, PersonalityScreeningResponse, ResumeScreeningApiResponse, ScreeningAssessment, SessionReviewedResponse, UpdateApplicationShareRequest } from "./types";
+import { getAssessmentDetailedReportRequestAction, getAssessmentReportRequestAction, getApplicationDetailRequestAction, getApplicationStagesRequestAction, getApplicationReasonsListRequestAction } from "./actions";
 import { showToastMessage } from "../../utils/toast";
 import { selectProfile } from "../profile/selectors";
-import type { UpdateStageStatusRequest } from "./types";
+import type { AssessmentOptionsReportResponse, PerformanceReportResponse, UpdateStageStatusRequest } from "./types";
 import { selectSelectedApplication } from "./selectors";
+import { organizationalOrigin, selectToken, tenant } from "../auth/selectors";
+
+const sanitizeFilename = (name: string) =>
+  name
+    .replace(/[\\/:*?"<>|]+/g, "_")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 120);
 
 function* getApplicationsWorker(
   action: GetApplicationsSagaAction
@@ -87,6 +119,191 @@ function* getApplicationsWorker(
     yield put(getApplicationsFailure(message));
   }
 }
+
+function* exportApplicationsWorker(
+  action: { type: string; payload?: { params?: GetApplicationsParams; mode?: 'download' } }
+): Generator<any, void, any> {
+  try {
+    yield put(exportApplicationsRequest());
+
+    const { csv, filename } = yield call(
+      applicationsApi.exportApplicationsCsv,
+      action.payload?.params
+    );
+
+    const safeName =
+      (filename && filename.toLowerCase().endsWith(".csv"))
+        ? filename
+        : `${filename || "applications_export"}.csv`;
+
+    // Cache is safe for temp staging on both platforms (we copy to Downloads on Android).
+    const directory = RNFS.CachesDirectoryPath;
+
+    const filePath = `${directory}/${safeName}`;
+    yield call(RNFS.writeFile, filePath, csv, "utf8");
+
+    const mode = action.payload?.mode ?? 'download';
+
+    if (Platform.OS === 'android') {
+      // ✅ Save into public Downloads via MediaStore (scoped-storage safe)
+      yield call(
+        ReactNativeBlobUtil.MediaCollection.copyToMediaStore,
+        {
+          name: safeName,
+          parentFolder: "CandidHR",
+          mimeType: "text/csv",
+        },
+        "Download",
+        filePath
+      );
+      showToastMessage("Saved to Downloads", "success");
+    } else {
+      // ✅ iOS "Download" = Save to Files flow
+      const shareUrl = `file://${filePath}`;
+      yield call(Share.open, {
+        urls: [shareUrl],
+        type: "text/csv",
+        saveToFiles: true,
+        failOnCancel: false,
+      });
+    }
+
+    yield put(exportApplicationsSuccess());
+  } catch (err: any) {
+    const message = err?.message ?? "Failed to export applications";
+    yield put(exportApplicationsFailure(message));
+    showToastMessage(message, "error");
+  }
+}
+
+// function* exportApplicantPdfWorker(
+//   action: { type: string; payload: { applicationId: string; mode?: 'download' } }
+// ): Generator<any, void, any> {
+//   const applicationId = action.payload?.applicationId;
+//   try {
+//     if (!applicationId) {
+//       yield put(exportApplicantPdfFailure("Missing application id"));
+//       return;
+//     }
+
+//     yield put(exportApplicantPdfRequest());
+
+//     const tokenValue: string | null = yield select(selectToken);
+//     const tenantValue: string | null = yield select(tenant);
+//     const originValue: string | null = yield select(organizationalOrigin);
+
+//     const application: any = yield select(selectSelectedApplication);
+//     const candidateName =
+//       application?.candidate?.name || application?.name || "Applicant";
+
+//     const safeName = `${sanitizeFilename(candidateName)}_${String(applicationId).slice(-6)}.pdf`;
+
+//     const directory = RNFS.CachesDirectoryPath;
+//     const filePath = `${directory}/${safeName}`;
+
+//     const headers: Record<string, string> = {
+//       Accept: "*/*",
+//     };
+//     if (originValue) headers["Origin"] = originValue;
+//     if (tokenValue) headers["Authorization"] = `Bearer ${tokenValue}`;
+//     if (tenantValue) headers["X-Organization-Id"] = tenantValue;
+
+//     const relativeCandidates = [
+//       API_ENDPOINTS.APPLICATIONS.PROFILE_PDF(applicationId),
+//       `${API_ENDPOINTS.APPLICATIONS.DETAIL(applicationId)}?format=pdf`,
+//       `${API_ENDPOINTS.APPLICATIONS.DETAIL(applicationId)}?export=pdf`,
+//       `${API_ENDPOINTS.APPLICATIONS.DETAIL(applicationId)}?download=1`,
+//     ];
+
+//     let lastStatus: number | null = null;
+//     let lastTriedUrl: string | null = null;
+//     let lastHeaders: Record<string, any> | null = null;
+//     let didDownload = false;
+
+//     for (const rel of relativeCandidates) {
+//       const url = `${config.api.baseURL}${rel}`;
+//       lastTriedUrl = url;
+
+//       const res = yield call(() =>
+//         ReactNativeBlobUtil.config({
+//           path: filePath,
+//           fileCache: true,
+//           overwrite: true,
+//         }).fetch("GET", url, headers)
+//       );
+
+//       const info = res?.info?.();
+//       const status = info?.status ?? 0;
+//       lastStatus = status;
+//       lastHeaders = (info?.headers ?? null) as any;
+
+//       if (status >= 200 && status < 300) {
+//         const contentType = String(
+//           info?.headers?.["content-type"] || info?.headers?.["Content-Type"] || ""
+//         ).toLowerCase();
+//         const contentDisposition = String(
+//           info?.headers?.["content-disposition"] ||
+//             info?.headers?.["Content-Disposition"] ||
+//             ""
+//         ).toLowerCase();
+
+//         const looksLikePdf =
+//           contentType.includes("application/pdf") ||
+//           contentType.includes("application/octet-stream") ||
+//           contentDisposition.includes(".pdf");
+
+//         if (!looksLikePdf) {
+//           // Some backends return JSON/HTML with 200 here; skip and try next candidate.
+//           continue;
+//         }
+//         didDownload = true;
+//         break;
+//       }
+//     }
+
+//     if (!didDownload) {
+//       const baseMsg = `Failed to export PDF (HTTP ${lastStatus ?? "?"})`;
+//       if (__DEV__) {
+//         console.warn("[exportApplicantPdf] failed", {
+//           applicationId,
+//           tried: relativeCandidates,
+//           lastStatus,
+//           lastTriedUrl,
+//           lastHeaders,
+//         });
+//       }
+//       throw new Error(lastTriedUrl ? `${baseMsg}` : baseMsg);
+//     }
+
+//     if (Platform.OS === "android") {
+//       yield call(
+//         ReactNativeBlobUtil.MediaCollection.copyToMediaStore,
+//         {
+//           name: safeName,
+//           parentFolder: "CandidHR",
+//           mimeType: "application/pdf",
+//         },
+//         "Download",
+//         filePath
+//       );
+//       showToastMessage("Saved to Downloads", "success");
+//     } else {
+//       const shareUrl = `file://${filePath}`;
+//       yield call(Share.open, {
+//         urls: [shareUrl],
+//         type: "application/pdf",
+//         saveToFiles: true,
+//         failOnCancel: false,
+//       });
+//     }
+
+//     yield put(exportApplicantPdfSuccess());
+//   } catch (err: any) {
+//     const message = err?.message ?? "Failed to export applicant PDF";
+//     yield put(exportApplicantPdfFailure(message));
+//     showToastMessage(message, "error");
+//   }
+// }
 
 
 function* getApplicationDetailWorker(action: { type: string; payload: string }): Generator<any, void, any> {
@@ -254,6 +471,66 @@ function* getAssessmentDetailedReportWorker(
   }
 }
 
+function* getPerformanceReportWorker(
+  action: {
+    type: string;
+    payload: string;
+  }
+): Generator<any, void, any> {
+  try {
+    yield put(getPerformanceReportRequest());
+
+    const res: PerformanceReportResponse = yield call(
+      applicationsApi.getPerformanceReport,
+      action.payload
+    );
+
+    console.log(res, "getPerformanceReport");
+
+    yield put(getPerformanceReportSuccess(res));
+  } catch (err: any) {
+    yield put(
+      getPerformanceReportFailure(
+        err.message || "Failed to fetch performance report"
+      )
+    );
+  }
+}
+
+function* getAssessmentOptionsReportWorker(
+  action: {
+    payload: { application_id: string; page?: number };
+  }
+): Generator<any, void, any> {
+  try {
+    const { application_id, page = 1 } = action.payload;
+
+    // sets loading=true and resets when needed (page=1 or application changes)
+    yield put(getAssessmentOptionsReportRequest({ application_id, page }));
+
+    const res: AssessmentOptionsReportResponse = yield call(
+      applicationsApi.getAssessmentOptionsReport,
+      application_id,
+      page
+    );
+    console.log(res,"getAssessmentOptionsReportWorkergetAssessmentOptionsReportWorker")
+
+    yield put(
+      getAssessmentOptionsReportSuccess({
+        application_id,
+        page,
+        response: res,
+      })
+    );
+  } catch (err: any) {
+    yield put(
+      getAssessmentOptionsReportFailure(
+        err.message || "Failed to fetch assessment options"
+      )
+    );
+  }
+}
+
 function* getPersonalityScreeningListWorker(
   action: {
     type: string;
@@ -386,6 +663,30 @@ function* parseResumeWorker(
   }
 }
 
+function* updateApplicationShareWorker(
+  action: { type: string; payload: UpdateApplicationShareRequest }
+): Generator<any, void, any> {
+  try {
+    const { applicationId, users } = action.payload;
+    console.log('[updateApplicationShareWorker] called', { applicationId, usersCount: users?.length ?? 0, users });
+    if (!applicationId) {
+      console.warn('[updateApplicationShareWorker] skipped: missing applicationId');
+      return;
+    }
+    yield call(applicationsApi.updateApplicationShare, applicationId, users);
+    console.log('[updateApplicationShareWorker] API call completed successfully');
+    showToastMessage(
+      action.payload?.isRemoval ? "Removed User" : "Application sharing updated successfully!",
+      "success"
+    );
+    // Refresh detail so `users_shared_with` stays in sync
+    yield put(getApplicationDetailRequestAction(applicationId));
+  } catch (err: any) {
+    const message = err?.message ?? "Failed to update shared users";
+    console.warn("[updateApplicationShareWorker] failed:", message, err);
+  }
+}
+
 function* getReasonCategoryListWorker(): Generator<any, void, any> {
   try {
     yield put(getReasonCategoryListRequest());
@@ -411,12 +712,15 @@ function* getReasonListWorker(
   }
 }
 
-function* getApplicationReasonsListWorker(): Generator<any, void, any> {
+function* getApplicationReasonsListWorker(action: {
+  type: string;
+  payload?: { applicationId?: string; jobId?: string };
+}): Generator<any, void, any> {
   try {
     const application: { id?: string; job?: { id?: string } } | null =
       yield select(selectSelectedApplication);
-    const applicationId = application?.id;
-    const jobId = application?.job?.id;
+    const applicationId = action.payload?.applicationId ?? application?.id;
+    const jobId = action.payload?.jobId ?? application?.job?.id;
     if (!applicationId || !jobId) {
       yield put(getApplicationReasonsListFailure("Missing application or job"));
       return;
@@ -439,7 +743,17 @@ function* getApplicationReasonsListWorker(): Generator<any, void, any> {
 function* updateStageStatusWorker(
   action: { type: string; payload: UpdateStageStatusRequest }
 ): Generator<any, void, any> {
-  const { stageId, status, applicationId, jobId, reasonIds, contentType } = action.payload;
+  const {
+    stageId,
+    status,
+    applicationId,
+    jobId,
+    reasonIds,
+    contentType,
+    emailCandidate,
+    subject,
+    message,
+  } = action.payload;
   try {
     yield put(updateStageStatusRequest());
 
@@ -478,7 +792,7 @@ function* updateStageStatusWorker(
         } else {
           const reasonsPayload = {
             application: resolvedApplicationId,
-            job: resolvedJobId,
+            job_id: resolvedJobId,
             content_type: contentType,
             object_id: stageId,
             reason: reasonIds,
@@ -501,12 +815,14 @@ function* updateStageStatusWorker(
       reasonError ? "error" : "success"
     );
 
-    // POST /applications/send-email/ – send status update email to candidate
+    // POST /applications/send-email/ – send status update email to candidate (only when user opted in)
     try {
       const selectedApplication: { candidate?: { email?: string }; status?: string } | null =
         yield select(selectSelectedApplication);
       const toEmail = selectedApplication?.candidate?.email;
-      if (applicationId && toEmail) {
+      const shouldEmail = Boolean(emailCandidate);
+      const hasRequiredFields = Boolean(subject?.trim()) && Boolean(message?.trim());
+      if (shouldEmail && applicationId && toEmail && hasRequiredFields) {
         yield call(applicationsApi.sendEmail, {
           application_id: applicationId,
           status: selectedApplication?.status ?? "shortlisted",
@@ -514,6 +830,8 @@ function* updateStageStatusWorker(
           sent: 1,
           to: toEmail,
           detail: "Email sent.",
+          subject: subject?.trim(),
+          message: message?.trim(),
         });
       }
     } catch (sendEmailErr: any) {
@@ -532,8 +850,56 @@ function* updateStageStatusWorker(
   }
 }
 
+function* addApplicationReasonsWorker(action: {
+  type: string;
+  payload: {
+    application: string;
+    job_id: string;
+    content_type: string;
+    object_id: string;
+    reason: string[];
+  };
+}): Generator<any, void, any> {
+  try {
+    yield put(addApplicationReasonsRequest());
+    yield call(applicationsApi.addApplicationReasons, action.payload);
+    yield put(addApplicationReasonsSuccess());
+    yield put(getApplicationReasonsListRequestAction());
+    showToastMessage("Reason updated successfully", "success");
+  } catch (err: any) {
+    const message = err?.message ?? "Failed to update reason";
+    yield put(addApplicationReasonsFailure(message));
+    showToastMessage(message, "error");
+  }
+}
+
+function* updateApplicationReasonWorker(action: {
+  type: string;
+  payload: { id: string; message: string };
+}): Generator<any, void, any> {
+  try {
+    const id = action.payload?.id;
+    const message = action.payload?.message ?? "Deleted";
+    if (!id) {
+      yield put(updateApplicationReasonFailure("Missing reason id"));
+      return;
+    }
+    yield put(updateApplicationReasonRequest());
+    yield call(applicationsApi.updateApplicationReason, id, { message });
+    yield put(updateApplicationReasonSuccess());
+    yield put(getApplicationReasonsListRequestAction());
+    showToastMessage("Reason deleted successfully", "success");
+  } catch (err: any) {
+    const msg = err?.message ?? "Failed to delete reason";
+    yield put(updateApplicationReasonFailure(msg));
+    showToastMessage(msg, "error");
+  }
+}
+
 export function* applicationsSaga() {
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_APPLICATIONS_REQUEST, getApplicationsWorker);
+  yield takeLatest(APPLICATIONS_ACTION_TYPES.EXPORT_APPLICATIONS_REQUEST, exportApplicationsWorker);
+  // yield takeLatest(APPLICATIONS_ACTION_TYPES.EXPORT_APPLICANT_PDF_REQUEST, exportApplicantPdfWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_APPLICATION_DETAIL_REQUEST, getApplicationDetailWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.CREATE_APPLICATION_REQUEST, createApplicationWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.UPDATE_APPLICATION_STATUS_REQUEST, updateApplicationStatusWorker);
@@ -542,6 +908,7 @@ export function* applicationsSaga() {
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_ASSESSMENT_LOGS_REQUEST, getAssessmentLogsWorker)
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_ASSESSMENT_REPORT_REQUEST, getAssessmentReportWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_ASSESSMENT_DETAILED_REPORT_REQUEST, getAssessmentDetailedReportWorker);
+  yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_PERFORMANCE_REPORT_REQUEST, getPerformanceReportWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_PERSONALITY_LIST_REQUEST, getPersonalityScreeningListWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_PERSONALITY_RESPONSES_REQUEST, getPersonalityScreeningResponsesWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_APPLICATION_STAGES_REQUEST, getApplicationStagesWorker);
@@ -550,6 +917,10 @@ export function* applicationsSaga() {
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_REASON_CATEGORY_LIST_REQUEST, getReasonCategoryListWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_REASON_LIST_REQUEST, getReasonListWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_APPLICATION_REASONS_LIST_REQUEST, getApplicationReasonsListWorker);
+  yield takeLatest(APPLICATIONS_ACTION_TYPES.ADD_APPLICATION_REASONS_REQUEST, addApplicationReasonsWorker);
+  yield takeLatest(APPLICATIONS_ACTION_TYPES.UPDATE_APPLICATION_REASON_REQUEST, updateApplicationReasonWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.UPDATE_STAGE_STATUS_REQUEST, updateStageStatusWorker);
+  yield takeLatest(APPLICATIONS_ACTION_TYPES.UPDATE_APPLICATION_SHARE_REQUEST, updateApplicationShareWorker);
+  yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_ASSESSMENTOPTIONS_REPORT_REQUEST, getAssessmentOptionsReportWorker);
 }
 

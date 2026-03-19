@@ -36,6 +36,7 @@ import { formatMonDDYYYY } from "../../../../utils/dateformatter";
 import type { PersonalityScreeningItem } from "../../../../features/personalityScreening/types";
 
 const FILTER_OPTIONS = [
+  "Sort",
   "Applicant",
   "Email",
   "Status",

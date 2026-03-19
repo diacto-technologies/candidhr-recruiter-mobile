@@ -77,5 +77,68 @@ export const useStyles = () => {
           borderRadius: 8,
           borderWidth: 1,
         },
+
+        sectionCard: {
+          borderWidth: 1,
+          borderColor: colors.gray[200],
+          borderRadius: 16,
+          backgroundColor: colors.common.white,
+          padding: 16,
+          gap: 14,
+        },
+
+        sectionHeaderRow: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+        },
+
+        sectionTitleRow: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 8,
+        },
+
+        statGrid: {
+          flexDirection: "row",
+          flexWrap: "wrap",
+          gap: 12,
+        },
+
+        statTile: {
+          flexGrow: 1,
+          flexBasis: "47%",
+          paddingVertical: 14,
+          paddingHorizontal: 14,
+          borderRadius: 12,
+          backgroundColor: colors.gray[50],
+          borderWidth: 1,
+          borderColor: colors.gray[200],
+          gap: 6,
+        },
+
+        violationRow: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingVertical: 6,
+        },
+
+        warningIcon: {
+          width: 20,
+          height: 20,
+          borderRadius: 999,
+          backgroundColor: colors.warning[50],
+          borderWidth: 1,
+          borderColor: colors.warning[200],
+          alignItems: "center",
+          justifyContent: "center",
+        },
+
+        bulletRow: {
+          flexDirection: "row",
+          alignItems: "flex-start",
+          gap: 10,
+        },
       });
  }

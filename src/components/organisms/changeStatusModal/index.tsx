@@ -141,7 +141,21 @@ const ChangeStatusModal = ({
   }, [reasonList, selectedCategories]);
 
   const currentLabel = currentStatus ? (STATUS_LABELS[currentStatus] ?? currentStatus.replace(/_/g, ' ')) : '—';
-  const selectedNewOption = newStatusOptions.find((o) => o.id === selectedNewStatusId);
+  const newStatusOptionsFiltered = useMemo(
+    () =>
+      (newStatusOptions ?? []).filter(
+        (o) => (o?.id ?? '').toLowerCase() !== (currentStatus ?? '').toLowerCase()
+      ),
+    [newStatusOptions, currentStatus]
+  );
+  useEffect(() => {
+    if (visible && selectedNewStatusId != null && currentStatus != null) {
+      if ((selectedNewStatusId ?? '').toLowerCase() === (currentStatus ?? '').toLowerCase()) {
+        setSelectedNewStatusId(null);
+      }
+    }
+  }, [visible, currentStatus, selectedNewStatusId]);
+  const selectedNewOption = newStatusOptionsFiltered.find((o) => o.id === selectedNewStatusId);
 
   const isEmailFieldsInvalid = emailCandidate && (!subject.trim() || !message.trim());
   const isUpdateDisabled =
@@ -166,7 +180,6 @@ const ChangeStatusModal = ({
     };
 
     if (useApiFlow && stageId && applicationId) {
-      dispatch(getApplicationReasonsListRequestAction());
       dispatch(
         updateStageStatusRequestAction({
           stageId,
@@ -175,6 +188,9 @@ const ChangeStatusModal = ({
           jobId: application?.job?.id,
           reasonIds: addReason ? selectedReasonIds : undefined,
           contentType: addReason ? (contentType ?? undefined) : undefined,
+          emailCandidate: emailCandidate || undefined,
+          subject: emailCandidate ? subject : undefined,
+          message: emailCandidate ? message : undefined,
         })
       );
       onUpdateStatus(selectedNewStatusId, options);
@@ -255,14 +271,19 @@ const ChangeStatusModal = ({
                 <Typography variant="mediumTxtsm" color={colors.gray[700]}>
                   New Status
                 </Typography>
-                <TextField
-                  value={selectedNewOption ? selectedNewOption.name : '—'}
-                  // onChangeText={setSelectedReasonId}
-                  placeholder="Current"
-                  editable={false}
-                  style={styles.input}
-                  size="Medium"
-                  disable={true}
+                <CommonDropdown
+                  placeholder="Select new status"
+                  options={newStatusOptionsFiltered}
+                  value={selectedNewStatusId ?? ''}
+                  onChange={(nextValue) => {
+                    setSelectedNewStatusId(nextValue ?? null);
+                  }}
+                  labelKey="name"
+                  valueKey="id"
+                  showIndexAndTotal={false}
+                  mode="default"
+                  dropdownPosition="bottom"
+                  disabled={initialNewStatusId != null}
                 />
               </View>
 

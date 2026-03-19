@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
   Image,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ViewStyle,
   DimensionValue,
+  Share,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { navigate } from '../../../utils/navigationUtils';
@@ -18,6 +19,18 @@ import { Application } from '../../../features/applications/types';
 import { formatMonDDYYYY } from '../../../utils/dateformatter';
 import { getStatusColor } from './helper';
 import { capitalizeFirstLetter } from '../../../utils/stringUtils';
+import { SvgXml } from 'react-native-svg';
+import { horizontalThreedotIcon } from '../../../assets/svg/horizontalthreedoticon';
+import { DropdownMenu } from '../../molecules/dropdownmenu';
+import ChangeStatusModal from '../changeStatusModal';
+import ShareApplicationModal from '../shareApplicationModal';
+import { userIcon } from '../../../assets/svg/usericon';
+import { exportIcon } from '../../../assets/svg/export';
+import { editIcon } from '../../../assets/svg/edit';
+import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { updateApplicationStatusRequestAction } from '../../../features/applications/actions';
+import { applicantUserIcon } from '../../../assets/svg/applicantUser';
+import { shareIcon } from '../../../assets/svg/share';
 
 interface ApplicantCardProps {
   item?: Application | null;
@@ -76,6 +89,46 @@ const ShimmerBox: React.FC<{
 
 const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = false, cardWidth }) => {
   const styles = useStyles();
+  const dispatch = useAppDispatch();
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState<{ left: number; top: number }>({
+    left: 0,
+    top: 0,
+  });
+  const menuTriggerRef = useRef<View | null>(null);
+  const [changeStatusVisible, setChangeStatusVisible] = useState(false);
+  const [shareModalVisible, setShareModalVisible] = useState(false);
+
+  const STATUS_OPTIONS = [
+    { id: "shortlisted", name: "Shortlisted" },
+    { id: "rejected", name: "Rejected" },
+    { id: "on_hold", name: "On Hold" },
+    { id: "interview_scheduled", name: "Interview Scheduled" },
+    { id: "final_interview", name: "Final Interview" },
+    { id: "hired", name: "Hired" },
+    { id: "offer_extended", name: "Offer Extended" },
+    { id: "offer_accepted", name: "Offer Accepted" },
+    { id: "offer_rejected", name: "Offer Rejected" },
+    { id: "not_selected", name: "Not Selected" },
+    { id: "withdrawn", name: "Withdrawn" },
+    { id: "archived", name: "Archived" },
+  ];
+
+  const handleOpenMenu = () => {
+    if (menuTriggerRef.current && 'measureInWindow' in menuTriggerRef.current) {
+      (menuTriggerRef.current as any).measureInWindow(
+        (x: number, y: number, width: number, height: number) => {
+          setDropdownPosition({
+            left: x + width - 140,
+            top: y + height - 5,
+          });
+          setMenuVisible(true);
+        }
+      );
+    } else {
+      setMenuVisible(true);
+    }
+  };
 
   // If loading or no item provided -> show skeleton built from ShimmerBox
   if (loading || !item) {
@@ -143,13 +196,22 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
               {item?.name ?? (item?.id ? "?" : '')}
             </Typography>
             <Typography variant="regularTxtsm" color={colors.gray[600]}>
-              Applied on : {item?.applied_at?formatMonDDYYYY(item?.applied_at):"_"}
+              Applied on : {item?.applied_at ? formatMonDDYYYY(item?.applied_at) : "_"}
             </Typography>
           </View>
         </View>
 
         <View style={{ alignSelf: 'flex-start' }}>
-          {/* <SvgXml xml={horizontalThreedotIcon} height={20} width={20} /> */}
+          <View
+            ref={(el) => {
+              menuTriggerRef.current = el;
+            }}
+            collapsable={false}
+          >
+            <Pressable onPress={handleOpenMenu}>
+              <SvgXml xml={horizontalThreedotIcon} height={20} width={20} />
+            </Pressable>
+          </View>
         </View>
       </View>
 
@@ -179,6 +241,91 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
           </View>
         }
       </View>
+
+      <DropdownMenu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        position={dropdownPosition}
+        iconColor={colors?.gray[400]}
+        dropdownStyle={{
+          //borderRadius: 12,
+          //backgroundColor: '#fff',
+          //elevation: 8,
+          // paddingRight:10
+        }}
+        width={160}
+        itemStyle={{
+          //paddingVertical: 12,
+        }}
+        textStyle={{
+          color: 'red',
+        }}
+        iconStyle={{
+          marginRight: 12,
+        }}
+        iconHight={20}
+        iconWidth={20}
+        items={[
+          {
+            label: 'Profile',
+            icon: applicantUserIcon,
+            onPress: () => {
+              if (item?.id && item?.job?.id) {
+                navigate('ApplicantDetails', {
+                  application_id: item.id,
+                  job_id: item.job.id,
+                });
+              }
+            },
+          },
+          {
+            label: 'Change status',
+            icon: editIcon,
+            onPress: () => {
+              setChangeStatusVisible(true);
+            },
+          },
+          {
+            label: 'Share',
+            icon: shareIcon,
+            onPress: () => {
+              setMenuVisible(false);
+              setShareModalVisible(true);
+            },
+          },
+        ]}
+      />
+
+      {item && (
+        <ChangeStatusModal
+          visible={changeStatusVisible}
+          onClose={() => setChangeStatusVisible(false)}
+          applicantName={item.name ?? ''}
+          currentStatus={item.status ?? null}
+          newStatusOptions={STATUS_OPTIONS}
+          onUpdateStatus={(selectedStatusId) => {
+            if (!item?.id) return;
+            dispatch(
+              updateApplicationStatusRequestAction({
+                id: item.id,
+                status: selectedStatusId,
+              })
+            );
+          }}
+          hideAddReason
+          initialEmailMessage={
+            'Hi {{candidate_name}},\n\nYour application status has been updated to "{{application_status}}".\n\nThanks,\n{{company}}'
+          }
+        />
+      )}
+      {item && (
+        <ShareApplicationModal
+          visible={shareModalVisible}
+          onClose={() => setShareModalVisible(false)}
+          applicationId={item.id}
+          initialSharedMemberIds={item.users_shared_with ?? []}
+        />
+      )}
     </Pressable>
   );
 };

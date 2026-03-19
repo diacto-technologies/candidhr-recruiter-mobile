@@ -1,21 +1,27 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { JobsState, Job, CreateJobRequest, UpdateJobRequest, JobsListApiResponse, GetJobsParams, JobDetail, JobNamesListApiResponse } from "./types";
 
-const initialState: JobsState = {
+export const jobsInitialState: JobsState = {
   publishedJobs: [],
   unpublishedJobs: [],
+  favouriteJobs: [],
+  favouriteJobIds: [],
   selectedJob: null,
   publishedCount: 0,
   unpublishedCount: 0,
+  favouritesCount: 0,
   loading: false,
   error: null,
   activeTab: "Published",
   publishedListLoading: false,
   unpublishedListLoading: false,
+  favouritesListLoading: false,
   publishedIsTabLoading: false,
   unpublishedIsTabLoading: false,
+  favouritesIsTabLoading: false,
   latestPublishedRequestId: 0,
   latestUnpublishedRequestId: 0,
+  latestFavouritesRequestId: 0,
   publishedPagination: {
     page: 1,
     limit: 10,
@@ -26,8 +32,14 @@ const initialState: JobsState = {
     limit: 10,
     total: 0,
   },
+  favouritesPagination: {
+  page: 1,
+  limit: 10,
+  total: 0,
+  },
   publishedHasMore: true,
   unpublishedHasMore: true,
+  favouritesHasMore: true,
   filters: {
     title: "",
     experience: "",
@@ -36,6 +48,9 @@ const initialState: JobsState = {
     owner_name: "",
     closeDate: "",
     closeDateTo: "",
+    sortBy: "",
+    sortDir: "desc" as "asc" | "desc",
+    orderBy: "",
   },
   jobNameList: [],
   jobNameListLoading: false,
@@ -47,7 +62,7 @@ const initialState: JobsState = {
 
 const jobsSlice = createSlice({
   name: "jobs",
-  initialState,
+  initialState: jobsInitialState,
   reducers: {
     getJobsRequest: (
       state,
@@ -60,6 +75,14 @@ const jobsSlice = createSlice({
 
       const published = _action.payload?.published ?? true;
       const requestId = _action.payload?.requestId ?? Date.now();
+
+      // ⭐ FAVOURITES TAB
+      if (_action.payload?.favourites) {
+        state.latestFavouritesRequestId = requestId;
+        state.favouritesListLoading = true;
+        state.favouritesIsTabLoading = _action.payload?.append === false;
+        return;
+      }
 
       if (published) {
         state.latestPublishedRequestId = requestId;
@@ -80,10 +103,34 @@ const jobsSlice = createSlice({
         data: JobsListApiResponse;
         onlyCount?: boolean;
         requestId?: number;
+        favourites?: boolean;
       }>
     ) => {
-      const { page, append, data, published, onlyCount, requestId } =
+      const { page, append, data, published, onlyCount, requestId, favourites } =
         action.payload;
+
+      // ⭐ FAVOURITES LIST MODE (no count-only support for now)
+      if (favourites) {
+        if (
+          typeof requestId === "number" &&
+          requestId !== state.latestFavouritesRequestId
+        ) {
+          return;
+        }
+
+        state.favouritesListLoading = false;
+        state.favouritesIsTabLoading = false;
+
+        state.favouritesPagination.page = page;
+        state.favouritesPagination.total = data.count;
+        state.favouritesCount = data.count;
+
+        state.favouriteJobs = append
+          ? [...state.favouriteJobs, ...data.results]
+          : data.results;
+        state.favouritesHasMore = state.favouriteJobs.length < data.count;
+        return;
+      }
 
       // ✅ COUNT ONLY MODE
       if (onlyCount) {
@@ -147,6 +194,8 @@ const jobsSlice = createSlice({
       state.unpublishedListLoading = false;
       state.publishedIsTabLoading = false;
       state.unpublishedIsTabLoading = false;
+      state.favouritesListLoading = false;
+      state.favouritesIsTabLoading = false;
     },
     getJobDetailRequest: (state, _action: PayloadAction<string>) => {
       state.loading = true;
@@ -280,6 +329,34 @@ const jobsSlice = createSlice({
       state.publishedHasMore = true;
       state.unpublishedHasMore = true;
     },
+    setJobSort: (
+      state,
+      action: PayloadAction<{
+        sortBy: string;
+        sortDir: "asc" | "desc";
+      }>
+    ) => {
+      const { sortBy, sortDir } = action.payload;
+      state.filters.sortBy = sortBy;
+      state.filters.sortDir = sortDir;
+
+      const fieldMap: Record<string, string> = {
+        "Job Title": "title",
+        "Location": "location",
+        "Close Date": "close_date",
+      };
+      const backendField = fieldMap[sortBy];
+      state.filters.orderBy = backendField
+        ? sortDir === "desc"
+          ? `-${backendField}`
+          : backendField
+        : "";
+
+      state.publishedPagination.page = 1;
+      state.unpublishedPagination.page = 1;
+      state.publishedHasMore = true;
+      state.unpublishedHasMore = true;
+    },
     clearJobFilters: (state) => {
       state.filters = {
         title: "",
@@ -289,6 +366,9 @@ const jobsSlice = createSlice({
         owner_name: "",
         closeDate: "",
         closeDateTo: "",
+        sortBy: "",
+        sortDir: "desc",
+        orderBy: "",
       };
 
       // UX: reset pagination + hasMore after clearing filters.
@@ -297,7 +377,7 @@ const jobsSlice = createSlice({
       state.publishedHasMore = true;
       state.unpublishedHasMore = true;
     },
-    setActiveTab: (state, action: PayloadAction<"Published" | "Unpublished">) => {
+    setActiveTab: (state, action: PayloadAction<"Published" | "Draft" | "Favourites">) => {
       state.activeTab = action.payload;
     },
     getJobNameListRequest: (
@@ -343,6 +423,35 @@ const jobsSlice = createSlice({
       state.jobNameListLoading = false;
     },
 
+    // ⭐ Hydrate favourites from persistent storage
+    setFavouriteJobIds: (state, action: PayloadAction<string[]>) => {
+      state.favouriteJobIds = action.payload;
+    },
+
+    // ⭐ Toggle a job ID in favourite list
+    toggleFavouriteJob: (state, action: PayloadAction<string>) => {
+      const jobId = action.payload;
+      const exists = state.favouriteJobIds.includes(jobId);
+      if (exists) {
+        state.favouriteJobIds = state.favouriteJobIds.filter((id: string) => id !== jobId);
+        state.favouriteJobs = state.favouriteJobs.filter((job: Job) => job.id !== jobId);
+      } else {
+        state.favouriteJobIds.push(jobId);
+      }
+    },
+
+    // ⭐ Clear favourites list (used when no IDs)
+    clearFavouriteJobs: (state) => {
+      state.favouriteJobs = [];
+      state.favouritesPagination = {
+        page: 1,
+        limit: state.favouritesPagination.limit,
+        total: 0,
+      };
+      state.favouritesHasMore = false;
+      state.favouritesCount = 0;
+    },
+
   },
 });
 
@@ -365,12 +474,16 @@ export const {
   setSelectedJob,
   clearError,
   setJobFilters,
+  setJobSort,
   clearJobFilters,
   setActiveTab,
   getJobNameListRequest,
   getJobNameListSuccess,
   getJobNameListFailure,
   clearJobNameList,
+  setFavouriteJobIds,
+  toggleFavouriteJob,
+  clearFavouriteJobs,
 } = jobsSlice.actions;
 
 export default jobsSlice.reducer;

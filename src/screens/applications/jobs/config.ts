@@ -1,1 +1,1 @@
-export const jobTabs=["Published", "Unpublished"]
+export const jobTabs=["Published", "Draft", "Favourites"]

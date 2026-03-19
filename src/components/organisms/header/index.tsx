@@ -20,6 +20,7 @@ const Header = ({
   backNavigation,
   edit,
   threedot,
+  onThreeDotPress,
   borderCondition,
   showSearchIcon = false,
   onSearchIconPress,
@@ -139,7 +140,7 @@ const Header = ({
             ) : null}
 
             {threedot ? (
-              <Pressable>
+              <Pressable onPress={onThreeDotPress}>
                 <SvgXml xml={horizontalThreedotIcon} />
               </Pressable>
             ) : null}
@@ -147,7 +148,7 @@ const Header = ({
         </>
       ) : (
         <>
-          {/* ✅ Title / SearchBar */}
+          {/* ✅ Left: Title / SearchBar */}
           {enableJobSearch && openSearch ? (
             <Animated.View
               style={{
@@ -176,19 +177,26 @@ const Header = ({
             </Typography>
           )}
 
-          {/* ✅ Simple Search Icon (just icon with callback) */}
-          {showSearchIcon && !enableJobSearch && (
-            <Pressable onPress={onSearchIconPress}>
-              <SvgXml xml={searchIcon} />
-            </Pressable>
-          )}
+          {/* ✅ Right: icons (search / three-dot) */}
+          <View style={styles.subEditcontainer}>
+            {showSearchIcon && !enableJobSearch && (
+              <Pressable onPress={onSearchIconPress}>
+                <SvgXml xml={searchIcon} />
+              </Pressable>
+            )}
 
-          {/* ✅ Job Search icon */}
-          {enableJobSearch && (
-            <Pressable onPress={handleSearchToggle}>
-              <SvgXml xml={searchIcon} />
-            </Pressable>
-          )}
+            {enableJobSearch && (
+              <Pressable onPress={handleSearchToggle}>
+                <SvgXml xml={searchIcon} />
+              </Pressable>
+            )}
+
+            {threedot ? (
+              <Pressable onPress={onThreeDotPress}>
+                <SvgXml xml={horizontalThreedotIcon} />
+              </Pressable>
+            ) : null}
+          </View>
         </>
       )}
     </View>

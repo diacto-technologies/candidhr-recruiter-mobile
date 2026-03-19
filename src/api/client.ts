@@ -300,8 +300,12 @@ async function executeWithRefresh(
 
 // API Client with token injection
 export const apiClient = {
-  get: async (endpoint: string, customConfig?: RequestInit) => {
-    const response = await executeWithRefresh(
+  /**
+   * Returns the raw `Response` object (useful for file downloads / non-JSON).
+   * Callers are responsible for parsing (e.g. `response.text()`).
+   */
+  getResponse: async (endpoint: string, customConfig?: RequestInit) => {
+    return await executeWithRefresh(
       () =>
         fetch(`${API_BASE_URL}${endpoint}`, {
           method: 'GET',
@@ -310,7 +314,10 @@ export const apiClient = {
         }),
       endpoint
     );
+  },
 
+  get: async (endpoint: string, customConfig?: RequestInit) => {
+    const response = await apiClient.getResponse(endpoint, customConfig);
     return response.json();
   },
 

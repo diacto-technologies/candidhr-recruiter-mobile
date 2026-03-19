@@ -7,6 +7,7 @@ export interface IHeader {
   backNavigation?: boolean;
   edit?: boolean;
   threedot?: boolean;
+  onThreeDotPress?: () => void;
   borderCondition?: boolean;
   showTitle?: boolean;
 

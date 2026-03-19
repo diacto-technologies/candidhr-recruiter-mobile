@@ -16,12 +16,14 @@ export const API_ENDPOINTS = {
     AVATAR: '/profile/avatar',
   },
   USERS: {
-    LIST: '/core/users/list/',
+    // Used for dropdowns / selectors and users management screens
+    // Backed by: GET /core/users/options/?page=1
+    LIST: '/core/users/options/',
     CREATE: '/core/tenant/users/',
     ASSIGN_ROLE: '/core/assign-role/',
     DELETE: (id: string) => `/core/tenant/users/${id}/`,
   },
-  ROLES:{
+  ROLES: {
     LIST: '/core/roles/',
   },
   // Jobs endpoints
@@ -37,10 +39,13 @@ export const API_ENDPOINTS = {
   // Applications endpoints
   APPLICATIONS: {
     LIST: '/applications/v2/filter/',
+    EXPORT: '/applications/v2/export/',
     DETAIL: (id: string) => `/applications/v1/${id}/profile/`,
+    /** GET application profile as PDF (server-generated) */
+    PROFILE_PDF: (id: string) => `/applications/v1/${id}/profile/pdf/`,
     CREATE: '/applications',
     UPDATE: (id: string) => `/applications/${id}`,
-    stages:(id:string)=>`/applications/v1/stages/?application_id=${id}`,
+    stages: (id: string) => `/applications/v1/stages/?application_id=${id}`,
     STATUS: (id: string) => `/applications/${id}/status`,
     /** PATCH application status: /applications/v1/status-update/{id}/?status=... */
     STATUS_UPDATE: (id: string, status: string) =>
@@ -53,6 +58,8 @@ export const API_ENDPOINTS = {
     STAGE_STATUS: (stageId: string, status: string) => `/applications/v1/stages/${stageId}/${status}/`,
     PARSE_RESUME: (applicationId: string) => `/applications/v1/${applicationId}/parse-resume/`,
     ASSESSMENT_REPORT: (assessmentLogId: string) => `/assessments/v1/assessment-log/${assessmentLogId}/report-details/`,
+    PERFORMANCE_REPORT: (assessmentLogId: string) => `/assessments/v2/${assessmentLogId}/performance-report/`,
+    Assessment_Reports:(application_id:string)=>`assessments/v2/assignment-options/?application_id=${application_id}`,
     ASSESSMENT_DETAILED_REPORT: (assessmentLogId: string, assessmentId: string) =>
       `/assessments/v1/assessment-log/assessment/detailed-report/?assessment_log_id=${assessmentLogId}&assessment_id=${assessmentId}`,
     PERSONALITY_SCREENING_LIST: (application_id: string, job_id: string) =>
@@ -61,8 +68,10 @@ export const API_ENDPOINTS = {
       `/personality-screening/${screening_id}/responses/`,
     /** POST send status update email to candidate */
     SEND_EMAIL: '/applications/send-email/',
+    /** PATCH share users with an application: /applications/v1/{id}/share/ */
+    SHARE: (id: string) => `/applications/v1/${id}/share/`,
   },
-  ASSESSMENTS:{
+  ASSESSMENTS: {
     LIST: "/assessments/v1/list/",
     // Assigned assessments (filter endpoint)
     ASSIGNEDLIST: "/assessments/v1/filter",
@@ -84,6 +93,18 @@ export const API_ENDPOINTS = {
     APPLICATION_REASONS_LIST: '/notifications/v1/reasons/application-reasons/list/',
     /** POST application reasons: /notifications/v1/reasons/application-reasons/add/ */
     APPLICATION_REASONS_ADD: '/notifications/v1/reasons/application-reasons/add/',
+    /** PATCH application reasons update (delete uses message="Deleted"): /notifications/v1/reasons/application-reasons/{id}/update/ */
+    APPLICATION_REASONS_UPDATE: (id: string) => `/notifications/v1/reasons/application-reasons/${id}/update/`,
+  },
+  COMMENTS: {
+    /** GET list: /comments/v1/comments/?application_id=...&job_id=... */
+    LIST: '/comments/v1/comments/',
+    /** POST create: /comments/v1/comments/ */
+    CREATE: '/comments/v1/comments/',
+    /** PATCH update: /comments/v1/{commentId}/update/ */
+    UPDATE: (commentId: string) => `/comments/v1/${commentId}/update/`,
+    /** DELETE: /comments/v1/comments/{commentId}/ */
+    DELETE: (commentId: string) => `/comments/v1/comments/${commentId}/`,
   },
 } as const;
 

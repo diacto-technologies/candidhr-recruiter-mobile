@@ -7,10 +7,9 @@ export const useStyles = () => {
     return StyleSheet.create({
       container: {
         flex: 1,
-        paddingTop:inset.insetsTop,
-        paddingBottom:inset.insetsBottom,
-        //backgroundColor:colors.base.white
-    },
+        paddingTop: inset.insetsTop,
+        paddingBottom: inset.insetsBottom,
+      },
         subContainer: { flex: 1, backgroundColor: '#F6F6F8' },
         tabContainer: {
           position: "relative",
@@ -66,6 +65,11 @@ export const useStyles = () => {
           justifyContent: 'center',
           alignItems: 'center',
           marginRight: 12,
+        },
+        floatingButton: {
+          position: 'absolute',
+          right: 24,
+          bottom: inset.insetsBottom + 88,
         },
     });
 };

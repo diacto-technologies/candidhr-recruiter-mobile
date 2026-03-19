@@ -8,6 +8,7 @@ import { applicationsSaga } from '../features/applications/saga';
 import { usersSaga } from '../features/profile/users';
 import { assessmentsSaga } from '../features/assessments/saga';
 import { personalityScreeningSaga } from '../features/personalityScreening/saga';
+import { commentsSaga } from '../features/comments';
 
 export default function* rootSaga() {
   yield all([
@@ -19,5 +20,6 @@ export default function* rootSaga() {
     applicationsSaga(),
     assessmentsSaga(),
     personalityScreeningSaga(),
+    commentsSaga(),
   ]);
 }

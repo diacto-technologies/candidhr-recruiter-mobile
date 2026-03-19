@@ -68,7 +68,10 @@ export interface PersonalityScreeningFilterParams {
 export type PersonalityScreeningFilters = Omit<
   PersonalityScreeningFilterParams,
   "page" | "o"
->;
+> & {
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
+};
 
 export interface GetPersonalityScreeningListPayload
   extends PersonalityScreeningFilterParams {

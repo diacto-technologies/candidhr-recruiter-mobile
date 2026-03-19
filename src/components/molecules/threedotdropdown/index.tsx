@@ -32,7 +32,7 @@ const ThreeDotDropdown: React.FC<ThreeDotDropdownProps> = ({
   return (
     <Modal transparent visible={visible} animationType="fade">
       <Pressable style={styles.overlay} onPress={onClose}>
-        <View style={[styles.dropdownContainer, { bottom:top, right }]}>
+        <View style={[styles.dropdownContainer, { top, right }]}>
           {menuItems.map((item, index) => (
             <View key={index}>
               {index > 0 && <View style={styles.divider} />}
