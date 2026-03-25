@@ -91,6 +91,8 @@ export interface ApplicationsState {
   assessmentOptionsHasMore: boolean;
   loadingAssessmentOptions: boolean;
   assessmentOptionsError: string | null;
+  loadingExportAssessmentReport?: boolean;
+  exportAssessmentReportError?: string | null;
 }
 
 export interface AssessmentOption {
@@ -1253,4 +1255,9 @@ export interface AssessmentOptionsReportResponse {
   page_size?: number;
   total?: number;
   total_pages?: number;
+}
+
+export interface ExportAssessmentReportRequest {
+  assignment_ids: string[];
+  select_all?: boolean;
 }

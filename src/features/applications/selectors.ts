@@ -203,3 +203,9 @@ export const selectAssessmentOptionsHasMore = (state: RootState) =>
 
 export const selectAssessmentOptionsPage = (state: RootState) =>
   state.applications.assessmentOptionsPage;
+
+export const selectExportAssessmentReportLoading = (state: RootState) =>
+  state.applications.loadingExportAssessmentReport ?? false;
+
+export const selectExportAssessmentReportError = (state: RootState) =>
+  state.applications.exportAssessmentReportError ?? null;

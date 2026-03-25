@@ -150,7 +150,7 @@ export default function ResumeScreening() {
           }}
         />
 
-        <Card style={{ gap: 4 }}>
+        <Card style={{ gap: 4,flex:1, width:'100%' }}>
           <Typography variant="regularTxtxs" style={{ backgroundColor: colors?.brand['200'], borderTopEndRadius: 12, borderTopStartRadius: 12, padding: 5 }} numberOfLines={2}>
             Stage was {resumeScreeningStatus} by{" "}
             {stages?.find(s => s.stage_type === "resume_screening")?.reviewed_by?.name ??

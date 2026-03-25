@@ -6,6 +6,7 @@ import { useAppSelector } from '../../../../../hooks/useAppSelector';
 import {
   getAssessmentLogsRequestAction,
   getAssessmentOptionsReportRequestAction,
+  exportAssessmentReportRequestAction,
   getAssessmentReportRequestAction,
   getPerformanceReportRequestAction,
   markSessionAsReviewedRequestAction,
@@ -19,6 +20,7 @@ import {
   selectPerformanceReport,
   selectAssessmentOptions,
   selectAssessmentOptionsLoading,
+  selectExportAssessmentReportLoading,
 } from '../../../../../features/applications/selectors';
 import { formatMonDDYYYY } from '../../../../../utils/dateformatter';
 import Dropdown from '../../../../../components/organisms/dropdown';
@@ -42,6 +44,7 @@ import TimeAnalyticsCard from '../assessment/assessmentdetails/components/TimeAn
 import RecommendationCard from '../assessment/assessmentdetails/components/RecommendationCard';
 import { useStyles as useAssessmentDetailsStyles } from '../assessment/assessmentdetails/styles';
 import type { StrengthsWeaknesses } from '../assessment/assessmentdetails/types';
+import { showToastMessage } from '../../../../../utils/toast';
 
 interface TimelineItem {
   title: string;
@@ -64,6 +67,7 @@ const AssessmentV2 = () => {
   const loadingMarkReviewed = useAppSelector(selectMarkSessionReviewedLoading);
   const assessmentOptions = useAppSelector(selectAssessmentOptions);
   const loadingOptions = useAppSelector(selectAssessmentOptionsLoading);
+  const loadingExportReport = useAppSelector(selectExportAssessmentReportLoading);
   const strengthsWeaknesses = (performanceReport as any)?.strengths_weaknesses as
     | StrengthsWeaknesses
     | undefined;
@@ -90,8 +94,8 @@ const AssessmentV2 = () => {
   }, [assessmentLogs, session]);
 
   useEffect(() => {
-    if (assessmentOptions?.length && !selectedAssignment) {
-      setSelectedAssignment(assessmentOptions[0]?.id ?? null);
+    if (assessmentOptions?.length) {
+      setSelectedAssignment(assessmentOptions[0]?.id);
     }
   }, [assessmentOptions]);
 
@@ -249,8 +253,8 @@ const AssessmentV2 = () => {
           },
         }}
       />
-      <View style={{ zIndex: 1000 }}>
-        <Card style={{ gap: 4 }}>
+      <View style={{zIndex: 1000,}}>
+        <Card style={{gap: 4,width:"100%"}}>
           <Typography variant="regularTxtxs" style={{ backgroundColor: colors?.brand['200'], borderTopEndRadius: 12, borderTopStartRadius: 12, padding: 5 }} numberOfLines={2}>
             Stage was {assessmentStatus} by{" "}
             {stages?.find(s => s.stage_type === "assessment_v2")?.reviewed_by?.name ??
@@ -371,8 +375,10 @@ const AssessmentV2 = () => {
       </View> */}
       </View>
 
-      <AssignmentDropdown
-        data={
+      <AssessmentReportsCard
+        count={assessmentOptions?.length ?? 0}
+        selectedItem={selectedAssignment}
+        options={
           assessmentOptions?.map((item) => ({
             id: item.id,
             job_title: item.job_title,
@@ -380,10 +386,31 @@ const AssessmentV2 = () => {
             status: item.status,
           })) || []
         }
-        selectedId={selectedAssignment}
         onSelect={(item: { id: SetStateAction<string>; }) => {
           setSelectedAssignment(item.id);
         }}
+        onRefresh={() => {
+          dispatch(
+            getAssessmentOptionsReportRequestAction({
+              application_id: selectedAssignment,
+              page: 1,
+            }),
+          );
+        }}
+        onExport={() => {
+          if (!selectedAssignment) {
+            showToastMessage("Please select an assignment to export", "error");
+            return;
+          }
+          dispatch(
+            exportAssessmentReportRequestAction({
+              select_all: false,
+              assignment_ids: [selectedAssignment],
+            })
+          );
+        }}
+        refreshing={loadingOptions}
+        exporting={loadingExportReport}
       />
 
       <CustomTimeline progress={progress} data={timelineData} />

@@ -462,10 +462,10 @@ const FilterSheetContent: React.FC<Props> = ({
                       </View>
                     )}
                     {selectedTab === 'Title' && <TextSearchFilter mode="job" field="title" placeholder="Search by 'Title'" />}
-                    {selectedTab === 'Experience' && <ExperienceFilter />}
+                    {/* {selectedTab === 'Experience' && <ExperienceFilter />} */}
                     {selectedTab === 'Location' && <TextSearchFilter mode="job" field="location" placeholder="Search by 'Location' " />}
                     {selectedTab === 'Employment Type' && <TextSearchFilter mode="job" field="employmentType" placeholder="Search by 'Employee Type' " />}
-                    {selectedTab === 'Close Date' && <DateFilter />}
+                    {/* {selectedTab === 'Close Date' && <DateFilter />} */}
                     {selectedTab === 'Created By' && <TextSearchFilter mode="job" field="createdBy" placeholder="Search by 'Created By' " />}
                   </>
                 )}

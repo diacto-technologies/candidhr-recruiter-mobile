@@ -60,6 +60,7 @@ export const API_ENDPOINTS = {
     ASSESSMENT_REPORT: (assessmentLogId: string) => `/assessments/v1/assessment-log/${assessmentLogId}/report-details/`,
     PERFORMANCE_REPORT: (assessmentLogId: string) => `/assessments/v2/${assessmentLogId}/performance-report/`,
     Assessment_Reports:(application_id:string)=>`assessments/v2/assignment-options/?application_id=${application_id}`,
+    ASSESSMENT_REPORT_EXPORT: '/assessments/v2/assignments/export/',
     ASSESSMENT_DETAILED_REPORT: (assessmentLogId: string, assessmentId: string) =>
       `/assessments/v1/assessment-log/assessment/detailed-report/?assessment_log_id=${assessmentLogId}&assessment_id=${assessmentId}`,
     PERSONALITY_SCREENING_LIST: (application_id: string, job_id: string) =>

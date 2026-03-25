@@ -132,12 +132,11 @@ const JobCardList: React.FC<JobCardListProps> = ({
                         {formatMonDDYYYY(item.close_date ?? 0)}
                     </Typography>
                 </View>
-                <TouchableOpacity onPress={() => onToggleFavourite(item.id)}>
+                <TouchableOpacity onPress={() => onToggleFavourite(item.id)}   style={{ alignSelf: "flex-end" }}>
                   <SvgXml
                     xml={heartIcon}
                     height={20}
                     width={20}
-                    style={{ alignSelf: "flex-end" }}
                     color={
                       favouriteJobIds?.includes?.(item.id)
                         ? colors.warning[400]

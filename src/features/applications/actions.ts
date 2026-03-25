@@ -151,6 +151,14 @@ export const getAssessmentOptionsReportFailure = (payload: string) => ({
   payload,
 });
 
+export const exportAssessmentReportRequestAction = (payload: {
+  assignment_ids: string[];
+  select_all?: boolean;
+}) => ({
+  type: APPLICATIONS_ACTION_TYPES.EXPORT_ASSESSMENT_REPORT_REQUEST,
+  payload,
+});
+
 export const getAssessmentDetailedReportRequestAction = (payload: {
   assessmentLogId: string;
   assessmentId: string;

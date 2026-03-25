@@ -67,6 +67,8 @@ const initialState: ApplicationsState = {
   assessmentOptionsHasMore: true,
   loadingAssessmentOptions: false,
   assessmentOptionsError: null as string | null,
+  loadingExportAssessmentReport: false,
+  exportAssessmentReportError: null,
 };
 
 const applicationsSlice = createSlice({
@@ -665,6 +667,18 @@ const applicationsSlice = createSlice({
       state.loadingAssessmentOptions = false;
       state.assessmentOptionsError = action.payload;
     },
+    exportAssessmentReportRequest: (state) => {
+      state.loadingExportAssessmentReport = true;
+      state.exportAssessmentReportError = null;
+    },
+    exportAssessmentReportSuccess: (state) => {
+      state.loadingExportAssessmentReport = false;
+      state.exportAssessmentReportError = null;
+    },
+    exportAssessmentReportFailure: (state, action: PayloadAction<string>) => {
+      state.loadingExportAssessmentReport = false;
+      state.exportAssessmentReportError = action.payload;
+    },
   },
 });
 
@@ -745,7 +759,10 @@ export const {
   getPerformanceReportFailure,
   getAssessmentOptionsReportRequest,
   getAssessmentOptionsReportSuccess,
-  getAssessmentOptionsReportFailure
+  getAssessmentOptionsReportFailure,
+  exportAssessmentReportRequest,
+  exportAssessmentReportSuccess,
+  exportAssessmentReportFailure,
 } = applicationsSlice.actions;
 
 export default applicationsSlice.reducer;

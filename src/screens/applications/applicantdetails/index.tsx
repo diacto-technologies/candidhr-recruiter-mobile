@@ -6,7 +6,8 @@ import {
   Linking,
   FlatList,
   Modal,
-  Button,
+  Text,
+  TouchableOpacity,
 } from 'react-native';
 import ProfileCart from '../../../components/organisms/profile';
 import { Header, ResumeModal } from '../../../components';
@@ -428,6 +429,8 @@ export default function ApplicantDetails() {
               </View>
             </View>
           )}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
         />
 
         <Modal
@@ -436,10 +439,22 @@ export default function ApplicantDetails() {
           onRequestClose={() => setHtmlPreviewVisible(false)}
         >
           <View style={{ flex: 1, backgroundColor: '#fff' }}>
-            <View style={{ padding: 12 }}>
-              <Button title="Close Preview" onPress={() => setHtmlPreviewVisible(false)} />
-            </View>
             <WebView originWhitelist={['*']} source={{ html: htmlPreview }} style={{ flex: 1 }} />
+            <TouchableOpacity
+              onPress={() => setHtmlPreviewVisible(false)}
+              style={{
+                position: 'absolute',
+                top: Platform.OS === 'android' ? 14 : 52,
+                right: 16,
+                backgroundColor: '#111827',
+                paddingVertical: 8,
+                paddingHorizontal: 12,
+                borderRadius: 999,
+                zIndex: 10,
+              }}
+            >
+              <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>Close</Text>
+            </TouchableOpacity>
           </View>
         </Modal>
 

@@ -352,6 +352,22 @@ export const apiClient = {
     return response.json();
   },
 
+  /**
+   * Returns raw `Response` for POST requests (useful for file exports).
+   */
+  postResponse: async (endpoint: string, data?: any, customConfig?: RequestInit) => {
+    return await executeWithRefresh(
+      () =>
+        fetch(`${API_BASE_URL}${endpoint}`, {
+          method: 'POST',
+          headers: buildHeaders(customConfig?.headers as Record<string, string> | undefined),
+          body: JSON.stringify(data),
+          ...customConfig,
+        }),
+      endpoint
+    );
+  },
+
   put: async (endpoint: string, data?: any, customConfig?: RequestInit) => {
     const response = await executeWithRefresh(
       () =>

@@ -1,6 +1,6 @@
 import { apiClient } from "../../api/client";
 import { API_ENDPOINTS } from "../../api/endpoints";
-import { CreateApplicationRequest, UpdateApplicationStatusRequest, Application, GetApplicationsParams, ApplicationsListResponse, ApplicationDetailResponse, GetApplicationResponsesParams, ApplicationResponsesApiResponse, ResumeScreeningApiResponse, AssessmentLogApiResponse, AssessmentReportApiResponse, AssessmentDetailedReportApiResponse, ScreeningAssessment, PersonalityScreeningResponse, ApplicationStagesResponse, SessionReviewedResponse, ReasonCategory, ReasonListItem, UpdateStageStatusPayload, PerformanceReportResponse, AssessmentOptionsReportResponse } from "./types";
+import { CreateApplicationRequest, UpdateApplicationStatusRequest, Application, GetApplicationsParams, ApplicationsListResponse, ApplicationDetailResponse, GetApplicationResponsesParams, ApplicationResponsesApiResponse, ResumeScreeningApiResponse, AssessmentLogApiResponse, AssessmentReportApiResponse, AssessmentDetailedReportApiResponse, ScreeningAssessment, PersonalityScreeningResponse, ApplicationStagesResponse, SessionReviewedResponse, ReasonCategory, ReasonListItem, UpdateStageStatusPayload, PerformanceReportResponse, AssessmentOptionsReportResponse, ExportAssessmentReportRequest } from "./types";
 
 export const applicationsApi = {
   // getApplications: async (params?: GetApplicationsParams): Promise<ApplicationsListResponse> => {
@@ -250,6 +250,23 @@ getApplications: async (
     const res = await apiClient.get(url);
   
     return res?.data ?? res;
+  },
+
+  exportAssessmentReport: async (
+    payload: ExportAssessmentReportRequest
+  ): Promise<Response> => {
+    return apiClient.postResponse(
+      API_ENDPOINTS.APPLICATIONS.ASSESSMENT_REPORT_EXPORT,
+      {
+        select_all: Boolean(payload.select_all),
+        assignment_ids: payload.assignment_ids,
+      },
+      {
+        headers: {
+          Accept: "*/*",
+        },
+      }
+    );
   },
 
   getPersonalityScreeningList: async (application_id: string,

@@ -220,7 +220,7 @@ const Assessment = () => {
         }}
       />
       <View style={{ zIndex: 1000 }}>
-        <Card style={{ gap: 4 }}>
+        <Card style={{ gap: 4 ,flex:1,width:'100%'}}>
           <Typography variant="regularTxtxs" style={{ backgroundColor: colors?.brand['200'], borderTopEndRadius: 12, borderTopStartRadius: 12, padding: 5 }} numberOfLines={2}>
             Stage was {assessmentStatus} by{" "}
             {stages?.find(s => s.stage_type === "assessment")?.reviewed_by?.name ??

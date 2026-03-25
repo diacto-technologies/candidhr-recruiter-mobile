@@ -15,6 +15,8 @@ import CodingQuestionCard from "../codingquestioncard";
 import VideoPlayerBox from "../../../../../../components/molecules/videoplayer";
 import SnapshotModal from "../../../../../../components/molecules/snapshotmodal";
 import { useStyles } from "./styles";
+import { SvgXml } from "react-native-svg";
+import { arrowDown } from "../../../../../../assets/svg/arrowdown";
 
 type AssessmentCard = {
   id: string;
@@ -109,10 +111,56 @@ const toLabelFromKey = (value?: string) => {
     .join(" ");
 };
 
+const normalizeAiEvaluation = (ai: any, questionPoints?: number) => {
+  if (!ai || typeof ai !== "object") return null;
+
+  const flags: string[] = Array.isArray(ai?.ai_flags)
+    ? ai.ai_flags.map((item: any) => String(item).toLowerCase())
+    : [];
+
+  const breakdownFromArray = Array.isArray(ai?.ai_breakdown)
+    ? ai.ai_breakdown.map((item: any) => ({
+      key: String(item?.key ?? item?.label ?? "").trim(),
+      label: String(item?.label ?? toLabelFromKey(item?.key) ?? "Metric").trim(),
+      note: String(item?.note ?? "").trim(),
+      score: Number(item?.score ?? 0),
+    }))
+    : [];
+
+  const breakdownFromObject =
+    !breakdownFromArray.length && ai?.ai_subscores && typeof ai.ai_subscores === "object"
+      ? Object.entries(ai.ai_subscores).map(([k, v]: [string, any]) => ({
+        key: k,
+        label: toLabelFromKey(k) || "Metric",
+        note: "",
+        score: Number(v ?? 0),
+      }))
+      : [];
+
+  const breakdown = breakdownFromArray.length ? breakdownFromArray : breakdownFromObject;
+
+  const improvements = Array.isArray(ai?.ai_improvements)
+    ? ai.ai_improvements.map((item: any) => String(item).trim()).filter(Boolean)
+    : [];
+
+  return {
+    status: String(ai?.ai_status ?? "").trim() || "Scored",
+    score: Number(ai?.ai_score ?? ai?.ai_overall_score ?? 0),
+    maxScore: Number(questionPoints ?? 5) || 5,
+    note: String(ai?.ai_note ?? ai?.ai_summary ?? ai?.ai_feedback ?? "").trim(),
+    relevance: String(ai?.ai_relevance ?? "").trim(),
+    language: String(ai?.ai_language ?? "").trim(),
+    isOffTopic: flags.includes("off_topic"),
+    breakdown,
+    improvements,
+  };
+};
+
 const AssessmentsDetailsV2 = ({ style }: Props) => {
   const styles = useStyles();
   const dispatch = useAppDispatch();
   const [activeTab, setActiveTab] = useState<TabType>("QUESTIONS");
+  const [expandedAI, setExpandedAI] = useState<string | null>(null);
   const [snapshotModalVisible, setSnapshotModalVisible] = useState(false);
   const [selectedSnapshot, setSelectedSnapshot] = useState<string | null>(null);
   const assessmentReport = useAppSelector(selectAssessmentReport);
@@ -349,9 +397,9 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
                 </Typography>
               </View>
             ))}
-          </View> */}
+          </View> 
 
-          {/* <View
+           <View
             style={{
               flexDirection: "row",
               alignItems: "center",
@@ -393,7 +441,7 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
                 incorrect
               </Typography>
             </View>
-          </View> */}
+          </View> 
          {/* <Divider height={1} marginVertical={5}/> */}
           <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
             <View
@@ -561,9 +609,11 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
 
                                 const isProvided = providedSet.has(idNum);
                                 const isCorrectOpt = correctSet.has(idNum);
-
-                                const isSelectedCorrect = isProvided && isCorrectOpt;
-                                const isSelectedWrong = isProvided && !isCorrectOpt;
+                                const isFullyCorrect =
+                                  providedSet.size === correctSet.size &&
+                                  [...providedSet].every((id) => correctSet.has(id));
+                                const isSelectedCorrect = isFullyCorrect && isProvided && isCorrectOpt;
+                                const isSelectedWrong = isProvided && (!isCorrectOpt || !isFullyCorrect);
 
                                 const backgroundColor = isSelectedCorrect
                                   ? colors.success[50]
@@ -619,10 +669,10 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
                           <Divider />
 
                           {/* Correct answer row */}
-                          <Typography variant="mediumTxtsm" color={colors.gray[600]}>
+                          {/* <Typography variant="mediumTxtsm" color={colors.gray[600]}>
                             Correct answer:
-                          </Typography>
-                          <View style={styles.optionRow}>
+                          </Typography> */}
+                          {/* <View style={styles.optionRow}>
                             {choices.length > 0
                               ? (() => {
                                 const correctChoices = choices.filter((c) =>
@@ -669,24 +719,278 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
                                   </Typography>
                                 </View>
                               ))}
-                          </View>
+                          </View> */}
+                          {String(q?.question_type).toLowerCase() !== "text" && (
+                            <>
+                              {/* Correct answer row */}
+                              <Typography variant="mediumTxtsm" color={colors.gray[600]}>
+                                Correct answer:
+                              </Typography>
 
-                          {/* Status chip */}
-                          <View
-                            style={{
-                              alignSelf: "flex-start",
-                              paddingHorizontal: 10,
-                              paddingVertical: 4,
-                              borderRadius: 999,
-                              backgroundColor: bg,
-                              borderWidth: 1,
-                              borderColor: border,
-                            }}
-                          >
-                            <Typography variant="semiBoldTxtxs" color={text}>
-                              {status}
-                            </Typography>
-                          </View>
+                              <View style={styles.optionRow}>
+                                {choices.length > 0
+                                  ? (() => {
+                                    const correctChoices = choices.filter((c) =>
+                                      correctSet.has(Number(c?.choice_id))
+                                    );
+                                    const missingCorrect = correctChoices.filter(
+                                      (c) => !providedSet.has(Number(c?.choice_id))
+                                    );
+                                    const toShow = missingCorrect.length ? missingCorrect : correctChoices;
+
+                                    return toShow.map((c) => (
+                                      <View
+                                        key={`correct-${String(c?.choice_id)}`}
+                                        style={[
+                                          styles.optionChip,
+                                          {
+                                            backgroundColor: colors.success[50],
+                                            borderColor: colors.success[200],
+                                          },
+                                        ]}
+                                      >
+                                        <Typography variant="mediumTxtsm" color={colors.success[700]}>
+                                          {String(c?.choice_text ?? "").trim() || "_"}
+                                        </Typography>
+                                      </View>
+                                    ));
+                                  })()
+                                  : correctChoiceIds.map((idNum) => (
+                                    <View
+                                      key={`correct-${String(idNum)}`}
+                                      style={[
+                                        styles.optionChip,
+                                        {
+                                          backgroundColor: colors.success[50],
+                                          borderColor: colors.success[200],
+                                        },
+                                      ]}
+                                    >
+                                      <Typography variant="mediumTxtsm" color={colors.success[700]}>
+                                        {String(idNum)}
+                                      </Typography>
+                                    </View>
+                                  ))}
+                              </View>
+                            </>
+                          )}
+                          {/* AI evaluation for text answers */}
+                          {(() => {
+                            const ai = normalizeAiEvaluation(q?.ai_evaluation, q?.points);
+                            if (!ai || String(q?.question_type).toLowerCase() !== "text") return null;
+
+                            const aiId = String(q?.question_id ?? index);
+                            const isExpanded = expandedAI === aiId;
+
+                            return (
+                              <View
+                                style={{
+                                  marginTop: 8,
+                                  borderRadius: 16,
+                                  borderWidth: 1,
+                                  borderColor: colors.gray[200],
+                                  overflow: "hidden",
+                                  backgroundColor: colors.brand[25],
+                                }}
+                              >
+                                <TouchableOpacity
+                                  onPress={() => setExpandedAI(isExpanded ? null : aiId)}
+                                  style={{
+                                    paddingHorizontal: 16,
+                                    paddingTop: 14,
+                                    paddingBottom: 12,
+                                    flexDirection: "row",
+                                    justifyContent: "space-between",
+                                    alignItems: "flex-start",
+                                  }}
+                                >
+                                  <View style={{ flex: 1, paddingRight: 10, gap: 4 }}>
+                                    <Typography variant="semiBoldTxtxl" color={colors.brand[600]}>
+                                      {!isExpanded ? 'Hide AI Analysis' : 'View AI Analysis'}
+                                    </Typography>
+                                    {/* <Typography variant="semiBoldTxtxl" color={colors.brand[600]}>
+                                      {Number(ai.score).toFixed(2)}
+                                    </Typography> */}
+                                  </View>
+
+                                  <View style={{ paddingTop: 2 }}>
+                                    <SvgXml
+                                      xml={arrowDown}
+                                      width={18}
+                                      height={18}
+                                      style={{
+                                        transform: [{ rotate: isExpanded ? "180deg" : "0deg" }],
+                                      }}
+                                    />
+                                  </View>
+                                </TouchableOpacity>
+
+                                {isExpanded && (
+                                  <View
+                                    style={{
+                                      paddingHorizontal: 16,
+                                      paddingBottom: 14,
+                                      gap: 14,
+                                    }}
+                                  >
+                                    <View
+                                      style={{
+                                        flexDirection: "row",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                      }}
+                                    >
+                                      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+
+                                        {/* Left: AI Evaluation title + status + note */}
+                                        <View style={{ flex: 1 }}>
+                                          <Typography variant="semiBoldTxtlg" color={colors.gray[800]}>
+                                            AI Evaluation
+                                          </Typography>
+                                          <Typography variant="regularTxtsm" color={colors.gray[500]}>
+                                            {toTitleCase(ai.status)}
+                                          </Typography>
+                                        </View>
+
+                                        {/* Right: Score — pushed to the far right end */}
+                                        <View style={{ alignItems: "flex-end" }}>
+                                          <Typography variant="semiBoldTxtxl" color={colors.brand[600]}>
+                                            {`${ai.score}/${ai.maxScore}`}
+                                          </Typography>
+                                          <Typography variant="regularTxtsm" color={colors.gray[500]}>
+                                            AI Score
+                                          </Typography>
+                                        </View>
+
+                                      </View>
+                                    </View>
+                                    {ai.note ? (
+                                      <Typography variant="regularTxtmd" color={colors.gray[900]}>
+                                        {ai.note}
+                                      </Typography>
+                                    ) : null}
+                                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                                      {ai.relevance ? (
+                                        <View
+                                          style={[
+                                            styles.smallChip,
+                                            { backgroundColor: colors.common.white, borderColor: colors.gray[200] },
+                                          ]}
+                                        >
+                                          <Typography variant="mediumTxtsm" color={colors.gray[700]}>
+                                            {`Relevance: ${toTitleCase(ai.relevance)}`}
+                                          </Typography>
+                                        </View>
+                                      ) : null}
+
+                                      {ai.language ? (
+                                        <View
+                                          style={[
+                                            styles.smallChip,
+                                            { backgroundColor: colors.common.white, borderColor: colors.gray[200] },
+                                          ]}
+                                        >
+                                          <Typography variant="mediumTxtsm" color={colors.gray[700]}>
+                                            {`Language: ${ai.language}`}
+                                          </Typography>
+                                        </View>
+                                      ) : null}
+
+                                      <View
+                                        style={[
+                                          styles.smallChip,
+                                          {
+                                            backgroundColor: ai.isOffTopic ? colors.error[50] : colors.success[50],
+                                            borderColor: ai.isOffTopic ? colors.error[200] : colors.success[200],
+                                          },
+                                        ]}
+                                      >
+                                        <Typography
+                                          variant="mediumTxtsm"
+                                          color={ai.isOffTopic ? colors.error[700] : colors.success[700]}
+                                        >
+                                          {ai.isOffTopic ? "Off Topic" : "On Topic"}
+                                        </Typography>
+                                      </View>
+                                    </View>
+
+                                    {ai.breakdown.length > 0 && (
+                                      <View style={{ gap: 10 }}>
+                                        <Typography variant="semiBoldTxtxl" color={colors.gray[800]}>
+                                          Score Breakdown
+                                        </Typography>
+
+                                        {ai.breakdown.map((item: any, idx: number) => (
+                                          <View
+                                            key={`${item.key}-${idx}`}
+                                            style={{
+                                              backgroundColor: colors.common.white,
+                                              borderRadius: 14,
+                                              borderWidth: 1,
+                                              borderColor: colors.gray[200],
+                                              padding: 12,
+                                              gap: 6,
+                                            }}
+                                          >
+                                            <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
+                                              {item.label}
+                                            </Typography>
+                                            {item.note ? (
+                                              <Typography variant="regularTxtmd" color={colors.gray[600]}>
+                                                {item.note}
+                                              </Typography>
+                                            ) : null}
+                                            <View
+                                              style={{
+                                                marginTop: 2,
+                                                height: 8,
+                                                borderRadius: 999,
+                                                backgroundColor: colors.gray[200],
+                                                overflow: "hidden",
+                                              }}
+                                            >
+                                              <View
+                                                style={{
+                                                  width: `${Math.max(
+                                                    0,
+                                                    Math.min(100, (Number(item.score) || 0) * 100)
+                                                  )}%`,
+                                                  height: "100%",
+                                                  backgroundColor: colors.brand[600],
+                                                }}
+                                              />
+                                            </View>
+                                          </View>
+                                        ))}
+                                      </View>
+                                    )}
+
+                                    {ai.improvements.length > 0 && (
+                                      <View
+                                        style={{
+                                          padding: 12,
+                                          borderRadius: 12,
+                                          borderWidth: 1,
+                                          borderColor: colors.warning[200],
+                                          backgroundColor: colors.warning[50],
+                                          gap: 6,
+                                        }}
+                                      >
+                                        <Typography variant="semiBoldTxtmd" color={colors.warning[900]}>
+                                          AREAS TO IMPROVE
+                                        </Typography>
+                                        {ai.improvements.map((line: string, idx: number) => (
+                                          <Typography key={`${line}-${idx}`} variant="regularTxtmd" color={colors.warning[800]}>
+                                            {line}
+                                          </Typography>
+                                        ))}
+                                      </View>
+                                    )}
+                                  </View>
+                                )}
+                              </View>
+                            );
+                          })()}
                         </View>
                       );
                     })()}

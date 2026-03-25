@@ -77,9 +77,12 @@ import {
   getAssessmentOptionsReportSuccess,
   getAssessmentOptionsReportFailure,
   getAssessmentOptionsReportRequest,
+  exportAssessmentReportRequest,
+  exportAssessmentReportSuccess,
+  exportAssessmentReportFailure,
 } from "./slice";
 import { applicationsApi } from "./api";
-import { AssessmentDetailedReportApiResponse, AssessmentLogApiResponse, AssessmentReportApiResponse, GetApplicationResponsesParams, GetApplicationsParams, GetApplicationsSagaAction, PersonalityScreeningResponse, ResumeScreeningApiResponse, ScreeningAssessment, SessionReviewedResponse, UpdateApplicationShareRequest } from "./types";
+import { AssessmentDetailedReportApiResponse, AssessmentLogApiResponse, AssessmentReportApiResponse, ExportAssessmentReportRequest, GetApplicationResponsesParams, GetApplicationsParams, GetApplicationsSagaAction, PersonalityScreeningResponse, ResumeScreeningApiResponse, ScreeningAssessment, SessionReviewedResponse, UpdateApplicationShareRequest } from "./types";
 import { getAssessmentDetailedReportRequestAction, getAssessmentReportRequestAction, getApplicationDetailRequestAction, getApplicationStagesRequestAction, getApplicationReasonsListRequestAction } from "./actions";
 import { showToastMessage } from "../../utils/toast";
 import { selectProfile } from "../profile/selectors";
@@ -499,6 +502,7 @@ function* getPerformanceReportWorker(
 
 function* getAssessmentOptionsReportWorker(
   action: {
+    type: string;
     payload: { application_id: string; page?: number };
   }
 ): Generator<any, void, any> {
@@ -528,6 +532,108 @@ function* getAssessmentOptionsReportWorker(
         err.message || "Failed to fetch assessment options"
       )
     );
+  }
+}
+
+function* exportAssessmentReportWorker(
+  action: { type: string; payload: ExportAssessmentReportRequest }
+): Generator<any, void, any> {
+  try {
+    const assignmentIds = action.payload?.assignment_ids ?? [];
+    if (!Array.isArray(assignmentIds) || assignmentIds.length === 0) {
+      throw new Error("Please select an assignment to export.");
+    }
+
+    yield put(exportAssessmentReportRequest());
+
+    const tokenValue: string | null = yield select(selectToken);
+    const tenantValue: string | null = yield select(tenant);
+    const originValue: string | null = yield select(organizationalOrigin);
+
+    const endpoint = API_ENDPOINTS.APPLICATIONS.ASSESSMENT_REPORT_EXPORT;
+    const url = `${config.api.baseURL}${endpoint}`;
+    const requestHeaders: Record<string, string> = {
+      "Content-Type": "application/json",
+      Accept: "*/*",
+    };
+    if (originValue) requestHeaders.Origin = originValue;
+    if (tokenValue) requestHeaders.Authorization = `Bearer ${tokenValue}`;
+    if (tenantValue) requestHeaders["X-Organization-Id"] = tenantValue;
+
+    const tempPath = `${RNFS.CachesDirectoryPath}/assessment_report_${Date.now()}.tmp`;
+    const res = yield call(() =>
+      ReactNativeBlobUtil.config({
+        path: tempPath,
+        fileCache: true,
+        overwrite: true,
+      }).fetch("POST", url, requestHeaders, JSON.stringify({
+        select_all: Boolean(action.payload?.select_all),
+        assignment_ids: assignmentIds,
+      }))
+    );
+
+    const status = res?.info?.()?.status ?? 0;
+    if (status < 200 || status >= 300) {
+      throw new Error(`Failed to export assessment report (HTTP ${status})`);
+    }
+
+    const contentType = String(
+      res?.info?.()?.headers?.["content-type"] ||
+      res?.info?.()?.headers?.["Content-Type"] ||
+      "application/octet-stream"
+    );
+    const contentDisposition = String(
+      res?.info?.()?.headers?.["content-disposition"] ||
+      res?.info?.()?.headers?.["Content-Disposition"] ||
+      ""
+    );
+
+    const filenameMatch = contentDisposition.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+    const headerFileName = filenameMatch?.[1]?.trim();
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    const defaultFileName = `assessment_report_${yyyy}-${mm}-${dd}.xlsx`;
+
+    // Keep backend-provided xlsx name when present, otherwise use consistent date format.
+    const fileName = headerFileName && headerFileName.toLowerCase().endsWith(".xlsx")
+      ? headerFileName
+      : defaultFileName;
+
+    const exportMimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+    const finalPath = `${RNFS.CachesDirectoryPath}/${fileName}`;
+    if (finalPath !== tempPath) {
+      yield call(RNFS.moveFile, tempPath, finalPath);
+    }
+
+    if (Platform.OS === "android") {
+      yield call(
+        ReactNativeBlobUtil.MediaCollection.copyToMediaStore,
+        {
+          name: fileName,
+          parentFolder: "CandidHR",
+          mimeType: exportMimeType,
+        },
+        "Download",
+        finalPath
+      );
+      showToastMessage("Assessment report exported to Downloads", "success");
+    } else {
+      yield call(Share.open, {
+        urls: [`file://${finalPath}`],
+        type: exportMimeType,
+        saveToFiles: true,
+        failOnCancel: false,
+      });
+    }
+
+    yield put(exportAssessmentReportSuccess());
+  } catch (err: any) {
+    const message = err?.message ?? "Failed to export assessment report";
+    yield put(exportAssessmentReportFailure(message));
+    showToastMessage(message, "error");
   }
 }
 
@@ -922,5 +1028,6 @@ export function* applicationsSaga() {
   yield takeLatest(APPLICATIONS_ACTION_TYPES.UPDATE_STAGE_STATUS_REQUEST, updateStageStatusWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.UPDATE_APPLICATION_SHARE_REQUEST, updateApplicationShareWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_ASSESSMENTOPTIONS_REPORT_REQUEST, getAssessmentOptionsReportWorker);
+  yield takeLatest(APPLICATIONS_ACTION_TYPES.EXPORT_ASSESSMENT_REPORT_REQUEST, exportAssessmentReportWorker);
 }
 

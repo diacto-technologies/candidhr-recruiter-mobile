@@ -1,19 +1,30 @@
 import React from "react";
 import { View, TouchableOpacity } from "react-native";
-import Ionicons from "react-native-vector-icons/Ionicons";
 import Typography from "../../../../../../components/atoms/typography";
 import { colors } from "../../../../../../theme/colors";
 import Button from "../../../../../../components/atoms/button";
-import Dropdown from "../../../../../../components/organisms/dropdown";
 import AssignmentDropdown from "../../../../../../components/organisms/dropdown/assignmentdropdown";
+import Card from "../../../../../../components/atoms/card";
+import { SvgXml } from "react-native-svg";
+import { downloadIcon } from "../../../../../../assets/svg/download";
+import Feather from "react-native-vector-icons/Feather";
+
+interface AssignmentOption {
+    id: string;
+    job_title: string;
+    date: string;
+    status: string;
+}
 
 interface Props {
     count: number;
     selectedItem: string | null;
-    options: any[];
-    onSelect: (item: any) => void;
+    options: AssignmentOption[];
+    onSelect: (item: AssignmentOption) => void;
     onRefresh: () => void;
     onExport: () => void;
+    refreshing?: boolean;
+    exporting?: boolean;
 }
 
 const AssessmentReportsCard: React.FC<Props> = ({
@@ -23,14 +34,19 @@ const AssessmentReportsCard: React.FC<Props> = ({
     onSelect,
     onRefresh,
     onExport,
+    refreshing = false,
+    exporting = false,
 }) => {
+    const canExport = Boolean(selectedItem) && !exporting;
+
     return (
-        <View
+        <Card
             style={{
-                backgroundColor: "#F9FAFB",
+                backgroundColor: colors?.base?.white,
                 borderRadius: 16,
                 padding: 16,
                 marginBottom: 12,
+                width:"100%"
             }}
         >
             {/* HEADER */}
@@ -51,55 +67,58 @@ const AssessmentReportsCard: React.FC<Props> = ({
                     </Typography>
                 </View>
 
-                <View style={{ flexDirection: "row", gap: 10 }}>
+                <View style={{ flexDirection: "row", gap: 10, alignContent: 'center' }}>
                     <Button
                         variant="outline"
-                        borderRadius={20}
-                        paddingHorizontal={12}
-                        onPress={onRefresh}
-                    >
-                        Refresh
-                    </Button>
-
-                    <Button
-                        borderRadius={20}
-                        paddingHorizontal={12}
-                        buttonColor={colors.brand[100]}
+                        borderRadius={8}
+                        borderWidth={1}
+                        borderColor={colors.brand[200]}
+                        buttonColor={colors.brand[25]}
                         textColor={colors.brand[700]}
                         startIcon={
-                            <Ionicons name="download-outline" size={16} />
+                            <Feather
+                                name="refresh-cw"
+                                size={13}
+                                color={colors.brand[700]}
+                            />
                         }
-                        onPress={onExport}
+                        size={25}
+                        paddingHorizontal={5}
+                        style={{ flex: 1 }}
+                        textVariant="mediumTxtxs"
+                        onPress={onRefresh}
+                        disabled={refreshing}
                     >
-                        Export Report
+                        {refreshing ? "Refreshing..." : "Refresh"}
                     </Button>
+
+                    <TouchableOpacity
+                        style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 4,
+                            opacity: canExport ? 1 : 0.5,
+                        }}
+                        onPress={onExport}
+                        disabled={!canExport}
+                    >
+                        <SvgXml xml={downloadIcon} height={15} width={15} color={colors.brand[600]} />
+                        <Typography variant="mediumTxtxs" color={colors.brand[600]}>
+                            {exporting ? "Exporting..." : "Export Report"}
+                        </Typography>
+                    </TouchableOpacity>
                 </View>
             </View>
 
             {/* SELECT ASSIGNMENT */}
             <View style={{ marginTop: 16 }}>
-                <Typography variant="mediumTxtsm" color={colors.gray[500]}>
-                    Select Assignment
-                </Typography>
-
-                <View
-                    style={{
-                        marginTop: 8,
-                        borderWidth: 1,
-                        borderColor: colors.gray[200],
-                        borderRadius: 12,
-                        padding: 10,
-                    }}
-                >
-                    <AssignmentDropdown
-                        options={options}
-                        labelKey="name"
-                        valueKey="id"
-                        setValue={selectedItem ?? undefined}
-                        onSelect={onSelect} label={""} />
-                </View>
+                <AssignmentDropdown
+                    data={options}
+                    selectedId={selectedItem}
+                    onSelect={onSelect}
+                />
             </View>
-        </View>
+        </Card>
     );
 };
 
