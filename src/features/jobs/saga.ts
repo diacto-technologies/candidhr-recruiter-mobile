@@ -46,6 +46,7 @@ function* getJobsWorker(
         data: response,
         requestId: payload?.requestId,
         onlyCount: payload?.onlyCount,
+        favourites: payload?.favourites,
       })
     );
   } catch (error: any) {

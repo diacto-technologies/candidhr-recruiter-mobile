@@ -93,8 +93,9 @@ const CustomTabBar: FC<BottomTabBarProps> = (props) => {
         visible={dropdownVisible}
         onClose={() => setDropdownVisible(false)}
         menuItems={menuItemsWithHandlers}
-        top={bottom.top + 40}
-        right={40}
+        // Anchor the dropdown to the bottom-left of the tab bar area.
+        bottom={bottom.bottom + 8}
+        right={16}
       />
     </View>
   );

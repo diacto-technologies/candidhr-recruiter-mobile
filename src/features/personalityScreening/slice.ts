@@ -76,6 +76,15 @@ const personalityScreeningSlice = createSlice({
       };
     },
 
+    setSort: (
+      state,
+      action: PayloadAction<{ sortBy: string; sortDir: "asc" | "desc" }>
+    ) => {
+      const { sortBy, sortDir } = action.payload;
+      state.filters.sortBy = sortBy;
+      state.filters.sortDir = sortDir;
+    },
+
     clearFilters: (state) => {
       state.filters = {};
     },
@@ -87,6 +96,7 @@ export const {
   getListSuccess,
   getListFailure,
   setFilters,
+  setSort,
   clearFilters,
 } = personalityScreeningSlice.actions;
 

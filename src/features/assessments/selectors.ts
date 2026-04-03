@@ -29,6 +29,11 @@ export const selectAssessmentsHasMore = createSelector(
   (state) => state.hasMore
 );
 
+export const selectAssessmentsCounts = createSelector(
+  [selectAssessmentsState],
+  (state) => state.counts
+);
+
 // ---------------------------------------------------------------------------
 // Assigned assessments
 // ---------------------------------------------------------------------------
@@ -65,4 +70,88 @@ export const selectAssignedAssessmentsHasMore = createSelector(
 export const selectAssignedAssessmentFilters = createSelector(
   [selectAssignedAssessmentsState],
   (state) => state.filters
+);
+
+// ---------------------------------------------------------------------------
+// Assessment overview (blueprint + dashboard stats + assignments)
+// ---------------------------------------------------------------------------
+
+export const selectAssessmentOverviewState = createSelector(
+  [selectAssessmentsState],
+  (state) => state.assessmentOverview
+);
+
+export const selectAssessmentOverviewBlueprint = createSelector(
+  [selectAssessmentOverviewState],
+  (o) => o.blueprint
+);
+
+export const selectAssessmentOverviewDashboardStats = createSelector(
+  [selectAssessmentOverviewState],
+  (o) => o.dashboardStats
+);
+
+export const selectAssessmentOverviewAssignments = createSelector(
+  [selectAssessmentOverviewState],
+  (o) => o.assignments
+);
+
+export const selectAssessmentOverviewBlueprintAssignmentStats = createSelector(
+  [selectAssessmentOverviewState],
+  (o) => o.blueprintAssignmentStats
+);
+
+export const selectAssessmentOverviewLoading = createSelector(
+  [selectAssessmentOverviewState],
+  (o) => o.loading
+);
+
+export const selectAssessmentOverviewError = createSelector(
+  [selectAssessmentOverviewState],
+  (o) => o.error
+);
+
+export const selectAssessmentOverviewBlueprintId = createSelector(
+  [selectAssessmentOverviewState],
+  (o) => o.blueprintId
+);
+
+export const selectBlueprintAssignmentsListLoading = createSelector(
+  [selectAssessmentOverviewState],
+  (o) => o.assignmentsListLoading
+);
+
+export const selectBlueprintAssignmentsListError = createSelector(
+  [selectAssessmentOverviewState],
+  (o) => o.assignmentsListError
+);
+
+export const selectBlueprintAssignmentsPagination = createSelector(
+  [selectAssessmentOverviewState],
+  (o) => o.assignmentsPagination
+);
+
+export const selectBlueprintAssignmentsListQuery = createSelector(
+  [selectAssessmentOverviewState],
+  (o) => o.assignmentsListQuery
+);
+
+export const selectAssignmentsListSearchText = createSelector(
+  [selectAssessmentOverviewState],
+  (o) => o.assignmentsListSearchText
+);
+
+export const selectAssignmentTableSelectedIds = createSelector(
+  [selectAssessmentOverviewState],
+  (o) => o.assignmentTableSelectedIds
+);
+
+export const selectAssignmentExportLoading = createSelector(
+  [selectAssessmentOverviewState],
+  (o) => o.assignmentExportLoading
+);
+
+export const selectAssignmentExportError = createSelector(
+  [selectAssessmentOverviewState],
+  (o) => o.assignmentExportError
 );

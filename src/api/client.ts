@@ -249,11 +249,22 @@ const handleApiError = async (response: Response, endpoint?: string): Promise<ne
   // Show toast message to user
   // TODO: Consider moving toast to saga/UI layer for better separation of concerns
   // API layer should be UI-agnostic, but keeping for now to maintain existing behavior
+  const normalizedErrorMessage = String(errorMessage ?? "").toLowerCase();
   const isEmptyState404 =
     response.status === 404 &&
-    errorMessage === 'No results found';
+    (normalizedErrorMessage.includes("no results found") ||
+      normalizedErrorMessage.includes("no data") ||
+      normalizedErrorMessage.includes("no result") ||
+      normalizedErrorMessage.includes("not found"));
 
-  if (!isEmptyState404) {
+  // For assessment/v2 endpoints, a 404 often means "result not generated yet".
+  // Silence toast to avoid confusing the user during tab/applicant switches.
+  const isAssessmentsV2Endpoint =
+    response.status === 404 &&
+    typeof endpoint === "string" &&
+    (endpoint.includes("/assessments/v2/") || endpoint.includes("assessments/v2/"));
+
+  if (!isEmptyState404 && !isAssessmentsV2Endpoint) {
     showToastMessage(errorMessage, 'error');
   }
 
@@ -300,8 +311,12 @@ async function executeWithRefresh(
 
 // API Client with token injection
 export const apiClient = {
-  get: async (endpoint: string, customConfig?: RequestInit) => {
-    const response = await executeWithRefresh(
+  /**
+   * Returns the raw `Response` object (useful for file downloads / non-JSON).
+   * Callers are responsible for parsing (e.g. `response.text()`).
+   */
+  getResponse: async (endpoint: string, customConfig?: RequestInit) => {
+    return await executeWithRefresh(
       () =>
         fetch(`${API_BASE_URL}${endpoint}`, {
           method: 'GET',
@@ -310,7 +325,10 @@ export const apiClient = {
         }),
       endpoint
     );
+  },
 
+  get: async (endpoint: string, customConfig?: RequestInit) => {
+    const response = await apiClient.getResponse(endpoint, customConfig);
     return response.json();
   },
 
@@ -343,6 +361,22 @@ export const apiClient = {
     }
 
     return response.json();
+  },
+
+  /**
+   * Returns raw `Response` for POST requests (useful for file exports).
+   */
+  postResponse: async (endpoint: string, data?: any, customConfig?: RequestInit) => {
+    return await executeWithRefresh(
+      () =>
+        fetch(`${API_BASE_URL}${endpoint}`, {
+          method: 'POST',
+          headers: buildHeaders(customConfig?.headers as Record<string, string> | undefined),
+          body: JSON.stringify(data),
+          ...customConfig,
+        }),
+      endpoint
+    );
   },
 
   put: async (endpoint: string, data?: any, customConfig?: RequestInit) => {

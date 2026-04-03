@@ -3,7 +3,7 @@ import { View, TouchableOpacity, Image, ScrollView, Dimensions } from 'react-nat
 import { SvgXml } from 'react-native-svg';
 import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
 import { getPersonalityScreeningListRequestAction, getPersonalityScreeningResponsesRequestAction, markSessionAsReviewedRequestAction } from '../../../../../features/applications/actions';
-import { selectApplicationStages, selectAssessmentLogs, selectMarkSessionReviewedLoading, selectPersonalityScreeningList, selectPersonalityScreeningResponses, selectSelectedApplication } from '../../../../../features/applications/selectors';
+import { selectApplicationStages, selectAssessmentLogs, selectMarkSessionReviewedLoading, selectPersonalityScreeningList, selectPersonalityScreeningLoading, selectPersonalityScreeningResponses, selectSelectedApplication } from '../../../../../features/applications/selectors';
 import { useAppSelector } from '../../../../../hooks/useAppSelector';
 import { useStyles } from "./styles";
 import Dropdown from '../../../../../components/organisms/dropdown';
@@ -23,22 +23,44 @@ import Card from '../../../../../components/atoms/card';
 import Button from '../../../../../components/atoms/button';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { getApprovalStageStatusOptions } from '../stageStatusOptions';
+import Shimmer from '../../../../../components/atoms/shimmer';
 
-export default function VideoInterview() {
+const normalizeContentType = (v: unknown) =>
+  String(v ?? '')
+    .toLowerCase()
+    .trim()
+    .replace(/[\s-]+/g, '_');
+
+type VideoInterviewProps = {
+  sessionContentId: string | null;
+  onSessionContentIdChange: (id: string | null) => void;
+};
+
+export default function VideoInterview({
+  sessionContentId,
+  onSessionContentIdChange,
+}: VideoInterviewProps) {
   const [activeTab, setActiveTab] = useState("Articulation");
-  const [selectedSession, setSelectedSession] = useState<string>('');
   const [activeIndex, setActiveIndex] = useState(0);
   const [responseDropdownOpen, setResponseDropdownOpen] = useState(false);
   const [transcriptionView, setTranscriptionView] = useState<'continuous' | 'bytime'>('continuous');
   const [currentTime, setCurrentTime] = useState(0);
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
   const [selectedStageStatus, setSelectedStageStatus] = useState<string | null>(null);
+  const [isResponsesLoading, setIsResponsesLoading] = useState(false);
 
   const dispatch = useAppDispatch();
   const styles = useStyles();
   const applicant = useAppSelector(selectSelectedApplication);
-  const PersonalityScreeningList = useAppSelector(selectPersonalityScreeningList)
+  const PersonalityScreeningList = useAppSelector(selectPersonalityScreeningList);
+  const personalityLoading = useAppSelector(selectPersonalityScreeningLoading);
   const assessmentLogs = useAppSelector(selectAssessmentLogs);
+  const filteredVideoLogs = useMemo(() => {
+    const logs = assessmentLogs ?? [];
+    return logs.filter(
+      (l) => normalizeContentType(l?.content_type) === 'automated_video_interview'
+    );
+  }, [assessmentLogs]);
   const responses = useAppSelector(selectPersonalityScreeningResponses);
   const stages = useAppSelector(selectApplicationStages);
   const loadingMarkReviewed = useAppSelector(selectMarkSessionReviewedLoading);
@@ -67,22 +89,41 @@ export default function VideoInterview() {
   }, []);
 
   useEffect(() => {
-    if (!selectedSession) return;
+    if (!sessionContentId) return;
     setActiveIndex(0);
+    setIsResponsesLoading(true);
     dispatch(
-      getPersonalityScreeningResponsesRequestAction(selectedSession)
+      getPersonalityScreeningResponsesRequestAction(sessionContentId)
     );
-  }, [selectedSession]);
+  }, [sessionContentId, dispatch]);
 
   useEffect(() => {
-    if (!assessmentLogs?.length) return;
+    if (!sessionContentId) {
+      setIsResponsesLoading(false);
+      return;
+    }
+    if (!isResponsesLoading) return;
+    if (responses?.length > 0) {
+      setIsResponsesLoading(false);
+      return;
+    }
+    // Fallback to avoid shimmer being stuck if API returns empty array
+    const timeout = setTimeout(() => setIsResponsesLoading(false), 4000);
+    return () => clearTimeout(timeout);
+  }, [sessionContentId, isResponsesLoading, responses?.length]);
 
-    setSelectedSession(prev => {
-      const exists = assessmentLogs.some(item => item.content_id === prev);
-      return exists ? prev : assessmentLogs[0].content_id;
-    });
-
-  }, [assessmentLogs]);
+  useEffect(() => {
+    if (!filteredVideoLogs?.length) {
+      onSessionContentIdChange(null);
+      return;
+    }
+    const exists = filteredVideoLogs.some(
+      (item) => item.content_id === sessionContentId
+    );
+    if (!sessionContentId || !exists) {
+      onSessionContentIdChange(filteredVideoLogs[0]?.content_id ?? null);
+    }
+  }, [filteredVideoLogs, sessionContentId, onSessionContentIdChange]);
 
   useEffect(() => {
     const stageStatus = stages?.find(s => s.stage_type === "automated_video_interview")?.status;
@@ -92,7 +133,7 @@ export default function VideoInterview() {
   }, [stages]);
 
   const sessionOptions =
-    assessmentLogs?.map((item, index) => ({
+    filteredVideoLogs?.map((item, index) => ({
       id: item.content_id,
       name: `Automated Video Interview`,
       status_text: item?.session_status ?? "—",
@@ -117,22 +158,22 @@ export default function VideoInterview() {
 
   // Get current status id from selected session
   const currentStatusId = useMemo(() => {
-    if (selectedSession && PersonalityScreeningList?.length) {
-      const currentSession = PersonalityScreeningList.find(item => item.id === selectedSession);
+    if (sessionContentId && PersonalityScreeningList?.length) {
+      const currentSession = PersonalityScreeningList.find(item => item.id === sessionContentId);
       if (currentSession?.status_text) {
         return mapStatusTextToId(currentSession.status_text);
       }
     }
     return '';
-  }, [selectedSession, PersonalityScreeningList]);
+  }, [sessionContentId, PersonalityScreeningList]);
 
   const screening = useMemo(() => {
-    if (!PersonalityScreeningList?.length || !selectedSession) return null;
+    if (!PersonalityScreeningList?.length || !sessionContentId) return null;
 
     return PersonalityScreeningList.find(
-      item => item.id === selectedSession
+      item => item.id === sessionContentId
     ) ?? null;
-  }, [PersonalityScreeningList, selectedSession]);
+  }, [PersonalityScreeningList, sessionContentId]);
 
 
 
@@ -254,8 +295,9 @@ export default function VideoInterview() {
       ?.replace(/\b\w/g, c => c.toUpperCase());
 
   const currentSessionLog = useMemo(
-    () => assessmentLogs?.find((item) => item.content_id === selectedSession) ?? null,
-    [assessmentLogs, selectedSession]
+    () =>
+      filteredVideoLogs?.find((item) => item.content_id === sessionContentId) ?? null,
+    [filteredVideoLogs, sessionContentId]
   );
   const isReviewed = currentSessionLog?.session_status === 'reviewed';
 
@@ -267,6 +309,12 @@ export default function VideoInterview() {
   const STAGE_STATUS_OPTIONS = useMemo(() => {
     return getApprovalStageStatusOptions(currentStageStatus);
   }, [currentStageStatus]);
+
+  /** List load (no screenings yet) or responses load for selected session */
+  const showVideoContentShimmer =
+    personalityLoading &&
+    (!!sessionContentId || !PersonalityScreeningList?.length);
+  const showContentShimmer = showVideoContentShimmer || isResponsesLoading;
 
   return (
     <View style={styles.container}>
@@ -294,7 +342,7 @@ export default function VideoInterview() {
         />
       </View>
       <View style={{ zIndex: 1000 }}>
-        <Card style={{ gap: 4 }}>
+        <Card style={{ gap: 4,flex:1,width:'100%' }}>
           <Typography variant="regularTxtxs" style={{ backgroundColor: colors?.brand['200'], borderTopEndRadius: 12, borderTopStartRadius: 12, padding: 5 }} numberOfLines={2}>
             Stage was {assessmentStatus} by{" "}
             {stages?.find(s => s.stage_type === "automated_video_interview")?.reviewed_by?.name ??
@@ -316,82 +364,95 @@ export default function VideoInterview() {
               labelKey="name"
               valueKey="id"
               statusKey="status_text"
-              setValue={selectedSession}
+              setValue={sessionContentId ?? ''}
               onSelect={(item) => {
-                setSelectedSession(item?.id);
+                onSessionContentIdChange(item?.id ?? null);
               }}
               onChangeText={() => { }}
             />
             <View style={styles.reviewRow}>
-              <Typography variant="regularTxtxs" style={{ flex: 1 }}>
-                {assessmentLogs
-                  ?.find(item => item.content_id === selectedSession)
-                  ?.action_taken_by?.name ? (
-                  <>
-                    Reviewed by{" "}
-                    {
-                      assessmentLogs.find(item => item.content_id === selectedSession)
-                        ?.action_taken_by?.name
-                    }{" "}
-                    ·{" "}
-                    {formatMonDDYYYY(
-                      assessmentLogs.find(item => item.content_id === selectedSession)
-                        ?.action_taken_at,
-                      "DD MMM YYYY HH:mm",
-                      "IST"
-                    )}
-                  </>
-                ) : assessmentLogs?.find(item => item.content_id === selectedSession)
-                  ?.workflow_status_updated_at ? (
-                  <>
-                    Reviewed by Workflow ·{" "}
-                    {formatMonDDYYYY(
-                      assessmentLogs.find(item => item.content_id === selectedSession)
-                        ?.workflow_status_updated_at,
-                      "DD MMM YYYY HH:mm",
-                      "IST"
-                    )}
-                  </>
-                ) : assessmentLogs?.find(item => item.content_id === selectedSession)
-                  ?.updated_at ? (
-                  <>
-                    ·{" "}
-                    {formatMonDDYYYY(
-                      assessmentLogs.find(item => item.content_id === selectedSession)
-                        ?.updated_at,
-                      "DD MMM YYYY HH:mm",
-                      "IST"
-                    )}
-                  </>
-                ) : null}
-              </Typography>
-              <Button
-                variant="outline"
-                borderRadius={20}
-                borderWidth={1}
-                borderColor={isReviewed ? colors.success[200] : colors.brand[200]}
-                buttonColor={isReviewed ? colors.success[400] : colors.brand[25]}
-                textColor={isReviewed ? colors.success[700] : colors.brand[700]}
-                startIcon={
-                  <Ionicons
-                    name="checkmark"
-                    size={14}
-                    color={isReviewed ? colors.success[700] : colors.brand[700]}
-                  />
-                }
-                size={30}
-                paddingHorizontal={10}
-                style={{ flex: 1 }}
-                textVariant="mediumTxtxs"
-                onPress={() => {
-                  if (currentSessionLog?.id && !isReviewed && !loadingMarkReviewed) {
-                    dispatch(markSessionAsReviewedRequestAction(currentSessionLog.id));
-                  }
-                }}
-                disabled={!currentSessionLog?.id || isReviewed || loadingMarkReviewed}
-              >
-                {loadingMarkReviewed ? 'Marking…' : isReviewed ? 'Review completed' : 'Mark as Reviewed'}
-              </Button>
+              {showContentShimmer ? (
+                <>
+                  <Shimmer style={{ flex: 1 }} width="100%" height={14} borderRadius={8} />
+                  <Shimmer style={{ flex: 1 }} width="100%" height={30} borderRadius={20} />
+                </>
+              ) : (
+                <>
+                  <Typography variant="regularTxtxs" style={{ flex: 1 }}>
+                    {filteredVideoLogs
+                      ?.find(item => item.content_id === sessionContentId)
+                      ?.action_taken_by?.name ? (
+                      <>
+                        Reviewed by{" "}
+                        {
+                          filteredVideoLogs.find(item => item.content_id === sessionContentId)
+                            ?.action_taken_by?.name
+                        }{" "}
+                        ·{" "}
+                        {formatMonDDYYYY(
+                          filteredVideoLogs.find(item => item.content_id === sessionContentId)
+                            ?.action_taken_at,
+                          "DD MMM YYYY HH:mm",
+                          "IST"
+                        )}
+                      </>
+                    ) : filteredVideoLogs?.find(item => item.content_id === sessionContentId)
+                      ?.workflow_status_updated_at ? (
+                      <>
+                        Reviewed by Workflow ·{" "}
+                        {formatMonDDYYYY(
+                          filteredVideoLogs.find(item => item.content_id === sessionContentId)
+                            ?.workflow_status_updated_at,
+                          "DD MMM YYYY HH:mm",
+                          "IST"
+                        )}
+                      </>
+                    ) : filteredVideoLogs?.find(item => item.content_id === sessionContentId)
+                      ?.updated_at ? (
+                      <>
+                        ·{" "}
+                        {formatMonDDYYYY(
+                          filteredVideoLogs.find(item => item.content_id === sessionContentId)
+                            ?.updated_at,
+                          "DD MMM YYYY HH:mm",
+                          "IST"
+                        )}
+                      </>
+                    ) : null}
+                  </Typography>
+                  <Button
+                    variant="outline"
+                    borderRadius={20}
+                    borderWidth={1}
+                    borderColor={isReviewed ? colors.success[200] : colors.brand[200]}
+                    buttonColor={isReviewed ? colors.success[400] : colors.brand[25]}
+                    textColor={isReviewed ? colors.success[700] : colors.brand[700]}
+                    startIcon={
+                      <Ionicons
+                        name="checkmark"
+                        size={14}
+                        color={isReviewed ? colors.success[700] : colors.brand[700]}
+                      />
+                    }
+                    size={30}
+                    paddingHorizontal={10}
+                    style={{ flex: 1 }}
+                    textVariant="mediumTxtxs"
+                    onPress={() => {
+                      if (currentSessionLog?.id && !isReviewed && !loadingMarkReviewed) {
+                        dispatch(markSessionAsReviewedRequestAction(currentSessionLog.id));
+                      }
+                    }}
+                    disabled={!currentSessionLog?.id || isReviewed || loadingMarkReviewed}
+                  >
+                    {loadingMarkReviewed
+                      ? 'Marking…'
+                      : isReviewed
+                        ? 'Review completed'
+                        : 'Mark as Reviewed'}
+                  </Button>
+                </>
+              )}
             </View>
           </View>
         </Card>
@@ -399,13 +460,13 @@ export default function VideoInterview() {
       {/* <View style={styles.shortListedCard}>
         <View style={styles.rowBetween}>
           <View style={styles.row}>
-            <View style={[styles.statusDot, { backgroundColor: getStatusColor(PersonalityScreeningList?.find(item => item.id === selectedSession)?.status_text ?? "_") }]} />
+            <View style={[styles.statusDot, { backgroundColor: getStatusColor(PersonalityScreeningList?.find(item => item.id === sessionContentId)?.status_text ?? "_") }]} />
             <Typography
               // key={item.id}
               variant="mediumTxtmd"
               color={colors.gray[900]}
             >
-              Status {PersonalityScreeningList?.find(item => item.id === selectedSession)?.status_text ?? "_"}
+              Status {PersonalityScreeningList?.find(item => item.id === sessionContentId)?.status_text ?? "_"}
             </Typography>
           </View>
           <SvgXml xml={arrowDown} />
@@ -421,7 +482,18 @@ export default function VideoInterview() {
           { title: "Completed", date: "—", status: "upcoming" },
         ]}
       /> */}
-      {responses.length === 0 ? (
+      {showContentShimmer ? (
+        <View style={{ gap: 14, paddingVertical: 18 }}>
+          <Shimmer width="40%" height={20} borderRadius={8} />
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <Shimmer width="45%" height={14} borderRadius={8} />
+            <Shimmer width="45%" height={14} borderRadius={8} />
+          </View>
+          <Shimmer width="100%" height={120} borderRadius={16} />
+          <Shimmer width="100%" height={180} borderRadius={16} />
+          <Shimmer width="100%" height={220} borderRadius={12} />
+        </View>
+      ) : responses.length === 0 ? (
         <View style={{
           flex: 1,
           justifyContent: 'center',

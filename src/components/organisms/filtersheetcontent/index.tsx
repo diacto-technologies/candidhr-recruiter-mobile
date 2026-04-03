@@ -14,11 +14,11 @@ import DateFilter from './datefilter';
 import TextSearchFilter from './textSearchFilter';
 import { getJobsRequestAction } from '../../../features/jobs/actions';
 import { selectJobFilters, selectJobsActiveTab } from '../../../features/jobs/selectors';
-import { setJobFilters } from '../../../features/jobs/slice';
+import { setJobFilters, setJobSort } from '../../../features/jobs/slice';
 import { selectAssignedAssessmentFilters } from '../../../features/assessments/selectors';
-import { setAssignedAssessmentFilters } from '../../../features/assessments/slice';
+import { setAssignedAssessmentFilters, setAssignedAssessmentSort } from '../../../features/assessments/slice';
 import { selectPersonalityScreeningFilters } from '../../../features/personalityScreening/selectors';
-import { setFilters as setPersonalityScreeningFilters } from '../../../features/personalityScreening/slice';
+import { setFilters as setPersonalityScreeningFilters, setSort as setPersonalityScreeningSort } from '../../../features/personalityScreening/slice';
 import DropdownFilter from './dropdownfilter';
 
 interface Props {
@@ -31,13 +31,57 @@ interface Props {
   filtersConfig: string[];
   mode: "job" | "applicant" | "assessments" | 'videoInterview';
 }
-const sortOptions = [
-  { label: 'Applicant name', value: 'Applicant name' },
-  { label: 'Resume Score', value: 'Resume Score' },
-  { label: 'Applied On', value: 'Applied' },
-  { label: 'Last Updated', value: 'Last Update' },
+const sortOptionsCombined: { label: string; sortBy: string; sortDir: 'asc' | 'desc' }[] = [
+  { label: 'Applicant Name: A → Z', sortBy: 'Applicant name', sortDir: 'asc' },
+  { label: 'Applicant Name: Z → A', sortBy: 'Applicant name', sortDir: 'desc' },
+  { label: 'Resume Score: Low → High', sortBy: 'Resume Score', sortDir: 'asc' },
+  { label: 'Resume Score: High → Low', sortBy: 'Resume Score', sortDir: 'desc' },
+  { label: 'Applied On: Old → New', sortBy: 'Applied', sortDir: 'asc' },
+  { label: 'Applied On: New → Old', sortBy: 'Applied', sortDir: 'desc' },
+  { label: 'Last Updated: Old → New', sortBy: 'Last Update', sortDir: 'asc' },
+  { label: 'Last Updated: New → Old', sortBy: 'Last Update', sortDir: 'desc' },
 ];
 
+const jobSortOptionsCombined: { label: string; sortBy: string; sortDir: 'asc' | 'desc' }[] = [
+  { label: 'Job Title: A → Z', sortBy: 'Job Title', sortDir: 'asc' },
+  { label: 'Job Title: Z → A', sortBy: 'Job Title', sortDir: 'desc' },
+  { label: 'Location: A → Z', sortBy: 'Location', sortDir: 'asc' },
+  { label: 'Location: Z → A', sortBy: 'Location', sortDir: 'desc' },
+  { label: 'Close Date: Old → New', sortBy: 'Close Date', sortDir: 'asc' },
+  { label: 'Close Date: New → Old', sortBy: 'Close Date', sortDir: 'desc' },
+];
+
+const videoInterviewSortOptionsCombined: { label: string; sortBy: string; sortDir: 'asc' | 'desc' }[] = [
+  { label: 'Applicant: A → Z', sortBy: 'Applicant', sortDir: 'asc' },
+  { label: 'Applicant: Z → A', sortBy: 'Applicant', sortDir: 'desc' },
+  { label: 'Email: A → Z', sortBy: 'Email', sortDir: 'asc' },
+  { label: 'Email: Z → A', sortBy: 'Email', sortDir: 'desc' },
+  { label: 'Assigned On: Old → New', sortBy: 'Assigned On', sortDir: 'asc' },
+  { label: 'Assigned On: New → Old', sortBy: 'Assigned On', sortDir: 'desc' },
+  { label: 'Expires On: Old → New', sortBy: 'Expires On', sortDir: 'asc' },
+  { label: 'Expires On: New → Old', sortBy: 'Expires On', sortDir: 'desc' },
+];
+
+const assessmentSortOptionsCombined = [
+  { label: 'Applicant: A → Z', sortBy: 'Applicant', sortDir: 'asc' },
+  { label: 'Applicant: Z → A', sortBy: 'Applicant', sortDir: 'desc' },
+
+  { label: 'Email: A → Z', sortBy: 'Email', sortDir: 'asc' },
+  { label: 'Email: Z → A', sortBy: 'Email', sortDir: 'desc' },
+
+  { label: 'Job Title: A → Z', sortBy: 'Job Title', sortDir: 'asc' },
+  { label: 'Job Title: Z → A', sortBy: 'Job Title', sortDir: 'desc' },
+
+  // ✅ Percentage sorting (correct)
+  { label: 'Avg %: Low → High', sortBy: 'Avg %', sortDir: 'asc' },
+  { label: 'Avg %: High → Low', sortBy: 'Avg %', sortDir: 'desc' },
+
+  { label: 'Assigned At: Old → New', sortBy: 'Assigned At', sortDir: 'asc' },
+  { label: 'Assigned At: New → Old', sortBy: 'Assigned At', sortDir: 'desc' },
+
+  { label: 'Valid Till: Old → New', sortBy: 'Valid Till', sortDir: 'asc' },
+  { label: 'Valid Till: New → Old', sortBy: 'Valid Till', sortDir: 'desc' },
+];
 const FilterSheetContent: React.FC<Props> = ({
   onCancel,
   onApply,
@@ -61,41 +105,41 @@ const FilterSheetContent: React.FC<Props> = ({
   const pagination = useAppSelector(selectApplicationsPagination);
   const activeTab = useAppSelector(selectJobsActiveTab);
 
- const labelMap: Record<string, Record<string, string>> = {
-  source: {
-    application_form: "Form",
-    imported_using_bulk_resume_upload: "Bulk Import",
-  },
+  const labelMap: Record<string, Record<string, string>> = {
+    source: {
+      application_form: "Form",
+      imported_using_bulk_resume_upload: "Bulk Import",
+    },
 
-  status: {
-    applied: "Applied",
-    in_progress: "In Progress",
-    shortlisted: "Shortlisted",
-    rejected: "Rejected",
-    on_hold: "On Hold",
-    interview_scheduled: "Interview Scheduled",
-    final_interview: "Final Interview",
-    hired: "Hired",
-    offer_extended: "Offer Extended",
-    offer_accepted: "Offer Accepted",
-    offer_rejected: "Offer Rejected",
-    not_selected: "Not Selected",
-    withdrawn: "Withdrawn",
-    archived: "Archived",
-  },
+    status: {
+      applied: "Applied",
+      in_progress: "In Progress",
+      shortlisted: "Shortlisted",
+      rejected: "Rejected",
+      on_hold: "On Hold",
+      interview_scheduled: "Interview Scheduled",
+      final_interview: "Final Interview",
+      hired: "Hired",
+      offer_extended: "Offer Extended",
+      offer_accepted: "Offer Accepted",
+      offer_rejected: "Offer Rejected",
+      not_selected: "Not Selected",
+      withdrawn: "Withdrawn",
+      archived: "Archived",
+    },
 
-  latestStageName: {
-    resume_screening: "Resume Screening",
-    assessment: "Assessment",
-    automated_video_interview: "Automated Video Interview",
-  },
+    latestStageName: {
+      resume_screening: "Resume Screening",
+      assessment: "Assessment",
+      automated_video_interview: "Automated Video Interview",
+    },
 
-  latestStageStatus: {
-    approved: "Approved",
-    not_approved: "Not Approved",
-    approval_pending: "Pending",
-  },
-};
+    latestStageStatus: {
+      approved: "Approved",
+      not_approved: "Not Approved",
+      approval_pending: "Pending",
+    },
+  };
 
   const activeFilters =
     mode === 'job'
@@ -136,7 +180,7 @@ const FilterSheetContent: React.FC<Props> = ({
         <View style={{ marginVertical: 16 }}>
           <FlatList
             data={Object.entries(activeFilters).filter(
-              ([key, value]) => !!value && !['sort', 'sortBy', 'sortDir'].includes(key)
+              ([key, value]) => !!value && !['sort', 'sortBy', 'sortDir', 'orderBy'].includes(key)
             )}
             keyExtractor={([key]) => key}
             horizontal
@@ -248,20 +292,16 @@ const FilterSheetContent: React.FC<Props> = ({
                             <Typography variant="P1M" color={colors.gray[700]}>
                               Sort by
                             </Typography>
-                            <View style={styles.sortBySummary}>
-                              <Typography
-                                variant="P1M"
-                                color={colors.gray[800]}
-                                numberOfLines={1}
-                                style={styles.sortByLabel}
-                              >
-                                {sortOptions.find((o) => o.value === filters.sortBy)?.label ?? 'Applied On'}
-                              </Typography>
-                              <Typography variant="P1M" color={colors.gray[600]}>
-                                {' , '}
-                                {filters.sortDir === 'asc' ? 'Asc' : 'Des'}
-                              </Typography>
-                            </View>
+                            <Typography
+                              variant="P1M"
+                              color={colors.gray[800]}
+                              numberOfLines={1}
+                              style={styles.sortByLabel}
+                            >
+                              {sortOptionsCombined.find(
+                                (o) => o.sortBy === filters.sortBy && o.sortDir === (filters.sortDir ?? 'desc')
+                              )?.label ?? 'Applied On: New → Old'}
+                            </Typography>
                           </View>
                           <Icon
                             name={sortExpanded ? 'chevron-up' : 'chevron-down'}
@@ -276,16 +316,18 @@ const FilterSheetContent: React.FC<Props> = ({
                             <Typography variant="P1M" color={colors.gray[700]} style={styles.sortBySectionTitle}>
                               Sort By
                             </Typography>
-                            {sortOptions.map((option) => {
-                              const isSelected = filters.sortBy === option.value;
+                            {sortOptionsCombined.map((option) => {
+                              const isSelected =
+                                filters.sortBy === option.sortBy &&
+                                (filters.sortDir ?? 'desc') === option.sortDir;
                               return (
                                 <TouchableOpacity
-                                  key={option.value}
+                                  key={`${option.sortBy}-${option.sortDir}`}
                                   onPress={() =>
                                     dispatch(
                                       setSort({
-                                        sortBy: option.value,
-                                        sortDir: (filters.sortDir ?? 'desc') as 'asc' | 'desc',
+                                        sortBy: option.sortBy,
+                                        sortDir: option.sortDir,
                                       })
                                     )
                                   }
@@ -294,38 +336,6 @@ const FilterSheetContent: React.FC<Props> = ({
                                 >
                                   <Typography variant="P1M" color={colors.gray[800]}>
                                     {option.label}
-                                  </Typography>
-                                  <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
-                                    {isSelected && <View style={styles.radioInner} />}
-                                  </View>
-                                </TouchableOpacity>
-                              );
-                            })}
-
-                            <Typography variant="P1M" color={colors.gray[700]} style={styles.sortBySectionTitle}>
-                              Order
-                            </Typography>
-                            {[
-                              { dir: 'asc' as const, label: '↑ Ascending' },
-                              { dir: 'desc' as const, label: '↓ Descending' },
-                            ].map(({ dir, label }) => {
-                              const isSelected = filters.sortDir === dir;
-                              return (
-                                <TouchableOpacity
-                                  key={dir}
-                                  onPress={() =>
-                                    dispatch(
-                                      setSort({
-                                        sortBy: filters.sortBy,
-                                        sortDir: dir,
-                                      })
-                                    )
-                                  }
-                                  style={[styles.radioRow, isSelected && styles.radioRowSelected]}
-                                  activeOpacity={0.7}
-                                >
-                                  <Typography variant="P1M" color={colors.gray[800]}>
-                                    {label}
                                   </Typography>
                                   <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
                                     {isSelected && <View style={styles.radioInner} />}
@@ -403,28 +413,255 @@ const FilterSheetContent: React.FC<Props> = ({
 
                 {mode === 'job' && (
                   <>
+                    {selectedTab === 'Sort' && (
+                      <View style={styles.sortByBlock}>
+                        <TouchableOpacity
+                          style={styles.sortByHeader}
+                          onPress={() => setSortExpanded((e) => !e)}
+                          activeOpacity={0.7}
+                        >
+                          <View style={styles.sortBySummaryWrap}>
+                            <Typography variant="P1M" color={colors.gray[700]}>
+                              Sort by
+                            </Typography>
+                            <Typography
+                              variant="P1M"
+                              color={colors.gray[800]}
+                              numberOfLines={1}
+                              style={styles.sortByLabel}
+                            >
+                              {jobSortOptionsCombined.find(
+                                (o) =>
+                                  o.sortBy === jobFilters.sortBy &&
+                                  (jobFilters.sortDir ?? 'desc') === o.sortDir
+                              )?.label ?? 'Close Date: New → Old'}
+                            </Typography>
+                          </View>
+                          <Icon
+                            name={sortExpanded ? 'chevron-up' : 'chevron-down'}
+                            size={20}
+                            color={colors.gray[600]}
+                            iconFamily="Feather"
+                          />
+                        </TouchableOpacity>
+
+                        {sortExpanded && (
+                          <View style={styles.sortByExpanded}>
+                            <Typography variant="P1M" color={colors.gray[700]} style={styles.sortBySectionTitle}>
+                              Sort By
+                            </Typography>
+                            {jobSortOptionsCombined.map((option) => {
+                              const isSelected =
+                                jobFilters.sortBy === option.sortBy &&
+                                (jobFilters.sortDir ?? 'desc') === option.sortDir;
+                              return (
+                                <TouchableOpacity
+                                  key={`${option.sortBy}-${option.sortDir}`}
+                                  onPress={() =>
+                                    dispatch(
+                                      setJobSort({
+                                        sortBy: option.sortBy,
+                                        sortDir: option.sortDir,
+                                      })
+                                    )
+                                  }
+                                  style={[styles.radioRow, isSelected && styles.radioRowSelected]}
+                                  activeOpacity={0.7}
+                                >
+                                  <Typography variant="P1M" color={colors.gray[800]}>
+                                    {option.label}
+                                  </Typography>
+                                  <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
+                                    {isSelected && <View style={styles.radioInner} />}
+                                  </View>
+                                </TouchableOpacity>
+                              );
+                            })}
+                          </View>
+                        )}
+                      </View>
+                    )}
                     {selectedTab === 'Title' && <TextSearchFilter mode="job" field="title" placeholder="Search by 'Title'" />}
-                    {selectedTab === 'Experience' && <ExperienceFilter />}
-                    {selectedTab === 'Employment Type' && <TextSearchFilter mode="job" field="employmentType" placeholder="Search by 'Employee Type' " />}
+                    {/* {selectedTab === 'Experience' && <ExperienceFilter />} */}
                     {selectedTab === 'Location' && <TextSearchFilter mode="job" field="location" placeholder="Search by 'Location' " />}
-                    {selectedTab === 'Close Date' && <DateFilter />}
+                    {selectedTab === 'Employment Type' && <TextSearchFilter mode="job" field="employmentType" placeholder="Search by 'Employee Type' " />}
+                    {/* {selectedTab === 'Close Date' && <DateFilter />} */}
                     {selectedTab === 'Created By' && <TextSearchFilter mode="job" field="createdBy" placeholder="Search by 'Created By' " />}
                   </>
                 )}
 
                 {mode === 'assessments' && (
                   <>
+                    {selectedTab === 'Sort' && (
+                      <View style={styles.sortByBlock}>
+                        <TouchableOpacity
+                          style={styles.sortByHeader}
+                          onPress={() => setSortExpanded((e) => !e)}
+                          activeOpacity={0.7}
+                        >
+                          <View style={styles.sortBySummaryWrap}>
+                            <Typography variant="P1M" color={colors.gray[700]}>
+                              Sort by
+                            </Typography>
+                            <Typography
+                              variant="P1M"
+                              color={colors.gray[800]}
+                              numberOfLines={1}
+                              style={styles.sortByLabel}
+                            >
+                              {assessmentSortOptionsCombined.find(
+                                (o) =>
+                                  o.sortBy === assessmentFilters.sortBy &&
+                                  (assessmentFilters.sortDir ?? 'desc') === o.sortDir
+                              )?.label ?? 'Assigned On: New → Old'}
+                            </Typography>
+                          </View>
+                          <Icon
+                            name={sortExpanded ? 'chevron-up' : 'chevron-down'}
+                            size={20}
+                            color={colors.gray[600]}
+                            iconFamily="Feather"
+                          />
+                        </TouchableOpacity>
+
+                        {sortExpanded && (
+                          <View style={styles.sortByExpanded}>
+                            <Typography variant="P1M" color={colors.gray[700]} style={styles.sortBySectionTitle}>
+                              Sort By
+                            </Typography>
+                            {assessmentSortOptionsCombined.map((option) => {
+                              const isSelected =
+                                assessmentFilters.sortBy === option.sortBy &&
+                                (assessmentFilters.sortDir ?? 'desc') === option.sortDir;
+                              return (
+                                <TouchableOpacity
+                                  key={`${option.sortBy}-${option.sortDir}`}
+                                  onPress={() =>
+                                    dispatch(
+                                      setAssignedAssessmentSort({
+                                        sortBy: option.sortBy,
+                                        sortDir: option.sortDir,
+                                      })
+                                    )
+                                  }
+                                  style={[styles.radioRow, isSelected && styles.radioRowSelected]}
+                                  activeOpacity={0.7}
+                                >
+                                  <Typography variant="P1M" color={colors.gray[800]}>
+                                    {option.label}
+                                  </Typography>
+                                  <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
+                                    {isSelected && <View style={styles.radioInner} />}
+                                  </View>
+                                </TouchableOpacity>
+                              );
+                            })}
+                          </View>
+                        )}
+                      </View>
+                    )}
                     {selectedTab === 'Applicant' && <TextSearchFilter mode="assessments" field="applicant_name__icontains" placeholder="Search by 'Applicant' " />}
                     {selectedTab === 'Email' && <TextSearchFilter mode="assessments" field="candidate_email__icontains" placeholder="Search by 'Email'" />}
                     {selectedTab === 'Job Title' && <TextSearchFilter mode="assessments" field="job__title__icontains" placeholder="Search by 'Job Title'" />}
                     {selectedTab === 'Avg Percentage' && <TextSearchFilter mode="assessments" field="average_percentage__in" placeholder="Search by 'Avg Percentage'" />}
                     {selectedTab === 'Assigned By' && <TextSearchFilter mode="assessments" field="assigned_by__name__icontains" placeholder="Search by 'Assigned By'" />}
-                    {selectedTab === 'Status' && <TextSearchFilter mode="assessments" field="status_text" placeholder="Search by 'Status'" />}
+                    {selectedTab === 'Status' && (
+                      <DropdownFilter
+                        mode="assessments"
+                        field="status_text"
+                        placeholder="All"
+                        options={[
+                          { label: "All", value: "" },
+                          { label: "Assigned Successfully", value: "Assigned Successfully" },
+                          { label: "Link Opened", value: "Link Opened" },
+                          { label: "Started", value: "Started" },
+                          { label: "Assigned", value: "Assigned" },
+                          { label: "Completed", value: "Completed" },
+                          { label: "Shortlisted", value: "Shortlisted" },
+                          { label: "Rejected", value: "Rejected" },
+                          { label: "Scheduled Final Interview", value: "Scheduled Final Interview" },
+                          { label: "Hired", value: "Hired" },
+                          { label: "Disqualified", value: "Disqualified" },
+                          { label: "Shortlisted By WorkFlow", value: "Shortlisted By WorkFlow" },
+                          { label: "Not shortlisted By WorkFlow", value: "Not shortlisted By WorkFlow" },
+                        ]}
+                        labelKey="label"
+                        valueKey="value"
+                      />
+                    )}
                   </>
                 )}
 
                 {mode === 'videoInterview' && (
                   <>
+                    {selectedTab === 'Sort' && (
+                      <View style={styles.sortByBlock}>
+                        <TouchableOpacity
+                          style={styles.sortByHeader}
+                          onPress={() => setSortExpanded((e) => !e)}
+                          activeOpacity={0.7}
+                        >
+                          <View style={styles.sortBySummaryWrap}>
+                            <Typography variant="P1M" color={colors.gray[700]}>
+                              Sort by
+                            </Typography>
+                            <Typography
+                              variant="P1M"
+                              color={colors.gray[800]}
+                              numberOfLines={1}
+                              style={styles.sortByLabel}
+                            >
+                              {videoInterviewSortOptionsCombined.find(
+                                (o) =>
+                                  o.sortBy === personalityScreeningFilters.sortBy &&
+                                  (personalityScreeningFilters.sortDir ?? 'desc') === o.sortDir
+                              )?.label ?? 'Assigned On: New → Old'}
+                            </Typography>
+                          </View>
+                          <Icon
+                            name={sortExpanded ? 'chevron-up' : 'chevron-down'}
+                            size={20}
+                            color={colors.gray[600]}
+                            iconFamily="Feather"
+                          />
+                        </TouchableOpacity>
+
+                        {sortExpanded && (
+                          <View style={styles.sortByExpanded}>
+                            <Typography variant="P1M" color={colors.gray[700]} style={styles.sortBySectionTitle}>
+                              Sort By
+                            </Typography>
+                            {videoInterviewSortOptionsCombined.map((option) => {
+                              const isSelected =
+                                personalityScreeningFilters.sortBy === option.sortBy &&
+                                (personalityScreeningFilters.sortDir ?? 'desc') === option.sortDir;
+                              return (
+                                <TouchableOpacity
+                                  key={`${option.sortBy}-${option.sortDir}`}
+                                  onPress={() =>
+                                    dispatch(
+                                      setPersonalityScreeningSort({
+                                        sortBy: option.sortBy,
+                                        sortDir: option.sortDir,
+                                      })
+                                    )
+                                  }
+                                  style={[styles.radioRow, isSelected && styles.radioRowSelected]}
+                                  activeOpacity={0.7}
+                                >
+                                  <Typography variant="P1M" color={colors.gray[800]}>
+                                    {option.label}
+                                  </Typography>
+                                  <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
+                                    {isSelected && <View style={styles.radioInner} />}
+                                  </View>
+                                </TouchableOpacity>
+                              );
+                            })}
+                          </View>
+                        )}
+                      </View>
+                    )}
                     {selectedTab === 'Applicant' && (
                       <TextSearchFilter
                         mode="videoInterview"

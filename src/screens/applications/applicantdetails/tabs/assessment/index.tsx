@@ -6,7 +6,6 @@ import AssessmentsDetails from './assessmentdetails';
 import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../../../hooks/useAppSelector';
 import {
-  getAssessmentLogsRequestAction,
   getAssessmentReportRequestAction,
   markSessionAsReviewedRequestAction,
 } from '../../../../../features/applications/actions';
@@ -29,6 +28,8 @@ import { Button } from '../../../../../components';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Card from '../../../../../components/atoms/card';
 import { getApprovalStageStatusOptions } from '../stageStatusOptions';
+import Shimmer from '../../../../../components/atoms/shimmer';
+import { selectAssessmentLoading } from '../../../../../features/applications/selectors';
 
 interface TimelineItem {
   title: string;
@@ -36,14 +37,29 @@ interface TimelineItem {
   status: 'completed' | 'current';
 }
 
-const Assessment = () => {
+const normalizeContentType = (v: unknown) =>
+  String(v ?? '')
+    .toLowerCase()
+    .trim()
+    .replace(/[\s-]+/g, '_');
+
+type AssessmentProps = {
+  sessionContentId: string | null;
+  onSessionContentIdChange: (id: string | null) => void;
+};
+
+const Assessment = ({ sessionContentId, onSessionContentIdChange }: AssessmentProps) => {
   const styles = useStyles();
-  const [session, setSelectedSession] = useState<string | null>(null);
   const [selectedStageStatus, setSelectedStageStatus] = useState<string | null>(null);
   const dispatch = useAppDispatch();
   const application = useAppSelector(selectSelectedApplication);
   const assessmentLogs = useAppSelector(selectAssessmentLogs);
+  const filteredAssessmentLogs = useMemo(() => {
+    const logs = assessmentLogs ?? [];
+    return logs.filter((l) => normalizeContentType(l?.content_type) === 'assessment');
+  }, [assessmentLogs]);
   const assessmentReport = useAppSelector(selectAssessmentReport);
+  const assessmentLoading = useAppSelector(selectAssessmentLoading);
   const stages = useAppSelector(selectApplicationStages);
   const loadingMarkReviewed = useAppSelector(selectMarkSessionReviewedLoading);
 
@@ -72,38 +88,45 @@ const Assessment = () => {
     }
   }, [stages]);
 
+  const currentSessionLog = useMemo(
+    () =>
+      filteredAssessmentLogs?.find((item) => item.content_id === sessionContentId) ?? null,
+    [filteredAssessmentLogs, sessionContentId]
+  );
+
+  /** True when Redux already has the report for this session (avoids refetch + shimmer on tab remount). */
+  const reportMatchesSession = useMemo(() => {
+    if (!sessionContentId || !assessmentReport) return false;
+    return (
+      assessmentReport.id === sessionContentId ||
+      (!!currentSessionLog && assessmentReport.id === currentSessionLog.id)
+    );
+  }, [sessionContentId, assessmentReport, currentSessionLog]);
+
   useEffect(() => {
-    if (!assessmentLogs?.length) {
-      setSelectedSession(null);
+    if (!filteredAssessmentLogs?.length) {
+      onSessionContentIdChange(null);
       return;
     }
-    const currentExists = assessmentLogs.some((item) => item.content_id === session);
-    if (!session || !currentExists) {
-      setSelectedSession(assessmentLogs[0]?.content_id ?? null);
+    const currentExists = filteredAssessmentLogs.some(
+      (item) => item.content_id === sessionContentId
+    );
+    if (!sessionContentId || !currentExists) {
+      onSessionContentIdChange(filteredAssessmentLogs[0]?.content_id ?? null);
     }
-  }, [assessmentLogs, session]);
+  }, [filteredAssessmentLogs, sessionContentId, onSessionContentIdChange]);
 
   useEffect(() => {
-    if (session && assessmentLogs?.length) {
-      dispatch(getAssessmentReportRequestAction(session));
-    }
-  }, [session, assessmentLogs?.length]);
+    if (!sessionContentId || !filteredAssessmentLogs?.length) return;
+    if (reportMatchesSession) return;
+    dispatch(getAssessmentReportRequestAction(sessionContentId));
+  }, [
+    sessionContentId,
+    filteredAssessmentLogs?.length,
+    dispatch,
+    reportMatchesSession,
+  ]);
 
-
-
-  //Ensure dropdown shows the currently active session.
-  // useEffect(() => {
-  //   if (!session && assessmentLogs?.length) {
-  //     setSelectedSession(assessmentLogs[assessmentLogs.length - 1]?.id);
-  //   }
-  // }, [assessmentLogs, session]);
-
-  // Map status_text to STATUS_OPTIONS id format
-
-  const currentSessionLog = useMemo(
-    () => assessmentLogs?.find((item) => item.content_id === session) ?? null,
-    [assessmentLogs, session]
-  );
   const isReviewed = currentSessionLog?.session_status === 'reviewed';
 
   const assessmentStage = useMemo(
@@ -132,14 +155,16 @@ const Assessment = () => {
 
   // Get current status id from selected session
   const currentStatusId = useMemo(() => {
-    if (session && assessmentLogs?.length) {
-      const currentSession = assessmentLogs.find(item => item.content_id === session);
+    if (sessionContentId && filteredAssessmentLogs?.length) {
+      const currentSession = filteredAssessmentLogs.find(
+        (item) => item.content_id === sessionContentId
+      );
       if (currentSession?.status_text) {
         return mapStatusTextToId(currentSession.status_text);
       }
     }
     return '';
-  }, [session, assessmentLogs]);
+  }, [sessionContentId, filteredAssessmentLogs]);
 
   const assessmentStatus =
     stages?.find(stage => stage.stage_type === "assessment")?.status
@@ -220,7 +245,7 @@ const Assessment = () => {
         }}
       />
       <View style={{ zIndex: 1000 }}>
-        <Card style={{ gap: 4 }}>
+        <Card style={{ gap: 4 ,flex:1,width:'100%'}}>
           <Typography variant="regularTxtxs" style={{ backgroundColor: colors?.brand['200'], borderTopEndRadius: 12, borderTopStartRadius: 12, padding: 5 }} numberOfLines={2}>
             Stage was {assessmentStatus} by{" "}
             {stages?.find(s => s.stage_type === "assessment")?.reviewed_by?.name ??
@@ -238,55 +263,55 @@ const Assessment = () => {
             <Dropdown
               label="Session"
               dropdownLabel="Session"
-              options={assessmentLogs?.map((item, index) => ({
+              options={filteredAssessmentLogs?.map((item, index) => ({
                 id: item.content_id,
                 name: `Assessment`,
                 status_text: item?.session_status ?? "—",
                 raw: item,
               })) ?? []}
-              setValue={session ?? undefined}
+              setValue={sessionContentId ?? ''}
               statusKey="status_text"
               labelKey="name"
               valueKey="id"
-              onSelect={item => setSelectedSession(item?.id)}
+              onSelect={item => onSessionContentIdChange(item?.id ?? null)}
               onChangeText={() => { }}
             />
             <View style={styles.reviewRow}>
               <Typography variant="regularTxtxs" style={{ flex: 1 }}>
-                {assessmentLogs
-                  ?.find(item => item.content_id === session)
+                {filteredAssessmentLogs
+                  ?.find(item => item.content_id === sessionContentId)
                   ?.action_taken_by?.name ? (
                   <>
                     Reviewed by{" "}
                     {
-                      assessmentLogs.find(item => item.content_id === session)
+                      filteredAssessmentLogs.find(item => item.content_id === sessionContentId)
                         ?.action_taken_by?.name
                     }{" "}
                     ·{" "}
                     {formatMonDDYYYY(
-                      assessmentLogs.find(item => item.content_id === session)
+                      filteredAssessmentLogs.find(item => item.content_id === sessionContentId)
                         ?.action_taken_at,
                       "DD MMM YYYY HH:mm",
                       "IST"
                     )}
                   </>
-                ) : assessmentLogs?.find(item => item.content_id === session)
+                ) : filteredAssessmentLogs?.find(item => item.content_id === sessionContentId)
                   ?.workflow_status_updated_at ? (
                   <>
                     Reviewed by Workflow ·{" "}
                     {formatMonDDYYYY(
-                      assessmentLogs.find(item => item.content_id === session)
+                      filteredAssessmentLogs.find(item => item.content_id === sessionContentId)
                         ?.workflow_status_updated_at,
                       "DD MMM YYYY HH:mm",
                       "IST"
                     )}
                   </>
-                ) : assessmentLogs?.find(item => item.content_id === session)
+                ) : filteredAssessmentLogs?.find(item => item.content_id === sessionContentId)
                   ?.updated_at ? (
                   <>
                     ·{" "}
                     {formatMonDDYYYY(
-                      assessmentLogs.find(item => item.content_id === session)
+                      filteredAssessmentLogs.find(item => item.content_id === sessionContentId)
                         ?.updated_at,
                       "DD MMM YYYY HH:mm",
                       "IST"
@@ -341,9 +366,22 @@ const Assessment = () => {
       </View> */}
       </View>
 
-      <CustomTimeline progress={progress} data={timelineData} />
-
-      <AssessmentsDetails />
+      {assessmentLoading && !!sessionContentId && !reportMatchesSession ? (
+        <View style={{ gap: 14, paddingVertical: 18 }}>
+          <Shimmer width="40%" height={20} borderRadius={8} />
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <Shimmer width="45%" height={14} borderRadius={8} />
+            <Shimmer width="45%" height={14} borderRadius={8} />
+          </View>
+          <Shimmer width="100%" height={180} borderRadius={16} />
+          <Shimmer width="100%" height={220} borderRadius={12} />
+        </View>
+      ) : (
+        <>
+          <CustomTimeline progress={progress} data={timelineData} />
+          <AssessmentsDetails />
+        </>
+      )}
     </View>
   );
 };

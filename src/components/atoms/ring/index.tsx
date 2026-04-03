@@ -1,11 +1,19 @@
-import React from "react";
 import { View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
+import Animated, {
+  useSharedValue,
+  useAnimatedProps,
+  withTiming,
+  Easing,
+} from "react-native-reanimated";
 import Typography from "../typography";
 import { colors } from "../../../theme/colors";
+import React = require("react");
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 interface RingProps {
-  percent: number;       // 0–100
+  percent: number;
   size?: number;
   strokeWidth?: number;
   showText?: boolean;
@@ -22,9 +30,23 @@ const Ring: React.FC<RingProps> = ({
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
 
-  // ✅ Static calculation (no animation)
-  const strokeDashoffset =
-    circumference - (percent / 100) * circumference;
+  const progress = useSharedValue(0);
+
+  React.useEffect(() => {
+    progress.value = withTiming(percent, {
+      duration: 1000,
+      easing: Easing.out(Easing.ease),
+    });
+  }, [percent]);
+
+  const animatedProps = useAnimatedProps(() => {
+    const strokeDashoffset =
+      circumference - (progress.value / 100) * circumference;
+
+    return {
+      strokeDashoffset,
+    };
+  });
 
   return (
     <View
@@ -46,8 +68,8 @@ const Ring: React.FC<RingProps> = ({
           fill="none"
         />
 
-        {/* Progress Ring */}
-        <Circle
+        {/* Animated Progress Ring */}
+        <AnimatedCircle
           stroke={colors.brand[600]}
           strokeWidth={strokeWidth}
           cx={size / 2}
@@ -55,7 +77,7 @@ const Ring: React.FC<RingProps> = ({
           r={radius}
           fill="none"
           strokeDasharray={`${circumference} ${circumference}`}
-          strokeDashoffset={strokeDashoffset}
+          animatedProps={animatedProps}
           strokeLinecap="round"
           rotation={rotation}
           originX={size / 2}

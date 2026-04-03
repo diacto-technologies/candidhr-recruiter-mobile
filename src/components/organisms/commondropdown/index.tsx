@@ -16,6 +16,7 @@ const CommonDropdown = ({
   options,
   value,
   onChange,
+  onOpen,
   labelKey = 'name',
   valueKey = 'id',
   usernameKey = 'username',
@@ -28,6 +29,7 @@ const CommonDropdown = ({
   mode = 'default',
   dropdownPosition = 'bottom',
   multiSelect = false,
+  onLoadMore,
 }: CommonDropdownProps) => {
   const [isFocused, setIsFocused] = useState(false);
 
@@ -106,7 +108,15 @@ const CommonDropdown = ({
               search={searchable}
               searchPlaceholder={searchPlaceholder}
               searchField={searchField as any}
-              onFocus={() => setIsFocused(true)}
+              flatListProps={
+                onLoadMore
+                  ? { onEndReached: onLoadMore, onEndReachedThreshold: 0.3 }
+                  : undefined
+              }
+              onFocus={() => {
+                setIsFocused(true);
+                onOpen?.();
+              }}
               onBlur={() => setIsFocused(false)}
               renderSelectedItem={() => <View style={{ height: 0, width: 0 }} />}
               onChange={(next) => {
@@ -132,7 +142,11 @@ const CommonDropdown = ({
 
                     <View style={styles.rightContainer}>
                       {!!item.username && (
-                        <Typography style={styles.usernameText}>
+                        <Typography
+                          style={styles.usernameText}
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                        >
                           {item.username}
                         </Typography>
                       )}
@@ -175,7 +189,15 @@ const CommonDropdown = ({
               search={searchable}
               searchPlaceholder={searchPlaceholder}
               searchField={searchField}
-              onFocus={() => setIsFocused(true)}
+              flatListProps={
+                onLoadMore
+                  ? { onEndReached: onLoadMore, onEndReachedThreshold: 0.3 }
+                  : undefined
+              }
+              onFocus={() => {
+                setIsFocused(true);
+                onOpen?.();
+              }}
               onBlur={() => setIsFocused(false)}
               onChange={(item) => onChange(item.value, item.original)}
               renderItem={(item) => {
@@ -194,7 +216,11 @@ const CommonDropdown = ({
 
                     <View style={styles.rightContainer}>
                       {!!item.username && (
-                        <Typography style={styles.usernameText}>
+                        <Typography
+                          style={styles.usernameText}
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                        >
                           {item.username}
                         </Typography>
                       )}

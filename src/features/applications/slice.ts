@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ApplicationsState, Application, ApplicationsListResponse, ApplicationResponseItem, ResumeScreeningResponseItem, AssessmentLog, AssessmentReport, AssessmentDetailedReport, ScreeningAssessment, PersonalityScreeningResponse, ApplicationStage, ReasonCategory, ReasonListItem } from "./types";
+import { ApplicationsState, Application, ApplicationsListResponse, ApplicationResponseItem, ResumeScreeningResponseItem, AssessmentLog, AssessmentReport, AssessmentDetailedReport, ScreeningAssessment, PersonalityScreeningResponse, ApplicationStage, ReasonCategory, ReasonListItem, PerformanceReportResponse, AssessmentOptionsReportResponse, AssessmentOption } from "./types";
 
 const initialState: ApplicationsState = {
   applications: [],
@@ -17,6 +17,10 @@ const initialState: ApplicationsState = {
   applicationReasonsList: [],
   loadingApplicationReasonsList: false,
   applicationReasonsListError: null,
+  loadingAddApplicationReasons: false,
+  addApplicationReasonsError: null,
+  loadingUpdateApplicationReason: false,
+  updateApplicationReasonError: null,
   assessmentReport: null,
   assessmentDetailedReport: null,
   selectedApplication: null,
@@ -29,8 +33,15 @@ const initialState: ApplicationsState = {
   loadingMarkSessionReviewed: false,
   loadingParseResume: false,
   loadingUpdateStageStatus: false,
+  loadingExportApplications: false,
+  exportApplicationsError: null,
+  loadingExportApplicantPdf: false,
+  exportApplicantPdfError: null,
   applicationStages: [],
   error: null,
+  performanceReport: null,
+  loadingPerformanceReport: false,
+  performanceReportError: null,
   pagination: {
     page: 1,
     limit: 10,
@@ -50,12 +61,46 @@ const initialState: ApplicationsState = {
     status: '',
     latestStageName: '',
   },
+  assessmentOptions: [],
+  assessmentOptionsApplicationId: null,
+  assessmentOptionsPage: 1,
+  assessmentOptionsHasMore: true,
+  loadingAssessmentOptions: false,
+  assessmentOptionsError: null as string | null,
+  loadingExportAssessmentReport: false,
+  exportAssessmentReportError: null,
 };
 
 const applicationsSlice = createSlice({
   name: "applications",
   initialState,
   reducers: {
+    exportApplicationsRequest: (state) => {
+      state.loadingExportApplications = true;
+      state.exportApplicationsError = null;
+    },
+    exportApplicationsSuccess: (state) => {
+      state.loadingExportApplications = false;
+      state.exportApplicationsError = null;
+    },
+    exportApplicationsFailure: (state, action: PayloadAction<string>) => {
+      state.loadingExportApplications = false;
+      state.exportApplicationsError = action.payload;
+    },
+
+    // exportApplicantPdfRequest: (state) => {
+    //   state.loadingExportApplicantPdf = true;
+    //   state.exportApplicantPdfError = null;
+    // },
+    // exportApplicantPdfSuccess: (state) => {
+    //   state.loadingExportApplicantPdf = false;
+    //   state.exportApplicantPdfError = null;
+    // },
+    // exportApplicantPdfFailure: (state, action: PayloadAction<string>) => {
+    //   state.loadingExportApplicantPdf = false;
+    //   state.exportApplicantPdfError = action.payload;
+    // },
+
     getApplicationsRequest: (state, _action: PayloadAction<any>) => {
       state.loading = true;
       state.error = null;
@@ -185,7 +230,7 @@ const applicationsSlice = createSlice({
     },
 
     getAssessmentLogsRequest: (state) => {
-      state.loading = true;
+      state.loadingAssessment = true;
       state.error = null;
       state.assessmentLogs = [];
       state.assessmentReport = null;
@@ -195,7 +240,7 @@ const applicationsSlice = createSlice({
       state,
       action: PayloadAction<AssessmentLog[]>
     ) => {
-      state.loading = false;
+      state.loadingAssessment = false;
       state.assessmentLogs = action.payload;
     },
 
@@ -203,7 +248,7 @@ const applicationsSlice = createSlice({
       state,
       action: PayloadAction<string>
     ) => {
-      state.loading = false;
+      state.loadingAssessment = false;
       state.error = action.payload;
       state.assessmentLogs = [];
       state.assessmentReport = null;
@@ -248,16 +293,25 @@ const applicationsSlice = createSlice({
       state.error = action.payload;
     },
 
-    getAssessmentReportRequest: (state) => {
-      state.loading = true;
+    getAssessmentReportRequest: (state, action: PayloadAction<string>) => {
+      state.loadingAssessment = true;
       state.error = null;
+      const nextKey = action.payload;
+      const current = state.assessmentReport;
+      const sameSession =
+        current &&
+        (current.id === nextKey ||
+          current.id === state.assessmentLogs.find((l) => l.content_id === nextKey)?.id);
+      if (!sameSession) {
+        state.assessmentReport = null;
+      }
     },
 
     getAssessmentReportSuccess: (
       state,
       action: PayloadAction<AssessmentReport>
     ) => {
-      state.loading = false;
+      state.loadingAssessment = false;
       state.assessmentReport = action.payload;
     },
 
@@ -265,12 +319,12 @@ const applicationsSlice = createSlice({
       state,
       action: PayloadAction<string>
     ) => {
-      state.loading = false;
+      state.loadingAssessment = false;
       state.error = action.payload;
     },
 
     getAssessmentDetailedReportRequest: (state) => {
-      state.loading = true;
+      state.loadingAssessment = true;
       state.error = null;
     },
 
@@ -278,7 +332,7 @@ const applicationsSlice = createSlice({
       state,
       action: PayloadAction<AssessmentDetailedReport>
     ) => {
-      state.loading = false;
+      state.loadingAssessment = false;
       state.assessmentDetailedReport = action.payload;
     },
 
@@ -286,12 +340,40 @@ const applicationsSlice = createSlice({
       state,
       action: PayloadAction<string>
     ) => {
-      state.loading = false;
+      state.loadingAssessment = false;
       state.error = action.payload;
     },
+
+    getPerformanceReportRequest: (state, action: PayloadAction<string>) => {
+      state.loadingPerformanceReport = true;
+      state.performanceReportError = null;
+      const nextAssignmentId = action.payload;
+      const currentAssignmentId =
+        state.performanceReport?.assessment_info?.assignment_id;
+      if (currentAssignmentId !== nextAssignmentId) {
+        state.performanceReport = null;
+      }
+    },
+
+    getPerformanceReportSuccess: (
+      state,
+      action: PayloadAction<PerformanceReportResponse>
+    ) => {
+      state.loadingPerformanceReport = false;
+      state.performanceReport = action.payload;
+    },
+
+    getPerformanceReportFailure: (
+      state,
+      action: PayloadAction<string>
+    ) => {
+      state.loadingPerformanceReport = false;
+      state.performanceReportError = action.payload;
+    },
+
     // applications/slice.ts
     getPersonalityScreeningListRequest: (state) => {
-      state.loading = true;
+      state.loadingPersonality = true;
       state.error = null;
     },
 
@@ -299,7 +381,7 @@ const applicationsSlice = createSlice({
       state,
       action: PayloadAction<ScreeningAssessment[]>
     ) => {
-      state.loading = false;
+      state.loadingPersonality = false;
       state.error = null;
       state.personalityScreeningList = action.payload;
 
@@ -313,14 +395,14 @@ const applicationsSlice = createSlice({
       state,
       action: PayloadAction<string>
     ) => {
-      state.loading = false;
+      state.loadingPersonality = false;
       state.error = action.payload;
       state.personalityScreeningList = [];
       state.personalityScreeningResponses = [];
     },
 
     getPersonalityScreeningResponsesRequest: state => {
-      state.loading = true;
+      state.loadingPersonality = true;
       state.error = null;
     },
 
@@ -328,7 +410,7 @@ const applicationsSlice = createSlice({
       state,
       action: PayloadAction<PersonalityScreeningResponse[]>
     ) => {
-      state.loading = false;
+      state.loadingPersonality = false;
       state.personalityScreeningResponses = action.payload;
     },
 
@@ -336,7 +418,7 @@ const applicationsSlice = createSlice({
       state,
       action: PayloadAction<string>
     ) => {
-      state.loading = false;
+      state.loadingPersonality = false;
       state.error = action.payload;
       state.personalityScreeningResponses = [];
     },
@@ -383,6 +465,8 @@ const applicationsSlice = createSlice({
       state.personalityScreeningResponses = [];
       state.assessmentReport = null;
       state.assessmentDetailedReport = null;
+      state.loadingPersonality = false;
+      state.loadingAssessment = false;
       state.loading = false;
       state.error = null;
     },
@@ -474,6 +558,32 @@ const applicationsSlice = createSlice({
       state.applicationReasonsListError = action.payload;
     },
 
+    addApplicationReasonsRequest: (state) => {
+      state.loadingAddApplicationReasons = true;
+      state.addApplicationReasonsError = null;
+    },
+    addApplicationReasonsSuccess: (state) => {
+      state.loadingAddApplicationReasons = false;
+      state.addApplicationReasonsError = null;
+    },
+    addApplicationReasonsFailure: (state, action: PayloadAction<string>) => {
+      state.loadingAddApplicationReasons = false;
+      state.addApplicationReasonsError = action.payload;
+    },
+
+    updateApplicationReasonRequest: (state) => {
+      state.loadingUpdateApplicationReason = true;
+      state.updateApplicationReasonError = null;
+    },
+    updateApplicationReasonSuccess: (state) => {
+      state.loadingUpdateApplicationReason = false;
+      state.updateApplicationReasonError = null;
+    },
+    updateApplicationReasonFailure: (state, action: PayloadAction<string>) => {
+      state.loadingUpdateApplicationReason = false;
+      state.updateApplicationReasonError = action.payload;
+    },
+
     updateStageStatusRequest: (state) => {
       state.loadingUpdateStageStatus = true;
       state.error = null;
@@ -491,10 +601,111 @@ const applicationsSlice = createSlice({
       state.loadingUpdateStageStatus = false;
       state.error = action.payload;
     },
+
+    getAssessmentOptionsReportRequest: (
+      state,
+      action: PayloadAction<{ application_id: string; page?: number }>
+    ) => {
+      state.loadingAssessmentOptions = true;
+      state.assessmentOptionsError = null;
+
+      const applicationId = action.payload?.application_id;
+      const requestedPage = action.payload?.page ?? 1;
+
+      const applicationChanged =
+        Boolean(applicationId) &&
+        state.assessmentOptionsApplicationId !== applicationId;
+
+      // Reset when first page OR application changes (prevents mixing lists)
+      if (requestedPage === 1 || applicationChanged) {
+        state.assessmentOptions = [];
+        state.assessmentOptionsHasMore = true;
+      }
+
+      state.assessmentOptionsApplicationId = applicationId ?? null;
+      // Store the page being fetched; on success we advance to next page.
+      state.assessmentOptionsPage = requestedPage;
+    },
+
+    getAssessmentOptionsReportSuccess: (
+      state,
+      action: PayloadAction<{
+        application_id: string;
+        page: number;
+        response: AssessmentOptionsReportResponse;
+      }>
+    ) => {
+      state.loadingAssessmentOptions = false;
+
+      const { application_id, page, response } = action.payload;
+      const assessmentlogs = response?.assessmentlogs ?? [];
+
+      // Ignore stale responses (e.g. user switched applications mid-flight)
+      if (
+        state.assessmentOptionsApplicationId &&
+        state.assessmentOptionsApplicationId !== application_id
+      ) {
+        return;
+      }
+
+      // Merge with dedupe (stable, prevents duplicate rows on re-fetch)
+      if (page === 1) {
+        state.assessmentOptions = assessmentlogs;
+      } else if (assessmentlogs.length > 0) {
+        const byId = new Map<string, AssessmentOption>();
+        for (const item of state.assessmentOptions) byId.set(item.id, item);
+        for (const item of assessmentlogs) byId.set(item.id, item);
+        state.assessmentOptions = Array.from(byId.values());
+      }
+
+      // Pagination logic (supports current API + future pagination metadata)
+      const totalPages = response?.total_pages;
+      const pageSize = response?.page_size;
+
+      if (typeof totalPages === "number" && totalPages > 0) {
+        state.assessmentOptionsHasMore = page < totalPages;
+      } else if (typeof pageSize === "number" && pageSize > 0) {
+        state.assessmentOptionsHasMore = assessmentlogs.length >= pageSize;
+      } else {
+        // Fallback: if server returns empty list => no more.
+        state.assessmentOptionsHasMore = assessmentlogs.length > 0;
+      }
+
+      // Keep `assessmentOptionsPage` as the NEXT page to request
+      state.assessmentOptionsPage = state.assessmentOptionsHasMore
+        ? page + 1
+        : page;
+    },
+
+    getAssessmentOptionsReportFailure: (
+      state,
+      action: PayloadAction<string>
+    ) => {
+      state.loadingAssessmentOptions = false;
+      state.assessmentOptionsError = action.payload;
+    },
+    exportAssessmentReportRequest: (state) => {
+      state.loadingExportAssessmentReport = true;
+      state.exportAssessmentReportError = null;
+    },
+    exportAssessmentReportSuccess: (state) => {
+      state.loadingExportAssessmentReport = false;
+      state.exportAssessmentReportError = null;
+    },
+    exportAssessmentReportFailure: (state, action: PayloadAction<string>) => {
+      state.loadingExportAssessmentReport = false;
+      state.exportAssessmentReportError = action.payload;
+    },
   },
 });
 
 export const {
+  exportApplicationsRequest,
+  exportApplicationsSuccess,
+  exportApplicationsFailure,
+  // exportApplicantPdfRequest,
+  // exportApplicantPdfSuccess,
+  // exportApplicantPdfFailure,
   getApplicationsRequest,
   getApplicationsSuccess,
   getApplicationsFailure,
@@ -544,6 +755,12 @@ export const {
   getApplicationReasonsListRequest,
   getApplicationReasonsListSuccess,
   getApplicationReasonsListFailure,
+  addApplicationReasonsRequest,
+  addApplicationReasonsSuccess,
+  addApplicationReasonsFailure,
+  updateApplicationReasonRequest,
+  updateApplicationReasonSuccess,
+  updateApplicationReasonFailure,
   updateStageStatusRequest,
   updateStageStatusSuccess,
   updateStageStatusFailure,
@@ -553,7 +770,16 @@ export const {
   parseResumeRequest,
   parseResumeSuccess,
   parseResumeFailure,
-  setSort
+  setSort,
+  getPerformanceReportRequest,
+  getPerformanceReportSuccess,
+  getPerformanceReportFailure,
+  getAssessmentOptionsReportRequest,
+  getAssessmentOptionsReportSuccess,
+  getAssessmentOptionsReportFailure,
+  exportAssessmentReportRequest,
+  exportAssessmentReportSuccess,
+  exportAssessmentReportFailure,
 } = applicationsSlice.actions;
 
 export default applicationsSlice.reducer;

@@ -23,6 +23,16 @@ export const selectApplicationsDetailLoading = createSelector(
   (applications) => applications.loadingApplicationDetail
 );
 
+// export const selectExportApplicantPdfLoading = createSelector(
+//   [selectApplicationsState],
+//   (applications) => applications.loadingExportApplicantPdf ?? false
+// );
+
+// export const selectExportApplicantPdfError = createSelector(
+//   [selectApplicationsState],
+//   (applications) => applications.exportApplicantPdfError ?? null
+// );
+
 export const selectResumeScreeningResponsesLoading = createSelector(
   [selectApplicationsState],
   (applications) => applications.loadingResumeScreeningResponses
@@ -75,7 +85,13 @@ export const selectPersonalityScreeningList = createSelector(
 
 export const selectPersonalityScreeningLoading = createSelector(
   [(state: RootState) => state.applications],
-  (state) => state.loading
+  (state) => state.loadingPersonality ?? false
+);
+
+/** Assessment session logs + report + detailed report (not shared with personality / list loading). */
+export const selectAssessmentLoading = createSelector(
+  [(state: RootState) => state.applications],
+  (state) => state.loadingAssessment ?? false
 );
 
 export const selectPersonalityScreeningResponses = createSelector(
@@ -139,4 +155,66 @@ export const selectReasonListError = createSelector(
   (state) => state.reasonListError ?? null
 );
 
+export const selectApplicationReasonsList = createSelector(
+  [selectApplicationsState],
+  (state) => state.applicationReasonsList ?? []
+);
 
+export const selectApplicationReasonsListLoading = createSelector(
+  [selectApplicationsState],
+  (state) => state.loadingApplicationReasonsList ?? false
+);
+
+export const selectApplicationReasonsListError = createSelector(
+  [selectApplicationsState],
+  (state) => state.applicationReasonsListError ?? null
+);
+
+export const selectAddApplicationReasonsLoading = createSelector(
+  [selectApplicationsState],
+  (state) => state.loadingAddApplicationReasons ?? false
+);
+
+export const selectAddApplicationReasonsError = createSelector(
+  [selectApplicationsState],
+  (state) => state.addApplicationReasonsError ?? null
+);
+
+export const selectPerformanceReport = createSelector(
+  [(state: RootState) => state.applications],
+  (state) => state.performanceReport
+);
+
+export const selectPerformanceReportLoading = createSelector(
+  [(state: RootState) => state.applications],
+  (state) => state.loadingPerformanceReport ?? false
+);
+
+export const selectPerformanceReportError = createSelector(
+  [(state: RootState) => state.applications],
+  (state) => state.performanceReportError ?? null
+);
+
+export const selectAssessmentOptions = (state: RootState) =>
+  state.applications.assessmentOptions;
+
+export const selectAssessmentOptionsApplicationId = (state: RootState) =>
+  state.applications.assessmentOptionsApplicationId ?? null;
+
+export const selectAssessmentOptionsLoading = (state: RootState) =>
+  state.applications.loadingAssessmentOptions;
+
+export const selectAssessmentOptionsError = (state: RootState) =>
+  state.applications.assessmentOptionsError;
+
+export const selectAssessmentOptionsHasMore = (state: RootState) =>
+  state.applications.assessmentOptionsHasMore;
+
+export const selectAssessmentOptionsPage = (state: RootState) =>
+  state.applications.assessmentOptionsPage;
+
+export const selectExportAssessmentReportLoading = (state: RootState) =>
+  state.applications.loadingExportAssessmentReport ?? false;
+
+export const selectExportAssessmentReportError = (state: RootState) =>
+  state.applications.exportAssessmentReportError ?? null;

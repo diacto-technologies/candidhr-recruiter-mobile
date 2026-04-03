@@ -37,6 +37,17 @@
         android:host="app.candidhr.ai" 
         android:pathPrefix="/app/candidate/"/>
    </intent-filter>
+   <intent-filter android:autoVerify="true">
+    <action android:name="android.intent.action.VIEW"/>
+
+    <category android:name="android.intent.category.DEFAULT"/>
+    <category android:name="android.intent.category.BROWSABLE"/>
+
+    <data
+        android:scheme="https"
+        android:host="googleqa.candidhr.ai"
+        android:pathPrefix="/app/candidate/"/>
+    </intent-filter>
       </activity>
     </application>
 </manifest>

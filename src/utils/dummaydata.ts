@@ -13,14 +13,16 @@ export const applicantFiltersOption = [
 ]
 
 export const jobFiltersOption = [
+    'Sort',
     'Title',
-    'Experience',
+    // 'Experience',
     'Employment Type',
     'Location',
-    'Close Date',
+    // 'Close Date',
     'Created By',
 ]
 export const assessmentAssignedData = [
+    'Sort',
     'Applicant',
     'Email',
     'Job Title',

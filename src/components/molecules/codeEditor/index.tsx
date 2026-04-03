@@ -20,7 +20,7 @@ export default function CustomCodeEditor({
   editable = false,
   onChangeText,
 }: Props) {
-  const lines = value.split("\n");
+  const lines = value?.split("\n") ?? [""];
 
   return (
     <ScrollView horizontal style={styles.container}>
@@ -36,7 +36,7 @@ export default function CustomCodeEditor({
 
         {/* Code Input */}
         <TextInput
-          value={value}
+          value={value ?? ""}
           onChangeText={onChangeText}
           editable={editable}
           multiline

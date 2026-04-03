@@ -30,6 +30,7 @@ import { organizationalOrigin } from "../../../features/auth";
 import { store } from "../../../store";
 import ApplicantsTab from "./tabs/applicantstab";
 import OverviewTab from "./tabs/overviewtab";
+import { screenHeight } from "../../../utils/devicelayout";
 
 const tabs: string[] = ["Overview", "Applicants"];
 
@@ -145,7 +146,7 @@ const JobDetailScreen: React.FC = () => {
         onClose={() => setFilterSheet(false)}
         onClearAll={() => handleClearAllFilters()}
         title="Filter by"
-        showHeadline
+        showHeadline  hight={screenHeight* 0.8}        
       >
         <FilterSheetContent
           onCancel={() => setFilterSheet(false)}

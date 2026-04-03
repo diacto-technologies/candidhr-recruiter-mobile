@@ -1,9 +1,42 @@
 import { APPLICATIONS_ACTION_TYPES } from "./constants";
-import { CreateApplicationRequest, UpdateApplicationStatusRequest, Application, GetApplicationsParams, GetApplicationResponsesParams, ResumeScreeningResponseItem, AssessmentLog, AssessmentReport, AssessmentDetailedReport, ScreeningAssessment, PersonalityScreeningResponse, SessionReviewedResponse, UpdateStageStatusRequest } from "./types";
+import {
+  CreateApplicationRequest,
+  UpdateApplicationStatusRequest,
+  Application,
+  GetApplicationsParams,
+  GetApplicationResponsesParams,
+  ResumeScreeningResponseItem,
+  AssessmentLog,
+  AssessmentReport,
+  AssessmentDetailedReport,
+  ScreeningAssessment,
+  PersonalityScreeningResponse,
+  SessionReviewedResponse,
+  UpdateStageStatusRequest,
+  UpdateApplicationShareRequest,
+  PerformanceReportResponse,
+  AssessmentOptionsReportResponse,
+} from "./types";
 
 export const getApplicationsRequestAction = (params?: GetApplicationsParams) => ({
   type: APPLICATIONS_ACTION_TYPES.GET_APPLICATIONS_REQUEST,
   payload: params,
+});
+
+export const exportApplicationsRequestAction = (payload?: {
+  params?: GetApplicationsParams;
+  mode?: 'download';
+}) => ({
+  type: APPLICATIONS_ACTION_TYPES.EXPORT_APPLICATIONS_REQUEST,
+  payload,
+});
+
+export const exportApplicantPdfRequestAction = (payload: {
+  applicationId: string;
+  mode?: 'download';
+}) => ({
+  type: APPLICATIONS_ACTION_TYPES.EXPORT_APPLICANT_PDF_REQUEST,
+  payload,
 });
 
 export const getApplicationDetailRequestAction = (id: string) => ({
@@ -53,9 +86,15 @@ export const getResumeScreeningResponsesFailure = (payload: string) => ({
 });
 
 
-export const getAssessmentLogsRequestAction = (applicationId: string) => ({
+export const getAssessmentLogsRequestAction = (stageId: string) => ({
   type: APPLICATIONS_ACTION_TYPES.GET_ASSESSMENT_LOGS_REQUEST,
-  payload: applicationId,
+  payload: stageId,
+});
+
+/** Sessions API expects `stage_id` query param — fetch several stages and merge in saga. */
+export const getAssessmentLogsBatchRequestAction = (stageIds: string[]) => ({
+  type: APPLICATIONS_ACTION_TYPES.GET_ASSESSMENT_LOGS_BATCH_REQUEST,
+  payload: stageIds,
 });
 
 export const getAssessmentLogsSuccess = (payload: AssessmentLog[]) => ({
@@ -80,6 +119,49 @@ export const getAssessmentReportSuccess = (payload: AssessmentReport) => ({
 
 export const getAssessmentReportFailure = (payload: string) => ({
   type: APPLICATIONS_ACTION_TYPES.GET_ASSESSMENT_REPORT_FAILURE,
+  payload,
+});
+
+export const getPerformanceReportRequestAction = (assessmentLogId: string) => ({
+  type: APPLICATIONS_ACTION_TYPES.GET_PERFORMANCE_REPORT_REQUEST,
+  payload: assessmentLogId,
+});
+
+export const getPerformanceReportSuccess = (payload: PerformanceReportResponse) => ({
+  type: APPLICATIONS_ACTION_TYPES.GET_PERFORMANCE_REPORT_SUCCESS,
+  payload,
+});
+
+export const getPerformanceReportFailure = (payload: string) => ({
+  type: APPLICATIONS_ACTION_TYPES.GET_PERFORMANCE_REPORT_FAILURE,
+  payload,
+});
+
+export const getAssessmentOptionsReportRequestAction = (payload: {
+  application_id: string;
+  page?: number;
+}) => ({
+  type: APPLICATIONS_ACTION_TYPES.GET_ASSESSMENTOPTIONS_REPORT_REQUEST,
+  payload,
+});
+
+export const getAssessmentOptionsReportSuccess = (
+  payload: AssessmentOptionsReportResponse
+) => ({
+  type: APPLICATIONS_ACTION_TYPES.GET_ASSESSMENTOPTIONS_REPORT_SUCCESS,
+  payload,
+});
+
+export const getAssessmentOptionsReportFailure = (payload: string) => ({
+  type: APPLICATIONS_ACTION_TYPES.GET_ASSESSMENTOPTIONS_REPORT_FAILURE,
+  payload,
+});
+
+export const exportAssessmentReportRequestAction = (payload: {
+  assignment_ids: string[];
+  select_all?: boolean;
+}) => ({
+  type: APPLICATIONS_ACTION_TYPES.EXPORT_ASSESSMENT_REPORT_REQUEST,
   payload,
 });
 
@@ -197,7 +279,38 @@ export const updateStageStatusRequestAction = (payload: UpdateStageStatusRequest
   payload,
 });
 
-/** GET application reasons list; uses selectSelectedApplication for application.id and job.id */
-export const getApplicationReasonsListRequestAction = () => ({
+/** GET application reasons list; can use provided ids or selectedApplication */
+export const getApplicationReasonsListRequestAction = (payload?: {
+  applicationId?: string;
+  jobId?: string;
+}) => ({
   type: APPLICATIONS_ACTION_TYPES.GET_APPLICATION_REASONS_LIST_REQUEST,
+  payload,
+});
+
+/** POST application reasons: /notifications/v1/reasons/application-reasons/add/ */
+export const addApplicationReasonsRequestAction = (payload: {
+  application: string;
+  job_id: string;
+  content_type: string;
+  object_id: string;
+  reason: string[];
+}) => ({
+  type: APPLICATIONS_ACTION_TYPES.ADD_APPLICATION_REASONS_REQUEST,
+  payload,
+});
+
+/** PATCH application reasons update: /notifications/v1/reasons/application-reasons/{id}/update/ */
+export const updateApplicationReasonRequestAction = (payload: {
+  id: string;
+  message: string;
+}) => ({
+  type: APPLICATIONS_ACTION_TYPES.UPDATE_APPLICATION_REASON_REQUEST,
+  payload,
+});
+
+/** PATCH `users_shared_with` for an application */
+export const updateApplicationShareRequestAction = (payload: UpdateApplicationShareRequest) => ({
+  type: APPLICATIONS_ACTION_TYPES.UPDATE_APPLICATION_SHARE_REQUEST,
+  payload,
 });

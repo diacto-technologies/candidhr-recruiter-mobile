@@ -108,6 +108,8 @@ export interface GetJobsParams {
   page?: number;
   limit?: number;
   published?: boolean;
+  favourites?: boolean;
+  idIn?: string;
   title?: string;
   experience?: string;
   employmentType?: string;
@@ -180,8 +182,11 @@ export interface JobDetail {
 export interface JobsState {
   publishedJobs: Job[];
   unpublishedJobs: Job[];
+  favouriteJobs: Job[];
+  favouriteJobIds: string[];
   publishedCount: number;
   unpublishedCount: number;
+  favouritesCount: number;
   activeTab: string;
   selectedJob: JobDetail | null;
   /**
@@ -194,31 +199,38 @@ export interface JobsState {
    */
   publishedListLoading: boolean;
   unpublishedListLoading: boolean;
+  favouritesListLoading: boolean;
   /**
    * Tab "full refresh" shimmer (append=false).
    */
   publishedIsTabLoading: boolean;
   unpublishedIsTabLoading: boolean;
+  favouritesIsTabLoading: boolean;
   /**
    * Latest request guard per tab to prevent slow API races.
    */
   latestPublishedRequestId: number;
   latestUnpublishedRequestId: number;
+  latestFavouritesRequestId: number;
 
   publishedPagination: JobsPagination;
   unpublishedPagination: JobsPagination;
+  favouritesPagination: JobsPagination;
   publishedHasMore: boolean;
   unpublishedHasMore: boolean;
+  favouritesHasMore: boolean;
   filters: {
-    title: string,
-    experience: string,
-    employmentType: string,
-    location: string,
-    owner_name: string,
-    closeDate: string,
-    closeDateTo: string,
-
-  }
+    title: string;
+    experience: string;
+    employmentType: string;
+    location: string;
+    owner_name: string;
+    closeDate: string;
+    closeDateTo: string;
+    sortBy: string;
+    sortDir: "asc" | "desc";
+    orderBy: string;
+  };
   jobNameList: JobNameItem[];
   jobNameListLoading: boolean;
   jobNameListPage: number;

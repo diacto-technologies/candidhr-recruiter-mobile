@@ -14,6 +14,7 @@ import Icon from "../../../../../../components/atoms/vectoricon";
 interface TestCase {
   input: string;
   output: string;
+  expectedOutput?: string;
   passed: boolean;
 }
 
@@ -23,8 +24,20 @@ interface Props {
   language: string;
   code: string;
   testCases: TestCase[];
+  pointsObtained?: number;
+  totalPoints?: number;
+  timeSpentSeconds?: number;
   canEditCode?: boolean;
 }
+
+const formatTime = (seconds?: number) => {
+  const s = Number(seconds ?? 0);
+  if (!Number.isFinite(s) || s <= 0) return "0s";
+  const mins = Math.floor(s / 60);
+  const rem = Math.floor(s % 60);
+  if (mins <= 0) return `${rem}s`;
+  return `${mins}m ${rem}s`;
+};
 
 export default function CodingQuestionCard({
   index,
@@ -32,6 +45,9 @@ export default function CodingQuestionCard({
   language,
   code,
   testCases,
+  pointsObtained,
+  totalPoints,
+  timeSpentSeconds,
   canEditCode = false,
 }: Props) {
   const [expanded, setExpanded] = useState(true);
@@ -40,15 +56,52 @@ export default function CodingQuestionCard({
   const passedCount = testCases.filter(t => t.passed).length;
 
   return (
-    <View style={styles.card}>
+    <View style={[
+      styles.card,
+      expanded && { paddingBottom: 16 }
+    ]}>
       {/* Header */}
       <TouchableOpacity
         style={[styles.header,{ borderBottomWidth: expanded ? 1 :0}]}
         onPress={() => setExpanded(!expanded)}
       >
-        <Typography variant="semiBoldTxtsm">
-          {index + 1}. {title}
-        </Typography>
+        <View style={styles.headerLeft}>
+          <Typography variant="semiBoldTxtsm">
+            {index + 1}. {title}
+          </Typography>
+
+          {(totalPoints !== undefined || timeSpentSeconds !== undefined) && (
+            <View style={styles.metaRow}>
+              {totalPoints !== undefined && (
+                <View style={styles.pointsRow}>
+                  <Typography variant="semiBoldTxtsm" color={colors.gray[700]}>
+                    {pointsObtained ?? 0}
+                  </Typography>
+                  <Typography variant="semiBoldTxtsm" color={colors.gray[700]}>
+                    {" "}
+                    / {totalPoints} pts
+                  </Typography>
+                </View>
+              )}
+
+              {timeSpentSeconds !== undefined && (
+                <View style={styles.timeRow}>
+                  <Icon
+                    size={16}
+                    name={"time-outline"}
+                    iconFamily={"Ionicons"}
+                    color={colors.gray[500]}
+                  />
+                  <Typography variant="regularTxtsm" color={colors.gray[500]}>
+                    {" "}
+                    {formatTime(timeSpentSeconds)}
+                  </Typography>
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+
         <SvgXml
           xml={arrowDown}
           width={20}
@@ -112,6 +165,19 @@ export default function CodingQuestionCard({
                   {tc.output || "No output"}
                 </Typography>
               </View>
+
+              {tc.expectedOutput !== undefined && (
+                <>
+                  <Typography style={styles.label} variant="semiBoldTxtsm">
+                    Expected
+                  </Typography>
+                  <View style={styles.box}>
+                    <Typography variant="regularTxtsm" color={colors.gray[600]}>
+                      {tc.expectedOutput || "No expected output"}
+                    </Typography>
+                  </View>
+                </>
+              )}
             </View>
           ))}
         </View>
@@ -127,14 +193,31 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
     borderColor:  colors.gray[200],
-    paddingBottom:16,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    //alignItems: "center",
     padding: 16,
     borderColor:colors.gray[200]
+  },
+  headerLeft: {
+    flex: 1,
+    paddingRight: 12,
+    gap: 6,
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  pointsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  timeRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   subTitle: {
     marginTop: 16,

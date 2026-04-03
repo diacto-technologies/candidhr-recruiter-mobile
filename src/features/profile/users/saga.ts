@@ -27,7 +27,10 @@ function* getUsersWorker(action: { type: string; payload: { page: number } }): S
   try {
     const page = action.payload?.page ?? 1;
     yield put(getUsersRequest({ page }));
+
+    // Single-page fetch; caller (screen/dropdown) is responsible for requesting next pages
     const response = yield call(usersApi.list, page);
+    console.log('[getUsersWorker] page', page, 'response', response);
     yield put(getUsersSuccess({ page, response }));
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to fetch users";

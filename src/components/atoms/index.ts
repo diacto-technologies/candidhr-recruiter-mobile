@@ -8,7 +8,9 @@ export { default as VectorIcon } from './vectoricon';
 export { default as Shimmer } from './shimmer';
 export { default as ScalePress } from './scalepress';
 export { default as ProfileAvatar } from './profileavatar';
+export { default as AvatarStack } from './avatarstack';
 export { default as CompanyLogoAvatar } from './companylogoavatar';
+export { default as FloatingActionButton } from './floatingactionbutton';
 export { UrlInputField } from './urlinputfield';
 
 // Export types

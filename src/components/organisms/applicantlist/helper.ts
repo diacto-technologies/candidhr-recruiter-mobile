@@ -38,7 +38,7 @@ export const getStatusColor = (status?: string) => {
     case "Published":
       return colors.success[500];
 
-    case "Not Published":
+    case "Draft":
       return colors.error[500]
 
     case "Archived":

@@ -23,6 +23,12 @@ import ApplicationStageOverview from '../components/organisms/applicationstageov
 import ApplicationOverviewDetails from '../screens/applications/applicationstageoverviewdetails'
 import AssessmentScreen from '../screens/applications/services/assessment'
 import VideoInterviewScreen from '../screens/applications/services/videoInterview'
+import CommentsScreen from '../screens/applications/comments'
+import OldAssessmentList from '../screens/applications/services/assessment/oldassessmentList'
+import AssessmentTestList from '../screens/applications/services/assessment/assessmentTestList'
+import AssessmentList from '../screens/applications/services/assessment/assessmentList'
+import AssessmentOverView from '../screens/applications/services/assessment/assessmentoverview'
+import CandidateAssignmentsDeatilsTable from '../screens/applications/services/assessment/candidateassignmentsdetailstable'
 
 const Stack = createNativeStackNavigator()
 const Navigation: FC = () => {
@@ -63,6 +69,7 @@ const Navigation: FC = () => {
         <Stack.Screen name='JobDetailScreen' component={JobDetailScreen} options={{ animation: 'fade' }} />
         <Stack.Screen name='UserBottomTab' component={UserBottomTab} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
         <Stack.Screen name='ApplicantDetails' component={ApplicantDetails} options={{ animation: 'fade' }} />
+        <Stack.Screen name='Comments' component={CommentsScreen} options={{ animation: 'fade' }} />
         <Stack.Screen name='GetStartedScreen' component={GetStartedScreen} options={{
           animation: 'fade',
           headerShown: false,
@@ -78,6 +85,11 @@ const Navigation: FC = () => {
         <Stack.Screen name='Users' component={Users} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
         <Stack.Screen name='AssessmentScreen' component={AssessmentScreen} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
         <Stack.Screen name='VideoInterviewScreen' component={VideoInterviewScreen} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
+        <Stack.Screen name="OldAssessmentList" component={OldAssessmentList}/>
+         <Stack.Screen name="AssessmentTestList" component={AssessmentTestList}/>
+         <Stack.Screen name="AssessmentList" component={AssessmentList}/>
+         <Stack.Screen name="AssessmentOverView" component={AssessmentOverView}/>
+        <Stack.Screen name="CandidateAssignmentsDeatilsTable" component={CandidateAssignmentsDeatilsTable}/>
       </Stack.Navigator>
     </NavigationContainer>
   )

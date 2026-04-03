@@ -4,6 +4,7 @@ import { colors } from '../../../theme/colors';
 export const useStyles = () => {
     return StyleSheet.create({
         card: {
+            flex:1,
             padding: 16,
             gap: 12,
             marginBottom: 16
@@ -48,8 +49,8 @@ export const useStyles = () => {
         },
 
         avatar: {
-            width: 24,
-            height: 24,
+            width: 25,
+            height: 25,
             borderRadius: 18,
             borderWidth: 1,
             borderColor: '#00000014',

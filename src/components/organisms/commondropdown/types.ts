@@ -6,6 +6,7 @@ export interface CommonDropdownOption {
 
 export interface CommonDropdownProps {
   /** Placeholder shown when nothing is selected */
+  /** Placeholder shown when nothing is selected */
   placeholder: string;
   options: CommonDropdownOption[];
 
@@ -47,5 +48,17 @@ export interface CommonDropdownProps {
 
   /** Prefer opening list below the field */
   dropdownPosition?: 'auto' | 'top' | 'bottom';
+
+  /**
+   * Optional callback fired when the dropdown is opened (focus gained).
+   * Useful for lazy-loading options via Redux/Saga when the field is first used.
+   */
+  onOpen?: () => void;
+
+  /**
+   * Optional callback fired when the user scrolls to the end of the options list.
+   * Use for pagination: load next page of options (e.g. dispatch getUsersRequestAction(page + 1)).
+   */
+  onLoadMore?: () => void;
 }
 

@@ -1,5 +1,5 @@
 const linking = {
-  prefixes: ["candidhr://", "https://app.candidhr.ai"],
+  prefixes: ["candidhr://", "https://app.candidhr.ai", "https://googleqa.candidhr.ai"],
   config: {
     screens: {
       Dashboard: "dashboard",
