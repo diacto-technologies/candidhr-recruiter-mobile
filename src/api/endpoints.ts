@@ -74,8 +74,21 @@ export const API_ENDPOINTS = {
   },
   ASSESSMENTS: {
     LIST: "/assessments/v1/list/",
-    // Assigned assessments (filter endpoint)
-    ASSIGNEDLIST: "/assessments/v1/filter",
+    /** Candidate / assignment rows (filters like applicant_name__icontains, o=valid_to) */
+    ASSIGNED_FILTER: "/assessments/v1/filter",
+    // Tests library list
+    ASSIGNEDLIST: "/assessments/v2/tests/list/",
+    /** Assessment blueprints (company assessments library) */
+    BLUEPRINTS_LIST: "/assessments/v2/blueprints/list/",
+    BLUEPRINT_DETAIL: (id: string) => `/assessments/v2/blueprints/${id}/`,
+    /** GET ?blueprint_id=&o=-created_at */
+    ASSIGNMENTS_LIST: "/assessments/v2/assignments/list/",
+    /** GET ?blueprint_id= */
+    ASSIGNMENTS_STATS: "/assessments/v2/assignments/stats/",
+    /** POST body: select_all, assignment_ids, blueprint_id */
+    ASSIGNMENTS_EXPORT: "/assessments/v2/assignments/export/",
+    /** V2 assessments dashboard top stats */
+    ASSESSMENT_STATS: "/assessments/v2/dashboard-stats/",
   },
   PERSONALITY_SCREENING: {
     FILTER: "/personality-screening/filter/",

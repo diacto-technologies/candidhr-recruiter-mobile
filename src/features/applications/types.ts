@@ -225,6 +225,7 @@ export interface ResumeScore {
 ======================= */
 
 export interface ResumeData {
+  relevant_skills_evaluation: any[];
   id: string;
   resume_score: ResumeScore;
   updated_by: string | null;
@@ -439,6 +440,7 @@ export interface ResumeScreeningApiResponse {
 }
 
 export interface ResumeJson {
+  score_breakdown: any;
   name: string;
   emails: string[];
   skills: ResumeSkill[];

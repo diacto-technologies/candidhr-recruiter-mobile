@@ -86,9 +86,15 @@ export const getResumeScreeningResponsesFailure = (payload: string) => ({
 });
 
 
-export const getAssessmentLogsRequestAction = (applicationId: string) => ({
+export const getAssessmentLogsRequestAction = (stageId: string) => ({
   type: APPLICATIONS_ACTION_TYPES.GET_ASSESSMENT_LOGS_REQUEST,
-  payload: applicationId,
+  payload: stageId,
+});
+
+/** Sessions API expects `stage_id` query param — fetch several stages and merge in saga. */
+export const getAssessmentLogsBatchRequestAction = (stageIds: string[]) => ({
+  type: APPLICATIONS_ACTION_TYPES.GET_ASSESSMENT_LOGS_BATCH_REQUEST,
+  payload: stageIds,
 });
 
 export const getAssessmentLogsSuccess = (payload: AssessmentLog[]) => ({

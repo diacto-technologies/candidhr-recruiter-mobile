@@ -48,35 +48,28 @@ export default function ResumeScreening() {
 
   const isReviewed = assessmentLogs?.[0]?.session_status === 'reviewed';
   const matchedSkills =
-    application?.resume?.skills_matched?.map((item: any) =>
-      typeof item === "string" ? item : item?.name
-    ) ?? [];
+    application?.resume?.skills_matched
+      ?.map((item: any) => item?.matched_candidate_skill_name)
+      ?.filter((val: any) => typeof val === "string" && val.length > 0) ?? [];
 
   const skills: SkillScoreItem[] =
-    application?.resume?.skills?.map((skill: any) => {
-      const skillName = skill?.name ?? "_";
+    application?.resume?.skills?.map((skill: any) => ({
+      title: skill?.name ?? "_",
+      value: `${Number(skill?.relevance_score ?? 0) * 10}%`,
+      matched: Boolean(skill?.breakdown?.is_match),
+      proficiencyLevel: skill?.breakdown?.proficiency_level,
+      proficiencyEvidence: skill?.breakdown?.proficiency_evidence,
+    })) ?? [];
 
-      const isMatched = matchedSkills.some(
-        (matched: string) =>
-          matched.includes(skillName)
-      );
-
-      return {
-        title: skillName,
-        value: `${Number(skill?.relevance_score ?? 0) * 10}%`,
-        matched: isMatched,
-      };
-    }) ?? [];
-
-  const calculateOverallSkillScore = (skills: ResumeSkill[] = []) => {
+  const calculateOverallSkillScore = (skills: any[] = []) => {
     if (!skills.length) return 0;
 
     const total = skills.reduce(
-      (sum, skill) => sum + Number(skill?.relevance_score ?? 0),
+      (sum, skill) => sum + Number(skill?.proficiency_score ?? 0),
       0
     );
 
-    return Math.round((total / skills.length) * 10);
+    return Math.round((total / skills.length) * 10); // convert to %
   };
 
   const resumeStage = useMemo(
@@ -150,7 +143,7 @@ export default function ResumeScreening() {
           }}
         />
 
-        <Card style={{ gap: 4,flex:1, width:'100%' }}>
+        <Card style={{ gap: 4, flex: 1, width: '100%' }}>
           <Typography variant="regularTxtxs" style={{ backgroundColor: colors?.brand['200'], borderTopEndRadius: 12, borderTopStartRadius: 12, padding: 5 }} numberOfLines={2}>
             Stage was {resumeScreeningStatus} by{" "}
             {stages?.find(s => s.stage_type === "resume_screening")?.reviewed_by?.name ??
@@ -261,31 +254,41 @@ export default function ResumeScreening() {
               title: "Skill",
               percentage: `${Number(application?.job?.score_weight?.skills ?? 0) * 100}%`,
               value: application?.resume?.resume_score?.skills_score ?? "_",
-              completed: Number(application?.resume?.resume_score?.skills_score ?? 0) >= 1,
+              completed:
+                (Number(application?.resume?.resume_score?.skills_score ?? 0) / 3) * 100 >=
+                Number(application?.job?.score_weight?.skills ?? 0) * 100,
             },
             {
               title: "Experience",
               percentage: `${Number(application?.job?.score_weight?.work_experience ?? 0) * 100}%`,
               value: application?.resume?.resume_score?.work_exp_score ?? "_",
-              completed: Number(application?.resume?.resume_score?.work_exp_score ?? 0) >= 1,
+              completed:
+                (Number(application?.resume?.resume_score?.work_exp_score ?? 0) / 3) * 100 >=
+                Number(application?.job?.score_weight?.work_experience ?? 0) * 100,
             },
             {
               title: "Projects",
               percentage: `${Number(application?.job?.score_weight?.projects ?? 0) * 100}%`,
               value: application?.resume?.resume_score?.projects_score ?? "_",
-              completed: Number(application?.resume?.resume_score?.projects_score ?? 0) >= 1,
+              completed:
+                (Number(application?.resume?.resume_score?.projects_score ?? 0) / 2) * 100 >=
+                Number(application?.job?.score_weight?.projects ?? 0) * 100,
             },
             {
               title: "Education",
               percentage: `${Number(application?.job?.score_weight?.education ?? 0) * 100}%`,
               value: application?.resume?.resume_score?.education_score ?? "_",
-              completed: Number(application?.resume?.resume_score?.education_score ?? 0) >= 1,
+              completed:
+                (Number(application?.resume?.resume_score?.education_score ?? 0) / 1) * 100 >=
+                Number(application?.job?.score_weight?.education ?? 0) * 100,
             },
             {
               title: "Certification",
               percentage: `${Number(application?.job?.score_weight?.certifications ?? 0) * 100}%`,
               value: application?.resume?.resume_score?.certifications_score ?? "_",
-              completed: Number(application?.resume?.resume_score?.certifications_score ?? 0) >= 1,
+              completed:
+              (Number(application?.resume?.resume_score?.certifications_score ?? 0) / 1) * 100 >=
+              Number(application?.job?.score_weight?.certifications ?? 0) * 100,        
             },
           ]}
         />
@@ -294,10 +297,10 @@ export default function ResumeScreening() {
           title="Skills"
           isloading={loading}
           overall={String(calculateOverallSkillScore(
-            application?.resume?.skills ?? []
+            application?.resume?.resume_json?.score_breakdown?.skills_detail?.relevant_skills_evaluation ?? []
           ))}
           status={String(getSkillStatus(calculateOverallSkillScore(
-            application?.resume?.skills ?? []
+            application?.resume?.resume_json?.score_breakdown?.skills_detail?.relevant_skills_evaluation ?? []
           )))}
           data={skills}
         />

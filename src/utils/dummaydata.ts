@@ -22,6 +22,7 @@ export const jobFiltersOption = [
     'Created By',
 ]
 export const assessmentAssignedData = [
+    'Sort',
     'Applicant',
     'Email',
     'Job Title',

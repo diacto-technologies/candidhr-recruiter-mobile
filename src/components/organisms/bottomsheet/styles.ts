@@ -36,14 +36,32 @@ export const useStyles = () => {
       backgroundColor: 'transparent',
       flex: 1,
     },
+    modalRoot: {
+      flex: 1,
+      justifyContent: 'flex-end',
+      backgroundColor: 'rgba(0,0,0,0.1)',
+    },
     sheetContainer: {
+      alignSelf: 'stretch',
       backgroundColor: colors.common.white,
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
       overflow: 'hidden',
-      marginHorizontal:6,
-      borderBottomLeftRadius:20,
-      borderBottomRightRadius:20,
+      marginHorizontal: 6,
+      borderBottomLeftRadius: 20,
+      borderBottomRightRadius: 20,
+    },
+    topSection: {
+      marginTop: 5,
+      paddingTop: 10,
+      gap: 16,
+    },
+    dragHandle: {
+      width: 35,
+      height: 5,
+      borderRadius: 5,
+      backgroundColor: '#ccc',
+      alignSelf: 'center',
     },
     subTitle: {
       fontSize: 16,
@@ -52,11 +70,15 @@ export const useStyles = () => {
     touchableMask: {
       flex: 1,
     },
+    clearAllWrap: {
+      flex: 1,
+      alignItems: 'flex-end',
+    },
 
     wrapper: {
       backgroundColor: '#00000077',
       flex: 1,
     },
-    closeIcon: { flex: 1, backgroundColor:'rgba(0,0,0,0.1)', marginBottom:20}
+    closeIcon: { flex: 1, backgroundColor: 'rgba(0,0,0,0.1)' },
   });
 };

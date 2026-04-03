@@ -22,6 +22,7 @@ import DeviceInfo from 'react-native-device-info';
 import BackgroundPattern from '../../../components/atoms/backgroundpattern';
 import { Illustrations } from '../../../assets/svg/illustrations';
 import { SvgXml } from 'react-native-svg';
+import { screenHeight } from '../../../utils/devicelayout';
 
 const SKELETON_ROWS = 20;
 
@@ -335,8 +336,7 @@ const ApplicantScreen = () => {
         onClose={() => setFilterSheet(false)}
         onClearAll={() => handleClearAllFilters()}
         title="Filter by"
-        showHeadline
-      >
+        showHeadline hight={screenHeight* 0.8}      >
         <FilterSheetContent
           onCancel={() => setFilterSheet(false)}
           onApply={() => handleApplyFilters()}

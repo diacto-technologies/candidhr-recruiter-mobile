@@ -1,20 +1,17 @@
-import React, { useEffect, useState, useMemo, SetStateAction } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../../../hooks/useAppSelector';
 import {
-  getAssessmentLogsRequestAction,
   getAssessmentOptionsReportRequestAction,
   exportAssessmentReportRequestAction,
-  getAssessmentReportRequestAction,
   getPerformanceReportRequestAction,
   markSessionAsReviewedRequestAction,
 } from '../../../../../features/applications/actions';
 import {
   selectApplicationStages,
   selectAssessmentLogs,
-  selectAssessmentReport,
   selectSelectedApplication,
   selectMarkSessionReviewedLoading,
   selectPerformanceReport,
@@ -22,6 +19,7 @@ import {
   selectAssessmentOptionsLoading,
   selectExportAssessmentReportLoading,
 } from '../../../../../features/applications/selectors';
+import type { RootState } from '../../../../../store';
 import { formatMonDDYYYY } from '../../../../../utils/dateformatter';
 import Dropdown from '../../../../../components/organisms/dropdown';
 import Typography from '../../../../../components/atoms/typography';
@@ -52,22 +50,53 @@ interface TimelineItem {
   status: 'completed' | 'current';
 }
 
-const AssessmentV2 = () => {
+const normalizeContentType = (v: unknown) =>
+  String(v ?? '')
+    .toLowerCase()
+    .trim()
+    .replace(/[\s-]+/g, '_');
+
+type AssessmentV2Props = {
+  sessionContentId: string | null;
+  onSessionContentIdChange: (id: string | null) => void;
+  selectedAssignmentId: string | null;
+  onSelectedAssignmentIdChange: (id: string | null) => void;
+};
+
+const AssessmentV2 = ({
+  sessionContentId,
+  onSessionContentIdChange,
+  selectedAssignmentId,
+  onSelectedAssignmentIdChange,
+}: AssessmentV2Props) => {
   const styles = useStyles();
   const assessmentDetailsStyles = useAssessmentDetailsStyles();
-  const [session, setSelectedSession] = useState<string | null>(null);
-  const [selectedAssignment, setSelectedAssignment] = useState<string | null>(null);
   const [selectedStageStatus, setSelectedStageStatus] = useState<string | null>(null);
   const dispatch = useAppDispatch();
   const application = useAppSelector(selectSelectedApplication);
   const applicationId = application?.id ?? null;
   const assessmentLogs = useAppSelector(selectAssessmentLogs);
+  const assessmentOptionsAppId = useAppSelector(
+    (state: RootState) => state.applications.assessmentOptionsApplicationId ?? null
+  );
+  const filteredV2Logs = useMemo(() => {
+    const logs = assessmentLogs ?? [];
+    return logs.filter(
+      (l) => normalizeContentType(l?.content_type) === 'assessment_v2'
+    );
+  }, [assessmentLogs]);
   const performanceReport = useAppSelector(selectPerformanceReport);
   const stages = useAppSelector(selectApplicationStages);
   const loadingMarkReviewed = useAppSelector(selectMarkSessionReviewedLoading);
   const assessmentOptions = useAppSelector(selectAssessmentOptions);
   const loadingOptions = useAppSelector(selectAssessmentOptionsLoading);
   const loadingExportReport = useAppSelector(selectExportAssessmentReportLoading);
+
+  const questions: any[] = performanceReport?.question_analysis?.questions ?? [];
+  const hasQuestions = questions.some((q) => q?.question_type !== "coding");
+  const hasCoding = questions.some((q) => q?.question_type === "coding");
+  const shouldShowEmptyState = !performanceReport || (!hasQuestions && !hasCoding);
+
   const strengthsWeaknesses = (performanceReport as any)?.strengths_weaknesses as
     | StrengthsWeaknesses
     | undefined;
@@ -78,43 +107,64 @@ const AssessmentV2 = () => {
       setSelectedStageStatus(stageStatus);
     }
   }, [stages]);
+
   useEffect(() => {
-    if (!assessmentLogs?.length) {
-      setSelectedSession(null);
+    if (!filteredV2Logs?.length) {
+      onSessionContentIdChange(null);
       return;
     }
-  
-    const currentExists = assessmentLogs.some(
-      (item) => item.content_id === session
+
+    const currentExists = filteredV2Logs.some(
+      (item) => item.content_id === sessionContentId
     );
-  
-    if (!session || !currentExists) {
-      setSelectedSession(assessmentLogs[0]?.content_id ?? null);
-    }
-  }, [assessmentLogs, session]);
 
-  useEffect(() => {
-    if (assessmentOptions?.length) {
-      setSelectedAssignment(assessmentOptions[0]?.id);
+    if (!sessionContentId || !currentExists) {
+      onSessionContentIdChange(filteredV2Logs[0]?.content_id ?? null);
     }
-  }, [assessmentOptions]);
+  }, [filteredV2Logs, sessionContentId, onSessionContentIdChange]);
 
-  useEffect(() => {
-    if (selectedAssignment) {
-      dispatch(getPerformanceReportRequestAction(selectedAssignment));
-    }
-  }, [selectedAssignment,dispatch]);
-
+  /** Load assignment list once per application (avoids clearing options on every tab visit). */
   useEffect(() => {
     if (!applicationId) return;
-  
+    if (
+      assessmentOptionsAppId === applicationId &&
+      assessmentOptions.length > 0
+    ) {
+      return;
+    }
     dispatch(
       getAssessmentOptionsReportRequestAction({
         application_id: applicationId,
         page: 1,
       })
     );
-  }, [applicationId,dispatch]);
+  }, [applicationId, assessmentOptionsAppId, assessmentOptions.length, dispatch]);
+
+  /** Keep selected assignment valid when options load; preserve parent state on tab return. */
+  useEffect(() => {
+    if (!assessmentOptions?.length) return;
+    const exists = assessmentOptions.some((o) => o.id === selectedAssignmentId);
+    if (!selectedAssignmentId || !exists) {
+      onSelectedAssignmentIdChange(assessmentOptions[0]?.id ?? null);
+    }
+  }, [
+    assessmentOptions,
+    selectedAssignmentId,
+    onSelectedAssignmentIdChange,
+  ]);
+
+  const reportMatchesAssignment = useMemo(() => {
+    if (!selectedAssignmentId || !performanceReport) return false;
+    return (
+      performanceReport.assessment_info?.assignment_id === selectedAssignmentId
+    );
+  }, [selectedAssignmentId, performanceReport]);
+
+  useEffect(() => {
+    if (!selectedAssignmentId) return;
+    if (reportMatchesAssignment) return;
+    dispatch(getPerformanceReportRequestAction(selectedAssignmentId));
+  }, [selectedAssignmentId, dispatch, reportMatchesAssignment]);
 
 
 
@@ -128,8 +178,9 @@ const AssessmentV2 = () => {
   // Map status_text to STATUS_OPTIONS id format
 
   const currentSessionLog = useMemo(
-    () => assessmentLogs?.find((item) => item.content_id === session) ?? null,
-    [assessmentLogs, session]
+    () =>
+      filteredV2Logs?.find((item) => item.content_id === sessionContentId) ?? null,
+    [filteredV2Logs, sessionContentId]
   );
   const isReviewed = currentSessionLog?.session_status === 'reviewed';
 
@@ -159,14 +210,16 @@ const AssessmentV2 = () => {
 
   // Get current status id from selected session
   const currentStatusId = useMemo(() => {
-    if (session && assessmentLogs?.length) {
-      const currentSession = assessmentLogs.find(item => item.content_id === session);
+    if (sessionContentId && filteredV2Logs?.length) {
+      const currentSession = filteredV2Logs.find(
+        (item) => item.content_id === sessionContentId
+      );
       if (currentSession?.status_text) {
         return mapStatusTextToId(currentSession.status_text);
       }
     }
     return '';
-  }, [session, assessmentLogs]);
+  }, [sessionContentId, filteredV2Logs]);
 
   const assessmentStatus =
     stages?.find(stage => stage.stage_type === "assessment_v2")?.status
@@ -272,55 +325,55 @@ const AssessmentV2 = () => {
             <Dropdown
               label="Session"
               dropdownLabel="Session"
-              options={assessmentLogs?.map((item, index) => ({
+              options={filteredV2Logs?.map((item, index) => ({
                 id: item.content_id,
                 name: `Session`,
-                status: item?.session_status ?? "—",
+                status_text: item?.session_status ?? "—",
                 raw: item,
               })) ?? []}
-              setValue={session ?? undefined}
+              setValue={sessionContentId ?? ''}
               statusKey="status_text"
               labelKey="name"
               valueKey="id"
-              onSelect={item => setSelectedSession(item?.id)}
+              onSelect={item => onSessionContentIdChange(item?.id ?? null)}
               onChangeText={() => { }}
             />
             <View style={styles.reviewRow}>
               <Typography variant="regularTxtxs" style={{ flex: 1 }}>
-                {assessmentLogs
-                  ?.find(item => item.content_id === session)
+                {filteredV2Logs
+                  ?.find(item => item.content_id === sessionContentId)
                   ?.action_taken_by?.name ? (
                   <>
                     Reviewed by{" "}
                     {
-                      assessmentLogs.find(item => item.content_id === session)
+                      filteredV2Logs.find(item => item.content_id === sessionContentId)
                         ?.action_taken_by?.name
                     }{" "}
                     ·{" "}
                     {formatMonDDYYYY(
-                      assessmentLogs.find(item => item.content_id === session)
+                      filteredV2Logs.find(item => item.content_id === sessionContentId)
                         ?.action_taken_at,
                       "DD MMM YYYY HH:mm",
                       "IST"
                     )}
                   </>
-                ) : assessmentLogs?.find(item => item.content_id === session)
+                ) : filteredV2Logs?.find(item => item.content_id === sessionContentId)
                   ?.workflow_status_updated_at ? (
                   <>
                     Reviewed by Workflow ·{" "}
                     {formatMonDDYYYY(
-                      assessmentLogs.find(item => item.content_id === session)
+                      filteredV2Logs.find(item => item.content_id === sessionContentId)
                         ?.workflow_status_updated_at,
                       "DD MMM YYYY HH:mm",
                       "IST"
                     )}
                   </>
-                ) : assessmentLogs?.find(item => item.content_id === session)
+                ) : filteredV2Logs?.find(item => item.content_id === sessionContentId)
                   ?.updated_at ? (
                   <>
                     ·{" "}
                     {formatMonDDYYYY(
-                      assessmentLogs.find(item => item.content_id === session)
+                      filteredV2Logs.find(item => item.content_id === sessionContentId)
                         ?.updated_at,
                       "DD MMM YYYY HH:mm",
                       "IST"
@@ -362,12 +415,12 @@ const AssessmentV2 = () => {
         {/* <View style={styles.shortListedCard}>
         <View style={styles.rowBetween}>
           <View style={styles.row}>
-            <View style={[styles.statusDot, { backgroundColor: getStatusColor(assessmentLogs?.find(item => item.content_id === session)?.status_text ?? "_") }]} />
+            <View style={[styles.statusDot, { backgroundColor: getStatusColor(filteredV2Logs?.find(item => item.content_id === sessionContentId)?.status_text ?? "_") }]} />
             <Typography
               variant="mediumTxtmd"
               color={colors.gray[900]}
             >
-              Status {assessmentLogs?.find(item => item.content_id === session)?.status_text ?? "_"}
+              Status {filteredV2Logs?.find(item => item.content_id === sessionContentId)?.status_text ?? "_"}
             </Typography>
           </View>
           <SvgXml xml={arrowDown} />
@@ -377,7 +430,7 @@ const AssessmentV2 = () => {
 
       <AssessmentReportsCard
         count={assessmentOptions?.length ?? 0}
-        selectedItem={selectedAssignment}
+        selectedItem={selectedAssignmentId}
         options={
           assessmentOptions?.map((item) => ({
             id: item.id,
@@ -386,26 +439,27 @@ const AssessmentV2 = () => {
             status: item.status,
           })) || []
         }
-        onSelect={(item: { id: SetStateAction<string>; }) => {
-          setSelectedAssignment(item.id);
+        onSelect={(item) => {
+          onSelectedAssignmentIdChange(item.id);
         }}
         onRefresh={() => {
+          if (!applicationId) return;
           dispatch(
             getAssessmentOptionsReportRequestAction({
-              application_id: selectedAssignment,
+              application_id: applicationId,
               page: 1,
             }),
           );
         }}
         onExport={() => {
-          if (!selectedAssignment) {
+          if (!selectedAssignmentId) {
             showToastMessage("Please select an assignment to export", "error");
             return;
           }
           dispatch(
             exportAssessmentReportRequestAction({
               select_all: false,
-              assignment_ids: [selectedAssignment],
+              assignment_ids: [selectedAssignmentId],
             })
           );
         }}
@@ -413,7 +467,9 @@ const AssessmentV2 = () => {
         exporting={loadingExportReport}
       />
 
-      <CustomTimeline progress={progress} data={timelineData} />
+      {!shouldShowEmptyState && (
+        <CustomTimeline progress={progress} data={timelineData} />
+      )}
 
       <AssessmentsDetailsV2 />
       <ProctoringCard

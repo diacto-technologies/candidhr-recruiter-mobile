@@ -52,7 +52,7 @@ export default function ProctoringCard({ proctoring, styles }: Props) {
           <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
             Integrity Score
           </Typography>
-          <Typography variant="regularTxtsm" color={colors.success[700]}>
+          <Typography variant="regularTxtsm" color={colors.gray[600]}>
             {String(proctoring?.integrity_status ?? "").trim() || "—"}
           </Typography>
           <Typography variant="regularTxtsm" color={colors.gray[600]}>

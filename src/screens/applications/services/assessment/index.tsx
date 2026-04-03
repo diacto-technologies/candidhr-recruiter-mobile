@@ -1,391 +1,240 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { View, FlatList, StyleSheet } from 'react-native'
-import { SvgXml } from 'react-native-svg'
-
-import CustomSafeAreaView from '../../../../components/atoms/customsafeareaview'
-import Header from '../../../../components/organisms/header'
-import SlideAnimatedTab from '../../../../components/molecules/slideanimatedtab'
-import FooterButtons from '../../../../components/molecules/footerbuttons'
-import AssessmentCard from '../../../../components/molecules/assessmentcard'
-import AssignedAssessmentCard, { AssignedAssessmentCardShimmer } from '../../../../components/molecules/assignedAssessmentCard'
-import PrebuildAssessmentCard from '../../../../components/molecules/assessmentprebuild'
-import BottomSheet from '../../../../components/organisms/bottomsheet'
-import FilterSheetContent from '../../../../components/organisms/filtersheetcontent'
-import SortingAndFilter from '../../../../components/organisms/sortingandfilter'
-import Shimmer from '../../../../components/atoms/shimmer'
-import Card from '../../../../components/atoms/card'
-
-import { assignedUserIcon } from '../../../../assets/svg/assigneduser'
-import { plusIcon } from '../../../../assets/svg/plus'
-import { colors } from '../../../../theme/colors'
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  assessmentAssignedData,
-} from '../../../../utils/dummaydata'
-import { goBack } from '../../../../utils/navigationUtils'
-import { useRNSafeAreaInsets } from '../../../../hooks/useRNSafeAreaInsets'
-import { useAppDispatch } from '../../../../hooks/useAppDispatch'
-import { useAppSelector } from '../../../../hooks/useAppSelector'
-import { getAssessmentsRequestAction, getAssessmentsAssignedRequestAction } from '../../../../features/assessments/actions'
-import {
-  selectAssessments,
-  selectAssessmentsLoading,
-  selectAssessmentsHasMore,
-  selectAssessmentsPagination,
-  selectAssignedAssessments,
-  selectAssignedAssessmentFilters,
-  selectAssignedAssessmentsLoading,
-  selectAssignedAssessmentsHasMore,
-  selectAssignedAssessmentsPagination,
-} from '../../../../features/assessments/selectors'
-import type { Assessment, AssignedAssessment } from '../../../../features/assessments/types'
-import { useStyles } from './styles'
-import { clearAssignedAssessmentFilters } from '../../../../features/assessments/slice'
+  View,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
 
+import StatCard from '../../../../components/molecules/statcard';
+import CustomSafeAreaView from '../../../../components/atoms/customsafeareaview';
+import Card from '../../../../components/atoms/card';
+import Typography from '../../../../components/atoms/typography';
+import { goBack, navigate } from '../../../../utils/navigationUtils';
+import Header from '../../../../components/organisms/header';
+import { assessmentsApi } from '../../../../features/assessments/api';
+import type { AssessmentDashboardStats } from '../../../../features/assessments/types';
+import { useRNSafeAreaInsets } from '../../../../hooks/useRNSafeAreaInsets';
 
-const ASSESSMENT_TABS = ['My company', 'Prebuild', 'Assigned'] as const
-type AssessmentTab = (typeof ASSESSMENT_TABS)[number]
-const TAB_KEYS = {
-  MY_COMPANY: 'My company',
-  PREBUILD: 'Prebuild',
-  ASSIGNED: 'Assigned',
-} as const
-const PAGINATION = { END_REACHED_THRESHOLD: 0.3, INITIAL_PAGE: 1 } as const
-const SHIMMER_COUNTS = { EMPTY_LIST: 5, FOOTER: 2 } as const
+const quickActions = [
+  { title: 'Create Assessment', desc: 'Build a reusable assessment template' },
+  { title: 'Browse Assessments', desc: 'View and manage assessment templates', onPress: () => navigate('AssessmentList')},
+  { title: 'Create Test', desc: 'Send assessments to candidates' },
+  { title: 'Browse Tests', desc: 'Track and manage assignments', onPress: () => navigate('AssessmentTestList') },
+];
 
-type FilterOption = (typeof assessmentAssignedData)[number] | null
+const whatsNew = [
+  { title: 'Sections with per-section instructions', desc: 'Organize assessments into logical sections with custom instructions' },
+  { title: 'Question navigation with master timer', desc: 'Allow candidates to navigate freely while tracking overall time' },
+  { title: 'Advanced assignment configuration', desc: 'Set time limits, validity periods, and attempt requirements' },
+  { title: 'Section-aware reporting', desc: 'Get detailed insights with section-level analytics and exports' },
+];
 
-const tabPanelStyle = (visible: boolean) => ({
-  ...StyleSheet.absoluteFillObject,
-  opacity: visible ? 1 : 0,
-  pointerEvents: visible ? ('auto' as const) : ('none' as const),
-})
-
-const getFooterButtonProps = () => ({
-  left: {
-    children: 'Assign' as const,
-    variant: 'contain' as const,
-    size: 44,
-    buttonColor: colors.base.white,
-    textColor: colors.gray[700],
-    borderColor: colors.gray[300],
-    borderWidth: 1,
-    borderRadius: 8,
-    borderGradientOpacity: 0.25,
-    shadowColor: colors.gray[700],
-    onPress: () => {},
-    startIcon: <SvgXml xml={assignedUserIcon} />,
-  },
-  right: {
-    children: 'Create' as const,
-    variant: 'contain' as const,
-    size: 44,
-    borderWidth: 1,
-    buttonColor: colors.brand[600],
-    textColor: colors.base.white,
-    borderColor: colors.base.white,
-    borderRadius: 8,
-    onPress: () => {},
-    startIcon: <SvgXml xml={plusIcon} />,
-  },
-})
-
-const ASSIGNED_FOOTER_STYLE = {
-  paddingBottom: 12,
-  elevation: 10,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.25,
-  shadowRadius: 3,
-} as const
-
-const AssessmentCardShimmer: React.FC = () => (
-  <Card style={{ marginBottom: 12, padding: 16 }}>
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-      <Shimmer width="70%" height={18} borderRadius={6} />
-      <Shimmer width={20} height={20} borderRadius={6} />
-    </View>
-    <Shimmer width="55%" height={14} borderRadius={6} style={{ marginBottom: 12 }} />
-    <View style={{ flexDirection: 'row', marginBottom: 12 }}>
-      <Shimmer width="45%" height={14} borderRadius={6} />
-      <View style={{ width: 10 }} />
-      <Shimmer width="40%" height={14} borderRadius={6} />
-    </View>
-    <View style={{ height: 1, backgroundColor: colors.gray[200], marginVertical: 8 }} />
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Shimmer width={32} height={32} borderRadius={16} />
-        <Shimmer width={48} height={14} borderRadius={6} style={{ marginLeft: 8, alignSelf: 'center' }} />
-      </View>
-      <Shimmer width={64} height={20} borderRadius={6} />
-    </View>
-  </Card>
-)
-
-const AssessmentScreen: React.FC = () => {
-  const styles = useStyles()
-  const insets = useRNSafeAreaInsets()
-  const dispatch = useAppDispatch()
-
-  const [activeTab, setActiveTab] = useState<AssessmentTab>(TAB_KEYS.MY_COMPANY)
-  const [filterSheetOpen, setFilterSheetOpen] = useState(false)
-  const [selectedFilter, setSelectedFilter] = useState<FilterOption>(null)
-
-  const assessmentsList = useAppSelector(selectAssessments)
-  const loading = useAppSelector(selectAssessmentsLoading)
-  const hasMore = useAppSelector(selectAssessmentsHasMore)
-  const pagination = useAppSelector(selectAssessmentsPagination)
-
-  const assignedAssessments = useAppSelector(selectAssignedAssessments)
-  const assignedFilters = useAppSelector(selectAssignedAssessmentFilters)
-  const assignedLoading = useAppSelector(selectAssignedAssessmentsLoading)
-  const assignedHasMore = useAppSelector(selectAssignedAssessmentsHasMore)
-  const assignedPagination = useAppSelector(selectAssignedAssessmentsPagination)
-
-  const isMyCompany = activeTab === TAB_KEYS.MY_COMPANY
-  const isAssigned = activeTab === TAB_KEYS.ASSIGNED
-  const isPrebuild = activeTab === TAB_KEYS.PREBUILD
-
-  const footerButtonProps = useMemo(getFooterButtonProps, [])
+const AssessmentScreen = () => {
+  const insets = useRNSafeAreaInsets();
+  const [assessmentStats, setAssessmentStats] =
+    useState<AssessmentDashboardStats | null>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
 
   useEffect(() => {
-    dispatch(getAssessmentsRequestAction({ page: PAGINATION.INITIAL_PAGE, append: false }))
-  }, [dispatch])
+    let isMounted = true;
 
-  useEffect(() => {
-    if (
-      isAssigned &&
-      !assignedLoading &&
-      assignedAssessments.length === 0
-    ) {
-      dispatch(
-        getAssessmentsAssignedRequestAction({
-          page: PAGINATION.INITIAL_PAGE,
-          append: false,
-          o: '-assigned_at',
-        })
-      )
-    }
-  }, [dispatch, isAssigned])
-  
+    (async () => {
+      try {
+        setLoadingStats(true);
+        const res = await assessmentsApi.getDashboardStats();
+        if (isMounted) {
+          setAssessmentStats(res.assessment_stats);
+        }
+      } catch {
+        // Keep UI usable even if stats fail.
+      } finally {
+        if (isMounted) setLoadingStats(false);
+      }
+    })();
 
-  const loadMoreMyCompany = useCallback(() => {
-    if (!hasMore || loading) return
-    dispatch(getAssessmentsRequestAction({ page: pagination.page + 1, append: true }))
-  }, [hasMore, loading, pagination.page, dispatch])
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
-  const handleClearFilters = useCallback(() => {
-    if (isAssigned) {
-      dispatch(clearAssignedAssessmentFilters())
-    }
-    setSelectedFilter(null)
-  }, [dispatch, isAssigned])
+  const statsData = useMemo(() => {
+    const placeholder = loadingStats ? '...' : '--';
+    const valueOrPlaceholder = (value?: number) =>
+      typeof value === 'number' ? String(value) : placeholder;
 
-  const handleApplyFilters = useCallback(() => {
-    if (isAssigned) {
-      dispatch(
-        getAssessmentsAssignedRequestAction({
-          page: PAGINATION.INITIAL_PAGE,
-          append: false,
-          o: '-assigned_at',
-          ...assignedFilters,
-        })
-      )
-    }
-    setFilterSheetOpen(false)
-  }, [dispatch, isAssigned, assignedFilters])
-  const handleOpenFilter = useCallback((item?: FilterOption) => {
-    if (item != null) setSelectedFilter(item)
-    setFilterSheetOpen(true)
-  }, [])
+    return [
+      {
+        title: 'Total Assessments',
+        value: valueOrPlaceholder(assessmentStats?.total_assessments),
+      },
+      { title: 'Active', value: valueOrPlaceholder(assessmentStats?.active) },
+      { title: 'Drafts', value: valueOrPlaceholder(assessmentStats?.drafts) },
+      {
+        title: 'Library Tests',
+        value: valueOrPlaceholder(assessmentStats?.library_tests),
+      },
+    ];
+  }, [assessmentStats, loadingStats]);
 
-  const renderMyCompanyItem = useCallback(
-    ({ item }: { item: Assessment }) => <AssessmentCard item={item} />,
-    []
-  )
-  const renderAssignedItem = useCallback(
-    ({ item }: { item: AssignedAssessment }) => (
-      console.log(item?.status_text,""),
-      <AssignedAssessmentCard
-        item={{
-          id: item.id,
-          name: item.application.name ?? '',
-          email: item.email,
-          job: item.job?.title ?? '',
-          assignedBy: item.assigned_by.name,
-          assignedDate: new Date(item.assigned_at).toLocaleDateString(),
-          status: item.status_text,
-          statusColor: undefined,
-          profile: item.assigned_by.profile_pic ?? '',
-          application_id:item?.application?.id
-        }}
+  const renderStatItem = ({ item }) => (
+    <View style={styles.statCard}>
+      <StatCard
+        title={item.title}
+        value={item.value}
+        percentage=""
+        subText=""
+        tooltipText=""
       />
-    ),
-    []
-  )
-
-  const renderMyCompanyListFooter = useCallback(() => {
-    if (!loading || assessmentsList.length === 0) return null
-    return (
-      <View style={{ paddingTop: 8 }}>
-        {Array.from({ length: SHIMMER_COUNTS.FOOTER }, (_, i) => (
-          // <AssessmentCardShimmer key={i} />
-          <Shimmer  height={12} borderRadius={6} key={i}/>
-        ))}
-      </View>
-    )
-  }, [loading, assessmentsList.length])
-
-  const renderMyCompanyListEmpty = useCallback(
-    () =>
-      !loading ? null : (
-        <View style={{ paddingTop: 8 }}>
-          {Array.from({ length: SHIMMER_COUNTS.EMPTY_LIST }, (_, i) => (
-            <AssessmentCardShimmer key={i} />
-          ))}
-        </View>
-      ),
-    [loading]
-  )
-
-  const renderAssignedListFooter = useCallback(() => {
-    if (!assignedLoading || assignedAssessments.length === 0) return null
-    return (
-      <View style={{ paddingTop: 8 }}>
-        {Array.from({ length: SHIMMER_COUNTS.FOOTER }, (_, i) => (
-          <AssignedAssessmentCardShimmer key={i} />
-        ))}
-      </View>
-    )
-  }, [assignedLoading, assignedAssessments.length])
-
-  const renderAssignedListEmpty = useCallback(
-    () =>
-      !assignedLoading ? null : (
-        <View style={{ paddingTop: 8 }}>
-          {Array.from({ length: SHIMMER_COUNTS.EMPTY_LIST }, (_, i) => (
-            <AssignedAssessmentCardShimmer key={i} />
-          ))}
-        </View>
-      ),
-    [assignedLoading]
-  )
-
-  const loadMoreAssigned = useCallback(() => {
-    if (!assignedHasMore || assignedLoading) return
-    const nextPage = (assignedPagination.page || 1) + 1
-
-    dispatch(
-      getAssessmentsAssignedRequestAction({
-        page: nextPage,
-        append: true,
-        o: '-assigned_at',
-        ...assignedFilters,
-      })
-    )
-  }, [assignedHasMore, assignedLoading, assignedPagination.page, dispatch, assignedFilters])
+    </View>
+  );
 
   return (
     <CustomSafeAreaView>
       <Header title="Assessments" backNavigation enableJobSearch onBack={goBack} />
+      <ScrollView showsVerticalScrollIndicator={false} style={{paddingHorizontal:16,flex:1,marginBottom:insets.insetsBottom}} bounces={false}>
 
-      <View style={{ flex: 1 }}>
-        <View>
-          <SlideAnimatedTab
-            tabs={[...ASSESSMENT_TABS]}
-            activeTab={activeTab}
-            onChangeTab={(label) => setActiveTab(label as AssessmentTab)}
-          />
-          <View style={styles.bottomBorder} />
-        </View>
-
-        <View style={{ flex: 1 }} collapsable={false}>
-          <View style={[tabPanelStyle(isMyCompany), { flex: 1 }]}>
-            <FlatList
-              data={assessmentsList}
-              keyExtractor={(item, index) => `${item.id}-${index}`}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ padding: 16 }}
-              onEndReached={loadMoreMyCompany}
-              onEndReachedThreshold={PAGINATION.END_REACHED_THRESHOLD}
-              ListFooterComponent={renderMyCompanyListFooter}
-              ListEmptyComponent={renderMyCompanyListEmpty}
-              renderItem={renderMyCompanyItem}
-            />
-          </View>
-          <View style={[tabPanelStyle(isPrebuild), { flex: 1 }]}>
-            <PrebuildAssessmentCard />
-          </View>
-          <View style={[tabPanelStyle(isAssigned), { flex: 1 }]}>
-            <FlatList
-              data={assignedAssessments}
-              keyExtractor={(item, index) => `${item.id}-${index}`}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ padding: 16 }}
-              onEndReached={loadMoreAssigned}
-              onEndReachedThreshold={PAGINATION.END_REACHED_THRESHOLD}
-              ListFooterComponent={renderAssignedListFooter}
-              ListEmptyComponent={renderAssignedListEmpty}
-              renderItem={renderAssignedItem}
-            />
-          </View>
-        </View>
-      </View>
-
-      {isMyCompany && (
-        <FooterButtons
-          leftButtonProps={footerButtonProps.left}
-          rightButtonProps={footerButtonProps.right}
+        {/* 🔹 Stats (TOP) */}
+        <FlatList
+          data={statsData}
+          renderItem={renderStatItem}
+          keyExtractor={(_, i) => i.toString()}
+          numColumns={2}
+          scrollEnabled={false}   // 👈 important
+          columnWrapperStyle={{ justifyContent: 'space-between' }}
+          contentContainerStyle={{ padding: 8 }}
         />
-      )}
 
-      {isAssigned && (
-        <View>
-          <FooterButtons
-            leftButtonProps={footerButtonProps.left}
-            rightButtonProps={footerButtonProps.right}
-            footerStyle={ASSIGNED_FOOTER_STYLE}
+        {/* 🔹 Quick Actions */}
+        <Card style={styles.sectionCard}>
+          <Typography variant="semiBoldTxtmd">
+            ✨ Quick Actions
+          </Typography>
+
+          <FlatList
+            data={quickActions}
+            numColumns={2}
+            scrollEnabled={false}
+            keyExtractor={(_, i) => i.toString()}
+            columnWrapperStyle={{ justifyContent: 'space-between' }}
+            renderItem={({ item }) => (
+              <TouchableOpacity style={styles.actionCard} onPress={item?.onPress}>
+                <Typography variant="semiBoldTxtsm">
+                  {item.title}
+                </Typography>
+                <Typography variant="regularTxtxs" style={styles.desc}>
+                  {item.desc}
+                </Typography>
+              </TouchableOpacity>
+            )}
           />
-          <View
-            style={{
-              marginBottom: insets.insetsBottom,
-              borderTopWidth: 1,
-              borderColor: colors.gray[200],
-            }}
-          >
-            <SortingAndFilter
-              title="Filters"
-              options={assessmentAssignedData}
-              onPressFilter={() => handleOpenFilter()}
-              selectedTab={selectedFilter ?? ''}
-              onItemPress={handleOpenFilter}
-              setSelectedTab={(tab) => setSelectedFilter(tab as FilterOption)}
-              containerStyle={{}}
-              chipStyle={{}}
-              activeChipStyle={{}}
-            />
-            <BottomSheet
-              visible={filterSheetOpen}
-              onClose={() => setFilterSheetOpen(false)}
-              title="Filter by"
-              showHeadline
-              onClearAll={handleClearFilters}
-            >
-              <FilterSheetContent
-                onCancel={() => setFilterSheetOpen(false)}
-                onApply={handleApplyFilters}
-                selectedTab={selectedFilter ?? ''}
-                setSelectedTab={(tab) => setSelectedFilter(tab as FilterOption)}
-                filtersConfig={assessmentAssignedData}
-                onClearAll={handleClearFilters}
-                job_Id={undefined}
-                mode="assessments"
-              />
-            </BottomSheet>
-          </View>
-        </View>
-      )}
-    </CustomSafeAreaView>
-  )
-}
+        </Card>
 
-export default AssessmentScreen
+        {/* 🔹 What's New */}
+        <Card style={styles.sectionCard}>
+          <Typography variant="semiBoldTxtmd">
+            ✔ What's New in V2
+          </Typography>
+
+          {whatsNew.map((item, index) => (
+            <View key={index} style={styles.infoCard}>
+              <Typography variant="semiBoldTxtsm">
+                {item.title}
+              </Typography>
+              <Typography variant="regularTxtxs" style={styles.desc}>
+                {item.desc}
+              </Typography>
+            </View>
+          ))}
+        </Card>
+
+        {/* 🔹 Reports */}
+        <View style={styles.reportCard}>
+          <Typography variant="semiBoldTxtsm" style={styles.reportTitle}>
+            V1 Assigned Reports
+          </Typography>
+
+          <Typography variant="regularTxtxs" style={styles.reportDesc}>
+            View assigned assessment records from the legacy system.
+          </Typography>
+
+          <TouchableOpacity style={styles.reportBtn} onPress={() => navigate('OldAssessmentList')}>
+            <Typography variant="semiBoldTxtxs">
+              View V1 Reports
+            </Typography>
+          </TouchableOpacity>
+        </View>
+
+      </ScrollView>
+
+    </CustomSafeAreaView>
+  );
+};
+
+export default AssessmentScreen;
+
+const styles = StyleSheet.create({
+  statCard: {
+    flex: 1,
+    margin:6
+  },
+
+  sectionCard: {
+    padding: 16,
+    marginTop: 10,
+  },
+
+  actionCard: {
+    width: '48%',
+    backgroundColor: '#F9FAFB',
+    padding: 12,
+    borderRadius: 10,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+
+  infoCard: {
+    backgroundColor: '#F9FAFB',
+    padding: 12,
+    borderRadius: 10,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+
+  desc: {
+    marginTop: 4,
+    color: '#6B7280',
+  },
+
+  reportCard: {
+    marginTop: 12,
+    marginHorizontal: 8,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+    backgroundColor: '#FFFBEB',
+  },
+
+  reportTitle: {
+    color: '#92400E',
+  },
+
+  reportDesc: {
+    marginTop: 4,
+    marginBottom: 10,
+    color: '#92400E',
+  },
+
+  reportBtn: {
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+});

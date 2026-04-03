@@ -6,7 +6,11 @@ const selectJobsState = (state: RootState) => state.jobs;
 export const selectJobs = createSelector(
   [selectJobsState],
   (jobs) =>
-    jobs.activeTab === "Published" ? jobs.publishedJobs : jobs.unpublishedJobs
+    jobs.activeTab === "Published"
+      ? jobs.publishedJobs
+      : jobs.activeTab === "Favourites"
+        ? jobs.favouriteJobs
+        : jobs.unpublishedJobs
 );
 
 export const selectSelectedJob = createSelector(
@@ -24,7 +28,9 @@ export const selectJobsListLoading = createSelector(
   (jobs) =>
     jobs.activeTab === "Published"
       ? jobs.publishedListLoading
-      : jobs.unpublishedListLoading
+      : jobs.activeTab === "Favourites"
+        ? jobs.favouritesListLoading
+        : jobs.unpublishedListLoading
 );
 
 export const selectJobsError = createSelector(
@@ -37,13 +43,19 @@ export const selectJobsPagination = createSelector(
   (jobs) =>
     jobs.activeTab === "Published"
       ? jobs.publishedPagination
-      : jobs.unpublishedPagination
+      : jobs.activeTab === "Favourites"
+        ? jobs.favouritesPagination
+        : jobs.unpublishedPagination
 );
 
 export const selectJobsHasMore = createSelector(
   [selectJobsState],
   (jobs) =>
-    jobs.activeTab === "Published" ? jobs.publishedHasMore : jobs.unpublishedHasMore
+    jobs.activeTab === "Published"
+      ? jobs.publishedHasMore
+      : jobs.activeTab === "Favourites"
+        ? jobs.favouritesHasMore
+        : jobs.unpublishedHasMore
 );
 
 export const selectPublishedCount = createSelector(
@@ -54,6 +66,16 @@ export const selectPublishedCount = createSelector(
 export const selectUnpublishedCount = createSelector(
   [selectJobsState],
   (jobs) => jobs.unpublishedCount
+);
+
+export const selectFavouritesCount = createSelector(
+  [selectJobsState],
+  (jobs) => jobs.favouritesCount
+);
+
+export const selectFavouriteJobIds = createSelector(
+  [selectJobsState],
+  (jobs) => jobs.favouriteJobIds
 );
 
 export const selectJobFilters = createSelector(
@@ -82,7 +104,9 @@ export const selectIsTabLoading = createSelector(
   (jobs) =>
     jobs.activeTab === "Published"
       ? jobs.publishedIsTabLoading
-      : jobs.unpublishedIsTabLoading
+      : jobs.activeTab === "Favourites"
+        ? jobs.favouritesIsTabLoading
+        : jobs.unpublishedIsTabLoading
 );
 
 export const selectJobNameList = createSelector(

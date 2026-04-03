@@ -438,6 +438,7 @@ const jobsSlice = createSlice({
       } else {
         state.favouriteJobIds.push(jobId);
       }
+      state.favouritesCount = state.favouriteJobIds.length;
     },
 
     // ⭐ Clear favourites list (used when no IDs)

@@ -189,10 +189,11 @@ getApplications: async (
     return res?.data ?? res;
   },
 
+  /** `stageId` is sent as `?stage_id=` (see `ASSESSMENT_LOGS` endpoint). */
   getAssessmentLogs: async (
-    applicationId: string
+    stageId: string
   ): Promise<AssessmentLogApiResponse> => {
-    const url = API_ENDPOINTS.APPLICATIONS.ASSESSMENT_LOGS(applicationId);
+    const url = API_ENDPOINTS.APPLICATIONS.ASSESSMENT_LOGS(stageId);
     const res = await apiClient.get(url);
     return res?.data ?? res;
   },

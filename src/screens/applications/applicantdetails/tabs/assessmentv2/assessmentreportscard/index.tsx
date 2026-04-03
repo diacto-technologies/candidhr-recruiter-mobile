@@ -57,7 +57,7 @@ const AssessmentReportsCard: React.FC<Props> = ({
                     alignItems: "center",
                 }}
             >
-                <View>
+                <View style={{justifyContent:'center'}}>
                     <Typography variant="boldTxtmd">
                         Assessment Reports
                     </Typography>
@@ -67,8 +67,8 @@ const AssessmentReportsCard: React.FC<Props> = ({
                     </Typography>
                 </View>
 
-                <View style={{ flexDirection: "row", gap: 10, alignContent: 'center' }}>
-                    <Button
+                <View style={{ flexDirection: "row", gap: 10, alignContent: 'flex-start' }}>
+                    {/* <Button
                         variant="outline"
                         borderRadius={8}
                         borderWidth={1}
@@ -90,12 +90,12 @@ const AssessmentReportsCard: React.FC<Props> = ({
                         disabled={refreshing}
                     >
                         {refreshing ? "Refreshing..." : "Refresh"}
-                    </Button>
+                    </Button> */}
 
                     <TouchableOpacity
                         style={{
                             flexDirection: "row",
-                            alignItems: "center",
+                           // alignItems: "center",
                             gap: 4,
                             opacity: canExport ? 1 : 0.5,
                         }}

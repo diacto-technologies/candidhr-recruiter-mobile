@@ -84,18 +84,47 @@ const Header = ({
     <View style={[styles.container, { borderBottomWidth: !borderCondition ? 1 : 0 }]}>
       {backNavigation ? (
         <>
-          {/* ✅ Back + Title Row */}
+          {/* ✅ Back + Title Row (or search bar when job/simple search is open) */}
           {(showTitle && !enableJobSearch) || enableJobSearch ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
               <Pressable onPress={onBack} style={{ zIndex: 999 }}>
                 <SvgXml xml={backButtonIcon} />
               </Pressable>
 
-              <View style={{ marginLeft: 12, flex: 1 }}>
-                <Typography variant="semiBoldTxtxl" numberOfLines={1}>
-                  {selectedJob?.title ? selectedJob.title : title}
-                </Typography>
-              </View>
+              {enableJobSearch && openSearch ? (
+                <Animated.View
+                  style={{
+                    flex: 1,
+                    marginLeft: 12,
+                    marginRight: 8,
+                    zIndex: 999,
+                    opacity: searchOpacity,
+                    transform: [{ translateX }],
+                  }}
+                >
+                  <SearchBar
+                    value={searchText}
+                    onChangeText={
+                      simpleSearch
+                        ? onSimpleSearch || (() => {})
+                        : onSearchTextChange || (() => {})
+                    }
+                    placeholder={simpleSearch ? simpleSearchPlaceholder : 'Select a job'}
+                    dropdown={!simpleSearch}
+                    data={simpleSearch ? [] : jobNameList || []}
+                    onSelect={simpleSearch ? undefined : onJobSelect}
+                    onEndReached={simpleSearch ? undefined : onLoadMore}
+                    loading={simpleSearch ? false : jobNameListLoading}
+                    onClear={simpleSearch ? onSimpleClear : onSearchClear}
+                  />
+                </Animated.View>
+              ) : (
+                <View style={{ marginLeft: 12, flex: 1 }}>
+                  <Typography variant="semiBoldTxtxl" numberOfLines={1}>
+                    {selectedJob?.title ? selectedJob.title : title}
+                  </Typography>
+                </View>
+              )}
             </View>
           ) : (
             // ✅ If title not required then only back icon

@@ -10,8 +10,12 @@ import { colors } from "../../../../../../theme/colors";
 import { checkIcon } from "../../../../../../assets/svg/check";
 import { Wavy_CheckIcon } from "../../../../../../assets/svg/wavy_check";
 import { shadowStyles } from "../../../../../../theme/shadowcolor";
+import InfoTooltip from "../../../../../../components/atoms/Infotooltip";
+import { infoIcon } from "../../../../../../assets/svg/infoicon";
 
 interface SkillItem {
+  proficiencyEvidence: string;
+  proficiencyLevel: any;
   title: string;
   value: string;
   matched: boolean;
@@ -170,23 +174,37 @@ const SkillScore = ({ title, overall, status, data, isloading }: Props) => {
             ) : (
               <SvgXml xml={Wavy_CheckIcon} height={20} width={20} />
             )}
+            <View  style={{
+                  flex: 1,
+                  flexShrink: 1,
+                }}>
+              <Typography
+                variant="mediumTxtsm"
+                color={item.matched ? colors.gray[900] : colors.gray[600]}
+                numberOfLines={2}
+              >
+                {item.title}
+              </Typography>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <Typography variant="regularTxtxs" color={colors.gray[600]}>
+                  {item.proficiencyLevel
+                    ? item.proficiencyLevel.charAt(0).toUpperCase() +
+                    item.proficiencyLevel.slice(1)
+                    : ""}
+                </Typography>
 
-            <Typography
-              variant="mediumTxtsm"
-              color={item.matched ? colors.gray[900] : colors.gray[600]}
-              numberOfLines={2}
-              style={{
-                flex: 0.8,
-                flexShrink: 1,
-              }}
-            >
-              {item.title}
+                {item.proficiencyEvidence && (
+                  <InfoTooltip text={item.proficiencyEvidence}>
+                    <SvgXml xml={infoIcon} height={15} width={15}/>
+                  </InfoTooltip>
+                )}
+              </View>
+            </View>
+
+            <Typography variant="semiBoldTxtmd" color={colors.gray[700]}>
+              {item.value}
             </Typography>
           </View>
-
-          <Typography variant="semiBoldTxtmd" color={colors.gray[700]}>
-            {item.value}
-          </Typography>
         </View>
       ))}
 
@@ -282,7 +300,7 @@ const styles = StyleSheet.create({
 
   leftRow: {
     flexDirection: "row",
-    alignItems: "center",
+    // alignItems: "center",
     gap: 8,
   },
 

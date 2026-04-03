@@ -16,7 +16,7 @@ import { getJobsRequestAction } from '../../../features/jobs/actions';
 import { selectJobFilters, selectJobsActiveTab } from '../../../features/jobs/selectors';
 import { setJobFilters, setJobSort } from '../../../features/jobs/slice';
 import { selectAssignedAssessmentFilters } from '../../../features/assessments/selectors';
-import { setAssignedAssessmentFilters } from '../../../features/assessments/slice';
+import { setAssignedAssessmentFilters, setAssignedAssessmentSort } from '../../../features/assessments/slice';
 import { selectPersonalityScreeningFilters } from '../../../features/personalityScreening/selectors';
 import { setFilters as setPersonalityScreeningFilters, setSort as setPersonalityScreeningSort } from '../../../features/personalityScreening/slice';
 import DropdownFilter from './dropdownfilter';
@@ -62,6 +62,26 @@ const videoInterviewSortOptionsCombined: { label: string; sortBy: string; sortDi
   { label: 'Expires On: New → Old', sortBy: 'Expires On', sortDir: 'desc' },
 ];
 
+const assessmentSortOptionsCombined = [
+  { label: 'Applicant: A → Z', sortBy: 'Applicant', sortDir: 'asc' },
+  { label: 'Applicant: Z → A', sortBy: 'Applicant', sortDir: 'desc' },
+
+  { label: 'Email: A → Z', sortBy: 'Email', sortDir: 'asc' },
+  { label: 'Email: Z → A', sortBy: 'Email', sortDir: 'desc' },
+
+  { label: 'Job Title: A → Z', sortBy: 'Job Title', sortDir: 'asc' },
+  { label: 'Job Title: Z → A', sortBy: 'Job Title', sortDir: 'desc' },
+
+  // ✅ Percentage sorting (correct)
+  { label: 'Avg %: Low → High', sortBy: 'Avg %', sortDir: 'asc' },
+  { label: 'Avg %: High → Low', sortBy: 'Avg %', sortDir: 'desc' },
+
+  { label: 'Assigned At: Old → New', sortBy: 'Assigned At', sortDir: 'asc' },
+  { label: 'Assigned At: New → Old', sortBy: 'Assigned At', sortDir: 'desc' },
+
+  { label: 'Valid Till: Old → New', sortBy: 'Valid Till', sortDir: 'asc' },
+  { label: 'Valid Till: New → Old', sortBy: 'Valid Till', sortDir: 'desc' },
+];
 const FilterSheetContent: React.FC<Props> = ({
   onCancel,
   onApply,
@@ -85,41 +105,41 @@ const FilterSheetContent: React.FC<Props> = ({
   const pagination = useAppSelector(selectApplicationsPagination);
   const activeTab = useAppSelector(selectJobsActiveTab);
 
- const labelMap: Record<string, Record<string, string>> = {
-  source: {
-    application_form: "Form",
-    imported_using_bulk_resume_upload: "Bulk Import",
-  },
+  const labelMap: Record<string, Record<string, string>> = {
+    source: {
+      application_form: "Form",
+      imported_using_bulk_resume_upload: "Bulk Import",
+    },
 
-  status: {
-    applied: "Applied",
-    in_progress: "In Progress",
-    shortlisted: "Shortlisted",
-    rejected: "Rejected",
-    on_hold: "On Hold",
-    interview_scheduled: "Interview Scheduled",
-    final_interview: "Final Interview",
-    hired: "Hired",
-    offer_extended: "Offer Extended",
-    offer_accepted: "Offer Accepted",
-    offer_rejected: "Offer Rejected",
-    not_selected: "Not Selected",
-    withdrawn: "Withdrawn",
-    archived: "Archived",
-  },
+    status: {
+      applied: "Applied",
+      in_progress: "In Progress",
+      shortlisted: "Shortlisted",
+      rejected: "Rejected",
+      on_hold: "On Hold",
+      interview_scheduled: "Interview Scheduled",
+      final_interview: "Final Interview",
+      hired: "Hired",
+      offer_extended: "Offer Extended",
+      offer_accepted: "Offer Accepted",
+      offer_rejected: "Offer Rejected",
+      not_selected: "Not Selected",
+      withdrawn: "Withdrawn",
+      archived: "Archived",
+    },
 
-  latestStageName: {
-    resume_screening: "Resume Screening",
-    assessment: "Assessment",
-    automated_video_interview: "Automated Video Interview",
-  },
+    latestStageName: {
+      resume_screening: "Resume Screening",
+      assessment: "Assessment",
+      automated_video_interview: "Automated Video Interview",
+    },
 
-  latestStageStatus: {
-    approved: "Approved",
-    not_approved: "Not Approved",
-    approval_pending: "Pending",
-  },
-};
+    latestStageStatus: {
+      approved: "Approved",
+      not_approved: "Not Approved",
+      approval_pending: "Pending",
+    },
+  };
 
   const activeFilters =
     mode === 'job'
@@ -472,12 +492,103 @@ const FilterSheetContent: React.FC<Props> = ({
 
                 {mode === 'assessments' && (
                   <>
+                    {selectedTab === 'Sort' && (
+                      <View style={styles.sortByBlock}>
+                        <TouchableOpacity
+                          style={styles.sortByHeader}
+                          onPress={() => setSortExpanded((e) => !e)}
+                          activeOpacity={0.7}
+                        >
+                          <View style={styles.sortBySummaryWrap}>
+                            <Typography variant="P1M" color={colors.gray[700]}>
+                              Sort by
+                            </Typography>
+                            <Typography
+                              variant="P1M"
+                              color={colors.gray[800]}
+                              numberOfLines={1}
+                              style={styles.sortByLabel}
+                            >
+                              {assessmentSortOptionsCombined.find(
+                                (o) =>
+                                  o.sortBy === assessmentFilters.sortBy &&
+                                  (assessmentFilters.sortDir ?? 'desc') === o.sortDir
+                              )?.label ?? 'Assigned On: New → Old'}
+                            </Typography>
+                          </View>
+                          <Icon
+                            name={sortExpanded ? 'chevron-up' : 'chevron-down'}
+                            size={20}
+                            color={colors.gray[600]}
+                            iconFamily="Feather"
+                          />
+                        </TouchableOpacity>
+
+                        {sortExpanded && (
+                          <View style={styles.sortByExpanded}>
+                            <Typography variant="P1M" color={colors.gray[700]} style={styles.sortBySectionTitle}>
+                              Sort By
+                            </Typography>
+                            {assessmentSortOptionsCombined.map((option) => {
+                              const isSelected =
+                                assessmentFilters.sortBy === option.sortBy &&
+                                (assessmentFilters.sortDir ?? 'desc') === option.sortDir;
+                              return (
+                                <TouchableOpacity
+                                  key={`${option.sortBy}-${option.sortDir}`}
+                                  onPress={() =>
+                                    dispatch(
+                                      setAssignedAssessmentSort({
+                                        sortBy: option.sortBy,
+                                        sortDir: option.sortDir,
+                                      })
+                                    )
+                                  }
+                                  style={[styles.radioRow, isSelected && styles.radioRowSelected]}
+                                  activeOpacity={0.7}
+                                >
+                                  <Typography variant="P1M" color={colors.gray[800]}>
+                                    {option.label}
+                                  </Typography>
+                                  <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
+                                    {isSelected && <View style={styles.radioInner} />}
+                                  </View>
+                                </TouchableOpacity>
+                              );
+                            })}
+                          </View>
+                        )}
+                      </View>
+                    )}
                     {selectedTab === 'Applicant' && <TextSearchFilter mode="assessments" field="applicant_name__icontains" placeholder="Search by 'Applicant' " />}
                     {selectedTab === 'Email' && <TextSearchFilter mode="assessments" field="candidate_email__icontains" placeholder="Search by 'Email'" />}
                     {selectedTab === 'Job Title' && <TextSearchFilter mode="assessments" field="job__title__icontains" placeholder="Search by 'Job Title'" />}
                     {selectedTab === 'Avg Percentage' && <TextSearchFilter mode="assessments" field="average_percentage__in" placeholder="Search by 'Avg Percentage'" />}
                     {selectedTab === 'Assigned By' && <TextSearchFilter mode="assessments" field="assigned_by__name__icontains" placeholder="Search by 'Assigned By'" />}
-                    {selectedTab === 'Status' && <TextSearchFilter mode="assessments" field="status_text" placeholder="Search by 'Status'" />}
+                    {selectedTab === 'Status' && (
+                      <DropdownFilter
+                        mode="assessments"
+                        field="status_text"
+                        placeholder="All"
+                        options={[
+                          { label: "All", value: "" },
+                          { label: "Assigned Successfully", value: "Assigned Successfully" },
+                          { label: "Link Opened", value: "Link Opened" },
+                          { label: "Started", value: "Started" },
+                          { label: "Assigned", value: "Assigned" },
+                          { label: "Completed", value: "Completed" },
+                          { label: "Shortlisted", value: "Shortlisted" },
+                          { label: "Rejected", value: "Rejected" },
+                          { label: "Scheduled Final Interview", value: "Scheduled Final Interview" },
+                          { label: "Hired", value: "Hired" },
+                          { label: "Disqualified", value: "Disqualified" },
+                          { label: "Shortlisted By WorkFlow", value: "Shortlisted By WorkFlow" },
+                          { label: "Not shortlisted By WorkFlow", value: "Not shortlisted By WorkFlow" },
+                        ]}
+                        labelKey="label"
+                        valueKey="value"
+                      />
+                    )}
                   </>
                 )}
 

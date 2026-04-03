@@ -85,7 +85,13 @@ export const selectPersonalityScreeningList = createSelector(
 
 export const selectPersonalityScreeningLoading = createSelector(
   [(state: RootState) => state.applications],
-  (state) => state.loading
+  (state) => state.loadingPersonality ?? false
+);
+
+/** Assessment session logs + report + detailed report (not shared with personality / list loading). */
+export const selectAssessmentLoading = createSelector(
+  [(state: RootState) => state.applications],
+  (state) => state.loadingAssessment ?? false
 );
 
 export const selectPersonalityScreeningResponses = createSelector(
@@ -191,6 +197,9 @@ export const selectPerformanceReportError = createSelector(
 
 export const selectAssessmentOptions = (state: RootState) =>
   state.applications.assessmentOptions;
+
+export const selectAssessmentOptionsApplicationId = (state: RootState) =>
+  state.applications.assessmentOptionsApplicationId ?? null;
 
 export const selectAssessmentOptionsLoading = (state: RootState) =>
   state.applications.loadingAssessmentOptions;

@@ -20,9 +20,11 @@ import {
   selectJobsListLoading,
   selectIsTabLoading,
   selectPublishedCount,
-  selectUnpublishedCount
+  selectUnpublishedCount,
+  selectFavouritesCount,
+  selectFavouriteJobIds,
 } from '../../../features/jobs/selectors';
-import { clearJobFilters, setJobFilters, setActiveTab } from '../../../features/jobs/slice';
+import { clearFavouriteJobs, clearJobFilters, setJobFilters, setActiveTab, toggleFavouriteJob } from '../../../features/jobs/slice';
 import { setApplicationsFilters } from '../../../features/applications/slice';
 import { useFocusEffect } from '@react-navigation/native';
 import { useNetworkConnectivity } from '../../../hooks/useNetworkConnectivity';
@@ -32,6 +34,7 @@ import { jobTabs } from './config';
 import { usePermission } from '../../../hooks/usePermission';
 import { PERMISSIONS } from '../../../utils/permission.constants';
 import { selectProfile } from '../../../features/profile/selectors';
+import { screenHeight } from '../../../utils/devicelayout';
 
 const JobsScreen = () => {
   const styles = useStyles();
@@ -50,6 +53,8 @@ const JobsScreen = () => {
   const hasMore = useAppSelector(selectJobsHasMore);
   const publishedCount = useAppSelector(selectPublishedCount);
   const unpublishedCount = useAppSelector(selectUnpublishedCount);
+  const favouritesCount = useAppSelector(selectFavouritesCount);
+  const favouriteJobIds = useAppSelector(selectFavouriteJobIds);
   const token = useAppSelector(selectToken);
   const isConnected = useNetworkConnectivity();
 
@@ -74,8 +79,26 @@ const JobsScreen = () => {
 
   useEffect(() => {
     if (!isConnected) return;
-
     const timer = setTimeout(() => {
+      if (activeTab === "Favourites") {
+        if (!favouriteJobIds.length) {
+          dispatch(clearFavouriteJobs());
+          return;
+        }
+        dispatch(
+          getJobsRequestAction({
+            page: 1,
+            limit: pagination.limit,
+            append: false,
+            favourites: true,
+            idIn: favouriteJobIds.join(","),
+            ...jobFilters,
+          })
+        );
+        prevFiltersRef.current = jobFilters;
+        return;
+      }
+
       dispatch(
         getJobsRequestAction({
           page: 1,
@@ -89,7 +112,7 @@ const JobsScreen = () => {
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [jobFilters, isConnected, pagination.limit, dispatch]);
+  }, [jobFilters, isConnected, pagination.limit, dispatch, activeTab]);
 
   const handleApplyFilters = () => {
     if (!isConnected) return;
@@ -98,7 +121,12 @@ const JobsScreen = () => {
       getJobsRequestAction({
         page: 1,
         limit: pagination.limit,
-        published: activeTab === "Published",
+        ...(activeTab === "Favourites"
+          ? {
+              favourites: true,
+              idIn: favouriteJobIds.join(","),
+            }
+          : { published: activeTab === "Published" }),
         append: false,
         ...jobFilters,
       })
@@ -111,10 +139,29 @@ const JobsScreen = () => {
   };
 
   const handleChangeTab = (label: string) => {
-    const tab = label === "Published" ? "Published" : "Draft";
+    const tab = label as "Published" | "Draft" | "Favourites";
     dispatch(setActiveTab(tab));
 
     if (!isConnected) return;
+
+    if (tab === "Favourites") {
+      if (!favouriteJobIds.length) {
+        dispatch(clearFavouriteJobs());
+        return;
+      }
+
+      dispatch(
+        getJobsRequestAction({
+          page: 1,
+          limit: pagination.limit,
+          append: false,
+          favourites: true,
+          idIn: favouriteJobIds.join(","),
+          ...jobFilters,
+        })
+      );
+      return;
+    }
 
     dispatch(
       getJobsRequestAction({
@@ -135,7 +182,12 @@ const JobsScreen = () => {
         page: pagination.page + 1,
         limit: pagination.limit,
         append: true,
-        published: activeTab === "Published",
+        ...(activeTab === "Favourites"
+          ? {
+              favourites: true,
+              idIn: favouriteJobIds.join(","),
+            }
+          : { published: activeTab === "Published" }),
         ...jobFilters,
       })
     );
@@ -178,10 +230,13 @@ const JobsScreen = () => {
           hasMore={hasMore}
           publishedCount={publishedCount}
           unpublishedCount={unpublishedCount}
+          favouritesCount={favouritesCount}
           isConnected={isConnected}
           onChangeTab={handleChangeTab}
           onLoadMore={handleLoadMore}
           onJobPress={(jobId) => navigate('JobDetailScreen', { jobId })}
+          favouriteJobIds={favouriteJobIds}
+          onToggleFavourite={(jobId) => dispatch(toggleFavouriteJob(jobId))}
         />
       </View>
 
@@ -202,8 +257,7 @@ const JobsScreen = () => {
         onClose={() => setFilterSheet(false)}
         title="Filter by"
         showHeadline
-        onClearAll={() => dispatch(clearJobFilters())}
-      >
+        onClearAll={() => dispatch(clearJobFilters())} hight={screenHeight* 0.8}>
         <FilterSheetContent
           onCancel={() => setFilterSheet(false)}
           onApply={handleApplyFilters}

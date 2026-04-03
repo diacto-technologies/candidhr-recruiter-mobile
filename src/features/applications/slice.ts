@@ -230,7 +230,7 @@ const applicationsSlice = createSlice({
     },
 
     getAssessmentLogsRequest: (state) => {
-      state.loading = true;
+      state.loadingAssessment = true;
       state.error = null;
       state.assessmentLogs = [];
       state.assessmentReport = null;
@@ -240,7 +240,7 @@ const applicationsSlice = createSlice({
       state,
       action: PayloadAction<AssessmentLog[]>
     ) => {
-      state.loading = false;
+      state.loadingAssessment = false;
       state.assessmentLogs = action.payload;
     },
 
@@ -248,7 +248,7 @@ const applicationsSlice = createSlice({
       state,
       action: PayloadAction<string>
     ) => {
-      state.loading = false;
+      state.loadingAssessment = false;
       state.error = action.payload;
       state.assessmentLogs = [];
       state.assessmentReport = null;
@@ -293,16 +293,25 @@ const applicationsSlice = createSlice({
       state.error = action.payload;
     },
 
-    getAssessmentReportRequest: (state) => {
-      state.loading = true;
+    getAssessmentReportRequest: (state, action: PayloadAction<string>) => {
+      state.loadingAssessment = true;
       state.error = null;
+      const nextKey = action.payload;
+      const current = state.assessmentReport;
+      const sameSession =
+        current &&
+        (current.id === nextKey ||
+          current.id === state.assessmentLogs.find((l) => l.content_id === nextKey)?.id);
+      if (!sameSession) {
+        state.assessmentReport = null;
+      }
     },
 
     getAssessmentReportSuccess: (
       state,
       action: PayloadAction<AssessmentReport>
     ) => {
-      state.loading = false;
+      state.loadingAssessment = false;
       state.assessmentReport = action.payload;
     },
 
@@ -310,12 +319,12 @@ const applicationsSlice = createSlice({
       state,
       action: PayloadAction<string>
     ) => {
-      state.loading = false;
+      state.loadingAssessment = false;
       state.error = action.payload;
     },
 
     getAssessmentDetailedReportRequest: (state) => {
-      state.loading = true;
+      state.loadingAssessment = true;
       state.error = null;
     },
 
@@ -323,7 +332,7 @@ const applicationsSlice = createSlice({
       state,
       action: PayloadAction<AssessmentDetailedReport>
     ) => {
-      state.loading = false;
+      state.loadingAssessment = false;
       state.assessmentDetailedReport = action.payload;
     },
 
@@ -331,13 +340,19 @@ const applicationsSlice = createSlice({
       state,
       action: PayloadAction<string>
     ) => {
-      state.loading = false;
+      state.loadingAssessment = false;
       state.error = action.payload;
     },
 
-    getPerformanceReportRequest: (state) => {
+    getPerformanceReportRequest: (state, action: PayloadAction<string>) => {
       state.loadingPerformanceReport = true;
       state.performanceReportError = null;
+      const nextAssignmentId = action.payload;
+      const currentAssignmentId =
+        state.performanceReport?.assessment_info?.assignment_id;
+      if (currentAssignmentId !== nextAssignmentId) {
+        state.performanceReport = null;
+      }
     },
 
     getPerformanceReportSuccess: (
@@ -358,7 +373,7 @@ const applicationsSlice = createSlice({
 
     // applications/slice.ts
     getPersonalityScreeningListRequest: (state) => {
-      state.loading = true;
+      state.loadingPersonality = true;
       state.error = null;
     },
 
@@ -366,7 +381,7 @@ const applicationsSlice = createSlice({
       state,
       action: PayloadAction<ScreeningAssessment[]>
     ) => {
-      state.loading = false;
+      state.loadingPersonality = false;
       state.error = null;
       state.personalityScreeningList = action.payload;
 
@@ -380,14 +395,14 @@ const applicationsSlice = createSlice({
       state,
       action: PayloadAction<string>
     ) => {
-      state.loading = false;
+      state.loadingPersonality = false;
       state.error = action.payload;
       state.personalityScreeningList = [];
       state.personalityScreeningResponses = [];
     },
 
     getPersonalityScreeningResponsesRequest: state => {
-      state.loading = true;
+      state.loadingPersonality = true;
       state.error = null;
     },
 
@@ -395,7 +410,7 @@ const applicationsSlice = createSlice({
       state,
       action: PayloadAction<PersonalityScreeningResponse[]>
     ) => {
-      state.loading = false;
+      state.loadingPersonality = false;
       state.personalityScreeningResponses = action.payload;
     },
 
@@ -403,7 +418,7 @@ const applicationsSlice = createSlice({
       state,
       action: PayloadAction<string>
     ) => {
-      state.loading = false;
+      state.loadingPersonality = false;
       state.error = action.payload;
       state.personalityScreeningResponses = [];
     },
@@ -450,6 +465,8 @@ const applicationsSlice = createSlice({
       state.personalityScreeningResponses = [];
       state.assessmentReport = null;
       state.assessmentDetailedReport = null;
+      state.loadingPersonality = false;
+      state.loadingAssessment = false;
       state.loading = false;
       state.error = null;
     },

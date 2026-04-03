@@ -82,7 +82,7 @@ import {
   exportAssessmentReportFailure,
 } from "./slice";
 import { applicationsApi } from "./api";
-import { AssessmentDetailedReportApiResponse, AssessmentLogApiResponse, AssessmentReportApiResponse, ExportAssessmentReportRequest, GetApplicationResponsesParams, GetApplicationsParams, GetApplicationsSagaAction, PersonalityScreeningResponse, ResumeScreeningApiResponse, ScreeningAssessment, SessionReviewedResponse, UpdateApplicationShareRequest } from "./types";
+import { AssessmentDetailedReportApiResponse, AssessmentLog, AssessmentLogApiResponse, AssessmentReportApiResponse, ExportAssessmentReportRequest, GetApplicationResponsesParams, GetApplicationsParams, GetApplicationsSagaAction, PersonalityScreeningResponse, ResumeScreeningApiResponse, ScreeningAssessment, SessionReviewedResponse, UpdateApplicationShareRequest } from "./types";
 import { getAssessmentDetailedReportRequestAction, getAssessmentReportRequestAction, getApplicationDetailRequestAction, getApplicationStagesRequestAction, getApplicationReasonsListRequestAction } from "./actions";
 import { showToastMessage } from "../../utils/toast";
 import { selectProfile } from "../profile/selectors";
@@ -412,11 +412,38 @@ function* getAssessmentLogsWorker(
   }
 }
 
+function* getAssessmentLogsBatchWorker(
+  action: { type: string; payload: string[] }
+): Generator<any, void, any> {
+  const stageIds = (action.payload ?? []).filter(Boolean);
+  if (!stageIds.length) return;
+  try {
+    yield put(getAssessmentLogsRequest());
+    const merged: AssessmentLog[] = [];
+    for (const stageId of stageIds) {
+      const res: AssessmentLogApiResponse = yield call(
+        applicationsApi.getAssessmentLogs,
+        stageId
+      );
+      merged.push(...(res.results || []));
+    }
+    const byId = new Map<string, AssessmentLog>();
+    for (const log of merged) {
+      if (log?.id) byId.set(log.id, log);
+    }
+    yield put(getAssessmentLogsSuccess(Array.from(byId.values())));
+  } catch (err: any) {
+    yield put(
+      getAssessmentLogsFailure(err.message || "Failed to fetch assessment logs")
+    );
+  }
+}
+
 function* getAssessmentReportWorker(
   action: { type: string; payload: string }
 ): Generator<any, void, any> {
   try {
-    yield put(getAssessmentReportRequest());
+    yield put(getAssessmentReportRequest(action.payload));
 
     const res: AssessmentReportApiResponse = yield call(
       applicationsApi.getAssessmentReport,
@@ -481,7 +508,7 @@ function* getPerformanceReportWorker(
   }
 ): Generator<any, void, any> {
   try {
-    yield put(getPerformanceReportRequest());
+    yield put(getPerformanceReportRequest(action.payload));
 
     const res: PerformanceReportResponse = yield call(
       applicationsApi.getPerformanceReport,
@@ -1011,7 +1038,8 @@ export function* applicationsSaga() {
   yield takeLatest(APPLICATIONS_ACTION_TYPES.UPDATE_APPLICATION_STATUS_REQUEST, updateApplicationStatusWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_APPLICATION_RESPONSES_REQUEST, getApplicationResponsesWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_RESUME_SCREENING_REQUEST, getResumeScreeningResponsesWorker);
-  yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_ASSESSMENT_LOGS_REQUEST, getAssessmentLogsWorker)
+  yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_ASSESSMENT_LOGS_REQUEST, getAssessmentLogsWorker);
+  yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_ASSESSMENT_LOGS_BATCH_REQUEST, getAssessmentLogsBatchWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_ASSESSMENT_REPORT_REQUEST, getAssessmentReportWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_ASSESSMENT_DETAILED_REPORT_REQUEST, getAssessmentDetailedReportWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_PERFORMANCE_REPORT_REQUEST, getPerformanceReportWorker);

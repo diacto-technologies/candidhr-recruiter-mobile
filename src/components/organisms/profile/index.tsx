@@ -155,7 +155,7 @@ const ProfileCart: React.FC<Props> = ({ application, loading, onPressExport, onP
       <View style={styles.infoContainer}>
         <TouchableOpacity
           onPress={handlePressExport}
-          disabled={!onPressExport && !onPressPreview}
+          // disabled={!onPressExport && !onPressPreview}
           style={{ position: 'absolute', alignSelf: 'flex-end', margin: 10 }}
         >
           <SvgXml xml={exportIcon} color={colors.gray[400]} height={20} width={20}/>

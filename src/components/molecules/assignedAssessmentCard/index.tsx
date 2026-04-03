@@ -11,6 +11,8 @@ import { colors } from '../../../theme/colors';
 import { getStatusColor } from '../../organisms/applicantlist/helper';
 import { navigate } from '../../../utils/navigationUtils';
 import { formatMonDDYYYY } from '../../../utils/dateformatter';
+import { maskId } from '../../../utils/stringUtils';
+import CheckBox from '../../atoms/checkbox';
 
 const AssignedAssessmentCard = ({ item }: any) => {
   const styles = useStyles();
@@ -29,7 +31,7 @@ const AssignedAssessmentCard = ({ item }: any) => {
 
           <View>
             <Typography variant="semiBoldTxtmd">
-              {item.name}
+              {item.name || maskId(item.id)}
             </Typography>
 
             <Typography variant="regularTxtsm" color={colors.gray[600]}>
@@ -38,17 +40,17 @@ const AssignedAssessmentCard = ({ item }: any) => {
           </View>
         </View>
 
-        <SvgXml xml={horizontalThreedotIcon} width={20} height={20} style={{ marginBottom: 20 }} />
+       {/* <CheckBox/> */}
       </View>
 
       {/* ---------- INFO SECTION ---------- */}
       <View style={styles.infoSection}>
         <Typography variant="regularTxtsm" color={colors.gray[600]}>
-          Job : <Typography variant="semiBoldTxtsm" color={colors.gray[700]}>{item.job}</Typography>
+          Job : <Typography variant="semiBoldTxtsm" color={colors.gray[700]}>{item.job || "No Job linked"}</Typography>
         </Typography>
 
         <Typography variant="regularTxtsm" color={colors.gray[600]}>
-          Assigned by : <Typography variant="semiBoldTxtsm" color={colors.gray[700]}>{item.assignedBy}</Typography>
+          Assigned by : <Typography variant="semiBoldTxtsm" color={colors.gray[700]}>{item.assignedBy || "_"}</Typography>
         </Typography>
       </View>
 
@@ -57,7 +59,7 @@ const AssignedAssessmentCard = ({ item }: any) => {
       {/* ---------- BOTTOM ROW ---------- */}
       <View style={styles.rowBetween}>
         <Typography variant="regularTxtsm" color={colors.gray[600]}>
-          Assigned : {formatMonDDYYYY(item?.assignedDate,"MMM DD YYYY")}
+          Assigned: {formatMonDDYYYY(item?.assignedDate,"MMM DD YYYY",'IST')}
         </Typography>
 
         <View style={styles.statusBadge}>

@@ -13,6 +13,7 @@ import type {
   Assessment,
   AssessmentSharedUser,
 } from '../../../features/assessments/types';
+import { capitalizeFirstLetter } from '../../../utils/stringUtils';
 
 const formatDuration = (minutes: number): string => {
   const n = Number(minutes);
@@ -34,8 +35,9 @@ interface AssessmentCardProps {
 
 const AssessmentCard = ({ item }: AssessmentCardProps) => {
   const styles = useStyles();
-  const status = item.is_published ? 'Published' : 'Not Published';
-  const createdByName = (item.users_shared_with[0]?.name && String(item.created_by.name).trim()) || 'Unknown';
+  const status = item.is_published ? 'Published' : 'Draft';
+  const type = item.test_type;
+  const createdByName = item.created_by?.name?.trim() || 'Unknown';
   const sharedLength = Array.isArray(item.users_shared_with)
     ? item.users_shared_with.length
     : 0;
@@ -61,6 +63,19 @@ const AssessmentCard = ({ item }: AssessmentCardProps) => {
           .map(word => word.charAt(0).toUpperCase())
           .join('');
       };
+
+  const avatarUsers =
+    sharedLength > 0
+      ? item.users_shared_with
+      : item.created_by
+      ? [
+          {
+            id: item.created_by.id,
+            name: item.created_by.name,
+            profile_pic: item.created_by.profile_pic,
+          },
+        ]
+      : [];
 
   return (
     <Card style={styles.card} onPress={() => navigate('CompanyInfo')}>
@@ -96,7 +111,7 @@ const AssessmentCard = ({ item }: AssessmentCardProps) => {
       <View>
         <View style={styles.rowBetween}>
           <View style={styles.avatarGroup}>
-            {item.users_shared_with?.slice(0, 3).map((user, index) => (
+            {avatarUsers.slice(0, 3).map((user, index) => (
               user.profile_pic ? (
                 <Image
                   key={user.id ?? index}
@@ -122,11 +137,16 @@ const AssessmentCard = ({ item }: AssessmentCardProps) => {
               </View>
             )}
           </View>
+          <View style={{flexDirection:'row',alignItems:'center', gap:15}}>
+          <View style={styles.statusBadge}>
+            <Typography variant="mediumTxtxs">{capitalizeFirstLetter(type)}</Typography>
+          </View>
           <View style={styles.statusBadge}>
             <View
               style={[styles.statusDot, { backgroundColor: getStatusColor(status) }]}
             />
             <Typography variant="mediumTxtxs">{status}</Typography>
+          </View>
           </View>
         </View>
       </View>

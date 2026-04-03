@@ -34,6 +34,7 @@ import {
 import { clearFilters } from "../../../../features/personalityScreening/slice";
 import { formatMonDDYYYY } from "../../../../utils/dateformatter";
 import type { PersonalityScreeningItem } from "../../../../features/personalityScreening/types";
+import { screenHeight } from "../../../../utils/devicelayout";
 
 const FILTER_OPTIONS = [
   "Sort",
@@ -290,8 +291,7 @@ const VideoInterviewScreen = () => {
           visible={filterSheetOpen}
           onClose={() => setFilterSheetOpen(false)}
           title="Filter by"
-          showHeadline
-        >
+          showHeadline   hight={screenHeight* 0.8}               >
           <FilterSheetContent
             selectedTab={selectedFilter ?? ""}
             setSelectedTab={(tab) => setSelectedFilter(tab)}

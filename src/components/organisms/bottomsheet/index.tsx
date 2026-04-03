@@ -24,13 +24,13 @@ const BottomSheet = ({
   subTitle,
   showHeadline,
   onClearAll,
+  hight
 }: IBottomsheet) => {
   const { insetsTop } = useRNSafeAreaInsets();
   const backdropOpacity = useRef(new Animated.Value(0)).current;
   const [modalVisible, setModalVisible] = useState(false);
   const styles = useStyles();
-  const SHEET_HEIGHT = screenHeight * 0.8;
-
+  const SHEET_HEIGHT = (hight);
   useEffect(() => {
     if (visible) {
       setModalVisible(true);
@@ -83,7 +83,7 @@ const BottomSheet = ({
           />
           <View
             // behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={[styles.sheetContainer, {height: SHEET_HEIGHT,maxHeight: SHEET_HEIGHT - (insetsTop + 0), marginBottom: insetsTop+6 }]}
+            style={[styles.sheetContainer, {height: SHEET_HEIGHT, marginBottom: insetsTop+6 }]}
           >
             <View style={{
               marginTop: 5,

@@ -1,4 +1,4 @@
-import { StyleSheet, useWindowDimensions } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { colors } from '../../../../../../theme/colors';
 import { shadowStyles } from '../../../../../../theme/shadowcolor';
 
@@ -110,6 +110,7 @@ export const useStyles = () => {
         statTile: {
           flexGrow: 1,
           flexBasis: "47%",
+          minWidth: 140,
           paddingVertical: 14,
           paddingHorizontal: 14,
           borderRadius: 12,
@@ -117,6 +118,26 @@ export const useStyles = () => {
           borderWidth: 1,
           borderColor: colors.gray[200],
           gap: 6,
+        },
+
+        /** Two independent columns so multi-line cells (e.g. Answered + skipped) do not throw off row pairing. */
+        statMetricTwoCol: {
+          flexDirection: "row",
+          gap: 16,
+          alignItems: "flex-start",
+          width: "100%",
+        },
+
+        statMetricCol: {
+          flex: 1,
+          minWidth: 0,
+          gap: 14,
+        },
+
+        /** Single column on narrow screens — avoids squeezed side-by-side columns. */
+        statMetricSingleCol: {
+          width: "100%",
+          gap: 14,
         },
 
         violationRow: {

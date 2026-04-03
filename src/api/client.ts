@@ -249,11 +249,22 @@ const handleApiError = async (response: Response, endpoint?: string): Promise<ne
   // Show toast message to user
   // TODO: Consider moving toast to saga/UI layer for better separation of concerns
   // API layer should be UI-agnostic, but keeping for now to maintain existing behavior
+  const normalizedErrorMessage = String(errorMessage ?? "").toLowerCase();
   const isEmptyState404 =
     response.status === 404 &&
-    errorMessage === 'No results found';
+    (normalizedErrorMessage.includes("no results found") ||
+      normalizedErrorMessage.includes("no data") ||
+      normalizedErrorMessage.includes("no result") ||
+      normalizedErrorMessage.includes("not found"));
 
-  if (!isEmptyState404) {
+  // For assessment/v2 endpoints, a 404 often means "result not generated yet".
+  // Silence toast to avoid confusing the user during tab/applicant switches.
+  const isAssessmentsV2Endpoint =
+    response.status === 404 &&
+    typeof endpoint === "string" &&
+    (endpoint.includes("/assessments/v2/") || endpoint.includes("assessments/v2/"));
+
+  if (!isEmptyState404 && !isAssessmentsV2Endpoint) {
     showToastMessage(errorMessage, 'error');
   }
 

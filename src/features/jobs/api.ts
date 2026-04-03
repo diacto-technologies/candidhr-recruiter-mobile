@@ -12,6 +12,10 @@ export const jobsApi = {
     if (typeof params?.published === "boolean") {
       queryParams.append("published", String(params.published));
     }
+
+    if (params?.idIn) {
+      queryParams.append("id__in", params.idIn);
+    }
   
     if (params?.title) {
       queryParams.append("title__icontains", params.title);
