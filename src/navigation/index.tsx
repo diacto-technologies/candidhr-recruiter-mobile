@@ -29,6 +29,22 @@ import AssessmentTestList from '../screens/applications/services/assessment/asse
 import AssessmentList from '../screens/applications/services/assessment/assessmentList'
 import AssessmentOverView from '../screens/applications/services/assessment/assessmentoverview'
 import CandidateAssignmentsDeatilsTable from '../screens/applications/services/assessment/candidateassignmentsdetailstable'
+import CreateAssessmentTest from '../screens/applications/services/assessment/createassessmenttest'
+import CreateTestWith from '../screens/applications/services/assessment/createtestwith'
+import CreateTestType from '../screens/applications/services/assessment/createtesttype'
+import CreateTestQuestion from '../screens/applications/services/assessment/createtestquestion'
+import CodingTestQuestion from '../screens/applications/services/assessment/codingtestquestion'
+import AiTestQuestion from '../screens/applications/services/assessment/aitestquestion'
+import ExcelTestUpload from '../screens/applications/services/assessment/exceltestupload'
+import TestDetails from '../screens/applications/services/assessment/testdetails'
+import AiCodingTestQuestion from '../screens/applications/services/assessment/aicodingtestquestion'
+import BasicInfo from '../screens/applications/services/assessment/createassessment/basicinfo'
+import Section from '../screens/applications/services/assessment/createassessment/section'
+import Instruction from '../screens/applications/services/assessment/createassessment/instruction'
+import Proctoring from '../screens/applications/services/assessment/createassessment/proctoring'
+import jobdetails from '../screens/applications/jobs/ jobCreate/jobdetails'
+import ApplicationForm from '../screens/applications/jobs/ jobCreate/applicationform'
+import TeamMembers from '../screens/applications/jobs/ jobCreate/TeamMembers'
 
 const Stack = createNativeStackNavigator()
 const Navigation: FC = () => {
@@ -86,10 +102,26 @@ const Navigation: FC = () => {
         <Stack.Screen name='AssessmentScreen' component={AssessmentScreen} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
         <Stack.Screen name='VideoInterviewScreen' component={VideoInterviewScreen} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
         <Stack.Screen name="OldAssessmentList" component={OldAssessmentList}/>
-         <Stack.Screen name="AssessmentTestList" component={AssessmentTestList}/>
+         <Stack.Screen name="AssessmentTestList" component={AssessmentTestList} />
          <Stack.Screen name="AssessmentList" component={AssessmentList}/>
          <Stack.Screen name="AssessmentOverView" component={AssessmentOverView}/>
         <Stack.Screen name="CandidateAssignmentsDeatilsTable" component={CandidateAssignmentsDeatilsTable}/>
+        <Stack.Screen name="CreateAssessmentTest" component={CreateAssessmentTest}/>
+        <Stack.Screen name="CreateTestType" component={CreateTestType}  options={{ animation: 'none', statusBarStyle: 'dark' }}/>
+        <Stack.Screen name="CreateTestWith" component={CreateTestWith}  options={{ animation: 'none', statusBarStyle: 'dark' }}/>
+        <Stack.Screen name="CreateTestQuestion" component={CreateTestQuestion}/>
+        <Stack.Screen name="CodingTestQuestion" component={CodingTestQuestion}/>
+        <Stack.Screen name="AiTestQuestion" component={AiTestQuestion}/>
+        <Stack.Screen name="ExcelTestUpload" component={ExcelTestUpload}/>
+        <Stack.Screen name="TestDetails" component={TestDetails}/>
+        <Stack.Screen name="AiCodingTestQuestion" component={AiCodingTestQuestion}/>
+        <Stack.Screen name="BasicInfo" component={BasicInfo}/>
+        <Stack.Screen name="Section" component={Section}/>
+        <Stack.Screen name="Instruction" component={Instruction}/>
+        <Stack.Screen name="Proctoring" component={Proctoring}/>
+        <Stack.Screen name="jobdetails" component={jobdetails}/>
+        <Stack.Screen name="ApplicationForm" component={ApplicationForm} />
+        <Stack.Screen name="TeamMembers" component={TeamMembers} />
       </Stack.Navigator>
     </NavigationContainer>
   )

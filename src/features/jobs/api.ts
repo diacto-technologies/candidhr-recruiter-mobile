@@ -1,6 +1,14 @@
 import { apiClient } from "../../api/client";
 import { API_ENDPOINTS } from "../../api/endpoints";
-import { CreateJobRequest, UpdateJobRequest, Job, GetJobsParams, JobsListApiResponse, JobDetailApiResponse } from "./types";
+import {
+  CreateJobRequest,
+  UpdateJobRequest,
+  Job,
+  GetJobsParams,
+  JobsListApiResponse,
+  JobDetailApiResponse,
+  JobNamesListApiResponse,
+} from "./types";
 
 export const jobsApi = {
   getJobs: async (params?: GetJobsParams): Promise<JobsListApiResponse> => {
@@ -70,7 +78,10 @@ export const jobsApi = {
     return apiClient.delete(API_ENDPOINTS.JOBS.DELETE(id));
   },
 
-  getJobNamesList: async (page: number, search: string) => {
+  getJobNamesList: async (
+    page: number,
+    search: string
+  ): Promise<JobNamesListApiResponse> => {
     const queryParams = new URLSearchParams();
 
     queryParams.append("page", String(page));
@@ -79,7 +90,9 @@ export const jobsApi = {
       queryParams.append("title__icontains", search);
     }
 
-    return apiClient.get(`${API_ENDPOINTS.JOBS.JOB_NAME_LIST}?${queryParams.toString()}`);
+    return apiClient.get(
+      `${API_ENDPOINTS.JOBS.JOB_NAME_LIST}?${queryParams.toString()}`
+    );
   },
 
 };

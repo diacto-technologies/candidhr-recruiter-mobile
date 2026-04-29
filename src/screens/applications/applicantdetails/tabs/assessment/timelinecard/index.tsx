@@ -25,7 +25,7 @@ const CustomTimeline = ({ progress, data }: Props) => {
 
         {/* Progress circle */}
         <View style={styles.progressContainer}>
-        <Ring percent={progress} size={20} strokeWidth={4} rotation={90}/>
+          <Ring percent={progress} size={20} strokeWidth={4} rotation={90} />
           <Typography variant="semiBoldTxtmd">{progress}%</Typography>
         </View>
       </View>
@@ -48,19 +48,19 @@ const CustomTimeline = ({ progress, data }: Props) => {
                 )}
 
                 {item.status === "current" && (
-                  <View style={[styles.currentDot,{right:3}]}>
-                      <View style={[styles.completedDot]}>
-                     <View style={styles.completedInner} />
+                  <View style={[styles.currentDot, { right: 3 }]}>
+                    <View style={[styles.completedDot]}>
+                      <View style={styles.completedInner} />
                     </View>
                   </View>
                 )}
 
                 {item.status === "upcoming" && (
-                 <View style={[styles.pendingDot,{right:0.9}]}>
-                 {/* <View style={styles.completedDot}> */}
-                <View style={styles.pendingInner} />
-               {/* </View> */}
-             </View>
+                  <View style={[styles.pendingDot, { right: 0.9 }]}>
+                    {/* <View style={styles.completedDot}> */}
+                    <View style={styles.pendingInner} />
+                    {/* </View> */}
+                  </View>
                 )}
 
                 {/* VERTICAL LINE */}
@@ -73,7 +73,7 @@ const CustomTimeline = ({ progress, data }: Props) => {
                           item.status === "completed" || item.status === "current"
                             ? colors.brand[600]
                             : colors.gray[300],
-                            marginRight:item.status === "current"?6:0
+                        marginRight: item.status === "current" ? 6 : 0
                       },
                     ]}
                   />
@@ -88,14 +88,14 @@ const CustomTimeline = ({ progress, data }: Props) => {
                     item.status === "current"
                       ? colors.brand[700]
                       : item.status === "upcoming"
-                      ? colors.gray[700]
-                      : colors.gray[700]
+                        ? colors.gray[700]
+                        : colors.gray[700]
                   }
                 >
                   {item.title}
                 </Typography>
 
-                <Typography
+                {item.date && <Typography
                   variant="regularTxtsm"
                   color={
                     item.status === "upcoming"
@@ -103,8 +103,9 @@ const CustomTimeline = ({ progress, data }: Props) => {
                       : colors.gray[600]
                   }
                 >
-                  {item.date || "—"}
+                  {item.date}
                 </Typography>
+                }
               </View>
             </View>
           );
@@ -126,7 +127,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderColor: colors.gray[200],
     padding: 16,
-    gap:20,
+    gap: 20,
     // shadowColor: '#0A0D12',
     // shadowOffset: { width: 0, height: 1 },
     // shadowOpacity: 0.05,
@@ -175,7 +176,7 @@ const styles = StyleSheet.create({
   },
 
   iconColumn: {
-    paddingRight:12,
+    paddingRight: 12,
     alignItems: "center",
   },
 
@@ -198,7 +199,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brand[600],
     justifyContent: "center",
     alignItems: "center",
-    padding:8
+    padding: 8
   },
 
   completedInner: {
@@ -218,7 +219,7 @@ const styles = StyleSheet.create({
   currentDot: {
     width: DOT_SIZE + 10,
     height: DOT_SIZE + 10,
-    borderRadius:9999,
+    borderRadius: 9999,
     borderWidth: 3,
     borderColor: colors.brand[600],
     justifyContent: "center",

@@ -1,5 +1,5 @@
 import React, { Fragment } from 'react';
-import { Text } from 'react-native';
+import { Text, StyleSheet, type TextStyle } from 'react-native';
 import { colors } from '../../../theme/colors';
 import { TypographyProps } from './typography';
 import { Fonts, fontweightType } from '../../../theme/fonts';
@@ -440,6 +440,9 @@ export const textvariant = {
 
 const Typography = (props: TypographyProps) => {
   const variantStyle = textvariant[props.variant || 'P1'];
+  const flatStyle = StyleSheet.flatten(
+    [variantStyle, props.style] as TextStyle | TextStyle[] | undefined
+  ) as TextStyle;
 
   return (
     <Fragment>
@@ -449,7 +452,9 @@ const Typography = (props: TypographyProps) => {
         style={{
           ...variantStyle,
           ...props.style,
-          color: props.color || colors.gray['900'],
+          // Respect `color` from `style` when `color` prop is omitted (e.g. error text in CommonDropdown)
+          color: props.color ?? flatStyle?.color ?? colors.gray['900'],
+          lineHeight:0,
         }}
       >
         {props.children}

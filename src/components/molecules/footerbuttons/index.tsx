@@ -21,7 +21,7 @@ const FooterButtons: React.FC<FooterButtonsProps> = ({
     <View
       style={[
         styles.footer,
-        { paddingBottom: insets.insetsBottom+5, paddingTop: 16 },
+        {paddingTop: 16 },
         footerStyle, // 👈 merge custom style
       ]}
     >

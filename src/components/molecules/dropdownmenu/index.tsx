@@ -19,6 +19,8 @@ export interface DropdownMenuItem {
   closeOnPress?: boolean;
   /** Optional icon color for this item (overrides iconColor from props) */
   iconColor?: string;
+  /** Optional label color (e.g. destructive actions) */
+  labelColor?: string;
 }
 
 export interface DropdownMenuProps {
@@ -99,7 +101,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
 
                 <Typography
                   variant="semiBoldTxtsm"
-                  color={colors.gray[700]}
+                  color={item.labelColor ?? colors.gray[700]}
                   style={textStyle} // external text style
                 >
                   {item.label}

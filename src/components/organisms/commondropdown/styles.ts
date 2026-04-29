@@ -17,9 +17,18 @@ export const styles = StyleSheet.create({
     ...shadowStyles.shadow_xs,
   },
 
+  containerDisabled: {
+    backgroundColor: colors.gray[100],
+  },
+
   containerFocused: {
     borderColor: colors.brand[600],
     borderWidth: 2,
+  },
+
+  containerError: {
+    borderColor: colors.error[500],
+    borderWidth: 1,
   },
 
   dropdown: {
@@ -87,11 +96,30 @@ export const styles = StyleSheet.create({
     marginRight: 8,
   },
 
+  chipAvatar: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    marginRight: 6,
+    backgroundColor: colors.gray[200],
+  },
+
+  chipAvatarFallback: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    marginRight: 6,
+    backgroundColor: colors.gray[100],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
   chipText: {
     fontFamily: Fonts.InterMedium,
     fontSize: 14,
     color: colors.gray[900],
     marginRight: 8,
+    maxWidth: 140,
   },
 
   placeholderStyle: {
@@ -109,12 +137,38 @@ export const styles = StyleSheet.create({
     color: colors.gray[900],
   },
 
-  optionItem: {
-    flexDirection: 'column',
+  optionMiddle: {
+    flex: 1,
+    minWidth: 0,
+  },
+
+  optionItemAlignedTop: {
     alignItems: 'flex-start',
+  },
+
+  checkboxOuter: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: colors.gray[300],
+    alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 4,
+    flexShrink: 0,
+  },
+  checkboxOuterChecked: {
+    borderColor: colors.brand[600],
+    backgroundColor: colors.brand[600],
+  },
+
+  optionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: 10,
     paddingHorizontal: 16,
+    gap: 8,
   },
 
   selectedOptionItem: {
@@ -126,18 +180,32 @@ export const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.gray[900],
     flex: 1,
+    minWidth: 0,
+  },
+
+  optionPrimaryColumn: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+
+  selectedValueStacked: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: 'center',
+    gap: 2,
   },
 
   rightContainer: {
-    marginTop: 2,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
+    justifyContent: 'flex-end',
+    flexShrink: 0,
+    gap: 8,
   },
 
   checkIcon: {
-    marginLeft: 8,
+    marginLeft: 0,
   },
 
   usernameText: {
@@ -145,7 +213,7 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.gray[500],
     flexShrink: 1,
-    flex: 1,
+    maxWidth: '50%',
   },
 
   error: {

@@ -1,8 +1,20 @@
+import type { ReactNode } from 'react';
 import { GestureResponderEvent } from 'react-native';
 import type { ChangeStatusModalProps } from '../changeStatusModal';
+import type { TitleSubtitleTypographyProps } from '../../molecules/titleSubtitleBlock/types';
 
 export interface IHeader {
   title?: string;
+  /** Smaller line above the main title when `centerTitle` (e.g. flow context) */
+  subtitle?: ReactNode;
+  /** Optional `Typography` overrides for the main title (e.g. `style: { fontStyle: 'italic' }`) */
+  titleProps?: TitleSubtitleTypographyProps;
+  /** Optional `Typography` overrides for the subtitle */
+  subtitleProps?: TitleSubtitleTypographyProps;
+  /** Renders in the header row on the right (e.g. step indicator "2/3") */
+  rightComponent?: ReactNode;
+  /** When true with backNavigation, title is centered on the screen (not left-aligned after the back button) */
+  centerTitle?: boolean;
   onBack?: (event?: GestureResponderEvent) => void;
   backNavigation?: boolean;
   edit?: boolean;

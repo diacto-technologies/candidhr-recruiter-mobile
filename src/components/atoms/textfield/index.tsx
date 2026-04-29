@@ -39,9 +39,9 @@ const TextField = forwardRef((props: TextFieldProps, ref) => {
     <View style={styles.container}>
       {props.lable && (
         <View style={styles.labelRow}>
-          <Typography variant="P1C">{props.lable}</Typography>
+          <Typography variant="semiBoldTxtsm">{props.lable}</Typography>
           {props.isRequired && (
-            <Typography color={colors.mainColors.main} variant="P1C">
+            <Typography color={colors.error[500]}>
               *
             </Typography>
           )}

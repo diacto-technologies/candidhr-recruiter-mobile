@@ -1,14 +1,27 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, TextInput } from "react-native";
 import { Calendar } from "react-native-calendars";
 import dayjs from "dayjs";
+import Ionicons from "react-native-vector-icons/Ionicons";
 import { screenWidth } from "../../../utils/devicelayout";
+import { colors } from "../../../theme/colors";
+import { PickerModalFooter } from "./pickerModalFooter";
+
+const ACCENT = colors.brand[600];
+
+const MONTH_SHORT = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
 
 type Props = {
   onClose: () => void;
   onApply: (range: { start?: string; end?: string }) => void;
   mode?: "single" | "range";
   initialValue?: { start?: string; end?: string };
+  minDate?: string;
+  maxDate?: string;
+  hidePresets?: boolean;
 };
 
 // -------- FORMAT HELPERS --------
@@ -23,7 +36,6 @@ const parseInputDate = (input: string) => {
   const [dd, mm, yyyy] = parts;
   if (!dd || !mm || !yyyy) return null;
 
-  // Pad with zeros if needed (e.g., "1" -> "01")
   const day = dd.padStart(2, "0");
   const month = mm.padStart(2, "0");
   const year = yyyy.padStart(4, "0");
@@ -32,15 +44,9 @@ const parseInputDate = (input: string) => {
   return dayjs(f).isValid() ? f : null;
 };
 
-// Auto-format date input: adds "/" automatically
 const autoFormatDate = (input: string): string => {
-  // Remove all non-digit characters
   const digits = input.replace(/\D/g, "");
-  
-  // Limit to 8 digits (DDMMYYYY)
   const limited = digits.slice(0, 8);
-  
-  // Format: DD/MM/YYYY
   if (limited.length <= 2) {
     return limited;
   } else if (limited.length <= 4) {
@@ -50,21 +56,33 @@ const autoFormatDate = (input: string): string => {
   }
 };
 
+function isMonthEntirelyOutOfRange(
+  year: number,
+  month0: number,
+  minDateStr?: string,
+  maxDateStr?: string
+) {
+  const monthStart = dayjs().year(year).month(month0).date(1).startOf("day");
+  const monthEnd = dayjs().year(year).month(month0).endOf("month");
+  if (minDateStr && monthEnd.isBefore(dayjs(minDateStr), "day")) return true;
+  if (maxDateStr && monthStart.isAfter(dayjs(maxDateStr), "day")) return true;
+  return false;
+}
+
 export default function DateRangePicker({
   onClose,
   onApply,
   mode = "range",
   initialValue,
+  minDate,
+  maxDate,
+  hidePresets = false,
 }: Props) {
-
-  // Initialize state from initialValue
   const getInitialRange = () => {
     if (initialValue?.start) {
       const normalizedStart = dayjs(initialValue.start).isValid() 
         ? dayjs(initialValue.start).format("YYYY-MM-DD")
         : initialValue.start;
-      // For range mode, use end date if provided, otherwise use start (single date)
-      // For single mode, always use start as end
       const normalizedEnd = initialValue.end 
         ? (dayjs(initialValue.end).isValid() ? dayjs(initialValue.end).format("YYYY-MM-DD") : initialValue.end)
         : (mode === "range" ? undefined : normalizedStart);
@@ -77,8 +95,6 @@ export default function DateRangePicker({
   };
 
   const [range, setRange] = useState<{ start?: string; end?: string }>(getInitialRange());
-  
-  // Local state to track raw input text while typing
   const [startInput, setStartInput] = useState<string>(
     initialValue?.start ? displayFormat(initialValue.start) : ""
   );
@@ -87,32 +103,23 @@ export default function DateRangePicker({
   );
   const [isStartFocused, setIsStartFocused] = useState<boolean>(false);
   const [isEndFocused, setIsEndFocused] = useState<boolean>(false);
-  
-  // State to control which month the calendar displays
   const [currentMonth, setCurrentMonth] = useState<string>(
     initialValue?.start ? dayjs(initialValue.start).format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD")
   );
+  const [monthYearMode, setMonthYearMode] = useState(false);
+  const [pickerYear, setPickerYear] = useState(() => dayjs(currentMonth).year());
 
-  // Initialize input states when component mounts or initialValue changes
   useEffect(() => {
     if (initialValue?.start) {
-      // Normalize dates to YYYY-MM-DD format
       const normalizedStart = dayjs(initialValue.start).isValid() 
         ? dayjs(initialValue.start).format("YYYY-MM-DD")
         : initialValue.start;
-      // For range mode, use end date if provided, otherwise undefined
-      // For single mode, use start as end
       const normalizedEnd = initialValue.end 
         ? (dayjs(initialValue.end).isValid() ? dayjs(initialValue.end).format("YYYY-MM-DD") : initialValue.end)
         : (mode === "range" ? undefined : normalizedStart);
-      
-      // Only update if the values are different to avoid unnecessary re-renders
       setRange(prev => {
         if (prev.start !== normalizedStart || prev.end !== normalizedEnd) {
-          return {
-            start: normalizedStart,
-            end: normalizedEnd,
-          };
+          return { start: normalizedStart, end: normalizedEnd };
         }
         return prev;
       });
@@ -120,7 +127,6 @@ export default function DateRangePicker({
       setEndInput(normalizedEnd ? displayFormat(normalizedEnd) : "");
       setCurrentMonth(normalizedStart);
     } else {
-      // Reset when no initial value
       setRange({});
       setStartInput("");
       setEndInput("");
@@ -128,14 +134,47 @@ export default function DateRangePicker({
     }
   }, [initialValue, mode]);
   
-  // Update calendar month when range changes (from manual input or selection)
   useEffect(() => {
     if (range.start) {
       setCurrentMonth(range.start);
     }
   }, [range.start]);
 
-  const onDayPress = (day: any) => {
+  const { disableArrowLeft, disableArrowRight } = useMemo(() => {
+    const dLeft = minDate
+      ? dayjs(currentMonth)
+          .subtract(1, "month")
+          .endOf("month")
+          .isBefore(dayjs(minDate), "day")
+      : false;
+    const dRight = maxDate
+      ? dayjs(currentMonth)
+          .add(1, "month")
+          .startOf("month")
+          .isAfter(dayjs(maxDate), "day")
+      : false;
+    return { disableArrowLeft: dLeft, disableArrowRight: dRight };
+  }, [currentMonth, minDate, maxDate]);
+
+  const { canDecYear, canIncYear } = useMemo(() => {
+    const dec =
+      !minDate ||
+      !dayjs()
+        .year(pickerYear - 1)
+        .month(11)
+        .endOf("month")
+        .isBefore(dayjs(minDate), "day");
+    const inc =
+      !maxDate ||
+      !dayjs()
+        .year(pickerYear + 1)
+        .month(0)
+        .startOf("month")
+        .isAfter(dayjs(maxDate), "day");
+    return { canDecYear: dec, canIncYear: inc };
+  }, [pickerYear, minDate, maxDate]);
+
+  const onDayPress = (day: { dateString: string }) => {
     if (mode === "single") {
       setRange({ start: day.dateString, end: day.dateString });
       setStartInput(displayFormat(day.dateString));
@@ -166,10 +205,9 @@ export default function DateRangePicker({
     setRange({ start, end });
     setStartInput(displayFormat(start));
     setEndInput(displayFormat(end));
-    setCurrentMonth(start); // Navigate calendar to start date
+    setCurrentMonth(start);
   };
   
-  // Handle input blur - validate and format the date
   const handleStartBlur = () => {
     setIsStartFocused(false);
     if (startInput.trim()) {
@@ -177,9 +215,8 @@ export default function DateRangePicker({
       if (parsed) {
         setRange(prev => ({ ...prev, start: parsed }));
         setStartInput(displayFormat(parsed));
-        setCurrentMonth(parsed); // Navigate calendar to entered date
+        setCurrentMonth(parsed);
       } else {
-        // If invalid, reset to formatted date or empty
         setStartInput(range.start ? displayFormat(range.start) : "");
       }
     } else {
@@ -194,9 +231,8 @@ export default function DateRangePicker({
       if (parsed) {
         setRange(prev => ({ ...prev, end: parsed }));
         setEndInput(displayFormat(parsed));
-        setCurrentMonth(parsed); // Navigate calendar to entered date
+        setCurrentMonth(parsed);
       } else {
-        // If invalid, reset to formatted date or empty
         setEndInput(range.end ? displayFormat(range.end) : "");
       }
     } else {
@@ -205,115 +241,121 @@ export default function DateRangePicker({
   };
 
   const getMarked = () => {
-    let marked: any = {};
+    let marked: Record<string, object> = {};
     if (!range.start) return marked;
 
-    // Ensure date is in YYYY-MM-DD format (remove time if present, normalize format)
-    let startDate = range.start.includes('T') ? range.start.split('T')[0] : range.start;
-    let endDate = range.end && range.end.includes('T') ? range.end.split('T')[0] : range.end;
-    
-    // Normalize to YYYY-MM-DD format using dayjs
+    let startDate = range.start.includes("T") ? range.start.split("T")[0] : range.start;
+    let endDate = range.end && range.end.includes("T") ? range.end.split("T")[0] : range.end;
     if (startDate && dayjs(startDate).isValid()) {
       startDate = dayjs(startDate).format("YYYY-MM-DD");
     }
     if (endDate && dayjs(endDate).isValid()) {
       endDate = dayjs(endDate).format("YYYY-MM-DD");
     } else if (!endDate && mode === "range") {
-      // If in range mode but no end date, treat as single date
       endDate = startDate;
     }
 
-    // Check if it's a single date (same start and end, or single mode)
     if (mode === "single" || (startDate === endDate && endDate)) {
-      // For single date selection, use simple marking type
       marked[startDate] = {
         selected: true,
-        selectedColor: "#6C4BE7",
+        selectedColor: ACCENT,
         selectedTextColor: "white",
       };
       return marked;
     }
-
-    // For period marking, all dates must use the same color
-    const periodColor = "#6C4BE7";
     
     marked[startDate] = {
       startingDay: true,
-      color: periodColor,
+      color: ACCENT,
       textColor: "white",
     };
 
     if (endDate) {
       const startDateObj = dayjs(startDate);
       const endDateObj = dayjs(endDate);
-      
-      // Only mark dates if end is after start
       if (endDateObj.isAfter(startDateObj)) {
-        // Limit the range to prevent excessive properties (max 365 days)
         const daysDiff = endDateObj.diff(startDateObj, "day");
         if (daysDiff > 365) {
-          // If range is too large, only mark start and end
           marked[endDate] = {
             endingDay: true,
-            color: periodColor,
+            color: ACCENT,
             textColor: "white",
           };
           return marked;
         }
-        
-        // Mark all intermediate dates with the same color (required for period marking)
         let current = startDateObj.add(1, "day");
         while (current.isBefore(endDateObj)) {
           marked[current.format("YYYY-MM-DD")] = {
-            color: periodColor,
+            color: ACCENT,
             textColor: "white",
           };
           current = current.add(1, "day");
         }
-        
-        // Mark end date
         marked[endDate] = {
           endingDay: true,
-          color: periodColor,
+          color: ACCENT,
           textColor: "white",
         };
       } else if (endDateObj.isSame(startDateObj)) {
-        // If start and end are the same, treat as single date
         marked[startDate] = {
           selected: true,
-          selectedColor: periodColor,
+          selectedColor: ACCENT,
           selectedTextColor: "white",
         };
       }
     }
-
     return marked;
+  };
+
+  const openMonthYear = (month: { getFullYear: () => number }) => {
+    setPickerYear(Number(month.getFullYear()));
+    setMonthYearMode(true);
+  };
+
+  const onSelectMonthInPicker = (monthIndex: number) => {
+    if (isMonthEntirelyOutOfRange(pickerYear, monthIndex, minDate, maxDate)) {
+      return;
+    }
+    const firstOfMonth = dayjs()
+      .year(pickerYear)
+      .month(monthIndex)
+      .date(1)
+      .format("YYYY-MM-DD");
+    setCurrentMonth(firstOfMonth);
+    setMonthYearMode(false);
+  };
+
+  const applyDisabled =
+    mode === "single"
+      ? !range.start
+      : !range.start || !range.end;
+
+  const calTheme = {
+    arrowColor: ACCENT,
+    todayTextColor: ACCENT,
+    textMonthFontWeight: "600" as const,
+    textDayHeaderFontSize: 12,
+    textDayHeaderFontWeight: "500" as const,
+    textSectionTitleDisabledColor: colors.gray[400],
   };
 
   return (
     <View style={styles.container}>
-
-      <Text style={styles.monthTitle}>
-        {dayjs(range.start || new Date()).format("MMMM YYYY")}
-      </Text>
-
-      {/* ---------- INPUT AREA ---------- */}
       <View style={styles.row}>
-
         {mode === "single" ? (
           <>
             <TextInput
-              style={[styles.singleBox]}
+              style={styles.singleBox}
               value={isStartFocused ? startInput : (range.start ? displayFormat(range.start) : startInput)}
               placeholder="DD / MM / YYYY"
+              placeholderTextColor={colors.gray[400]}
               onChangeText={(val) => {
-                // Auto-format with "/" separators
                 const formatted = autoFormatDate(val);
                 setStartInput(formatted);
                 const parsed = parseInputDate(formatted);
                 if (parsed) {
                   setRange({ start: parsed, end: parsed });
-                  setCurrentMonth(parsed); // Navigate calendar to entered date
+                  setCurrentMonth(parsed);
                 }
               }}
               onFocus={() => {
@@ -323,17 +365,16 @@ export default function DateRangePicker({
               onBlur={handleStartBlur}
               keyboardType="numeric"
             />
-
             <TouchableOpacity
               style={styles.todayBtn}
               onPress={() => {
                 const today = dayjs().format("YYYY-MM-DD");
                 setRange({ start: today, end: today });
                 setStartInput(displayFormat(today));
-                setCurrentMonth(today); // Navigate calendar to today
+                setCurrentMonth(today);
               }}
             >
-              <Text style={{ fontWeight: "600" }}>Today</Text>
+              <Text style={styles.todayBtnText}>Today</Text>
             </TouchableOpacity>
           </>
         ) : (
@@ -342,14 +383,14 @@ export default function DateRangePicker({
               style={styles.inputBox}
               value={isStartFocused ? startInput : (range.start ? displayFormat(range.start) : startInput)}
               placeholder="Start date"
+              placeholderTextColor={colors.gray[400]}
               onChangeText={(val) => {
-                // Auto-format with "/" separators
                 const formatted = autoFormatDate(val);
                 setStartInput(formatted);
                 const parsed = parseInputDate(formatted);
                 if (parsed) {
                   setRange({ start: parsed, end: range.end });
-                  setCurrentMonth(parsed); // Navigate calendar to entered date
+                  setCurrentMonth(parsed);
                 }
               }}
               onFocus={() => {
@@ -359,21 +400,19 @@ export default function DateRangePicker({
               onBlur={handleStartBlur}
               keyboardType="numeric"
             />
-
-            <Text> - </Text>
-
+            <Text style={styles.dash}>-</Text>
             <TextInput
               style={styles.inputBox}
               value={isEndFocused ? endInput : (range.end ? displayFormat(range.end) : endInput)}
               placeholder="End date"
+              placeholderTextColor={colors.gray[400]}
               onChangeText={(val) => {
-                // Auto-format with "/" separators
                 const formatted = autoFormatDate(val);
                 setEndInput(formatted);
                 const parsed = parseInputDate(formatted);
                 if (parsed) {
                   setRange({ start: range.start, end: parsed });
-                  setCurrentMonth(parsed); // Navigate calendar to entered date
+                  setCurrentMonth(parsed);
                 }
               }}
               onFocus={() => {
@@ -387,142 +426,262 @@ export default function DateRangePicker({
         )}
       </View>
 
-      {/* PRESETS */}
-      <View style={styles.presets}>
-        <TouchableOpacity onPress={() => setPreset(7)}>
-          <Text style={styles.presetText}>Last week</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setPreset(30)}>
-          <Text style={styles.presetText}>Last month</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setPreset(365)}>
-          <Text style={styles.presetText}>Last year</Text>
-        </TouchableOpacity>
-      </View>
+      {!hidePresets ? (
+        <View style={styles.presets}>
+          <TouchableOpacity onPress={() => setPreset(7)}>
+            <Text style={styles.presetText}>Last week</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setPreset(30)}>
+            <Text style={styles.presetText}>Last month</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setPreset(365)}>
+            <Text style={styles.presetText}>Last year</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
+      <View style={styles.divider} />
 
       <View style={styles.calendarBox}>
-        <Calendar
-          current={currentMonth}
-          markingType={mode === "range" ? "period" : undefined}
-          markedDates={getMarked()}
-          onDayPress={onDayPress}
-          onMonthChange={(month: any) => {
-            // Update current month when user navigates calendar
-            setCurrentMonth(month.dateString);
-          }}
-          theme={{
-            arrowColor: "#6C4BE7",
-            todayTextColor: "#6C4BE7",
-          }}
-          style={{
-            width: screenWidth - 70,
-          }}
-        />
+        {monthYearMode ? (
+          <View style={styles.monthYearPanel}>
+            <View style={styles.monthYearTopRow}>
+              <TouchableOpacity
+                onPress={() => setMonthYearMode(false)}
+                style={styles.monthYearBack}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityLabel="Back to calendar"
+              >
+                <Ionicons name="chevron-back" size={22} color={colors.gray[800]} />
+              </TouchableOpacity>
+              <Text style={styles.monthYearPanelTitle}>Select month</Text>
+              <View style={styles.monthYearBack} />
+            </View>
+            <View style={styles.yearRow}>
+              <TouchableOpacity
+                onPress={() => canDecYear && setPickerYear((y) => y - 1)}
+                disabled={!canDecYear}
+                style={styles.yearArrowBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons
+                  name="chevron-back"
+                  size={22}
+                  color={!canDecYear ? colors.gray[300] : ACCENT}
+                />
+              </TouchableOpacity>
+              <Text style={styles.yearText}>{pickerYear}</Text>
+              <TouchableOpacity
+                onPress={() => canIncYear && setPickerYear((y) => y + 1)}
+                disabled={!canIncYear}
+                style={styles.yearArrowBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons
+                  name="chevron-forward"
+                  size={22}
+                  color={!canIncYear ? colors.gray[300] : ACCENT}
+                />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.monthGrid}>
+              {MONTH_SHORT.map((label, i) => {
+                const dis = isMonthEntirelyOutOfRange(
+                  pickerYear,
+                  i,
+                  minDate,
+                  maxDate
+                );
+                const isCurrentView =
+                  dayjs(currentMonth).year() === pickerYear &&
+                  dayjs(currentMonth).month() === i;
+                return (
+                  <TouchableOpacity
+                    key={label}
+                    style={[
+                      styles.monthCell,
+                      isCurrentView && styles.monthCellActive,
+                      dis && styles.monthCellDisabled,
+                    ]}
+                    disabled={dis}
+                    onPress={() => onSelectMonthInPicker(i)}
+                  >
+                    <Text
+                      style={[
+                        styles.monthCellText,
+                        dis && styles.monthCellTextDisabled,
+                        isCurrentView && styles.monthCellTextActive,
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        ) : (
+          <Calendar
+            key={dayjs(currentMonth).format("YYYY-MM")}
+            current={currentMonth}
+            minDate={minDate}
+            maxDate={maxDate}
+            firstDay={1}
+            markingType={mode === "range" ? "period" : undefined}
+            markedDates={getMarked()}
+            onDayPress={onDayPress}
+            onMonthChange={(month: { dateString: string }) => {
+              setCurrentMonth(month.dateString);
+            }}
+            renderHeader={(month) => (
+              <TouchableOpacity
+                onPress={() => openMonthYear(month)}
+                style={styles.headerTitlePressable}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                activeOpacity={0.6}
+                accessibilityLabel="Open month and year"
+              >
+                <Text style={styles.headerTitleText} allowFontScaling={false}>
+                  {month.toString("MMMM yyyy")}
+                </Text>
+              </TouchableOpacity>
+            )}
+            renderArrow={(direction) => (
+              <Ionicons
+                name={direction === "left" ? "chevron-back" : "chevron-forward"}
+                size={22}
+                color={ACCENT}
+              />
+            )}
+            disableArrowLeft={disableArrowLeft}
+            disableArrowRight={disableArrowRight}
+            theme={calTheme}
+            style={{ width: screenWidth - 70 }}
+            enableSwipeMonths
+          />
+        )}
       </View>
 
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.cancel} onPress={onClose}>
-          <Text>Cancel</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.apply,
-            { opacity: !range.start || !range.end ? 0.5 : 1 },
-          ]}
-          disabled={!range.start || !range.end}
-          onPress={() => onApply(range)}
-        >
-          <Text style={{ color: "white" }}>Apply</Text>
-        </TouchableOpacity>
-      </View>
+      <PickerModalFooter
+        onCancel={onClose}
+        onApply={() => onApply(range)}
+        applyDisabled={applyDisabled}
+      />
     </View>
   );
 }
 
-/* ---------- STYLES ---------- */
 const styles = StyleSheet.create({
   container: { flexGrow: 1 },
-
-  monthTitle: {
-    textAlign: "center",
-    fontWeight: "600",
-    fontSize: 18,
-    marginBottom: 10,
-  },
-
   row: {
     flexDirection: "row",
     justifyContent: "center",
     marginBottom: 8,
     alignItems: "center",
   },
-
+  dash: { marginHorizontal: 6, color: colors.gray[500] },
   inputBox: {
     borderWidth: 1,
-    borderColor: "#DDD",
+    borderColor: colors.gray[200],
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
     minWidth: 130,
   },
-
   singleBox: {
     borderWidth: 1,
-    borderColor: "#6C4BE7",
+    borderColor: ACCENT,
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 10,
     minWidth: 200,
   },
-
   todayBtn: {
     marginLeft: 10,
     borderWidth: 1,
-    borderColor: "#DDD",
+    borderColor: colors.gray[200],
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 10,
   },
-
+  todayBtnText: { fontWeight: "600", color: colors.gray[800] },
   presets: {
     flexDirection: "row",
     justifyContent: "space-around",
     marginBottom: 10,
   },
-
   presetText: {
-    color: "#6C4BE7",
+    color: ACCENT,
     fontWeight: "600",
   },
-
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.gray[200],
+    marginBottom: 8,
+  },
   calendarBox: {
     width: "100%",
     alignSelf: "center",
     borderRadius: 12,
     overflow: "hidden",
   },
-
-  footer: {
+  headerTitlePressable: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  headerTitleText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.gray[800],
+    textAlign: "center",
+  },
+  monthYearPanel: {
+    paddingBottom: 8,
+    minWidth: screenWidth - 70,
+  },
+  monthYearTopRow: {
     flexDirection: "row",
-    marginTop: 14,
-    columnGap: 10,
-  },
-
-  cancel: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 10,
-    borderColor: "#DDD",
-    padding: 12,
     alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
   },
-
-  apply: {
-    flex: 1,
-    backgroundColor: "#6C4BE7",
-    borderRadius: 10,
-    padding: 12,
+  monthYearBack: { width: 32, alignItems: "center" },
+  monthYearPanelTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.gray[800],
+  },
+  yearRow: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+    gap: 16,
   },
+  yearArrowBtn: { padding: 4 },
+  yearText: { fontSize: 18, fontWeight: "700", color: colors.gray[800], minWidth: 56, textAlign: "center" },
+  monthGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    rowGap: 8,
+  },
+  monthCell: {
+    width: "31%",
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    backgroundColor: colors.brand[50],
+  },
+  monthCellActive: {
+    backgroundColor: ACCENT,
+  },
+  monthCellDisabled: { opacity: 0.4 },
+  monthCellText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: colors.gray[800],
+  },
+  monthCellTextActive: { color: "#fff" },
+  monthCellTextDisabled: { color: colors.gray[400] },
 });

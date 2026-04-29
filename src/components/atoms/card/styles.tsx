@@ -19,7 +19,7 @@ export const useStyles = () => {
         //   elevation: 3,
         // },
         base: {
-          width: isTablet ? '49%' : "100%",
+          width: isTablet ? '100%' : "100%",
           marginHorizontal: isTablet ? 5 : 0,
           backgroundColor: colors.base.white,
           borderRadius: 12,

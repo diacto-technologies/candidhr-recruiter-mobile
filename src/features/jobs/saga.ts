@@ -36,7 +36,6 @@ function* getJobsWorker(
       jobsApi.getJobs,
       payload
     );
-    console.log(response, "getJobsWorkergetJobsWorkergetJobsWorker")
 
     yield put(
       getJobsSuccess({
@@ -109,7 +108,6 @@ function* getJobDetailWorker(action: { type: string; payload: string }): Generat
   try {
     yield put(getJobDetailRequest(action.payload));
     const response = yield call(jobsApi.getJobDetail, action.payload);
-    console.log(response, "getJobDetailWorkergetJobDetailWorkergetJobDetailWorkergetJobDetailWorker")
     yield put(getJobDetailSuccess(response));
   } catch (error: any) {
     yield put(getJobDetailFailure(error.message || "Failed to fetch job details"));
@@ -161,7 +159,6 @@ function* getJobNameListWorker(
       page,
       search
     );
-    console.log(response,"getJobNameListWorkergetJobNameListWorkergetJobNameListWorker")
 
     yield put(
       getJobNameListSuccess({

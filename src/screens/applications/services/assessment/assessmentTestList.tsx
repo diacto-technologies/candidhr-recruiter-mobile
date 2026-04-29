@@ -2,7 +2,7 @@ import { View, StyleSheet, Pressable, FlatList } from 'react-native'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import CustomSafeAreaView from '../../../../components/atoms/customsafeareaview'
 import Header from '../../../../components/organisms/header'
-import { goBack } from '../../../../utils/navigationUtils'
+import { goBack, navigate } from '../../../../utils/navigationUtils'
 import SlideAnimatedTab from '../../../../components/molecules/slideanimatedtab'
 import { colors } from '../../../../theme/colors'
 import { Shimmer, Typography } from '../../../../components'
@@ -175,7 +175,7 @@ const AssessmentTestList = () => {
                     setDebouncedTitle('')
                     setOpenSearch(false)
                 }}
-                onBack={goBack}
+                onBack={()=>navigate('AssessmentScreen')}
             />
             <View style={{ alignItems: 'center', flexDirection: 'row' }}>
                 <Pressable

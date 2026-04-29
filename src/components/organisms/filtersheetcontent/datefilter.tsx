@@ -27,7 +27,7 @@ const DateFilter: React.FC = () => {
   );
 
   return (
-    <View style={{ paddingHorizontal: 16 }}>
+    <View style={{}}>
       <TouchableOpacity
         activeOpacity={0.7}
         style={styles.dateInput}
@@ -81,14 +81,14 @@ export default DateFilter;
 
 const styles = StyleSheet.create({
   dateInput: {
-    flex: 1,
+   // flex: 1,
     borderWidth: 1,
     borderColor: "#E2E8F0",
-    borderRadius: 12,
-    paddingVertical: 12,
+    borderRadius: 8,
+    paddingVertical: 14,
     paddingHorizontal: 14,
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 6,
   },
 });

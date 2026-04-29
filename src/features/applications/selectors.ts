@@ -218,3 +218,38 @@ export const selectExportAssessmentReportLoading = (state: RootState) =>
 
 export const selectExportAssessmentReportError = (state: RootState) =>
   state.applications.exportAssessmentReportError ?? null;
+
+export const selectApplicantOptionsList = createSelector(
+  [selectApplicationsState],
+  (s) => s.applicantOptionsList
+);
+
+export const selectApplicantOptionsLoading = createSelector(
+  [selectApplicationsState],
+  (s) => s.applicantOptionsLoading
+);
+
+export const selectApplicantOptionsNext = createSelector(
+  [selectApplicationsState],
+  (s) => s.applicantOptionsNext
+);
+
+export const selectApplicantOptionsPage = createSelector(
+  [selectApplicationsState],
+  (s) => s.applicantOptionsPage
+);
+
+export const selectApplicantOptionsSearch = createSelector(
+  [selectApplicationsState],
+  (s) => s.applicantOptionsSearch
+);
+
+export const selectApplicantOptionsRequestJobId = createSelector(
+  [selectApplicationsState],
+  (s) => s.applicantOptionsRequestJobId
+);
+
+export const selectApplicantOptionsHasMore = createSelector(
+  [selectApplicantOptionsNext],
+  (next) => next != null
+);

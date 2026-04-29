@@ -47,7 +47,7 @@ import { showToastMessage } from '../../../../../utils/toast';
 interface TimelineItem {
   title: string;
   date?: string;
-  status: 'completed' | 'current';
+  status: 'completed' | 'current' | 'upcoming';
 }
 
 const normalizeContentType = (v: unknown) =>
@@ -272,11 +272,19 @@ const AssessmentV2 = ({
     (completedSteps / timelineSteps.length) * 100
   );
 
-  const timelineData: TimelineItem[] = timelineSteps.map(step => ({
-    title: step.title,
-    date: step.date,
-    status: step.completed ? 'completed' : 'current',
-  }));
+  const timelineData: TimelineItem[] = (() => {
+    let foundCurrent = false
+    return timelineSteps.map((step) => {
+      if (step.completed) {
+        return { title: step.title, date: step.date, status: 'completed' as const }
+      }
+      if (!foundCurrent) {
+        foundCurrent = true
+        return { title: step.title, date: step.date, status: 'current' as const }
+      }
+      return { title: step.title, date: step.date, status: 'upcoming' as const }
+    })
+  })();
 
 
   return (

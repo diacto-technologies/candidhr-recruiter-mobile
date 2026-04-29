@@ -27,6 +27,18 @@ export const useStyles = () => {
           statusDropdownWrapper: {
             minWidth: 180,
             maxWidth: 200,
-          }
+          },
+          titleCenterOverlay: {
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+            zIndex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingHorizontal: 48,
+            pointerEvents: 'none',
+          },
     });
 };

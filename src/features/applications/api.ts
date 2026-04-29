@@ -1,6 +1,30 @@
 import { apiClient } from "../../api/client";
 import { API_ENDPOINTS } from "../../api/endpoints";
-import { CreateApplicationRequest, UpdateApplicationStatusRequest, Application, GetApplicationsParams, ApplicationsListResponse, ApplicationDetailResponse, GetApplicationResponsesParams, ApplicationResponsesApiResponse, ResumeScreeningApiResponse, AssessmentLogApiResponse, AssessmentReportApiResponse, AssessmentDetailedReportApiResponse, ScreeningAssessment, PersonalityScreeningResponse, ApplicationStagesResponse, SessionReviewedResponse, ReasonCategory, ReasonListItem, UpdateStageStatusPayload, PerformanceReportResponse, AssessmentOptionsReportResponse, ExportAssessmentReportRequest } from "./types";
+import {
+  CreateApplicationRequest,
+  UpdateApplicationStatusRequest,
+  Application,
+  GetApplicationsParams,
+  ApplicationsListResponse,
+  ApplicationDetailResponse,
+  GetApplicationResponsesParams,
+  ApplicationResponsesApiResponse,
+  ResumeScreeningApiResponse,
+  AssessmentLogApiResponse,
+  AssessmentReportApiResponse,
+  AssessmentDetailedReportApiResponse,
+  ScreeningAssessment,
+  PersonalityScreeningResponse,
+  ApplicationStagesResponse,
+  SessionReviewedResponse,
+  ReasonCategory,
+  ReasonListItem,
+  UpdateStageStatusPayload,
+  PerformanceReportResponse,
+  AssessmentOptionsReportResponse,
+  ExportAssessmentReportRequest,
+  ApplicantOptionsListResponse,
+} from "./types";
 
 export const applicationsApi = {
   // getApplications: async (params?: GetApplicationsParams): Promise<ApplicationsListResponse> => {
@@ -393,5 +417,26 @@ getApplications: async (
     return res?.data ?? res;
   },
 
+  /**
+   * GET /applications/v1/options/?page=&jobId=
+   * When `jobId` is omitted, returns all applicants (per product).
+   */
+  getApplicantOptions: async (params: {
+    page: number;
+    jobId?: string | null;
+    search?: string;
+  }): Promise<ApplicantOptionsListResponse> => {
+    const queryParams = new URLSearchParams();
+    queryParams.append("page", String(params.page));
+    if (params.jobId) {
+      queryParams.append("jobId", params.jobId);
+    }
+    if (params.search) {
+      queryParams.append("name__icontains", params.search);
+    }
+    return apiClient.get(
+      `${API_ENDPOINTS.APPLICATIONS.APPLICANT_OPTIONS}?${queryParams.toString()}`
+    );
+  },
 };
 

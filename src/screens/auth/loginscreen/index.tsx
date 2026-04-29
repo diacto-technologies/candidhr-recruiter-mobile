@@ -23,6 +23,7 @@ import { saveCredentialsToPasswordManager } from '../../../utils/credentialManag
 import BackgroundPattern from '../../../components/atoms/backgroundpattern';
 import { eyeVisibleIcon } from '../../../assets/svg/eyevisible';
 import { eyeHiddenIcon } from '../../../assets/svg/eyehiddenicon';
+import { ActivityIndicator } from 'react-native-paper';
 
 const LoginScreen = () => {
   const styles = useStyles();
@@ -124,7 +125,6 @@ const LoginScreen = () => {
             <Typography variant="semiBoldTxtsm" color={colors.gray[700]}>
               Email *
             </Typography>
-
             <TextField
               placeholder="Enter your email"
               value={email}
@@ -133,6 +133,11 @@ const LoginScreen = () => {
               autoComplete="email"
               textContentType="username"
             />
+             {emailError && (
+              <Typography variant="regularTxtsm" color={colors.error[600]} style={{paddingLeft:5}}>
+                {emailError}
+              </Typography>
+            )}
           </View>
 
           <View style={styles.label}>
@@ -184,7 +189,7 @@ const LoginScreen = () => {
           </View>
 
           <Button variant="contain" onPress={handleLogin} disabled={!email || !password} textColor={!email || !password ? colors.gray[400] : colors.base.white}>
-            {isLoading ? "Signing in..." : "Continue"}
+            {isLoading ? <ActivityIndicator color={colors.base.white} size={20}/>:"Continue"}
           </Button>
 
           {/* {error && (

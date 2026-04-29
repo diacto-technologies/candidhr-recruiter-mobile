@@ -134,4 +134,10 @@ export const selectJobNameListSearch = createSelector(
   (jobs) => jobs.jobNameListSearch
 );
 
+/** True when the API returned a `next` URL (more pages available). */
+export const selectJobNameListHasMore = createSelector(
+  [selectJobNameListNext],
+  (next) => next != null
+);
+
 

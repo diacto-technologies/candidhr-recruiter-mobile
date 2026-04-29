@@ -278,7 +278,7 @@ const JobCardList: React.FC<JobCardListProps> = ({
                                         Try adjusting your search or filters
                                     </Typography>
                                 </View>
-                                {/* <Button
+                                <Button
                                     buttonColor={colors.mainColors.slateBlue}
                                     textColor={colors.common.white}
                                     borderColor={colors.mainColors.borderColor}
@@ -288,7 +288,7 @@ const JobCardList: React.FC<JobCardListProps> = ({
                                     onPress={() => { }}
                                 >
                                     Add new job
-                                </Button> */}
+                                </Button>
                             </View>
                         </BackgroundPattern >
                     ) : null

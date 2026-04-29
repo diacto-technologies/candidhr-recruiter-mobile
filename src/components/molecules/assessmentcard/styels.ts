@@ -13,7 +13,34 @@ export const useStyles = () => {
         rowBetween: {
             flexDirection: 'row',
             justifyContent: 'space-between',
+            //alignItems: 'center',
+        },
+
+        /** Blueprint list card — title + overflow menu (matches test AssessmentCard) */
+        listCardTitleRow: {
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+        },
+        listCardTitleText: {
+            width: '95%',
+        },
+        metaSpacer: {
+            marginRight: 10,
+        },
+        listCardStatusRow: {
+            flexDirection: 'row',
             alignItems: 'center',
+            gap: 15,
+        },
+        avatarMarginFirst: {
+            marginLeft: 0,
+        },
+        avatarMarginOverlap: {
+            marginLeft: -12,
+        },
+        dropdownMenuItemIcon: {
+            marginRight: 10,
         },
 
         metaRow: {
@@ -68,5 +95,35 @@ export const useStyles = () => {
             justifyContent: 'center',
             alignItems: 'center',
           },
+
+        /** Duplicate Test confirm modal — circular icon behind copy glyph */
+        duplicateModalIconWrap: {
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: colors.brand[50],
+        },
+
+        /** Delete Test confirm modal — light pink circle + trash */
+        deleteModalIconWrap: {
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: colors.error[50],
+        },
+
+        /** Archive Test confirm modal — light brand circle + archive glyph */
+        archiveModalIconWrap: {
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: colors.brand[50],
+        },
     })
 }

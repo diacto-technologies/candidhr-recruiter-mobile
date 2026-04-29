@@ -176,6 +176,106 @@ async function refreshFromStorage(): Promise<boolean> {
   return inFlightRefresh;
 }
 
+/** Rows may live at `details.reference_solutions` or `details.details.reference_solutions`. */
+export function extractReferenceSolutionRowsFromApiErrorDetails(
+  details: any
+): any[] | null {
+  if (!details || typeof details !== 'object') {
+    return null;
+  }
+  const rows =
+    details?.details?.reference_solutions ?? details?.reference_solutions;
+  return Array.isArray(rows) && rows.length > 0 ? rows : null;
+}
+
+/** Thrown by `handleApiError` so callers can read structured API bodies (e.g. reference solution rows). */
+export class ApiError extends Error {
+  readonly apiDetails: unknown;
+
+  constructor(message: string, apiDetails?: unknown) {
+    super(message);
+    this.name = 'ApiError';
+    this.apiDetails = apiDetails;
+    Object.setPrototypeOf(this, ApiError.prototype);
+  }
+}
+
+/** Prefer `message` / string `error`; never use boolean `error: true` as the user-facing text. */
+function enrichWithReferenceSolutionDetails(base: string, details: any): string {
+  const rows = extractReferenceSolutionRowsFromApiErrorDetails(details);
+  if (!rows) {
+    return base;
+  }
+  const first = rows[0];
+  const hint =
+    (typeof first?.message === 'string' && first.message.trim()) ||
+    (typeof first?.error === 'string' && first.error.trim()) ||
+    '';
+  const n = rows.length;
+  if (n <= 1) {
+    return hint ? `${base} ${hint}` : base;
+  }
+  return hint
+    ? `${base} Reference solution: ${hint} (${n} test cases).`
+    : `${base} Reference solution failed on ${n} test cases.`;
+}
+
+function messageFromApiErrorBody(errorData: Record<string, any>, baseDefault: string): string {
+  if (errorData.non_field_errors && Array.isArray(errorData.non_field_errors)) {
+    const joined = errorData.non_field_errors.filter(Boolean).join(', ');
+    if (joined) {
+      return enrichWithReferenceSolutionDetails(joined, errorData.details);
+    }
+  }
+  if (typeof errorData.message === 'string' && errorData.message.trim()) {
+    return enrichWithReferenceSolutionDetails(
+      errorData.message.trim(),
+      errorData.details,
+    );
+  }
+  if (typeof errorData.error === 'string' && errorData.error.trim()) {
+    return enrichWithReferenceSolutionDetails(
+      errorData.error.trim(),
+      errorData.details,
+    );
+  }
+  if (typeof errorData.detail === 'string' && errorData.detail.trim()) {
+    return enrichWithReferenceSolutionDetails(
+      errorData.detail.trim(),
+      errorData.details,
+    );
+  }
+  if (errorData.errors?.message && typeof errorData.errors.message === 'string') {
+    return enrichWithReferenceSolutionDetails(
+      errorData.errors.message.trim(),
+      errorData.details,
+    );
+  }
+  if (Array.isArray(errorData.errors)) {
+    const joined = errorData.errors.join(', ');
+    if (joined) {
+      return enrichWithReferenceSolutionDetails(joined, errorData.details);
+    }
+  }
+  if (
+    typeof errorData.error_description === 'string' &&
+    errorData.error_description.trim()
+  ) {
+    return enrichWithReferenceSolutionDetails(
+      errorData.error_description.trim(),
+      errorData.details,
+    );
+  }
+  if (errorData.error === true) {
+    const base =
+      typeof errorData.message === 'string' && errorData.message.trim()
+        ? errorData.message.trim()
+        : 'Validation failed.';
+    return enrichWithReferenceSolutionDetails(base, errorData.details);
+  }
+  return baseDefault;
+}
+
 // Helper function to handle API errors
 // Note: 401 is handled by executeWithRefresh, not here (to avoid double logout)
 const handleApiError = async (response: Response, endpoint?: string): Promise<never> => {
@@ -207,21 +307,11 @@ const handleApiError = async (response: Response, endpoint?: string): Promise<ne
     const errorData = await response.json();
     errorDetails = errorData;
 
-    // Try multiple common error message fields
-    // Handle non_field_errors (common in Django REST Framework)
-    if (errorData.non_field_errors && Array.isArray(errorData.non_field_errors)) {
-      errorMessage = errorData.non_field_errors.join(', ');
-    } else if (errorData.error) {
-      // Prioritize 'error' field (common in API responses)
-      errorMessage = errorData.error;
-    } else {
-      errorMessage = errorData.message ||
-        errorData.detail ||
-        errorData.errors?.message ||
-        (Array.isArray(errorData.errors) ? errorData.errors.join(', ') : null) ||
-        errorData.error_description ||
-        errorMessage;
-    }
+    // Prefer structured parsing; never use boolean `error: true` as the user-facing message.
+    errorMessage = messageFromApiErrorBody(
+      errorData,
+      `API Error (${response.status}): ${response.statusText}`
+    );
   } catch (parseError) {
     // If response is not JSON, try to get text
     try {
@@ -249,7 +339,7 @@ const handleApiError = async (response: Response, endpoint?: string): Promise<ne
   // Show toast message to user
   // TODO: Consider moving toast to saga/UI layer for better separation of concerns
   // API layer should be UI-agnostic, but keeping for now to maintain existing behavior
-  const normalizedErrorMessage = String(errorMessage ?? "").toLowerCase();
+  const normalizedErrorMessage = String(errorMessage ?? '').toLowerCase();
   const isEmptyState404 =
     response.status === 404 &&
     (normalizedErrorMessage.includes("no results found") ||
@@ -264,11 +354,25 @@ const handleApiError = async (response: Response, endpoint?: string): Promise<ne
     typeof endpoint === "string" &&
     (endpoint.includes("/assessments/v2/") || endpoint.includes("assessments/v2/"));
 
+  const refRows = extractReferenceSolutionRowsFromApiErrorDetails(
+    (errorDetails as any)?.details
+  );
+  const hasReferenceSolutionValidation =
+    Array.isArray(refRows) && refRows.length > 0;
+
   if (!isEmptyState404 && !isAssessmentsV2Endpoint) {
-    showToastMessage(errorMessage, 'error');
+    // Saga/UI shows an Alert with per-case rows; avoid a duplicate short toast.
+    if (!hasReferenceSolutionValidation) {
+      showToastMessage(errorMessage, 'error');
+    }
   }
 
-  throw new Error(errorMessage);
+  throw new ApiError(
+    typeof errorMessage === 'string'
+      ? errorMessage
+      : String(errorMessage ?? 'Request failed'),
+    errorDetails
+  );
 };
 
 async function executeWithRefresh(

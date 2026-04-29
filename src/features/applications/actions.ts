@@ -314,3 +314,18 @@ export const updateApplicationShareRequestAction = (payload: UpdateApplicationSh
   type: APPLICATIONS_ACTION_TYPES.UPDATE_APPLICATION_SHARE_REQUEST,
   payload,
 });
+
+export type GetApplicantOptionsPayload = {
+  page?: number;
+  /** Omit or null/empty = all applicants (no `jobId` query param) */
+  jobId?: string | null;
+  search?: string;
+  append?: boolean;
+};
+
+export const getApplicantOptionsRequestAction = (
+  payload?: GetApplicantOptionsPayload
+) => ({
+  type: APPLICATIONS_ACTION_TYPES.GET_APPLICANT_OPTIONS_REQUEST,
+  payload,
+});

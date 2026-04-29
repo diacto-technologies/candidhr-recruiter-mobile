@@ -71,6 +71,8 @@ export const API_ENDPOINTS = {
     SEND_EMAIL: '/applications/send-email/',
     /** PATCH share users with an application: /applications/v1/{id}/share/ */
     SHARE: (id: string) => `/applications/v1/${id}/share/`,
+    /** GET /applications/v1/options/?page=&jobId= — applicant picker (assign, etc.); omit jobId for all */
+    APPLICANT_OPTIONS: '/applications/v1/options/',
   },
   ASSESSMENTS: {
     LIST: "/assessments/v1/list/",
@@ -80,15 +82,74 @@ export const API_ENDPOINTS = {
     ASSIGNEDLIST: "/assessments/v2/tests/list/",
     /** Assessment blueprints (company assessments library) */
     BLUEPRINTS_LIST: "/assessments/v2/blueprints/list/",
+    /** POST create blueprint (wizard) — no id in path */
+    BLUEPRINTS_ROOT: "/assessments/v2/blueprints/",
     BLUEPRINT_DETAIL: (id: string) => `/assessments/v2/blueprints/${id}/`,
+    BLUEPRINT_DUPLICATE: (id: string) =>
+      `/assessments/v2/blueprints/${id}/duplicate/`,
+    BLUEPRINT_ARCHIVE: (id: string) =>
+      `/assessments/v2/blueprints/${id}/archive/`,
+    /** POST body: { is_published: true } */
+    BLUEPRINT_PUBLISH: (id: string) =>
+      `/assessments/v2/blueprints/${id}/publish/`,
+    /** POST body: { users_shared_with: string[] } */
+    BLUEPRINT_SHARE: (id: string) => `/assessments/v2/blueprints/${id}/share/`,
     /** GET ?blueprint_id=&o=-created_at */
     ASSIGNMENTS_LIST: "/assessments/v2/assignments/list/",
+    /** POST assign blueprint to applications + invite emails */
+    ASSIGNMENTS_POST: "/assessments/v2/assignments/",
     /** GET ?blueprint_id= */
     ASSIGNMENTS_STATS: "/assessments/v2/assignments/stats/",
     /** POST body: select_all, assignment_ids, blueprint_id */
     ASSIGNMENTS_EXPORT: "/assessments/v2/assignments/export/",
     /** V2 assessments dashboard top stats */
     ASSESSMENT_STATS: "/assessments/v2/dashboard-stats/",
+    ASSESSMENT_TEST:"/assessments/v2/tests/",
+    /** GET /assessments/v2/tests/{id}/ */
+    TEST_DETAIL: (id: string) => `/assessments/v2/tests/${id}/`,
+    /** POST /assessments/v2/tests/{id}/publish/ */
+    TEST_PUBLISH: (id: string) => `/assessments/v2/tests/${id}/publish/`,
+    /** POST /assessments/v2/tests/{id}/duplicate/ */
+    TEST_DUPLICATE: (id: string) => `/assessments/v2/tests/${id}/duplicate/`,
+    /** POST /assessments/v2/tests/{id}/archive/ */
+    TEST_ARCHIVE: (id: string) => `/assessments/v2/tests/${id}/archive/`,
+    /** POST /assessments/v2/tests/{id}/share/ body: { users_shared_with: string[] } */
+    TEST_SHARE: (id: string) => `/assessments/v2/tests/${id}/share/`,
+    /** POST create question (test id goes in body) */
+    QUESTIONS: "/assessments/v2/questions/",
+    /** POST/PUT coding problem-question (nested problem payload) */
+    PROBLEM_QUESTIONS: "/assessments/v2/problem-questions/",
+    PROBLEM_QUESTION_DETAIL: (questionId: string) =>
+      `/assessments/v2/problem-questions/${questionId}/`,
+    /** POST create question for a specific test id */
+    QUESTIONS_CREATE: (testId: string) => `/assessments/v2/questions/${testId}/`,
+    /** DELETE /assessments/v2/questions/{id}/ */
+    QUESTION_DETAIL: (questionId: string) => `/assessments/v2/questions/${questionId}/`,
+    /** POST /assessments/v2/tests/{id}/generate-questions/ */
+    TEST_GENERATE_QUESTIONS: (testId: string) =>
+      `/assessments/v2/tests/${testId}/generate-questions/`,
+    /** GET /assessments/v2/tests/{id}/download-template/ */
+    TEST_DOWNLOAD_TEMPLATE: (testId: string) =>
+      `/assessments/v2/tests/${testId}/download-template/`,
+    /** POST /assessments/v2/tests/{id}/bulk-upload/ (multipart file) */
+    TEST_BULK_UPLOAD: (testId: string) => `/assessments/v2/tests/${testId}/bulk-upload/`,
+    /** POST `{ questions: [...] }` — bulk create questions on a test */
+    TEST_QUESTIONS_BULK_CREATE: (testId: string) =>
+      `/assessments/v2/tests/${testId}/questions/bulk-create/`,
+    /** GET /assessments/v2/tests/options/?page=&page_size=&is_published= */
+    TEST_OPTIONS: "/assessments/v2/tests/options/",
+    /** GET /assessments/v2/languages/?page=&page_size= — judge / IDE language runtimes */
+    LANGUAGES: "/assessments/v2/languages/",
+    /** GET /assessments/v2/categories/?page=&o=name — test skill categories */
+    CATEGORIES: "/assessments/v2/categories/",
+    /** POST — AI metadata for coding problems (statement, constraints, examples) */
+    GENERATE_CODING_PROBLEM_METADATA: "/assessments/v2/generate-coding-problem/metadata/",
+    /** POST — AI hidden test cases + per-language starter snippets */
+    GENERATE_CODING_PROBLEM_TESTCASES_SNIPPETS:
+      "/assessments/v2/generate-coding-problem/testcases-snippets/",
+    /** POST — AI reference solution(s) per language */
+    GENERATE_CODING_PROBLEM_REFERENCE_SOLUTION:
+      "/assessments/v2/generate-coding-problem/reference-solution/",
   },
   PERSONALITY_SCREENING: {
     FILTER: "/personality-screening/filter/",

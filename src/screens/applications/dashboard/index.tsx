@@ -43,10 +43,11 @@ const Dashboard = () => {
     const jobNameListLoading = useAppSelector(selectJobNameListLoading);
     const selectedJob = useAppSelector(selectSelectedJob);
 
+    useEffect(()=>{
+        dispatch(getProfileRequestAction());
+    },[profileLoaded]);
+
     useEffect(() => {
-        if (!profileLoaded) {
-            dispatch(getProfileRequestAction());
-        }
         if (!analyticsLoaded) {
             dispatch(getAnalyticsRequestAction());
             dispatch(getStageGraphRequestAction());
@@ -54,7 +55,7 @@ const Dashboard = () => {
             // dispatch(getWeeklyGraphRequestAction());
             dispatch(getStageGraphOverviewRequestAction());
         }
-    }, [profileLoaded, analyticsLoaded])
+    }, [analyticsLoaded])
 
     useEffect(() => {
         if (openSearch) {
