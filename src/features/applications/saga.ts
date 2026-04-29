@@ -1,3 +1,4 @@
+import { PayloadAction } from "@reduxjs/toolkit";
 import { call, put, select, takeLatest } from "redux-saga/effects";
 import { Platform } from "react-native";
 import RNFS from "react-native-fs";
@@ -80,9 +81,28 @@ import {
   exportAssessmentReportRequest,
   exportAssessmentReportSuccess,
   exportAssessmentReportFailure,
+  getApplicantOptionsRequest,
+  getApplicantOptionsSuccess,
+  getApplicantOptionsFailure,
 } from "./slice";
 import { applicationsApi } from "./api";
-import { AssessmentDetailedReportApiResponse, AssessmentLog, AssessmentLogApiResponse, AssessmentReportApiResponse, ExportAssessmentReportRequest, GetApplicationResponsesParams, GetApplicationsParams, GetApplicationsSagaAction, PersonalityScreeningResponse, ResumeScreeningApiResponse, ScreeningAssessment, SessionReviewedResponse, UpdateApplicationShareRequest } from "./types";
+import type { GetApplicantOptionsPayload } from "./actions";
+import {
+  ApplicantOptionsListResponse,
+  AssessmentDetailedReportApiResponse,
+  AssessmentLog,
+  AssessmentLogApiResponse,
+  AssessmentReportApiResponse,
+  ExportAssessmentReportRequest,
+  GetApplicationResponsesParams,
+  GetApplicationsParams,
+  GetApplicationsSagaAction,
+  PersonalityScreeningResponse,
+  ResumeScreeningApiResponse,
+  ScreeningAssessment,
+  SessionReviewedResponse,
+  UpdateApplicationShareRequest,
+} from "./types";
 import { getAssessmentDetailedReportRequestAction, getAssessmentReportRequestAction, getApplicationDetailRequestAction, getApplicationStagesRequestAction, getApplicationReasonsListRequestAction } from "./actions";
 import { showToastMessage } from "../../utils/toast";
 import { selectProfile } from "../profile/selectors";
@@ -1029,6 +1049,48 @@ function* updateApplicationReasonWorker(action: {
   }
 }
 
+function* getApplicantOptionsWorker(
+  action: PayloadAction<GetApplicantOptionsPayload | undefined>
+): Generator<any, void, any> {
+  try {
+    const page = action.payload?.page ?? 1;
+    const search = action.payload?.search ?? "";
+    const append = action.payload?.append ?? false;
+    const raw = action.payload?.jobId;
+    const jobId =
+      raw === undefined || raw === null || raw === "" ? null : raw;
+
+    yield put(
+      getApplicantOptionsRequest({
+        page,
+        jobId: raw,
+        search,
+        append,
+      })
+    );
+
+    const response: ApplicantOptionsListResponse = yield call(
+      applicationsApi.getApplicantOptions,
+      { page, jobId, search }
+    );
+
+    yield put(
+      getApplicantOptionsSuccess({
+        page,
+        append,
+        jobId,
+        data: response,
+      })
+    );
+  } catch (error: any) {
+    yield put(
+      getApplicantOptionsFailure(
+        error?.message ?? "Failed to load applicants"
+      )
+    );
+  }
+}
+
 export function* applicationsSaga() {
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_APPLICATIONS_REQUEST, getApplicationsWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.EXPORT_APPLICATIONS_REQUEST, exportApplicationsWorker);
@@ -1057,5 +1119,9 @@ export function* applicationsSaga() {
   yield takeLatest(APPLICATIONS_ACTION_TYPES.UPDATE_APPLICATION_SHARE_REQUEST, updateApplicationShareWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_ASSESSMENTOPTIONS_REPORT_REQUEST, getAssessmentOptionsReportWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.EXPORT_ASSESSMENT_REPORT_REQUEST, exportAssessmentReportWorker);
+  yield takeLatest(
+    APPLICATIONS_ACTION_TYPES.GET_APPLICANT_OPTIONS_REQUEST,
+    getApplicantOptionsWorker
+  );
 }
 

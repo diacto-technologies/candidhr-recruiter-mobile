@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSelector } from 'react-redux';
 import Card from '../../../../components/atoms/card';
@@ -8,14 +8,17 @@ import Divider from '../../../../components/atoms/divider';
 import Typography from '../../../../components/atoms/typography';
 import Header from '../../../../components/organisms/header';
 import { colors } from '../../../../theme/colors';
-import { goBack, navigate } from '../../../../utils/navigationUtils';
+import { navigate } from '../../../../utils/navigationUtils';
 import { getStatusColor } from '../../../../components/organisms/applicantlist/helper';
 import { useRoute } from '@react-navigation/native';
 import TagList from '../../../../components/molecules/taglist';
 import StatCard from '../../../../components/molecules/statcard';
 import CandidateAssignmentsTable from '../../../../components/organisms/candidateassignmentstable ';
-import { Button } from '../../../../components';
-import { fetchAssessmentOverviewRequestAction } from '../../../../features/assessments/actions';
+import { CustomModalWrapper } from '../../../../components';
+import {
+    fetchAssessmentOverviewRequestAction,
+    publishBlueprintRequestAction,
+} from '../../../../features/assessments/actions';
 import type { AssessmentBlueprintDetail, ProctoringConfiguration } from '../../../../features/assessments/types';
 import {
     selectAssessmentOverviewAssignments,
@@ -24,9 +27,14 @@ import {
     selectAssessmentOverviewDashboardStats,
     selectAssessmentOverviewError,
     selectAssessmentOverviewLoading,
+    selectPublishBlueprintLoading,
 } from '../../../../features/assessments/selectors';
 import { useAppDispatch } from '../../../../hooks/useAppDispatch';
 import { mapBlueprintAssignmentsToTableRows } from './blueprintAssignmentsMapper';
+import AssignCandidatesModalContent from './assignCandidatesModalContent';
+import { SvgXml } from 'react-native-svg';
+import { uploadIcon2 } from '../../../../assets/svg/upload2';
+import FooterButtons from '../../../../components/molecules/footerbuttons';
 
 type AssessmentOverviewParams = {
     blueprintId?: string;
@@ -166,11 +174,14 @@ const AssessmentOverView = () => {
     const blueprintAssignmentStats = useSelector(selectAssessmentOverviewBlueprintAssignmentStats);
     const loading = useSelector(selectAssessmentOverviewLoading);
     const error = useSelector(selectAssessmentOverviewError);
+    const publishBlueprintLoading = useSelector(selectPublishBlueprintLoading);
 
     const assignmentsOverview = useMemo(
         () => ({ results: mapBlueprintAssignmentsToTableRows(assignmentResults) }),
         [assignmentResults]
     );
+
+    const [assignCandidatesOpen, setAssignCandidatesOpen] = useState(false);
 
     const load = useCallback(() => {
         dispatch(fetchAssessmentOverviewRequestAction(blueprintId ?? null));
@@ -240,10 +251,11 @@ const AssessmentOverView = () => {
     );
 
     const sections = blueprint?.sections ?? [];
+    const isPublished = blueprint?.is_published === true;
 
     return (
         <CustomSafeAreaView style={{ flex: 1 }}>
-            <Header title="Assessment overview" backNavigation threedot onBack={goBack} />
+            <Header title="Assessment overview" backNavigation threedot onBack={() => navigate('AssessmentList')} />
             {loading ? (
                 <AssessmentOverviewShimmer />
             ) : (
@@ -272,12 +284,8 @@ const AssessmentOverView = () => {
                                 {blueprint?.description ?? '_'}
                             </Typography>
                         </View>
-                        <Button size={40} paddingHorizontal={10}>
-                            Assign candidates
-                        </Button>
                     </View>
-
-                    <View style={{ marginTop: 14, gap: 8 }}>
+                    <View style={{ marginTop: 0, gap: 4 }}>
                         <View style={styles.metaRow}>
                             <Typography variant="regularTxtsm" color={colors.gray[600]}>
                                 Section :
@@ -394,13 +402,26 @@ const AssessmentOverView = () => {
                                     const shuf = sec.shuffle ? 'Yes' : 'No';
                                     return (
                                         <Card key={sec.id} style={styles.questionCard}>
-                                            <Typography
-                                                variant="semiBoldTxtsm"
-                                                color={colors.gray[900]}
-                                                numberOfLines={3}
-                                            >
-                                                {index + 1}.{testTitle}
-                                            </Typography>
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                <Typography
+                                                    variant="semiBoldTxtsm"
+                                                    color={colors.gray[900]}
+                                                    numberOfLines={3}
+                                                >
+                                                    {index + 1}.{testTitle}
+                                                </Typography>
+                                                {blueprint?.total_marks &&
+                                                    <View style={{ backgroundColor: colors.success[50], paddingHorizontal: 8, borderRadius: 999, borderColor: colors.success[200], borderWidth: 1, alignItems: 'center', paddingVertical: 2 }}>
+                                                        <Typography
+                                                            variant="mediumTxtxs"
+                                                            color={colors.success[700]}
+                                                            numberOfLines={3}
+                                                        >
+                                                            Marks: {blueprint?.total_marks || ""}
+                                                        </Typography>
+                                                    </View>
+                                                }
+                                            </View>
                                             <Typography
                                                 variant="regularTxtsm"
                                                 color={colors.gray[500]}
@@ -416,7 +437,7 @@ const AssessmentOverView = () => {
                         <Divider />
                         <View style={styles.subTitle}>
                             <Typography variant="semiBoldTxtmd" color={colors.gray[800]}>
-                                Instructions
+                                Skills
                             </Typography>
                             {instructionTags.length > 0 ? (
                                 <TagList
@@ -432,6 +453,18 @@ const AssessmentOverView = () => {
                             )}
                         </View>
                         <Divider />
+                        {blueprint?.instructions &&
+                            <>
+                                <View style={styles.subTitle}>
+                                    <Typography variant="semiBoldTxtmd" color={colors.gray[800]}>
+                                        Instructions
+                                    </Typography>
+                                    <Typography variant="regularTxtsm" color={colors.gray[500]}>{blueprint?.instructions || ""}</Typography>
+                                </View>
+                                <Divider />
+                            </>
+                        }
+
                         <View style={styles.subTitle}>
                             <Typography variant="semiBoldTxtmd" color={colors.gray[800]}>
                                 Proctoring
@@ -473,6 +506,56 @@ const AssessmentOverView = () => {
                     />
                 </ScrollView>
             )}
+            <CustomModalWrapper
+                visible={assignCandidatesOpen}
+                onClose={() => setAssignCandidatesOpen(false)}
+                title="Assign candidates"
+                subTitle={
+                    blueprint?.title
+                        ? `Assessment: ${blueprint.title}`
+                        : blueprintId
+                            ? ''
+                            : undefined
+                }
+            >
+                <AssignCandidatesModalContent
+                    blueprintId={blueprintId ?? ''}
+                    onCancel={() => setAssignCandidatesOpen(false)}
+                />
+            </CustomModalWrapper>
+            <FooterButtons
+                leftButtonProps={{
+                    children: 'Assign candidates',
+                    disabled: !isPublished,
+                    onPress: () => {
+                        if (!isPublished) return;
+                        setAssignCandidatesOpen(true);
+                    },
+                    size: 44,
+                     textColor: !isPublished ? colors.gray[500] : colors.base.white,
+                }}
+                rightButtonProps={{
+                    children: 'Publish assessment',
+                    disabled: isPublished,
+                    isLoading: publishBlueprintLoading,
+                    size: 44,
+                    paddingHorizontal: 10,
+                    textColor: isPublished ? colors.gray[500] : colors.base.white,
+                    onPress: () => {
+                        const id = blueprintId?.trim();
+                        if (!id || isPublished) return;
+                        dispatch(publishBlueprintRequestAction({ blueprint_id: id }));
+                    },
+                    startIcon: (
+                        <SvgXml
+                            xml={uploadIcon2}
+                            color={isPublished ? colors.gray[400] : colors.base.white}
+                            height={20}
+                            width={20}
+                        />
+                    ),
+                }}
+            />
         </CustomSafeAreaView>
     );
 };
@@ -494,7 +577,7 @@ const styles = StyleSheet.create({
         borderColor: colors.error[200],
     },
     sectionCard: {
-        flex:1,
+        flex: 1,
         padding: 16,
         gap: 16,
     },
@@ -574,4 +657,7 @@ const styles = StyleSheet.create({
         borderColor: colors.gray[200],
         backgroundColor: colors.base.white,
     },
+    // footerActions: {
+    //     justifyContent: 'space-around',
+    // },
 });

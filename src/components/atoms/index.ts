@@ -1,7 +1,12 @@
 // Atoms - Basic building blocks
 export { default as Button } from './button';
 export { default as Typography } from './typography';
+export { default as Label } from './label';
+export type { LabelProps } from './label';
 export { TextField } from './textfield';
+export { default as CodeEditorInput } from './codeditorinput';
+export type { CodeEditorInputProps } from './codeditorinput';
+export { CODE_EDITOR_SURFACE, codeEditorMonoFont } from './codeditorinput';
 export { default as IconButton } from './iconbutton';
 export { default as StatusBar } from './statusbar';
 export { default as VectorIcon } from './vectoricon';

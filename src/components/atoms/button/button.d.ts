@@ -12,7 +12,7 @@ export interface IButton extends PressableProps {
   middleIcon?: ReactNode;
   endIcon?: ReactNode;
 
-  textVariant?: string; 
+  textVariant?: string;
 
   // Core colors
   buttonColor?: string;        // background

@@ -11,7 +11,7 @@ interface CustomSafeAreaViewProps {
 
 const CustomSafeAreaView: FC<CustomSafeAreaViewProps> = ({ children, style }) => {
   return (
-    <SafeAreaView style={[styles.container, style]} edges={['top']}>
+    <SafeAreaView style={[styles.container, style]}>
       <StatusBarBackground showWhite />
       <View style={[styles.container, style]}>
         {children}

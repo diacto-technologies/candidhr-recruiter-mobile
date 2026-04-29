@@ -13,6 +13,7 @@ export { default as SortingAndFilter } from './sortingandfilter';
 export { default as ResumeModal } from './resumemodal';
 export { default as CommonDropdown } from './commondropdown';
 export { default as ChangeStatusModal } from './changeStatusModal';
+export { default as CustomModalWrapper } from './custommodalwrapper';
 
 // Export types
 export type { IHeader } from './header/header';
@@ -20,3 +21,4 @@ export type { IBottomsheet } from './bottomsheet/bottomsheet';
 export type { IModalBox } from './modalbox/modalbox';
 export type { IConfirmModal } from './confirmmodal/confirmmodal';
 export type { ChangeStatusModalProps } from './changeStatusModal';
+export type { CustomModalWrapperProps } from './custommodalwrapper';

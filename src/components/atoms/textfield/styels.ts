@@ -9,7 +9,7 @@ export const useStyles = (props: any, isFocus: boolean, size: any) => {
   return StyleSheet.create({
     // Root Wrapper
     container: {
-      gap: 5,
+      gap: 6,
     },
 
     // Label Row
@@ -37,7 +37,7 @@ export const useStyles = (props: any, isFocus: boolean, size: any) => {
           ? props.textFieldColor
           : colors.base.white,
       borderColor: props.isError
-        ? hexToRgb(colors.error[400], 0.8)
+        ? colors.error[500]
         : isFocus
           ? colors.brand[500]
           : colors.gray[300],

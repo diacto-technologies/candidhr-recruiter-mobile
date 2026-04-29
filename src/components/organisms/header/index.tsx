@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Pressable, Animated, Easing, Dimensions } from 'react-native';
+import { View, Pressable, Animated, Easing, Dimensions, TextStyle } from 'react-native';
 import Typography from '../../atoms/typography';
 import type { IHeader } from './header';
+import TitleSubtitleBlock from '../../molecules/titleSubtitleBlock/index';
 import { SvgXml } from 'react-native-svg';
 import { backButtonIcon } from '../../../assets/svg/backbutton';
 import { editIcon } from '../../../assets/svg/edit';
@@ -13,8 +14,26 @@ import StatusDropdown from '../dropdown/statusDropdown';
 
 const { width: screenWidth } = Dimensions.get('window');
 
+const CENTER_TEXT_WIDTH: TextStyle = {
+  width: '100%',
+  maxWidth: screenWidth * 0.65,
+  textAlign: 'center',
+  alignSelf: 'center',
+};
+
+const hasHeaderSubtitle = (subtitle: IHeader['subtitle']): boolean => {
+  if (subtitle == null) return false;
+  if (typeof subtitle === 'string') return subtitle.trim().length > 0;
+  return true;
+};
+
 const Header = ({
   title,
+  subtitle,
+  titleProps,
+  subtitleProps,
+  rightComponent,
+  centerTitle = false,
   showTitle = true,
   onBack,
   backNavigation,
@@ -80,6 +99,32 @@ const Header = ({
     }
   };
 
+  const showCenteredTitleOverlay =
+    centerTitle &&
+    backNavigation &&
+    showTitle &&
+    !(enableJobSearch && openSearch);
+
+  const displayTitle = (selectedJob?.title ? selectedJob.title : title) as string | undefined;
+  const showCenterSubtitle = hasHeaderSubtitle(subtitle);
+
+  const centeredTitleOnlyProps = (() => {
+    if (!titleProps) {
+      return {
+        variant: 'semiBoldTxtxl' as const,
+        numberOfLines: 1,
+        style: CENTER_TEXT_WIDTH,
+      };
+    }
+    const { style: tUserStyle, ...tRest } = titleProps;
+    return {
+      ...tRest,
+      variant: titleProps.variant ?? 'semiBoldTxtxl',
+      numberOfLines: titleProps.numberOfLines ?? 1,
+      style: [CENTER_TEXT_WIDTH, tUserStyle],
+    };
+  })();
+
   return (
     <View style={[styles.container, { borderBottomWidth: !borderCondition ? 1 : 0 }]}>
       {backNavigation ? (
@@ -118,6 +163,8 @@ const Header = ({
                     onClear={simpleSearch ? onSimpleClear : onSearchClear}
                   />
                 </Animated.View>
+              ) : showCenteredTitleOverlay ? (
+                <View style={{ flex: 1 }} />
               ) : (
                 <View style={{ marginLeft: 12, flex: 1 }}>
                   <Typography variant="semiBoldTxtxl" numberOfLines={1}>
@@ -133,8 +180,37 @@ const Header = ({
             </Pressable>
           )}
 
+          {showCenteredTitleOverlay ? (
+            <View pointerEvents="none" style={styles.titleCenterOverlay}>
+              {showCenterSubtitle ? (
+                <TitleSubtitleBlock
+                  title={displayTitle}
+                  subtitle={subtitle}
+                  titleProps={{
+                    ...(titleProps || {}),
+                    numberOfLines: titleProps?.numberOfLines ?? 2,
+                    style: [CENTER_TEXT_WIDTH, titleProps?.style],
+                  }}
+                  subtitleProps={{
+                    ...(subtitleProps || {}),
+                    numberOfLines: subtitleProps?.numberOfLines ?? 1,
+                    style: [CENTER_TEXT_WIDTH, subtitleProps?.style],
+                  }}
+                />
+              ) : (
+                <Typography {...centeredTitleOnlyProps}>{displayTitle}</Typography>
+              )}
+            </View>
+          ) : null}
+
           {/* ✅ Right side: status dropdown + icons */}
-          <View style={[styles.subEditcontainer, statusDropdown && styles.subEditcontainerWithDropdown]}>
+          <View
+            style={[
+              styles.subEditcontainer,
+              statusDropdown && styles.subEditcontainerWithDropdown,
+              showCenteredTitleOverlay && { zIndex: 2 },
+            ]}
+          >
             {statusDropdown && (
               <View style={styles.statusDropdownWrapper}>
                 <StatusDropdown
@@ -173,6 +249,7 @@ const Header = ({
                 <SvgXml xml={horizontalThreedotIcon} />
               </Pressable>
             ) : null}
+            {rightComponent}
           </View>
         </>
       ) : (
@@ -225,6 +302,7 @@ const Header = ({
                 <SvgXml xml={horizontalThreedotIcon} />
               </Pressable>
             ) : null}
+            {rightComponent}
           </View>
         </>
       )}

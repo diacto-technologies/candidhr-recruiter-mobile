@@ -1,6 +1,27 @@
 /** Default `o` for GET /assessments/v1/filter — newest assignment first */
 export const DEFAULT_ASSIGNED_ASSESSMENTS_ORDER = "-assigned_at" as const;
 
+/** Judge difficulty row ids for POST /assessments/v2/problem-questions/ (medium=14 from API). */
+export const CODING_PROBLEM_DIFFICULTY_IDS: Record<string, number> = {
+  easy: 13,
+  medium: 14,
+  hard: 15,
+};
+
+/**
+ * GET /assessments/v2/questions/?question_type= only allows
+ * multiple_choice | single_choice | text — not `coding`.
+ */
+export function sanitizeQuestionTypeForQuestionsListQuery(
+  questionType: string | null | undefined
+): string | undefined {
+  if (questionType == null) return undefined;
+  const t = String(questionType).trim();
+  if (!t) return undefined;
+  if (t.toLowerCase() === "coding") return undefined;
+  return t;
+}
+
 export const ASSESSMENTS_ACTION_TYPES = {
     GET_ASSESSMENTS_REQUEST: "assessments/GET_ASSESSMENTS_REQUEST",
     GET_ASSESSMENTS_SUCCESS: "assessments/GET_ASSESSMENTS_SUCCESS",
@@ -9,9 +30,25 @@ export const ASSESSMENTS_ACTION_TYPES = {
     GET_ASSIGNED_ASSESSMENTS_SUCCESS: "assessments/GET_ASSIGNED_ASSESSMENTS_SUCCESS",
     GET_ASSIGNED_ASSESSMENTS_FAILURE: "assessments/GET_ASSIGNED_ASSESSMENTS_FAILURE",
     FETCH_ASSESSMENT_OVERVIEW_REQUEST: "assessments/FETCH_ASSESSMENT_OVERVIEW_REQUEST",
-    FETCH_BLUEPRINT_ASSIGNMENTS_LIST_REQUEST:
-      "assessments/FETCH_BLUEPRINT_ASSIGNMENTS_LIST_REQUEST",
-    EXPORT_BLUEPRINT_ASSIGNMENTS_REPORT_REQUEST:
-      "assessments/EXPORT_BLUEPRINT_ASSIGNMENTS_REPORT_REQUEST",
+    ASSIGN_CANDIDATES_REQUEST: "assessments/ASSIGN_CANDIDATES_REQUEST",
+    PUBLISH_BLUEPRINT_REQUEST: "assessments/PUBLISH_BLUEPRINT_REQUEST",
+    FETCH_BLUEPRINT_ASSIGNMENTS_LIST_REQUEST:"assessments/FETCH_BLUEPRINT_ASSIGNMENTS_LIST_REQUEST",
+    EXPORT_BLUEPRINT_ASSIGNMENTS_REPORT_REQUEST: "assessments/EXPORT_BLUEPRINT_ASSIGNMENTS_REPORT_REQUEST",
+    POST_ASSESSMENTS_Test_REQUEST: "assessments/POST_ASSESSMENTS_Test_REQUEST",
+    POST_ASSESSMENTS_Test_SUCCESS: "assessments/POST_ASSESSMENTS_Test_SUCCESS",
+    POST_ASSESSMENTS_Test_FAILURE: "assessments/POST_ASSESSMENTS_Test_FAILURE",
+    POST_ASSESSMENT_QUESTION_REQUEST: "assessments/POST_ASSESSMENT_QUESTION_REQUEST",
+    POST_ASSESSMENT_QUESTION_SUCCESS: "assessments/POST_ASSESSMENT_QUESTION_SUCCESS",
+    POST_ASSESSMENT_QUESTION_FAILURE: "assessments/POST_ASSESSMENT_QUESTION_FAILURE",
+    GENERATE_ASSESSMENT_QUESTIONS_REQUEST: "assessments/GENERATE_ASSESSMENT_QUESTIONS_REQUEST",
+    GENERATE_CODING_PROBLEM_METADATA_REQUEST:
+      "assessments/GENERATE_CODING_PROBLEM_METADATA_REQUEST",
+    GENERATE_CODING_TESTCASES_SNIPPETS_REQUEST:
+      "assessments/GENERATE_CODING_TESTCASES_SNIPPETS_REQUEST",
+    GENERATE_CODING_REFERENCE_SOLUTION_REQUEST:
+      "assessments/GENERATE_CODING_REFERENCE_SOLUTION_REQUEST",
+    BULK_CREATE_QUESTIONS_REQUEST: "assessments/BULK_CREATE_QUESTIONS_REQUEST",
+    DOWNLOAD_TEST_TEMPLATE_REQUEST: "assessments/DOWNLOAD_TEST_TEMPLATE_REQUEST",
+    TEST_BULK_UPLOAD_REQUEST: "assessments/TEST_BULK_UPLOAD_REQUEST",
   } as const;
   

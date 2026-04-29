@@ -62,6 +62,8 @@ export const useStyles = () => {
       padding: 16,
       gap: 12,
       backgroundColor: colors.base.white,
+      borderTopWidth: 1,
+      borderTopColor: colors.gray[200],
     },
   });
 };

@@ -34,6 +34,8 @@ export interface CommonDropdownProps {
 
   disabled?: boolean;
   error?: string;
+  /** Red border + inline “!” next to chevron without rendering `error` text (use outer copy for twins). */
+  highlightError?: boolean;
   containerStyle?: StyleProp<ViewStyle>;
 
   searchable?: boolean;
@@ -60,5 +62,28 @@ export interface CommonDropdownProps {
    * Use for pagination: load next page of options (e.g. dispatch getUsersRequestAction(page + 1)).
    */
   onLoadMore?: () => void;
+
+  /**
+   * When set, each option shows two lines: primary (label) on top, returned string below in muted text.
+   * Example: `email · job title` for applicant rows.
+   */
+  subLabelBuilder?: (item: CommonDropdownOption) => string | undefined;
+
+  /** With multiSelect, show a checkbox on the left of each row instead of only a trailing checkmark. */
+  multiSelectCheckbox?: boolean;
+
+  /**
+   * When true with multiSelect, show comma-separated labels (single line) instead of chip row.
+   * Use when selections are echoed elsewhere (e.g. tags above).
+   */
+  multiSelectSummary?: boolean;
+
+  /**
+   * When true with multiSelect, prepend a “select all loaded options” row (use when e.g. a job filter is applied).
+   * Disabled automatically if there are no options.
+   */
+  showSelectAllOption?: boolean;
+  /** Label for the select-all row (default: Select all applicants). */
+  selectAllOptionLabel?: string;
 }
 

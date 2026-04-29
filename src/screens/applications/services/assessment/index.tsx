@@ -11,18 +11,14 @@ import StatCard from '../../../../components/molecules/statcard';
 import CustomSafeAreaView from '../../../../components/atoms/customsafeareaview';
 import Card from '../../../../components/atoms/card';
 import Typography from '../../../../components/atoms/typography';
-import { goBack, navigate } from '../../../../utils/navigationUtils';
+import { goBack, navigate, resetAndNavigate } from '../../../../utils/navigationUtils';
+import { useAppDispatch } from '../../../../hooks/useAppDispatch';
+import { clearAssessmentTestDetail } from '../../../../features/assessments/slice';
 import Header from '../../../../components/organisms/header';
 import { assessmentsApi } from '../../../../features/assessments/api';
 import type { AssessmentDashboardStats } from '../../../../features/assessments/types';
 import { useRNSafeAreaInsets } from '../../../../hooks/useRNSafeAreaInsets';
-
-const quickActions = [
-  { title: 'Create Assessment', desc: 'Build a reusable assessment template' },
-  { title: 'Browse Assessments', desc: 'View and manage assessment templates', onPress: () => navigate('AssessmentList')},
-  { title: 'Create Test', desc: 'Send assessments to candidates' },
-  { title: 'Browse Tests', desc: 'Track and manage assignments', onPress: () => navigate('AssessmentTestList') },
-];
+import Dashboard from '../../dashboard';
 
 const whatsNew = [
   { title: 'Sections with per-section instructions', desc: 'Organize assessments into logical sections with custom instructions' },
@@ -32,7 +28,23 @@ const whatsNew = [
 ];
 
 const AssessmentScreen = () => {
+  const dispatch = useAppDispatch();
   const insets = useRNSafeAreaInsets();
+
+  const quickActions = [
+    { title: 'Create Assessment', desc: 'Build a reusable assessment template', onPress: () => navigate('BasicInfo')},
+    { title: 'Browse Assessments', desc: 'View and manage assessment templates', onPress: () => navigate('AssessmentList')},
+    {
+      title: 'Create Test',
+      desc: 'Send assessments to candidates',
+      onPress: () => {
+        dispatch(clearAssessmentTestDetail());
+        navigate('CreateAssessmentTest', { freshStart: true });
+      },
+    },
+    { title: 'Browse Tests', desc: 'Track and manage assignments', onPress: () => navigate('AssessmentTestList') },
+  ];
+
   const [assessmentStats, setAssessmentStats] =
     useState<AssessmentDashboardStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
@@ -92,7 +104,7 @@ const AssessmentScreen = () => {
 
   return (
     <CustomSafeAreaView>
-      <Header title="Assessments" backNavigation enableJobSearch onBack={goBack} />
+      <Header title="Assessments" backNavigation enableJobSearch onBack={() => resetAndNavigate('UserBottomTab')} />
       <ScrollView showsVerticalScrollIndicator={false} style={{paddingHorizontal:16,flex:1,marginBottom:insets.insetsBottom}} bounces={false}>
 
         {/* 🔹 Stats (TOP) */}

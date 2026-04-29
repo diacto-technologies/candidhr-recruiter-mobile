@@ -65,10 +65,11 @@ const CustomSwitch: React.FC<SwitchProps> = ({
     }).start();
   };
 
+  /** Disabled: keep track neutral (inactive color); the old #a066d8 looked "on" and ignored theme grays. */
   const interpolatedBackgroundColor = animatedValue.interpolate({
     inputRange: [0, 1],
     outputRange: disabled
-      ? ["#a066d8", "#a066d8"]
+      ? [backgroundInactive, backgroundActive]
       : [backgroundInactive, backgroundActive],
   });
 
@@ -90,7 +91,7 @@ const CustomSwitch: React.FC<SwitchProps> = ({
           containerStyle,
           {
             backgroundColor: interpolatedBackgroundColor,
-            opacity: disabled ? 0.7 : 1,
+            opacity: 1,
           },
         ]}
         pointerEvents={disabled ? "none" : "auto"}

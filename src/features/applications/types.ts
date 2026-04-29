@@ -93,6 +93,37 @@ export interface ApplicationsState {
   assessmentOptionsError: string | null;
   loadingExportAssessmentReport?: boolean;
   exportAssessmentReportError?: string | null;
+  /**
+   * GET /applications/v1/options/ — assign-candidates / bulk applicant picker
+   * When `applicantOptionsJobId` is null, the list is unfiltered (all).
+   */
+  applicantOptionsList: ApplicantOptionItem[];
+  applicantOptionsLoading: boolean;
+  applicantOptionsPage: number;
+  applicantOptionsNext: string | null;
+  applicantOptionsSearch: string;
+  /** Job id used for the in-flight or last successful filter (null = all applicants) */
+  applicantOptionsRequestJobId: string | null;
+}
+
+/** Single row from GET /applications/v1/options/ */
+export interface ApplicantOptionItem {
+  id: string;
+  name: string;
+  job: { id: string; title: string };
+  candidate: {
+    id: string;
+    name: string;
+    email: string;
+    profile_pic: string | null;
+  };
+}
+
+export interface ApplicantOptionsListResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: ApplicantOptionItem[];
 }
 
 export interface AssessmentOption {

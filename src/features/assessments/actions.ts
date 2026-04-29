@@ -1,10 +1,19 @@
 import { ASSESSMENTS_ACTION_TYPES } from "./constants";
 import {
-  AssignedFilterParams,
   GetAssessmentsListPayload,
   GetAssignedAssessmentsPayload,
   FetchBlueprintAssignmentsListPayload,
   ExportBlueprintAssignmentsReportPayload,
+  CreateAssessmentPayload,
+  CreateAssessmentQuestionPayload,
+  GenerateQuestionsPayload,
+  GenerateCodingProblemMetadataPayload,
+  GenerateCodingTestcasesSnippetsPayload,
+  GenerateCodingReferenceSolutionPayload,
+  BulkCreateQuestionsPayload,
+  TestBulkUploadPayload,
+  AssignCandidatesPayload,
+  PublishBlueprintPayload,
 } from "./types";
 
 export const getAssessmentsRequestAction = (payload?: GetAssessmentsListPayload) => ({
@@ -32,6 +41,16 @@ export const fetchAssessmentOverviewRequestAction = (blueprintId?: string | null
   payload: { blueprintId: blueprintId ?? null },
 });
 
+export const assignCandidatesRequestAction = (payload: AssignCandidatesPayload) => ({
+  type: ASSESSMENTS_ACTION_TYPES.ASSIGN_CANDIDATES_REQUEST,
+  payload,
+});
+
+export const publishBlueprintRequestAction = (payload: PublishBlueprintPayload) => ({
+  type: ASSESSMENTS_ACTION_TYPES.PUBLISH_BLUEPRINT_REQUEST,
+  payload,
+});
+
 export const fetchBlueprintAssignmentsListRequestAction = (
   payload: FetchBlueprintAssignmentsListPayload
 ) => ({
@@ -57,3 +76,66 @@ export const exportBlueprintAssignmentsReportRequestAction = (
     assignment_ids: payload.assignment_ids ?? [],
   },
 });
+
+export const postAssessmentTestRequestAction = (payload: CreateAssessmentPayload) => ({
+  type: ASSESSMENTS_ACTION_TYPES.POST_ASSESSMENTS_Test_REQUEST,
+  payload,
+});
+
+export const postAssessmentQuestionRequestAction = (
+  payload: CreateAssessmentQuestionPayload
+) => ({
+  type: ASSESSMENTS_ACTION_TYPES.POST_ASSESSMENT_QUESTION_REQUEST,
+  payload,
+});
+
+export const generateAssessmentQuestionsRequestAction = (payload: {
+  params: GenerateQuestionsPayload;
+  requestId: string;
+}) => ({
+  type: ASSESSMENTS_ACTION_TYPES.GENERATE_ASSESSMENT_QUESTIONS_REQUEST,
+  payload,
+});
+
+export const generateCodingProblemMetadataRequestAction = (payload: {
+  payload: GenerateCodingProblemMetadataPayload;
+  requestId: string;
+}) => ({
+  type: ASSESSMENTS_ACTION_TYPES.GENERATE_CODING_PROBLEM_METADATA_REQUEST,
+  payload,
+});
+
+export const generateCodingTestcasesSnippetsRequestAction = (payload: {
+  payload: GenerateCodingTestcasesSnippetsPayload;
+  requestId: string;
+}) => ({
+  type: ASSESSMENTS_ACTION_TYPES.GENERATE_CODING_TESTCASES_SNIPPETS_REQUEST,
+  payload,
+});
+
+export const generateCodingReferenceSolutionRequestAction = (payload: {
+  payload: GenerateCodingReferenceSolutionPayload;
+  requestId: string;
+}) => ({
+  type: ASSESSMENTS_ACTION_TYPES.GENERATE_CODING_REFERENCE_SOLUTION_REQUEST,
+  payload,
+});
+
+export const bulkCreateAssessmentQuestionsRequestAction = (
+  payload: BulkCreateQuestionsPayload
+) => ({
+  type: ASSESSMENTS_ACTION_TYPES.BULK_CREATE_QUESTIONS_REQUEST,
+  payload,
+});
+
+export const downloadTestTemplateRequestAction = (payload: { testId: string }) => ({
+  type: ASSESSMENTS_ACTION_TYPES.DOWNLOAD_TEST_TEMPLATE_REQUEST,
+  payload,
+});
+
+export const testBulkUploadRequestAction = (payload: TestBulkUploadPayload) => ({
+  type: ASSESSMENTS_ACTION_TYPES.TEST_BULK_UPLOAD_REQUEST,
+  payload,
+});
+
+

@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, Fragment } from 'react';
 import { View, Text } from 'react-native';
-import { SortingAndFilter, Header, JobCardList, BottomSheet, FilterSheetContent } from '../../../components';
+import { SortingAndFilter, Header, JobCardList, BottomSheet, FilterSheetContent, FloatingActionButton } from '../../../components';
 import { jobFiltersOption } from '../../../utils/dummaydata';
 import { useStyles } from './styles';
 import CustomSafeAreaView from '../../../components/atoms/customsafeareaview';
@@ -35,6 +35,9 @@ import { usePermission } from '../../../hooks/usePermission';
 import { PERMISSIONS } from '../../../utils/permission.constants';
 import { selectProfile } from '../../../features/profile/selectors';
 import { screenHeight } from '../../../utils/devicelayout';
+import { commentIcon } from '../../../assets/svg/comments';
+import { colors } from '../../../theme/colors';
+import { plusIcon } from '../../../assets/svg/plus';
 
 const JobsScreen = () => {
   const styles = useStyles();
@@ -123,9 +126,9 @@ const JobsScreen = () => {
         limit: pagination.limit,
         ...(activeTab === "Favourites"
           ? {
-              favourites: true,
-              idIn: favouriteJobIds.join(","),
-            }
+            favourites: true,
+            idIn: favouriteJobIds.join(","),
+          }
           : { published: activeTab === "Published" }),
         append: false,
         ...jobFilters,
@@ -184,9 +187,9 @@ const JobsScreen = () => {
         append: true,
         ...(activeTab === "Favourites"
           ? {
-              favourites: true,
-              idIn: favouriteJobIds.join(","),
-            }
+            favourites: true,
+            idIn: favouriteJobIds.join(","),
+          }
           : { published: activeTab === "Published" }),
         ...jobFilters,
       })
@@ -202,44 +205,57 @@ const JobsScreen = () => {
   //   );
   // }
   return (
-    <CustomSafeAreaView>
-      <Header
-        title="Jobs"
-        enableJobSearch
-        simpleSearch
-        simpleSearchPlaceholder="Search by title"
-        openSearch={openSearch}
-        onSearchToggle={setOpenSearch}
-        searchText={jobFilters?.title || ''}
-        onSimpleSearch={(text) => {
-          dispatch(setJobFilters({ ...jobFilters, title: text }));
-        }}
-        onSimpleClear={() => {
-          dispatch(setJobFilters({ ...jobFilters, title: '' }));
-          setOpenSearch(false);
-        }}
-      />
-
-      <View style={styles.container}>
-        <JobCardList
-          tabs={jobTabs}
-          activeTab={activeTab}
-          jobsList={jobsList}
-          loading={loading}
-          isTabLoading={isTabLoading}
-          hasMore={hasMore}
-          publishedCount={publishedCount}
-          unpublishedCount={unpublishedCount}
-          favouritesCount={favouritesCount}
-          isConnected={isConnected}
-          onChangeTab={handleChangeTab}
-          onLoadMore={handleLoadMore}
-          onJobPress={(jobId) => navigate('JobDetailScreen', { jobId })}
-          favouriteJobIds={favouriteJobIds}
-          onToggleFavourite={(jobId) => dispatch(toggleFavouriteJob(jobId))}
+    <Fragment>
+      <CustomSafeAreaView>
+        <Header
+          title="Jobs"
+          enableJobSearch
+          simpleSearch
+          simpleSearchPlaceholder="Search by title"
+          openSearch={openSearch}
+          onSearchToggle={setOpenSearch}
+          searchText={jobFilters?.title || ''}
+          onSimpleSearch={(text) => {
+            dispatch(setJobFilters({ ...jobFilters, title: text }));
+          }}
+          onSimpleClear={() => {
+            dispatch(setJobFilters({ ...jobFilters, title: '' }));
+            setOpenSearch(false);
+          }}
         />
-      </View>
 
+        <View style={styles.container}>
+          <JobCardList
+            tabs={jobTabs}
+            activeTab={activeTab}
+            jobsList={jobsList}
+            loading={loading}
+            isTabLoading={isTabLoading}
+            hasMore={hasMore}
+            publishedCount={publishedCount}
+            unpublishedCount={unpublishedCount}
+            favouritesCount={favouritesCount}
+            isConnected={isConnected}
+            onChangeTab={handleChangeTab}
+            onLoadMore={handleLoadMore}
+            onJobPress={(jobId: any) => navigate('JobDetailScreen', { jobId })}
+            favouriteJobIds={favouriteJobIds}
+            onToggleFavourite={(jobId: string) => dispatch(toggleFavouriteJob(jobId))}
+          />
+        </View>
+         <View style={styles.floatingButton}>
+          <FloatingActionButton
+            value={plusIcon}
+            backgroundColor={colors.brand[600]}
+            iconColor={colors.base.white}
+            size={48}
+            style={{bottom:-130}}
+            onPress={() => {
+            navigate('jobdetails');
+            }}
+          />
+        </View>
+      </CustomSafeAreaView>
       <SortingAndFilter
         title="Filters"
         options={jobFiltersOption}
@@ -251,13 +267,12 @@ const JobsScreen = () => {
           setFilterSheet(true);
         }}
       />
-
       <BottomSheet
         visible={filterSheet}
         onClose={() => setFilterSheet(false)}
         title="Filter by"
         showHeadline
-        onClearAll={() => dispatch(clearJobFilters())} hight={screenHeight* 0.8}>
+        onClearAll={() => dispatch(clearJobFilters())} hight={screenHeight * 0.8}>
         <FilterSheetContent
           onCancel={() => setFilterSheet(false)}
           onApply={handleApplyFilters}
@@ -269,7 +284,7 @@ const JobsScreen = () => {
           onClearAll={() => dispatch(clearJobFilters())}
         />
       </BottomSheet>
-    </CustomSafeAreaView>
+    </Fragment>
   );
 };
 

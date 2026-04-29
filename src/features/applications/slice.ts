@@ -1,5 +1,23 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ApplicationsState, Application, ApplicationsListResponse, ApplicationResponseItem, ResumeScreeningResponseItem, AssessmentLog, AssessmentReport, AssessmentDetailedReport, ScreeningAssessment, PersonalityScreeningResponse, ApplicationStage, ReasonCategory, ReasonListItem, PerformanceReportResponse, AssessmentOptionsReportResponse, AssessmentOption } from "./types";
+import {
+  ApplicationsState,
+  Application,
+  ApplicationsListResponse,
+  ApplicationResponseItem,
+  ResumeScreeningResponseItem,
+  AssessmentLog,
+  AssessmentReport,
+  AssessmentDetailedReport,
+  ScreeningAssessment,
+  PersonalityScreeningResponse,
+  ApplicationStage,
+  ReasonCategory,
+  ReasonListItem,
+  PerformanceReportResponse,
+  AssessmentOptionsReportResponse,
+  AssessmentOption,
+  ApplicantOptionsListResponse,
+} from "./types";
 
 const initialState: ApplicationsState = {
   applications: [],
@@ -69,6 +87,12 @@ const initialState: ApplicationsState = {
   assessmentOptionsError: null as string | null,
   loadingExportAssessmentReport: false,
   exportAssessmentReportError: null,
+  applicantOptionsList: [],
+  applicantOptionsLoading: false,
+  applicantOptionsPage: 1,
+  applicantOptionsNext: null,
+  applicantOptionsSearch: "",
+  applicantOptionsRequestJobId: null,
 };
 
 const applicationsSlice = createSlice({
@@ -696,6 +720,55 @@ const applicationsSlice = createSlice({
       state.loadingExportAssessmentReport = false;
       state.exportAssessmentReportError = action.payload;
     },
+
+    getApplicantOptionsRequest: (
+      state,
+      action: PayloadAction<{
+        page: number;
+        jobId?: string | null;
+        search: string;
+        append: boolean;
+      }>
+    ) => {
+      state.applicantOptionsLoading = true;
+      state.applicantOptionsPage = action.payload.page;
+      state.applicantOptionsSearch = action.payload.search;
+      state.applicantOptionsRequestJobId =
+        action.payload.jobId === undefined || action.payload.jobId === ""
+          ? null
+          : action.payload.jobId;
+      if (!action.payload.append) {
+        state.applicantOptionsList = [];
+      }
+    },
+
+    getApplicantOptionsSuccess: (
+      state,
+      action: PayloadAction<{
+        append: boolean;
+        page: number;
+        jobId: string | null;
+        data: ApplicantOptionsListResponse;
+      }>
+    ) => {
+      const { append, jobId, data } = action.payload;
+
+      if (jobId !== state.applicantOptionsRequestJobId) {
+        return;
+      }
+
+      state.applicantOptionsLoading = false;
+      state.applicantOptionsNext = data.next;
+
+      state.applicantOptionsList = append
+        ? [...state.applicantOptionsList, ...(data.results ?? [])]
+        : data.results ?? [];
+    },
+
+    getApplicantOptionsFailure: (state, action: PayloadAction<string>) => {
+      state.applicantOptionsLoading = false;
+      state.error = action.payload;
+    },
   },
 });
 
@@ -780,6 +853,9 @@ export const {
   exportAssessmentReportRequest,
   exportAssessmentReportSuccess,
   exportAssessmentReportFailure,
+  getApplicantOptionsRequest,
+  getApplicantOptionsSuccess,
+  getApplicantOptionsFailure,
 } = applicationsSlice.actions;
 
 export default applicationsSlice.reducer;
