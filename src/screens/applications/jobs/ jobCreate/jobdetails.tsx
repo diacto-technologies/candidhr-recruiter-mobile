@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     KeyboardAvoidingView,
     Modal,
@@ -21,6 +21,9 @@ import CustomSwitch from '../../../../components/atoms/switchbutton';
 import NumberStepper from '../../../../components/atoms/numberstepper';
 import TagList from '../../../../components/molecules/taglist';
 import SkillTagComposer from '../../../../components/molecules/skilltagcomposer';
+import LocationAutocompleteField from '../../../../components/molecules/locationautocompletefield';
+import type { LocationAutocompleteItem } from '../../../../features/locations';
+import { clearSelectedLocation } from '../../../../features/locations';
 import { goBack, navigate } from '../../../../utils/navigationUtils';
 import { colors } from '../../../../theme/colors';
 import { shadowStyles } from '../../../../theme/shadowcolor';
@@ -28,8 +31,10 @@ import { calenderIcon } from '../../../../assets/svg/calender';
 import DateRangePicker from '../../../../components/organisms/filtersheetcontent/rangepicker';
 import { sparkles } from '../../../../assets/svg/sparkles';
 import Icon from '../../../../components/atoms/vectoricon';
+import { useAppDispatch } from '../../../../store/hooks';
 import Divider from '../../../../components/atoms/divider';
 import React from 'react';
+import dayjs from 'dayjs';
 
 type WeightKey = 'experience' | 'skills' | 'projects' | 'education' | 'certification';
 
@@ -199,38 +204,16 @@ const YEAR_OPTIONS = Array.from({ length: 61 }, (_, i) => ({
 }));
 
 const STATIC_SKILL_OPTIONS: { id: string; name: string }[] = [
-    { id: 'sk-miro', name: 'Miro' },
-    { id: 'sk-figma', name: 'Figma' },
-    { id: 'sk-sketch', name: 'Sketch' },
-    { id: 'sk-react', name: 'React' },
-    { id: 'sk-react-native', name: 'React Native' },
-    { id: 'sk-typescript', name: 'TypeScript' },
-    { id: 'sk-javascript', name: 'JavaScript' },
-    { id: 'sk-node', name: 'Node.js' },
     { id: 'sk-python', name: 'Python' },
+    { id: 'sk-javascript', name: 'JavaScript' },
     { id: 'sk-java', name: 'Java' },
-    { id: 'sk-kotlin', name: 'Kotlin' },
-    { id: 'sk-swift', name: 'Swift' },
-    { id: 'sk-go', name: 'Go' },
-    { id: 'sk-rust', name: 'Rust' },
-    { id: 'sk-aws', name: 'AWS' },
-    { id: 'sk-azure', name: 'Azure' },
-    { id: 'sk-gcp', name: 'GCP' },
-    { id: 'sk-kubernetes', name: 'Kubernetes' },
-    { id: 'sk-docker', name: 'Docker' },
-    { id: 'sk-terraform', name: 'Terraform' },
-    { id: 'sk-postgres', name: 'PostgreSQL' },
-    { id: 'sk-mongodb', name: 'MongoDB' },
-    { id: 'sk-redis', name: 'Redis' },
+    { id: 'sk-react', name: 'React' },
+    { id: 'sk-nodejs', name: 'Node.js' },
     { id: 'sk-sql', name: 'SQL' },
-    { id: 'sk-graphql', name: 'GraphQL' },
-    { id: 'sk-jest', name: 'Jest' },
-    { id: 'sk-playwright', name: 'Playwright' },
-    { id: 'sk-ui-ux', name: 'UI/UX design' },
-    { id: 'sk-product', name: 'Product management' },
-    { id: 'sk-agile', name: 'Agile' },
-    { id: 'sk-django', name: 'Django' },
-    { id: 'sk-ml', name: 'Machine Learning' },
+    { id: 'sk-mongodb', name: 'MongoDB' },
+    { id: 'sk-aws', name: 'AWS' },
+    { id: 'sk-docker', name: 'Docker' },
+    { id: 'sk-machine-learning', name: 'Machine Learning' },
     { id: 'sk-data-analysis', name: 'Data Analysis' },
     { id: 'sk-excel', name: 'Excel' },
 ];
@@ -297,10 +280,17 @@ function richTextLooksEmpty(html: string) {
 }
 
 const JobCreateDetailsScreen = () => {
+    const dispatch = useAppDispatch();
+
+    useEffect(() => {
+        dispatch(clearSelectedLocation());
+    }, [dispatch]);
     const [jobTitle, setJobTitle] = useState('');
     const [skills, setSkills] = useState<string[]>([]);
     const [extraSkillOptions, setExtraSkillOptions] = useState<{ id: string; name: string }[]>([]);
     const [location, setLocation] = useState('');
+    const [locationDetail, setLocationDetail] =
+        useState<LocationAutocompleteItem | null>(null);
     const [employmentId, setEmploymentId] = useState('full_time');
     const [expMinId, setExpMinId] = useState('0');
     const [expMaxId, setExpMaxId] = useState('1');
@@ -334,6 +324,8 @@ const JobCreateDetailsScreen = () => {
         }
         if (!location.trim()) {
             next.location = 'Location is required';
+        } else if (!locationDetail?.id) {
+            next.location = 'Select or confirm a verified location';
         }
         const minY = Number.parseInt(expMinId, 10);
         const maxY = Number.parseInt(expMaxId, 10);
@@ -346,21 +338,26 @@ const JobCreateDetailsScreen = () => {
         }
         if (!closingDateIso) {
             next.closingDate = 'Close date is required';
+        } else if (closingDateIso < dayjs().format('YYYY-MM-DD')) {
+            next.closingDate = 'Close date cannot be in the past';
         }
         if (richTextLooksEmpty(description)) {
             next.description = 'Job description is required';
         }
         return next;
-    }, [jobTitle, skills.length, location, expMinId, expMaxId, closingDateIso, description]);
+    }, [jobTitle, skills.length, location, locationDetail?.id, expMinId, expMaxId, closingDateIso, description]);
 
     const onNextPress = useCallback(() => {
         const next = validateJobFields();
         const keys = Object.keys(next) as JobFieldKey[];
         setFieldErrors(next);
         if (keys.length === 0) {
-            navigate('ApplicationForm');
+            navigate('ApplicationForm', {
+                locationDisplay: location.trim(),
+                locationDetail,
+            });
         }
-    }, [validateJobFields]);
+    }, [validateJobFields, location, locationDetail]);
 
     const weightSum = useMemo(
         () => WEIGHT_ORDER.reduce((acc, k) => acc + weights[k], 0),
@@ -425,6 +422,12 @@ const JobCreateDetailsScreen = () => {
     const calendarStart = useMemo(
         () => <SvgXml xml={calenderIcon} width={20} height={20} />,
         []
+    );
+
+    /** Closing date: only today and future (calendar + apply guard). */
+    const closingDateMinIso = useMemo(
+        () => dayjs().format('YYYY-MM-DD'),
+        [dateModalOpen]
     );
 
     return (
@@ -496,20 +499,34 @@ const JobCreateDetailsScreen = () => {
                         />
                     </View>
 
-                    <TextField
-                        lable="Location"
-                        isRequired
-                        placeholder="Search location"
-                        value={location}
-                        onChangeText={(t) => {
-                            setLocation(t);
-                            clearFieldError('location');
-                        }}
-                        startIcon={<Icon size={20} name={'location'} iconFamily={'Octicons'} color={colors.gray[400]}/>}
-                        size="Medium"
-                        isError={!!fieldErrors.location}
-                        error={fieldErrors.location}
-                    />
+                    <View style={styles.locationFieldBlock}>
+                        <LocationAutocompleteField
+                            lable="Location"
+                            isRequired
+                            placeholder="Search location"
+                            value={location}
+                            onChangeText={(t) => {
+                                setLocation(t);
+                                setLocationDetail(null);
+                                clearFieldError('location');
+                            }}
+                            onSelectLocation={(item: LocationAutocompleteItem | null) => {
+                                setLocationDetail(item);
+                                clearFieldError('location');
+                            }}
+                            startIcon={
+                                <Icon
+                                    size={20}
+                                    name="location"
+                                    iconFamily="Octicons"
+                                    color={colors.gray[400]}
+                                />
+                            }
+                            size="Medium"
+                            isError={!!fieldErrors.location}
+                            error={fieldErrors.location}
+                        />
+                    </View>
 
                     <View style={styles.block}>
                         <Typography variant="semiBoldTxtsm" color={colors.gray[800]} style={styles.labelSpacing}>
@@ -626,7 +643,7 @@ const JobCreateDetailsScreen = () => {
                             error={fieldErrors.description}
                         />
                         <TagList data={['Keep it concise and action oriented', 'Emphasize ownership, impact, and growth.', 'Highlight remote-friendly culture and async work.']} bgColor={colors.brand[50]} borderColor={colors.brand[200]} textColor={colors.brand[700]} />
-                        <Button startIcon={<SvgXml xml={sparkles.replace(/fill="[^"]*"/g, `fill="${colors.base.white}"`)} color={colors.base.white} fill={colors.base.white} />}>Genarate</Button>
+                        <Button startIcon={<SvgXml xml={sparkles.replace(/fill="[^"]*"/g, `fill="${colors.base.white}"`)} color={colors.base.white} fill={colors.base.white}/>} disabled={!jobTitle} >Genarate</Button>
                     </View>
                     <Divider/>
                     <Card style={styles.compensationCard}>
@@ -777,7 +794,7 @@ const JobCreateDetailsScreen = () => {
                                                 onChange={(v) => onWeightChange(key, v)}
                                                 min={0}
                                                 max={100}
-                                                step={1}
+                                                step={5}
                                                 unitLabel="%"
                                                 padLength={1}
                                                 editable
@@ -834,14 +851,17 @@ const JobCreateDetailsScreen = () => {
                             <DateRangePicker
                                 mode="single"
                                 hidePresets
+                                minDate={closingDateMinIso}
                                 initialValue={closingDateIso ? { start: closingDateIso } : undefined}
                                 onClose={() => setDateModalOpen(false)}
                                 onApply={(range) => {
                                     const picked = range.start ?? range.end;
                                     if (picked && String(picked).trim() !== '') {
                                         const iso = String(picked).slice(0, 10);
-                                        setClosingDateIso(iso);
-                                        clearFieldError('closingDate');
+                                        if (iso >= closingDateMinIso) {
+                                            setClosingDateIso(iso);
+                                            clearFieldError('closingDate');
+                                        }
                                     }
                                     setDateModalOpen(false);
                                 }}
@@ -876,6 +896,10 @@ const styles = StyleSheet.create({
     },
     block: {
         gap: 6,
+    },
+    locationFieldBlock: {
+        zIndex: 10,
+        elevation: 4,
     },
     labelRow: {
         flexDirection: 'row',

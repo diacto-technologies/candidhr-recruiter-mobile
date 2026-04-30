@@ -12,6 +12,7 @@ import themeReducer from "../features/theme/slice";
 import assessmentsReducer from "../features/assessments/slice";
 import personalityScreeningReducer from "../features/personalityScreening/slice";
 import { commentsReducer } from "../features/comments";
+import { locationsReducer } from "../features/locations";
 
 const rootReducer = combineReducers({
   auth: authReducer,
@@ -25,6 +26,7 @@ const rootReducer = combineReducers({
   assessments: assessmentsReducer,
   personalityScreening: personalityScreeningReducer,
   comments: commentsReducer,
+  locations: locationsReducer,
 });
 
 export default rootReducer;

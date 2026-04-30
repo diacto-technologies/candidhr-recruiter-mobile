@@ -1,4 +1,10 @@
 export const API_ENDPOINTS = {
+  CORE: {
+    /** GET ?q=&page=&page_size= — place autocomplete */
+    LOCATIONS_AUTOCOMPLETE: '/core/locations/autocomplete/',
+    /** POST — persist chosen / manual location */
+    LOCATIONS_SELECT: '/core/locations/select/',
+  },
   // Auth endpoints
   AUTH: {
     LOGIN: '/core/token/', // Login endpoint: POST /token/
