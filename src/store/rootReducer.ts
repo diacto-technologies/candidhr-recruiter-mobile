@@ -13,6 +13,8 @@ import assessmentsReducer from "../features/assessments/slice";
 import personalityScreeningReducer from "../features/personalityScreening/slice";
 import { commentsReducer } from "../features/comments";
 import { locationsReducer } from "../features/locations";
+import questionSetsReducer from "../features/questionSets/slice";
+import { workflowsReducer } from "../features/workflows";
 
 const rootReducer = combineReducers({
   auth: authReducer,
@@ -27,6 +29,8 @@ const rootReducer = combineReducers({
   personalityScreening: personalityScreeningReducer,
   comments: commentsReducer,
   locations: locationsReducer,
+  questionSets: questionSetsReducer,
+  workflows: workflowsReducer,
 });
 
 export default rootReducer;

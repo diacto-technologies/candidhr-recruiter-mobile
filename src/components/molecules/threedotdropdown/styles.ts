@@ -36,6 +36,9 @@ export const useStyles = () => {
             color: "#333",
             fontWeight: "500",
           },
+          dropdownTitleDestructive: {
+            color: colors.error[600],
+          },
         
           divider: {
             height: StyleSheet.hairlineWidth,

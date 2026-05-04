@@ -1,35 +1,25 @@
 import React, { Fragment, useState, useEffect, useCallback } from 'react';
 import {
   View,
-  StyleSheet,
-  Pressable,
-  Image,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Header, CompanyLogoAvatar, ProfileAvatar } from '../../../../components';
+import { Header, CompanyLogoAvatar } from '../../../../components';
 import { goBack } from '../../../../utils/navigationUtils';
 import CustomSafeAreaView from '../../../../components/atoms/customsafeareaview';
 import Typography from '../../../../components/atoms/typography';
 import { TextField } from '../../../../components/atoms/textfield';
 import { UrlInputField } from '../../../../components/atoms/urlinputfield';
 import Button from '../../../../components/atoms/button';
-import { SvgXml } from 'react-native-svg';
 import { colors } from '../../../../theme/colors';
 import { useAppSelector } from '../../../../hooks/useAppSelector';
 import { selectProfile } from '../../../../features/profile/selectors';
-import { Dropdown } from 'react-native-element-dropdown';
-import { Text } from 'react-native-gesture-handler';
 import PhoneInput from '../../../../components/atoms/phonefield';
-import { Fonts } from '../../../../theme/fonts';
-import { searchIcon } from '../../../../assets/svg/search';
-import { editAvatarIcon } from '../../../../assets/svg/editavatar';
-import { useRNSafeAreaInsets } from '../../../../hooks/useRNSafeAreaInsets';
+import { SvgXml } from 'react-native-svg';
 import { useStyles } from './styles';
-import { chevronDownIcon } from '../../../../assets/svg/chevrondownicon';
-import { DropdownOption } from './companyinfo';
 import { companySizeOptions, countryOptions, industryOptions, locationOptions, organizationTierOptions } from './companyinfo.config';
+import { editIcon } from '../../../../assets/svg/edit';
 
 const CompanyInfo = () => {
   const profile = useAppSelector(selectProfile);
@@ -47,13 +37,12 @@ const CompanyInfo = () => {
   const [location, setLocation] = useState('');
   const [companyEmail, setCompanyEmail] = useState('');
   const [supportEmail, setSupportEmail] = useState('');
-  const [phoneCode, setPhoneCode] = useState('+91');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [linkedin, setLinkedin] = useState('');
   const [facebook, setFacebook] = useState('');
   const [twitter, setTwitter] = useState('');
   const [loading, setLoading] = useState(false);
-  const { insetsTop } = useRNSafeAreaInsets();
+  const [editable, setEditable] = useState<Record<string, boolean>>({});
 
   // Initialize form with tenant data
   useEffect(() => {
@@ -119,118 +108,85 @@ const CompanyInfo = () => {
     console.log('Edit logo pressed');
   };
 
-  const renderDropdownField = (
+  const toggleEditable = useCallback((key: string) => {
+    setEditable((prev) => ({ ...prev, [key]: !prev[key] }));
+  }, []);
+
+  const getOptionLabel = useCallback((value: string, options: { label: string; value: string }[]) => {
+    if (!value?.trim()) return '';
+    const v = value.toLowerCase();
+    const matched = options.find((opt) => opt.value.toLowerCase() === v || opt.label.toLowerCase() === v);
+    return matched?.label ?? value;
+  }, []);
+
+  const renderEditableTextField = (
+    fieldKey: string,
     label: string,
     value: string,
-    options: DropdownOption[],
-    onChange: (value: string) => void,
+    onChangeText: (next: string) => void,
     placeholder: string
-  ) => {
-    // Find matching option by label or value
-    const matchedOption = options.find(
-      (opt) =>
-        opt.label.toLowerCase() === value.toLowerCase() ||
-        opt.value.toLowerCase() === value.toLowerCase() ||
-        opt.label.toLowerCase().includes(value.toLowerCase()) ||
-        value.toLowerCase().includes(opt.label.toLowerCase())
-    );
-
-    // Use selectedTextStyle for placeholder when value exists but no match
-    const hasValue = value && value.trim() !== '';
-
-    return (
-      <View style={styles.fieldContainer}>
-        <Typography variant="mediumTxtsm" color={colors.gray[700]} style={styles.label}>
-          {label}
-        </Typography>
-        <View style={styles.dropdownContainer}>
-          <Dropdown
-            style={styles.dropdown}
-            containerStyle={styles.dropdownListContainer}
-            placeholderStyle={hasValue && !matchedOption ? styles.selectedTextStyle : styles.placeholderStyle}
-            selectedTextStyle={styles.selectedTextStyle}
-            data={options}
-            maxHeight={300}
-            labelField="label"
-            valueField="value"
-            placeholder={value || placeholder}
-            value={matchedOption?.value || null}
-            onChange={(item) => onChange(item.label)}
-            renderRightIcon={() => <SvgXml xml={chevronDownIcon} width={20} height={20} />}
-            disable={true}
+  ) => (
+    <View style={styles.fieldContainer}>
+      <Typography variant="mediumTxtsm" color={colors.gray[700]} style={styles.label}>
+        {label}
+      </Typography>
+      <View style={styles.fieldInputRow}>
+        <View style={styles.fieldInputFlex}>
+          <TextField
+            value={value}
+            onChangeText={onChangeText}
+            placeholder={placeholder}
+            size="Medium"
+            disable={!editable[fieldKey]}
           />
         </View>
-      </View>
-    );
-  };
-
-  const renderSearchField = (
-    label: string,
-    value: string,
-    options: DropdownOption[],
-    onChange: (value: string) => void,
-    placeholder: string
-  ) => {
-    // Find matching option by label or value
-    const matchedOption = options.find(
-      (opt) =>
-        opt.label.toLowerCase() === value.toLowerCase() ||
-        opt.value.toLowerCase() === value.toLowerCase() ||
-        opt.label.toLowerCase().includes(value.toLowerCase()) ||
-        value.toLowerCase().includes(opt.label.toLowerCase())
-    );
-
-    // Use selectedTextStyle for placeholder when value exists but no match
-    const hasValue = value && value.trim() !== '';
-
-    return (
-      <View style={styles.fieldContainer}>
-        <Typography variant="mediumTxtsm" color={colors.gray[700]} style={styles.label}>
-          {label}
-        </Typography>
-        <View style={styles.dropdownContainer}>
-          <Dropdown
-            style={[styles.dropdown]}
-            containerStyle={styles.dropdownListContainer}
-            placeholderStyle={hasValue && !matchedOption ? styles.selectedTextStyle : styles.placeholderStyle}
-            selectedTextStyle={styles.selectedTextStyle}
-            data={options}
-            maxHeight={300}
-            labelField="label"
-            valueField="value"
-            placeholder={value || placeholder}
-            value={matchedOption?.value || null}
-            onChange={(item) => onChange(item.label)}
-            search
-            searchPlaceholder="Search..."
-            renderLeftIcon={() => (
-              <View style={styles.searchIconContainer}>
-                <SvgXml xml={searchIcon} width={20} height={20} />
-              </View>
-            )}
-            renderRightIcon={() => null}
-            disable={true}
-          />
+        <View style={styles.editButtonWrap}>
+          <Button
+            onPress={() => toggleEditable(fieldKey)}
+            type="Secondary"
+            size="Small"
+            style={styles.editButton}
+          >
+            <SvgXml xml={editIcon} width={18} height={18} />
+          </Button>
         </View>
       </View>
-    );
-  };
+    </View>
+  );
 
   const renderUrlField = (
+    fieldKey: string,
     label: string,
     value: string,
     onChange: (value: string) => void,
     placeholder: string
   ) => (
     <View style={styles.fieldContainer}>
-      <UrlInputField
-        label={label}
-        value={value}
-        onChangeText={onChange}
-        placeholder={placeholder}
-        showCopyIcon={true}
-        disable={true}
-      />
+      <Typography variant="mediumTxtsm" color={colors.gray[700]} style={styles.label}>
+        {label}
+      </Typography>
+      <View style={styles.fieldInputRow}>
+        <View style={styles.fieldInputFlex}>
+          <UrlInputField
+            label=""
+            value={value}
+            onChangeText={onChange}
+            placeholder={placeholder}
+            showCopyIcon={true}
+            disable={!editable[fieldKey]}
+          />
+        </View>
+        <View style={styles.editButtonWrap}>
+          <Button
+            onPress={() => toggleEditable(fieldKey)}
+            type="Secondary"
+            size="Small"
+            style={styles.editButton}
+          >
+            <SvgXml xml={editIcon} width={18} height={18} />
+          </Button>
+        </View>
+      </View>
     </View>
   );
 
@@ -250,7 +206,7 @@ const CompanyInfo = () => {
           >
             {/* Logo Section */}
             <View style={styles.logoSection}>
-            {/* <View style={styles.avatarContainer}> */}
+              {/* <View style={styles.avatarContainer}> */}
               <CompanyLogoAvatar
                 imageUrl={profile?.tenant?.logo}
                 name={companyName || profile?.tenant?.org_name}
@@ -260,7 +216,7 @@ const CompanyInfo = () => {
                 showEditBadge={true}
                 onEditPress={handleEditLogo}
               />
-               {/* <ProfileAvatar
+              {/* <ProfileAvatar
                 imageUrl={profile?.tenant?.logo}
                 name={profile?.tenant?.org_name}
                 size={96}
@@ -270,126 +226,163 @@ const CompanyInfo = () => {
               {/* <Pressable style={styles.editAvatarButton} onPress={()=>{}}>
                   <SvgXml xml={editAvatarIcon} width={20} height={20} />
                 </Pressable> */}
-                {/* </View> */}
+              {/* </View> */}
             </View>
 
             {/* Form Fields */}
             <View style={styles.formContainer}>
               {/* Company Name */}
-              <View style={styles.fieldContainer}>
-                <Typography variant="semiBoldTxtsm" color={colors.gray[700]} style={styles.label}>
-                  Company name
-                </Typography>
-                <TextField
-                  value={companyName}
-                  onChangeText={setCompanyName}
-                  placeholder="Enter company name"
-                  size="Medium"
-                  disable={true}
-                  // showDivider={true}
-                />
-              </View>
+              {renderEditableTextField(
+                'companyName',
+                'Company name',
+                companyName,
+                setCompanyName,
+                'Enter company name'
+              )}
 
               {/* Industry */}
-              {renderDropdownField('Industry', industry, industryOptions, setIndustry, 'Select industry')}
+              {renderEditableTextField(
+                'industry',
+                'Industry',
+                editable.industry ? industry : getOptionLabel(industry, industryOptions),
+                setIndustry,
+                'Select industry'
+              )}
 
               {/* Company Size */}
-              {renderDropdownField('Company size', companySize, companySizeOptions, setCompanySize, 'Select company size')}
+              {renderEditableTextField(
+                'companySize',
+                'Company size',
+                editable.companySize ? companySize : getOptionLabel(companySize, companySizeOptions),
+                setCompanySize,
+                'Select company size'
+              )}
 
               {/* Organization Tier */}
-              {renderDropdownField('Organization Tier', organizationTier, organizationTierOptions, setOrganizationTier, 'Select tier')}
+              {renderEditableTextField(
+                'organizationTier',
+                'Organization Tier',
+                editable.organizationTier ? organizationTier : getOptionLabel(organizationTier, organizationTierOptions),
+                setOrganizationTier,
+                'Select tier'
+              )}
 
               {/* About Us */}
               <View style={styles.fieldContainer}>
                 <Typography variant="semiBoldTxtsm" color={colors.gray[700]} style={styles.label}>
                   About company
                 </Typography>
-                <TextField
-                  value={aboutUs}
-                  onChangeText={setAboutUs}
-                  placeholder={`Write about ${companyName || 'your company'}...`}
-                  multiline
-                  numberOfLines={4}
-                  style={styles.textArea}
-                  size='Large'
-                  disable={true}
-                />
-              </View>
-
-              {/* Website */}
-              {renderUrlField('Website', website, setWebsite, 'yourwebsite.com')}
-
-              {/* Country */}
-              {renderSearchField('Country', country, countryOptions, setCountry, 'Search country')}
-
-              {/* Location */}
-              {renderSearchField('Location', location, locationOptions, setLocation, 'Search location')}
-
-              {/* Company Email */}
-              <View style={styles.fieldContainer}>
-                <Typography variant="semiBoldTxtsm" color={colors.gray[700]} style={styles.label}>
-                  Company email
-                </Typography>
-                <TextField
-                  value={companyEmail}
-                  onChangeText={setCompanyEmail}
-                  placeholder="company@example.com"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  size="Medium"
-                  disable={true}
-                />
-              </View>
-
-              {/* Support Email */}
-              <View style={styles.fieldContainer}>
-                <Typography variant="semiBoldTxtsm" color={colors.gray[700]} style={styles.label}>
-                  Support email
-                </Typography>
-                <TextField
-                  value={supportEmail}
-                  onChangeText={setSupportEmail}
-                  placeholder="support@example.com"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  size="Medium"
-                  disable={true}
-                />
-              </View>
-
-              {/* Phone */}
-              <View style={styles.fieldContainer}>
-                <Typography variant="semiBoldTxtsm" color={colors.gray[700]} style={styles.label}>
-                  Phone
-                </Typography>
-                <View style={styles.phoneContainer}>
-                  <View style={styles.phoneInputContainer}>
-                     <PhoneInput
-                      onFocus={() => { }}
-                      onBlur={() => { }}
-                      value={phoneNumber}
-                      onChangeText={setPhoneNumber}
-                       size="Medium"
-                       disabled={true}
+                <View style={styles.fieldInputRow}>
+                  <View style={styles.fieldInputFlex}>
+                    <TextField
+                      value={aboutUs}
+                      onChangeText={setAboutUs}
+                      placeholder={`Write about ${companyName || 'your company'}...`}
+                      multiline
+                      numberOfLines={4}
+                      style={styles.textArea}
+                      size="Large"
+                      disable={!editable.aboutUs}
                     />
+                  </View>
+                  <View style={styles.editButtonWrap}>
+                    <Button
+                      onPress={() => toggleEditable('aboutUs')}
+                      type="Secondary"
+                      size="Small"
+                      style={styles.editButton}
+                    >
+                      <SvgXml xml={editIcon} width={18} height={18} />
+                    </Button>
                   </View>
                 </View>
               </View>
 
+              {/* Country */}
+              {renderEditableTextField(
+                'country',
+                'Country',
+                editable.country ? country : getOptionLabel(country, countryOptions),
+                setCountry,
+                'Search country'
+              )}
+
+              {/* Location */}
+              {renderEditableTextField(
+                'location',
+                'State',
+                editable.location ? location : getOptionLabel(location, locationOptions),
+                setLocation,
+                'Search location'
+              )}
+
+              {/* Company Email */}
+              {renderEditableTextField(
+                'companyEmail',
+                'Company email',
+                companyEmail,
+                setCompanyEmail,
+                'company@example.com'
+              )}
+
+              {/* Support Email */}
+              {renderEditableTextField(
+                'supportEmail',
+                'Support email',
+                supportEmail,
+                setSupportEmail,
+                'support@example.com'
+              )}
+
+              {/* Phone */}
+              <View style={styles.fieldContainer}>
+                <Typography variant="semiBoldTxtsm" color={colors.gray[700]} style={styles.label}>
+                  Contact Phone
+                </Typography>
+                <View style={styles.fieldInputRow}>
+                  <View style={styles.fieldInputFlex}>
+                    <View style={styles.phoneContainer}>
+                      <View style={styles.phoneInputContainer}>
+                        <PhoneInput
+                          onFocus={() => {}}
+                          onBlur={() => {}}
+                          value={phoneNumber}
+                          onChangeText={setPhoneNumber}
+                          size="Medium"
+                          disabled={!editable.phoneNumber}
+                        />
+                      </View>
+                    </View>
+                  </View>
+                  <View style={styles.editButtonWrap}>
+                    <Button
+                      onPress={() => toggleEditable('phoneNumber')}
+                      type="Secondary"
+                      size="Small"
+                      style={styles.editButton}
+                    >
+                      <SvgXml xml={editIcon} width={18} height={18} />
+                    </Button>
+                  </View>
+                </View>
+              </View>
+
+              {renderUrlField('website', 'Company website', website, setWebsite, 'yourwebsite.com')}
+              
               {/* LinkedIn */}
-              {renderUrlField('Linkedin', linkedin, setLinkedin, 'in.linkedin.com/company/...')}
+              {renderUrlField('linkedin', 'Linkedin', linkedin, setLinkedin, 'in.linkedin.com/company/...')}
 
               {/* Facebook */}
-              {renderUrlField('Facebook', facebook, setFacebook, 'www.facebook.com/...')}
+              {renderUrlField('facebook', 'Facebook', facebook, setFacebook, 'www.facebook.com/...')}
 
               {/* Twitter */}
-              {renderUrlField('Twitter', twitter, setTwitter, 'x.com/...')}
+              {renderUrlField('twitter', 'Twitter', twitter, setTwitter, 'x.com/...')}
             </View>
             <View style={styles.buttonContainer}>
-            <Button onPress={()=>{}} isLoading={loading} style={styles.saveButton}>
-              Save
-            </Button>
-          </View>
+              <Button onPress={() => { }} isLoading={loading} style={styles.saveButton}>
+                Save
+              </Button>
+            </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </CustomSafeAreaView>

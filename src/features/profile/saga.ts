@@ -9,6 +9,7 @@ import {
   updateProfileFailure,
 } from "./slice";
 import { profileApi } from "./api";
+import { showToastMessage } from "../../utils/toast";
 
 function* getProfileWorker(): Generator<any, void, any> {
   try {
@@ -27,8 +28,11 @@ function* updateProfileWorker(action: { type: string; payload: any }): Generator
     yield put(updateProfileRequest(action.payload));
     const response = yield call(profileApi.updateProfile, action.payload);
     yield put(updateProfileSuccess(response.profile));
+    showToastMessage("Profile updated successfully", "success");
   } catch (error: any) {
-    yield put(updateProfileFailure(error.message || "Failed to update profile"));
+    const msg = error?.message || "Failed to update profile";
+    yield put(updateProfileFailure(msg));
+    showToastMessage(msg, "error");
   }
 }
 

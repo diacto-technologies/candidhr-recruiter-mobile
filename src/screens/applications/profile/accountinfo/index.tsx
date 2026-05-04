@@ -11,7 +11,6 @@ import { goBack } from '../../../../utils/navigationUtils';
 import { showToastMessage } from '../../../../utils/toast';
 import CustomSafeAreaView from '../../../../components/atoms/customsafeareaview';
 import Typography from '../../../../components/atoms/typography';
-import { TextField } from '../../../../components/atoms/textfield';
 import Button from '../../../../components/atoms/button';
 import { SvgXml } from 'react-native-svg';
 import { colors } from '../../../../theme/colors';
@@ -26,7 +25,6 @@ import {
 import { updateProfileRequestAction, getProfileRequestAction } from '../../../../features/profile/actions';
 import { apiClient } from '../../../../api/client';
 import { API_ENDPOINTS } from '../../../../api/endpoints';
-import PhoneInput from '../../../../components/atoms/phonefield';
 import { editAvatarIcon } from '../../../../assets/svg/editavatar';
 import { SetProfilePhotoModal } from './SetProfilePhotoModal';
 import { useStyles } from './styles';
@@ -37,62 +35,76 @@ const AccountInfo = () => {
   const loading = useAppSelector(selectProfileLoading);
   const styles = useStyles();
 
-  // Form state
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [phoneCode, setPhoneCode] = useState('+91');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [location, setLocation] = useState('');
+  const [country, setCountry] = useState('');
+  const [stateRegion, setStateRegion] = useState('');
+  const [jobTitle, setJobTitle] = useState('');
   const [role, setRole] = useState('');
 
-  // Selected image state for avatar upload
   const [selectedImage, setSelectedImage] = useState<Asset | null>(null);
-
-  // Local loading state for image upload
   const [isUploading, setIsUploading] = useState(false);
   const [showSetProfileModal, setShowSetProfileModal] = useState(false);
 
-  // Initialize form with profile data
   useEffect(() => {
-    if (profile) {
-      setFullName(profile.name || '');
-      setEmail(profile.email || '');
-      // Parse phone number if available
-      if (profile.contact) {
-        const contactStr = String(profile.contact);
-        setPhoneNumber(contactStr);
-      }
-      // Set location from country
-      setLocation(profile.country || '');
-      setRole(profile.role?.name || profile.position || '');
-    }
+    if (!profile) return;
+    setFullName(profile.name || '');
+    setEmail(profile.email || '');
+    setPhoneNumber(
+      profile.contact !== null && profile.contact !== undefined
+        ? String(profile.contact)
+        : ''
+    );
+    setCountry(profile.country || '');
+    setStateRegion(profile.state || '');
+    setJobTitle(profile.position || '');
+    setRole(profile.role?.name || '');
   }, [profile]);
 
-  const handleSave = useCallback(async () => {
-    // Use FormData when there's an image to upload - call API directly to avoid Redux serialization issue
-    if (selectedImage?.uri) {
-      const formData = new FormData();
-
-      // Append text fields - only append if they have values
-      if (fullName?.trim()) {
-        formData.append('name', fullName.trim());
-      }
-
-      if (location?.trim()) {
-        formData.append('country', location.trim());
-      }
-
-      if (phoneNumber && phoneNumber.trim()) {
+  const appendProfileFormFields = useCallback(
+    (formData: FormData) => {
+      if (fullName?.trim()) formData.append('name', fullName.trim());
+      formData.append('country', country.trim());
+      formData.append('state', stateRegion.trim());
+      formData.append('position', jobTitle.trim());
+      if (phoneNumber?.trim()) {
         const parsedContact = parseInt(phoneNumber.replace(/\s/g, ''), 10);
-        if (!isNaN(parsedContact)) {
+        if (!Number.isNaN(parsedContact)) {
           formData.append('contact', String(parsedContact));
         }
       }
+    },
+    [fullName, country, stateRegion, jobTitle, phoneNumber]
+  );
 
-      // Append the image file
-      const imageUri = Platform.OS === 'ios'
-        ? selectedImage.uri?.replace('file://', '')
-        : selectedImage.uri;
+  const buildJsonUpdatePayload = useCallback(() => {
+    const updatePayload: Record<string, unknown> = {
+      name: fullName?.trim() ? fullName.trim() : null,
+      country: country.trim() ? country.trim() : null,
+      state: stateRegion.trim() ? stateRegion.trim() : null,
+      position: jobTitle.trim() ? jobTitle.trim() : null,
+    };
+    if (phoneNumber?.trim()) {
+      const parsedContact = parseInt(phoneNumber.replace(/\s/g, ''), 10);
+      if (!Number.isNaN(parsedContact)) {
+        updatePayload.contact = parsedContact;
+      }
+    } else {
+      updatePayload.contact = null;
+    }
+    return updatePayload;
+  }, [fullName, country, stateRegion, jobTitle, phoneNumber]);
+
+  const handleSave = useCallback(async () => {
+    if (selectedImage?.uri) {
+      const formData = new FormData();
+      appendProfileFormFields(formData);
+
+      const imageUri =
+        Platform.OS === 'ios'
+          ? selectedImage.uri?.replace('file://', '')
+          : selectedImage.uri;
 
       formData.append('profile_pic', {
         uri: imageUri,
@@ -100,47 +112,26 @@ const AccountInfo = () => {
         type: selectedImage.type || 'image/jpeg',
       } as any);
 
-      if (__DEV__) {
-        console.log('Uploading profile with image:', {
-          uri: imageUri,
-          name: selectedImage.fileName,
-          type: selectedImage.type,
-        });
-      }
-
       try {
         setIsUploading(true);
         await apiClient.patch(API_ENDPOINTS.PROFILE.UPDATE, formData);
-        // Clear selected image after successful upload
         setSelectedImage(null);
-        // Refresh profile data
         dispatch(getProfileRequestAction());
         showToastMessage('Profile updated successfully', 'success');
       } catch (error: any) {
-        console.log('Upload error:', error);
         showToastMessage(error.message || 'Failed to update profile', 'error');
       } finally {
         setIsUploading(false);
       }
     } else {
-      // Regular JSON payload when no image - use Redux
-      const updatePayload: Record<string, any> = {
-        name: fullName || null,
-      };
-
-      if (phoneNumber && phoneNumber.trim()) {
-        const parsedContact = parseInt(phoneNumber.replace(/\s/g, ''), 10);
-        if (!isNaN(parsedContact)) {
-          updatePayload.contact = parsedContact;
-        }
-      } else {
-        updatePayload.contact = null;
-      }
-      updatePayload.country = location && location.trim() ? location.trim() : null;
-
-      dispatch(updateProfileRequestAction(updatePayload));
+      dispatch(updateProfileRequestAction(buildJsonUpdatePayload() as any));
     }
-  }, [dispatch, fullName, phoneNumber, location, selectedImage]);
+  }, [
+    dispatch,
+    selectedImage,
+    appendProfileFormFields,
+    buildJsonUpdatePayload,
+  ]);
 
   const PROFILE_IMAGE_SIZE = 500;
   const getCropOptions = () => ({
@@ -196,6 +187,24 @@ const AccountInfo = () => {
     setShowSetProfileModal(false);
   }, []);
 
+  const displayName = fullName.trim() || profile?.name;
+
+  const renderReadOnlyField = (label: string, value: string) => {
+    const displayValue = value?.trim() ? value.trim() : '—';
+    return (
+      <View style={styles.fieldContainer}>
+        <Typography variant="mediumTxtsm" color={colors.gray[700]} style={styles.label}>
+          {label}
+        </Typography>
+        <View style={styles.readOnlyValueContainer}>
+          <Typography variant="mediumTxtmd" color={colors.gray[900]} style={styles.readOnlyValueText}>
+            {displayValue}
+          </Typography>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <Fragment>
       <SetProfilePhotoModal
@@ -217,12 +226,11 @@ const AccountInfo = () => {
             keyboardShouldPersistTaps="handled"
             bounces={false}
           >
-            {/* Avatar Section */}
             <View style={styles.avatarSection}>
               <View style={styles.avatarContainer}>
                 <ProfileAvatar
                   imageUrl={selectedImage?.uri || profile?.profile_pic}
-                  name={profile?.name}
+                  name={displayName}
                   size={96}
                   fontVariant="semiBoldDxs"
                   outerSize={16}
@@ -233,85 +241,14 @@ const AccountInfo = () => {
               </View>
             </View>
 
-            {/* Form Fields */}
             <View style={styles.formContainer}>
-              {/* Full Name */}
-              <View style={styles.fieldContainer}>
-                <Typography variant="mediumTxtsm" color={colors.gray[700]} style={styles.label}>
-                  Full name
-                </Typography>
-                <TextField
-                  value={fullName}
-                  onChangeText={setFullName}
-                  placeholder="Enter your full name"
-                  size="Medium"
-                  keyboardType="name-phone-pad"
-                />
-              </View>
-
-              {/* Email */}
-              <View style={styles.fieldContainer}>
-                <Typography variant="mediumTxtsm" color={colors.gray[700]} style={styles.label}>
-                  Email
-                </Typography>
-                <TextField
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder="Enter your email"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  editable={false}
-                  style={styles.disabledField}
-                  size="Medium"
-                  disable={true}
-                />
-              </View>
-
-              {/* Phone */}
-              <View style={styles.fieldContainer}>
-                <Typography variant="mediumTxtsm" color={colors.gray[700]} style={styles.label}>
-                  Phone
-                </Typography>
-                <View style={styles.phoneContainer}>
-                  <View style={styles.phoneInputContainer}>
-                    <PhoneInput
-                      onFocus={() => { }}
-                      onBlur={() => { }}
-                      value={phoneNumber}
-                      onChangeText={setPhoneNumber}
-                    />
-                  </View>
-                </View>
-              </View>
-
-              {/* Location */}
-              <View style={styles.fieldContainer}>
-                <Typography variant="mediumTxtsm" color={colors.gray[700]} style={styles.label}>
-                  Location
-                </Typography>
-                <TextField
-                  value={location}
-                  onChangeText={setLocation}
-                  placeholder="Enter your location"
-                  keyboardType="default"
-                  autoCapitalize="none"
-                  size="Medium"
-                />
-              </View>
-
-              {/* Role */}
-              <View style={styles.fieldContainer}>
-                <Typography variant="mediumTxtsm" color={colors.gray[700]} style={styles.label}>
-                  Role
-                </Typography>
-                <TextField
-                  value={role}
-                  placeholder="Role"
-                  size="Medium"
-                  editable={false}
-                  disable={true}
-                />
-              </View>
+              {renderReadOnlyField('Full name', fullName)}
+              {renderReadOnlyField('Email', email)}
+              {renderReadOnlyField('Phone', phoneNumber)}
+              {renderReadOnlyField('Country', country)}
+              {renderReadOnlyField('State', stateRegion)}
+              {renderReadOnlyField('Job title', jobTitle)}
+              {renderReadOnlyField('Role', role)}
             </View>
             <View style={styles.buttonContainer}>
               <Button
@@ -323,7 +260,6 @@ const AccountInfo = () => {
               </Button>
             </View>
           </ScrollView>
-          {/* Save Button */}
         </KeyboardAvoidingView>
       </CustomSafeAreaView>
     </Fragment>

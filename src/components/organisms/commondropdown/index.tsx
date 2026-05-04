@@ -59,6 +59,7 @@ const CommonDropdown = ({
   multiSelectSummary = false,
   showSelectAllOption = false,
   selectAllOptionLabel = 'Select all applicants',
+  renderLeftIcon,
 }: CommonDropdownProps) => {
   const [isFocused, setIsFocused] = useState(false);
 
@@ -76,9 +77,11 @@ const CommonDropdown = ({
               return s != null && String(s).trim() !== '' ? String(s).trim() : '';
             })()
           : '';
-      const labelForSearch = subLine
-        ? `${display} ${subLine}`.replace(/\s+/g, ' ').trim()
-        : display;
+      const labelForSearch = item?.searchLabel
+        ? item.searchLabel
+        : subLine
+          ? `${display} ${subLine}`.replace(/\s+/g, ' ').trim()
+          : display;
       return {
         label: labelForSearch,
         value: valueId,
@@ -92,6 +95,8 @@ const CommonDropdown = ({
               : '',
         original: item,
         isSelectAllRow: false,
+        isHeader: !!item?.isHeader,
+        disable: !!item?.isHeader,
       };
     });
 
@@ -177,6 +182,16 @@ const CommonDropdown = ({
   type ListRow = (typeof items)[number];
 
   const renderOptionRow = (item: ListRow, rowSelected: boolean) => {
+    if (item.isHeader) {
+      return (
+        <View style={{ paddingVertical: 8, paddingHorizontal: 16, backgroundColor: colors.gray[50], borderBottomWidth: 1, borderBottomColor: colors.gray[200] }}>
+          <Typography variant="semiBoldTxtxs" color={colors.gray[500]}>
+            {item.name}
+          </Typography>
+        </View>
+      );
+    }
+
     const stacked = Boolean(item.subLine);
     const useCheckbox = !!(multiSelect && multiSelectCheckbox);
     const centerBlock = stacked ? (
@@ -226,6 +241,12 @@ const CommonDropdown = ({
                 color={colors.base.white}
               />
             ) : null}
+          </View>
+        ) : null}
+
+        {renderLeftIcon ? (
+          <View style={{ marginRight: 8 }}>
+            {renderLeftIcon(item.original)}
           </View>
         ) : null}
 
@@ -367,7 +388,10 @@ const CommonDropdown = ({
                 onOpen?.();
               }}
               onBlur={() => setIsFocused(false)}
-              onChange={(item) => onChange(item.value, item.original)}
+              onChange={(item) => {
+                if (item.isHeader) return;
+                onChange(item.value, item.original);
+              }}
               renderItem={(item) => renderOptionRow(item, item.value === value)}
               renderRightIcon={() => (
                 <Ionicons
@@ -444,7 +468,12 @@ const CommonDropdown = ({
               )}
             </View>
           ) : selectedItem ? (
-            <View style={styles.customSelectedDisplay}>
+            <View style={[styles.customSelectedDisplay, { flexDirection: 'row', alignItems: 'center' }]}>
+              {renderLeftIcon ? (
+                <View style={{ marginRight: 8 }}>
+                  {renderLeftIcon(selectedItem.original)}
+                </View>
+              ) : null}
               {selectedItem.subLine ? (
                 <View style={styles.selectedValueStacked}>
                   <Typography

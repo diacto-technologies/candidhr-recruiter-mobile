@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View,
   Animated,
@@ -21,7 +21,7 @@ import { useIsFocused, useRoute } from "@react-navigation/native";
 import { useAppDispatch } from "../../../hooks/useAppDispatch";
 import { useAppSelector } from "../../../hooks/useAppSelector";
 import {selectSelectedJob } from "../../../features/jobs/selectors";
-import { getJobDetailRequestAction } from "../../../features/jobs/actions";
+import { getJobDetailRequestAction, patchJobPublishedRequestAction } from "../../../features/jobs/actions";
 import { setApplicationsFilters, setSort } from "../../../features/applications/slice";
 import { selectApplicationsFilters, selectApplicationsPagination } from "../../../features/applications/selectors";
 import Clipboard from "@react-native-clipboard/clipboard";
@@ -47,6 +47,19 @@ const JobDetailScreen: React.FC = () => {
   const isFocused = useIsFocused();
   const filters = useAppSelector(selectApplicationsFilters);
   const jobs = useAppSelector(selectSelectedJob);
+  const publishToggleLoading = useAppSelector(
+    (s) => s.jobs.patchJobPublishedLoadingJobId === jobId
+  );
+
+  const handlePublishToggle = useCallback(() => {
+    if (!jobId || !jobs) return;
+    dispatch(
+      patchJobPublishedRequestAction({
+        jobId,
+        published: !jobs.published,
+      })
+    );
+  }, [dispatch, jobId, jobs]);
 
   useEffect(() => {
     if (!jobId) return;
@@ -162,21 +175,28 @@ const JobDetailScreen: React.FC = () => {
       <View>
         <FooterButtons
           leftButtonProps={{
-            children: "Unpublish",
+            children: jobs?.published ? "Unpublish" : "Publish",
             variant: "contain",
             size: 44,
-            buttonColor: styles.leftButton.backgroundColor,
-            textColor: styles.leftButtonText.color,
-            borderColor: colors.error[300],
+            buttonColor: jobs?.published
+              ? styles.leftButton.backgroundColor
+              :"",
+            textColor: jobs?.published
+              ? styles.leftButtonText.color
+              : "",
+            borderColor: jobs?.published ? colors.error[300] : colors.brand[300],
             borderRadius: styles.leftButton.borderRadius,
             borderWidth: 1,
-            onPress: () => console.log("Unpublish"),
+            isLoading: publishToggleLoading,
+            onPress: handlePublishToggle,
             startIcon: (
               <Icon
                 size={20}
-                name={"close"}
+                name={jobs?.published ? "close" : "check"}
                 iconFamily={"AntDesign"}
-                color={styles.iconRed.color}
+                color={
+                  jobs?.published ? styles.iconRed.color : colors.base.white
+                }
               />
             ),
           }}

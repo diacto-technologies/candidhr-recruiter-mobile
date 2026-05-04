@@ -348,7 +348,7 @@ const LocationAutocompleteField: React.FC<LocationAutocompleteFieldProps> = ({
                                 style={styles.clearHit}
                             >
                                 <Ionicons
-                                    name="closemu"
+                                    name="close"
                                     size={22}
                                     color={colors.gray[400]}
                                 />

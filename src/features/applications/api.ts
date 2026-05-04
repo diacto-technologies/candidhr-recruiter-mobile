@@ -119,6 +119,8 @@ getApplications: async (
     if (params?.jobTitle)
       query.append("job__title__icontains", params.jobTitle);
 
+    if (params?.jobId) query.append("job__id", params.jobId);
+
     if (params?.source)
       query.append("source__icontains", params.source);
     if (params?.status)

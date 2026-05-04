@@ -25,22 +25,66 @@ export const API_ENDPOINTS = {
     // Used for dropdowns / selectors and users management screens
     // Backed by: GET /core/users/options/?page=1
     LIST: '/core/users/options/',
+    /** GET ?page= — tenant members (Users screen). */
+    V2_LIST: '/core/v2/users/',
+    /** GET ?page= — invites (Users → Invites tab). */
+    V2_INVITES: '/core/v2/invites/',
+    /** POST — resend a pending invite. */
+    V2_INVITE_RESEND: (id: string) => `/core/v2/invites/${id}/resend/`,
+    /** POST — revoke a pending invite. */
+    V2_INVITE_REVOKE: (id: string) => `/core/v2/invites/${id}/revoke/`,
+    /** PATCH user (role + active): /core/v2/users/:id/ */
+    V2_DETAIL: (id: string) => `/core/v2/users/${id}/`,
+    /** Paginated tenant user directory: GET ?page= */
+    LIST_PAGE: '/core/users/list/',
     CREATE: '/core/tenant/users/',
     ASSIGN_ROLE: '/core/assign-role/',
     DELETE: (id: string) => `/core/tenant/users/${id}/`,
   },
   ROLES: {
-    LIST: '/core/roles/',
+    LIST: '/core/v2/roles/',
+  },
+  /** Questionnaire / screening question sets (paginated GET ?page=) */
+  QUESTIONNAIRE: {
+    QUESTION_SETS: '/questionnaire/question-sets/',
+    /** GET ?question_set_id=&page= */
+    QUESTIONS: '/questionnaire/questions/',
+    /** PATCH soft-delete `{ is_deleted: true }` */
+    QUESTION_DETAIL: (id: string) => `/questionnaire/questions/${id}/`,
   },
   // Jobs endpoints
   JOBS: {
     LIST: '/job/v1/filter',
-    DETAIL: (id: string) => `/job/v1/job-detail/${id}/`,
-    CREATE: '/jobs',
+    /** GET single job (same resource as PATCH `V1_JOB`). */
+    DETAIL: (id: string) => `/job/v1/jobs/${id}/`,
+    /** POST — server copy of job (`title`, `location`, `location_id`, `copy_shared_users`). */
+    DUPLICATE: (id: string) => `/job/v1/${id}/duplicate/`,
+    CREATE: '/job/v1/jobs/',
+    /** PATCH body (e.g. `users_shared_with_ids`) — job create / settings */
+    V1_JOB: (id: string) => `/job/v1/jobs/${id}/`,
     UPDATE: (id: string) => `/jobs/${id}`,
     DELETE: (id: string) => `/jobs/${id}`,
     APPLY: (id: string) => `/jobs/${id}/apply`,
     JOB_NAME_LIST: "/job/v1/job-names-list/",
+    GENERATE_DESCRIPTION: '/job/v1/generate-job-description/',
+    /** POST ?job_id= — resume screening preferences (wizard application step) */
+    RESUME_SCREENING_PREFERENCES: (jobId: string) =>
+      `/resume_parser/resume-screening-preferences/?job_id=${encodeURIComponent(jobId)}`,
+    /** PATCH existing row: /resume-screening-preferences/:id/?job_id= */
+    RESUME_SCREENING_PREFERENCES_BY_ID: (preferencesId: number | string, jobId: string) =>
+      `/resume_parser/resume-screening-preferences/${preferencesId}/?job_id=${encodeURIComponent(jobId)}`,
+    /** POST ?job_id= — body: array of criteria rows */
+    CRITERIA_BULK_CREATE_OR_UPDATE: (jobId: string) =>
+      `/job/v1/criteria/bulk-create-or-update/?job_id=${encodeURIComponent(jobId)}`,
+    /** GET — saved filter criteria for a job (wizard application form). */
+    CRITERIA_LIST: (jobId: string) => `/job/${encodeURIComponent(jobId)}/criteria/`,
+  },
+  /** Recruiting / automation workflows (tenant-scoped). */
+  WORKFLOW: {
+    /** GET ?name__icontains=&page=&page_size= */
+    WORKFLOWS_LIST: '/workflow/workflows/',
+    /** POST — assign workflow to job (`workflow_id`, invite flags, `emails`). */
+    ASSIGN: (jobId: string) => `/workflow/assign/${jobId}/`,
   },
   // Applications endpoints
   APPLICATIONS: {
@@ -65,7 +109,7 @@ export const API_ENDPOINTS = {
     PARSE_RESUME: (applicationId: string) => `/applications/v1/${applicationId}/parse-resume/`,
     ASSESSMENT_REPORT: (assessmentLogId: string) => `/assessments/v1/assessment-log/${assessmentLogId}/report-details/`,
     PERFORMANCE_REPORT: (assessmentLogId: string) => `/assessments/v2/${assessmentLogId}/performance-report/`,
-    Assessment_Reports:(application_id:string)=>`assessments/v2/assignment-options/?application_id=${application_id}`,
+    Assessment_Reports: (application_id: string) => `assessments/v2/assignment-options/?application_id=${application_id}`,
     ASSESSMENT_REPORT_EXPORT: '/assessments/v2/assignments/export/',
     ASSESSMENT_DETAILED_REPORT: (assessmentLogId: string, assessmentId: string) =>
       `/assessments/v1/assessment-log/assessment/detailed-report/?assessment_log_id=${assessmentLogId}&assessment_id=${assessmentId}`,
@@ -110,7 +154,7 @@ export const API_ENDPOINTS = {
     ASSIGNMENTS_EXPORT: "/assessments/v2/assignments/export/",
     /** V2 assessments dashboard top stats */
     ASSESSMENT_STATS: "/assessments/v2/dashboard-stats/",
-    ASSESSMENT_TEST:"/assessments/v2/tests/",
+    ASSESSMENT_TEST: "/assessments/v2/tests/",
     /** GET /assessments/v2/tests/{id}/ */
     TEST_DETAIL: (id: string) => `/assessments/v2/tests/${id}/`,
     /** POST /assessments/v2/tests/{id}/publish/ */

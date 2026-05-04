@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { View, FlatList, StyleSheet } from "react-native";
+import { View, FlatList, StyleSheet, TouchableOpacity } from "react-native";
 import { colors } from "../../../../../theme/colors";
 import { useAppDispatch } from "../../../../../hooks/useAppDispatch";
 import { useAppSelector } from "../../../../../hooks/useAppSelector";
@@ -12,7 +12,10 @@ import {
   selectApplicationsFilters,
 } from "../../../../../features/applications/selectors";
 
-import { getApplicationsRequestAction } from "../../../../../features/applications/actions";
+import {
+  getApplicationsRequestAction,
+  exportApplicationsRequestAction,
+} from "../../../../../features/applications/actions";
 import { setApplicationsFilters } from "../../../../../features/applications/slice";
 import { Illustrations } from "../../../../../assets/svg/illustrations";
 import { SvgXml } from "react-native-svg";
@@ -38,6 +41,31 @@ const ApplicantsTab = () => {
   const filters = useAppSelector(selectApplicationsFilters);
 
   const jobId = useAppSelector((state) => state.jobs.selectedJob?.id);
+  const exportLoading = useAppSelector((state) => state.applications.loadingExportApplications);
+
+  /** Matches GET /applications/v2/filter/ query keys (filter sheet → Redux → API). */
+  const listFilterParams = useMemo(
+    () => ({
+      applicantName: filters.name.trim() || undefined,
+      email: filters.email.trim() || undefined,
+      jobTitle: filters.appliedFor.trim() || undefined,
+      contact: filters.contact.trim() || undefined,
+      source: filters.source.trim() || undefined,
+      status: filters.status.trim() || undefined,
+      latestStageName: filters.latestStageName.trim() || undefined,
+      latestStageStatus: filters.latestStageStatus.trim() || undefined,
+    }),
+    [
+      filters.name,
+      filters.email,
+      filters.appliedFor,
+      filters.contact,
+      filters.source,
+      filters.status,
+      filters.latestStageName,
+      filters.latestStageStatus,
+    ]
+  );
 
   const onEndReachedCalledRef = useRef(false);
   useEffect(() => {
@@ -52,25 +80,20 @@ const ApplicantsTab = () => {
         reset: true,
         page: 1,
         limit: pagination.limit,
-        applicantName: filters.name.trim() || undefined,
         jobId,
-        email: filters.email || "",
-        jobTitle: filters.appliedFor || "",
-        contact: filters.contact || "",
         sort: sortValue,
+        ...listFilterParams,
       })
     );
   }, [
-    filters.name,
-    filters.email,
-    filters.appliedFor,
-    filters.contact,
+    listFilterParams,
     filters.sort,
     aiEnabled,
     jobId,
     pagination.limit,
+    dispatch,
   ]);
-  
+
   const handleLoadMore = useCallback(() => {
     if (loading || !hasMore) return;
 
@@ -84,12 +107,47 @@ const ApplicantsTab = () => {
         page: pagination.page + 1,
         limit: pagination.limit,
         append: true,
-        applicantName: filters.name.trim() || undefined,
         jobId,
-        sort: sortValue, // Use Redux filters.sort when AI is disabled
+        sort: sortValue,
+        ...listFilterParams,
       })
     );
-  }, [loading, hasMore, pagination.page, pagination.limit, filters.name, filters.sort, jobId, aiEnabled, dispatch]);
+  }, [
+    loading,
+    hasMore,
+    pagination.page,
+    pagination.limit,
+    listFilterParams,
+    filters.sort,
+    jobId,
+    aiEnabled,
+    dispatch,
+  ]);
+
+  const handleExport = useCallback(() => {
+    if (!jobId || exportLoading) return;
+    const sortForExport = aiEnabled
+      ? "-resume_score"
+      : filters.sort || "-last_updated";
+    dispatch(
+      exportApplicationsRequestAction({
+        mode: "download",
+        params: {
+          page: 1,
+          jobId,
+          sort: sortForExport,
+          ...listFilterParams,
+        },
+      })
+    );
+  }, [
+    jobId,
+    exportLoading,
+    aiEnabled,
+    filters.sort,
+    listFilterParams,
+    dispatch,
+  ]);
 
   const dataSource = useMemo(() => {
     if (loading && applications.length === 0) {
@@ -112,12 +170,21 @@ const ApplicantsTab = () => {
             dispatch(setApplicationsFilters({ name: v }))
           }
         />
-
-        <View style={styles.switchContainer}>
-          <CustomSwitch value={aiEnabled} onValueChange={setAiEnabled} />
-          <Typography variant="H4" color={colors.mainColors.carbonGray}>
-            AI recommendation
-          </Typography>
+        <View style={{ flexDirection: 'row', justifyContent: "space-between",alignItems:'center' }}>
+          <View style={styles.switchContainer}>
+            <CustomSwitch value={aiEnabled} onValueChange={setAiEnabled} />
+            <Typography variant="H4" color={colors.mainColors.carbonGray}>
+              AI recommendation
+            </Typography>
+          </View>
+          <TouchableOpacity onPress={handleExport} disabled={!jobId || exportLoading}>
+            <Typography
+              variant="H4"
+              color={!jobId || exportLoading ? colors.gray[400] : colors.brand[600]}
+            >
+              {exportLoading ? "Exporting…" : "+ Export"}
+            </Typography>
+          </TouchableOpacity>
         </View>
       </View>
 

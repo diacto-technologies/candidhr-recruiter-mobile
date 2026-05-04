@@ -63,10 +63,28 @@ export const useStyles = () => {
       marginBottom: 20,
     },
     label: {
-      marginBottom: 6,
+      marginBottom: 4,
+    },
+    fieldHint: {
+      marginBottom: 8,
+    },
+    readOnlyField: {
+      backgroundColor: colors.gray[50],
     },
     disabledField: {
       backgroundColor: colors.gray[50],
+    },
+    readOnlyValueContainer: {
+      minHeight: 44,
+      borderWidth: 1,
+      borderColor: colors.gray[200],
+      borderRadius: 12,
+      backgroundColor: colors.gray[50],
+      paddingHorizontal: 16,
+      justifyContent: 'center',
+    },
+    readOnlyValueText: {
+      lineHeight: 20,
     },
     phoneContainer: {
       flexDirection: 'row',

@@ -23,6 +23,46 @@ export const selectUsersListPage = createSelector(
   (users) => users.list.page
 );
 
+export const selectInvitesListItems = createSelector(
+  [selectUsersState],
+  (users) => users.invites.items
+);
+
+export const selectInvitesListLoading = createSelector(
+  [selectUsersState],
+  (users) => users.invites.loading
+);
+
+export const selectInvitesListNext = createSelector(
+  [selectUsersState],
+  (users) => users.invites.next
+);
+
+export const selectInvitesListPage = createSelector(
+  [selectUsersState],
+  (users) => users.invites.page
+);
+
+export const selectDirectoryUsersListItems = createSelector(
+  [selectUsersState],
+  (users) => users.directoryList.items
+);
+
+export const selectDirectoryUsersListLoading = createSelector(
+  [selectUsersState],
+  (users) => users.directoryList.loading
+);
+
+export const selectDirectoryUsersListNext = createSelector(
+  [selectUsersState],
+  (users) => users.directoryList.next
+);
+
+export const selectDirectoryUsersListPage = createSelector(
+  [selectUsersState],
+  (users) => users.directoryList.page
+);
+
 export const selectRolesListItems = createSelector(
   [selectUsersState],
   (users) => users.roles.items

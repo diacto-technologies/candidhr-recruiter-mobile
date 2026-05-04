@@ -21,13 +21,22 @@ const ConfirmModal = (props: IConfirmModal) => {
   const confirmText = props.confirmText ?? 'Remove';
   const cancelText = props.cancelText ?? 'Cancel';
   const headerIconName = props.headerIconName ?? 'alert-outline';
-  const confirmIconName = props.confirmIconName ?? 'trash-outline';
+  const bodyAlign = props.bodyAlign ?? 'center';
 
   const defaultHeaderIcon = (
     <View style={styles.headerIconWrap}>
-      <Ionicons name={headerIconName} size={20} color={colors.warning[800]} />
+      <Ionicons name={headerIconName} size={20} color={colors.warning[700]} />
     </View>
   );
+
+  const confirmStartIcon =
+    props.confirmStartIcon === false
+      ? undefined
+      : props.confirmStartIcon !== undefined
+        ? props.confirmStartIcon
+        : (
+            <SvgXml xml={deleteIcon.replace(/(stroke)=".*?"/g, '$1="white"')} width={20} height={20} />
+          );
 
   const cancelButtonEl = (
     <View style={{ flex: 1 }}>
@@ -53,7 +62,7 @@ const ConfirmModal = (props: IConfirmModal) => {
         buttonColor={colors.error[600]}
         textColor={colors.base.white}
         borderRadius={8}
-        startIcon={<SvgXml xml={deleteIcon.replace(/(stroke)=".*?"/g, '$1="white"')} width={20} height={20} />}
+        {...(confirmStartIcon ? { startIcon: confirmStartIcon } : {})}
         onPress={props.onConfirm}
         {...props.confirmButtonProps}
       >
@@ -82,9 +91,20 @@ const ConfirmModal = (props: IConfirmModal) => {
             <View style={styles.header}>
               <View style={styles.headerLeft}>
                 {props.headerIcon ?? defaultHeaderIcon}
-                <Typography variant="semiBoldTxtlg" color={colors.gray[900]}>
-                  {title}
-                </Typography>
+                <View style={styles.headerTextCol}>
+                  <Typography variant="semiBoldTxtlg" color={colors.gray[900]}>
+                    {title}
+                  </Typography>
+                  {props.subtitle ? (
+                    typeof props.subtitle === 'string' ? (
+                      <Typography variant="regularTxtsm" color={colors.gray[600]}>
+                        {props.subtitle}
+                      </Typography>
+                    ) : (
+                      props.subtitle
+                    )
+                  ) : null}
+                </View>
               </View>
 
               <Pressable onPress={handleClose} hitSlop={10}>
@@ -92,9 +112,17 @@ const ConfirmModal = (props: IConfirmModal) => {
               </Pressable>
             </View>
 
-            <View style={styles.body}>
+            <View style={[styles.body, bodyAlign === 'left' ? { alignItems: 'flex-start' } : null]}>
               {typeof props.message === 'string' ? (
-                <Typography variant="semiBoldTxtlg" color={colors.gray[900]} style={styles.message}>
+                <Typography
+                  variant={bodyAlign === 'left' ? 'regularTxtsm' : 'semiBoldTxtlg'}
+                  color={bodyAlign === 'left' ? colors.gray[700] : colors.gray[900]}
+                  style={
+                    bodyAlign === 'left'
+                      ? { ...styles.message, ...styles.messageLeft }
+                      : styles.message
+                  }
+                >
                   {props.message}
                 </Typography>
               ) : (

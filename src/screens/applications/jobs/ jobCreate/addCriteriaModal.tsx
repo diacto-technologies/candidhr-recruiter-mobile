@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { Typography, TextField } from '../../../../components/atoms';
@@ -43,6 +43,10 @@ type AddCriteriaModalProps = {
     visible: boolean;
     onClose: () => void;
     onSave: (payload: AddCriteriaSavePayload) => void;
+    /** When set while opening, form is filled for editing an existing row. */
+    initialValues?: AddCriteriaSavePayload | null;
+    /** Modal chrome title (default Add / Edit). */
+    headerTitle?: string;
 };
 
 function FieldLabel({ children }: { children: string }) {
@@ -66,7 +70,13 @@ const FOOTER_BLEED = {
 /** Estimated space outside the scroll viewport (chrome + footer pinned at bottom). */
 const MODAL_CHROME_VERTICAL = 200;
 
-export default function AddCriteriaModal({ visible, onClose, onSave }: AddCriteriaModalProps) {
+export default function AddCriteriaModal({
+    visible,
+    onClose,
+    onSave,
+    initialValues = null,
+    headerTitle,
+}: AddCriteriaModalProps) {
     const { height: windowHeight } = useWindowDimensions();
     const insets = useSafeAreaInsets();
 
@@ -102,6 +112,45 @@ export default function AddCriteriaModal({ visible, onClose, onSave }: AddCriter
         setQuestionText('');
         applyFormatId(FORMAT_OPTIONS[1].id);
     }, [applyFormatId]);
+
+    const hydrateFromPayload = useCallback((iv: AddCriteriaSavePayload) => {
+        const fid = (FORMAT_OPTIONS.some((f) => f.id === iv.formatId)
+            ? iv.formatId
+            : FORMAT_OPTIONS[1].id) as CriteriaFormatId;
+        setQuestionText(iv.questionText?.trim() ?? '');
+        setFormatId(fid);
+        if (fid === 'yes_no') {
+            setOptions(YES_NO_OPTIONS);
+            const allowed = new Set(YES_NO_OPTIONS.map((o) => o.id));
+            const picked = (iv.correctOptionIds ?? []).filter((id) => allowed.has(id));
+            setCorrectIds(new Set(picked.length ? picked : [YES_NO_OPTIONS[0].id]));
+            optionIdSeq.current = 4;
+            return;
+        }
+        const raw =
+            iv.options?.length >= 2
+                ? iv.options.map((o) => ({ ...o }))
+                : INITIAL_OPTION_ROWS();
+        setOptions(raw);
+        let maxSeq = 4;
+        for (const o of raw) {
+            const m = /^criteria-opt-(\d+)$/.exec(o.id);
+            if (m) maxSeq = Math.max(maxSeq, parseInt(m[1], 10));
+        }
+        optionIdSeq.current = Math.max(4, maxSeq);
+        const ids = new Set(raw.map((o) => o.id));
+        const correct = (iv.correctOptionIds ?? []).filter((id) => ids.has(id));
+        setCorrectIds(new Set(correct.length ? correct : [raw[0].id]));
+    }, []);
+
+    useEffect(() => {
+        if (!visible) return;
+        if (initialValues) {
+            hydrateFromPayload(initialValues);
+        } else {
+            reset();
+        }
+    }, [visible, initialValues, hydrateFromPayload, reset]);
 
     const handleClose = useCallback(() => {
         reset();
@@ -175,10 +224,13 @@ export default function AddCriteriaModal({ visible, onClose, onSave }: AddCriter
 
     const lockYesNoLabels = formatId === 'yes_no';
 
+    const resolvedTitle =
+        headerTitle ?? (initialValues ? 'Edit criteria' : 'Add criteria');
+
     return (
         <CustomModalWrapper
             visible={visible}
-            title="Add criteria"
+            title={resolvedTitle}
             onClose={handleClose}
             scrollable={false}
         >

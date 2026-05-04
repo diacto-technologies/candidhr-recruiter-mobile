@@ -85,5 +85,8 @@ export interface CommonDropdownProps {
   showSelectAllOption?: boolean;
   /** Label for the select-all row (default: Select all applicants). */
   selectAllOptionLabel?: string;
+
+  /** Optional icon rendered on the left of each row and selected view */
+  renderLeftIcon?: (item: CommonDropdownOption) => React.ReactNode;
 }
 

@@ -1,0 +1,3 @@
+export const WORKFLOWS_ACTION_TYPES = {
+  GET_WORKFLOWS_REQUEST: "workflows/GET_WORKFLOWS_REQUEST",
+} as const;
