@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+    ActivityIndicator,
     KeyboardAvoidingView,
     Modal,
     Platform,
@@ -8,8 +9,9 @@ import {
     StyleSheet,
     View,
 } from 'react-native';
+import { useRoute } from '@react-navigation/native';
 import { ProgressBar } from 'react-native-paper';
-import Svg, { Path, SvgXml } from 'react-native-svg';
+import Svg, { Path, SvgXml, SvgUri } from 'react-native-svg';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import CustomSafeAreaView from '../../../../components/atoms/customsafeareaview';
@@ -21,6 +23,9 @@ import CustomSwitch from '../../../../components/atoms/switchbutton';
 import NumberStepper from '../../../../components/atoms/numberstepper';
 import TagList from '../../../../components/molecules/taglist';
 import SkillTagComposer from '../../../../components/molecules/skilltagcomposer';
+import LocationAutocompleteField from '../../../../components/molecules/locationautocompletefield';
+import type { LocationAutocompleteItem } from '../../../../features/locations';
+import { clearSelectedLocation } from '../../../../features/locations';
 import { goBack, navigate } from '../../../../utils/navigationUtils';
 import { colors } from '../../../../theme/colors';
 import { shadowStyles } from '../../../../theme/shadowcolor';
@@ -28,8 +33,24 @@ import { calenderIcon } from '../../../../assets/svg/calender';
 import DateRangePicker from '../../../../components/organisms/filtersheetcontent/rangepicker';
 import { sparkles } from '../../../../assets/svg/sparkles';
 import Icon from '../../../../components/atoms/vectoricon';
+import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
+import { store } from '../../../../store';
 import Divider from '../../../../components/atoms/divider';
 import React from 'react';
+import dayjs from 'dayjs';
+import {
+    createJobRequestAction,
+    generateJobDescriptionRequestAction,
+    getJobDetailRequestAction,
+    patchJobDetailsRequestAction,
+} from '../../../../features/jobs/actions';
+import type { CreateJobRequest, JobDetail, PatchJobDetailsRequest } from '../../../../features/jobs/types';
+import {
+    clearCreatedJobForWizard,
+    clearError,
+    clearGeneratedJobDescription,
+    setSelectedJob,
+} from '../../../../features/jobs/slice';
 
 type WeightKey = 'experience' | 'skills' | 'projects' | 'education' | 'certification';
 
@@ -193,80 +214,102 @@ const EMPLOYMENT_OPTIONS = [
     { id: 'intern', name: 'Internship' },
 ];
 
+/** Values expected by POST /job/v1/jobs/ */
+const EMPLOYMENT_API_BY_ID: Record<string, string> = {
+    full_time: 'Full Time',
+    part_time: 'Part Time',
+    contract: 'Contract',
+    intern: 'Internship',
+};
+
+function employmentApiValueToDropdownId(apiValue: string): string {
+    const norm = (apiValue || '').trim().toLowerCase();
+    const found = Object.entries(EMPLOYMENT_API_BY_ID).find(([, v]) => v.toLowerCase() === norm);
+    return found?.[0] ?? 'full_time';
+}
+
+function scoreWeightToUiWeights(sw: JobDetail['score_weight']): Record<WeightKey, number> {
+    const def: Record<WeightKey, number> = {
+        experience: 30,
+        skills: 30,
+        projects: 20,
+        education: 10,
+        certification: 10,
+    };
+    if (!sw) return def;
+    const pct = (v: unknown) => {
+        const n = typeof v === 'string' ? parseFloat(v) : typeof v === 'number' ? v : NaN;
+        if (!Number.isFinite(n)) return 0;
+        return Math.round(n * 100);
+    };
+    return {
+        experience: pct(sw.work_experience) || def.experience,
+        skills: pct(sw.skills) || def.skills,
+        projects: pct(sw.projects) || def.projects,
+        education: pct(sw.education) || def.education,
+        certification: pct(sw.certifications) || def.certification,
+    };
+}
+
+function locationDetailToAutocomplete(
+    ld: NonNullable<JobDetail['location_detail']>
+): LocationAutocompleteItem {
+    return {
+        id: ld.id,
+        place_id: ld.place_id ?? null,
+        display_name: ld.display_name ?? ld.name ?? '',
+        city: ld.city ?? null,
+        state: ld.state ?? null,
+        country: ld.country ?? null,
+        lat: ld.latitude ?? null,
+        lon: ld.longitude ?? null,
+        type: ld.location_type ?? 'place',
+    };
+}
+
 const YEAR_OPTIONS = Array.from({ length: 61 }, (_, i) => ({
     id: String(i),
     name: `${i} ${i === 1 ? 'year' : 'years'}`,
 }));
 
 const STATIC_SKILL_OPTIONS: { id: string; name: string }[] = [
-    { id: 'sk-miro', name: 'Miro' },
-    { id: 'sk-figma', name: 'Figma' },
-    { id: 'sk-sketch', name: 'Sketch' },
-    { id: 'sk-react', name: 'React' },
-    { id: 'sk-react-native', name: 'React Native' },
-    { id: 'sk-typescript', name: 'TypeScript' },
-    { id: 'sk-javascript', name: 'JavaScript' },
-    { id: 'sk-node', name: 'Node.js' },
     { id: 'sk-python', name: 'Python' },
+    { id: 'sk-javascript', name: 'JavaScript' },
     { id: 'sk-java', name: 'Java' },
-    { id: 'sk-kotlin', name: 'Kotlin' },
-    { id: 'sk-swift', name: 'Swift' },
-    { id: 'sk-go', name: 'Go' },
-    { id: 'sk-rust', name: 'Rust' },
-    { id: 'sk-aws', name: 'AWS' },
-    { id: 'sk-azure', name: 'Azure' },
-    { id: 'sk-gcp', name: 'GCP' },
-    { id: 'sk-kubernetes', name: 'Kubernetes' },
-    { id: 'sk-docker', name: 'Docker' },
-    { id: 'sk-terraform', name: 'Terraform' },
-    { id: 'sk-postgres', name: 'PostgreSQL' },
-    { id: 'sk-mongodb', name: 'MongoDB' },
-    { id: 'sk-redis', name: 'Redis' },
+    { id: 'sk-react', name: 'React' },
+    { id: 'sk-nodejs', name: 'Node.js' },
     { id: 'sk-sql', name: 'SQL' },
-    { id: 'sk-graphql', name: 'GraphQL' },
-    { id: 'sk-jest', name: 'Jest' },
-    { id: 'sk-playwright', name: 'Playwright' },
-    { id: 'sk-ui-ux', name: 'UI/UX design' },
-    { id: 'sk-product', name: 'Product management' },
-    { id: 'sk-agile', name: 'Agile' },
-    { id: 'sk-django', name: 'Django' },
-    { id: 'sk-ml', name: 'Machine Learning' },
+    { id: 'sk-mongodb', name: 'MongoDB' },
+    { id: 'sk-aws', name: 'AWS' },
+    { id: 'sk-docker', name: 'Docker' },
+    { id: 'sk-machine-learning', name: 'Machine Learning' },
     { id: 'sk-data-analysis', name: 'Data Analysis' },
     { id: 'sk-excel', name: 'Excel' },
 ];
 
-/** Salary currency — searchable dropdown + quick picks stay in sync via `salaryCurrencyId`. */
-const CURRENCY_OPTIONS = [
-    { id: 'USD', name: 'USD — US Dollar' },
-    { id: 'EUR', name: 'EUR — Euro' },
-    { id: 'GBP', name: 'GBP — British Pound' },
-    { id: 'INR', name: 'INR — Indian Rupee' },
-    { id: 'CAD', name: 'CAD — Canadian Dollar' },
-    { id: 'AUD', name: 'AUD — Australian Dollar' },
-    { id: 'SGD', name: 'SGD — Singapore Dollar' },
-    { id: 'AED', name: 'AED — UAE Dirham' },
-    { id: 'JPY', name: 'JPY — Japanese Yen' },
-    { id: 'CNY', name: 'CNY — Chinese Yuan' },
-    { id: 'CHF', name: 'CHF — Swiss Franc' },
-    { id: 'SEK', name: 'SEK — Swedish Krona' },
-    { id: 'NZD', name: 'NZD — New Zealand Dollar' },
-    { id: 'HKD', name: 'HKD — Hong Kong Dollar' },
-    { id: 'ZAR', name: 'ZAR — South African Rand' },
+const CURRENCY_COUNTRIES: Record<string, string> = {
+    USD: "US", EUR: "EU", GBP: "GB", JPY: "JP", CNY: "CN", INR: "IN",
+    AUD: "AU", CAD: "CA", CHF: "CH", SGD: "SG", HKD: "HK", NZD: "NZ",
+    KRW: "KR", MXN: "MX", BRL: "BR", ZAR: "ZA", RUB: "RU", AED: "AE",
+    SAR: "SA", SEK: "SE", NOK: "NO", DKK: "DK", PLN: "PL", THB: "TH",
+    IDR: "ID", MYR: "MY", PHP: "PH", VND: "VN", TWD: "TW", TRY: "TR",
+    ILS: "IL", EGP: "EG", NGN: "NG", PKR: "PK", BDT: "BD", CLP: "CL",
+    COP: "CO", PEN: "PE", ARS: "AR", CZK: "CZ", HUF: "HU", RON: "RO",
+    BGN: "BG", HRK: "HR", UAH: "UA", KES: "KE", GHS: "GH", TZS: "TZ",
+    UGX: "UG", QAR: "QA", KWD: "KW", BHD: "BH", OMR: "OM", JOD: "JO",
+    LKR: "LK", NPR: "NP", MMK: "MM",
+};
+
+const POPULAR_CURRENCIES = [
+    "USD", "EUR", "GBP", "INR", "CAD", "AUD", "SGD", "AED", "JPY", "CNY",
 ];
 
-const QUICK_CURRENCY_CODES = ['USD', 'EUR', 'GBP', 'INR', 'CAD', 'AUD', 'SGD', 'AED', 'JPY', 'CNY'];
-
-const QUICK_CURRENCY_FLAGS: Record<string, string> = {
-    USD: '🇺🇸',
-    EUR: '🇪🇺',
-    GBP: '🇬🇧',
-    INR: '🇮🇳',
-    CAD: '🇨🇦',
-    AUD: '🇦🇺',
-    SGD: '🇸🇬',
-    AED: '🇦🇪',
-    JPY: '🇯🇵',
-    CNY: '🇨🇳',
+const CURRENCY_SYMBOLS: Record<string, string> = {
+    USD: "$", EUR: "€", GBP: "£", JPY: "¥", CNY: "¥", INR: "₹",
+    AUD: "A$", CAD: "C$", CHF: "Fr", SGD: "S$", HKD: "HK$", KRW: "₩",
+    BRL: "R$", ZAR: "R", RUB: "₽", AED: "د.إ", SAR: "﷼", SEK: "kr",
+    NOK: "kr", DKK: "kr", PLN: "zł", THB: "฿", MYR: "RM", PHP: "₱",
+    TRY: "₺", ILS: "₪", PKR: "₨", BDT: "৳", NGN: "₦",
 };
 
 function formatClosingDate(iso: string): string {
@@ -285,7 +328,18 @@ type JobFieldKey =
     | 'location'
     | 'experience'
     | 'closingDate'
-    | 'description';
+    | 'description'
+    | 'weights'
+    | 'salary'
+    | 'currency';
+
+function htmlToPlainDescription(html: string) {
+    return html
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
 
 function richTextLooksEmpty(html: string) {
     const t = html
@@ -296,17 +350,58 @@ function richTextLooksEmpty(html: string) {
     return t.length === 0;
 }
 
+const SALARY_PAIR_INCOMPLETE =
+    'Enter both minimum and maximum salary, or leave both empty.';
+
+const SALARY_PAIR_INVALID =
+    'Enter valid positive amounts; maximum must be greater than minimum.';
+
+const CURRENCY_REQUIRED_ERROR = 'Please select a currency when salary is provided.';
+
+type JobDetailsRouteParams = { jobId?: string };
+
 const JobCreateDetailsScreen = () => {
+    const route = useRoute();
+    const jobIdParam = (route.params as JobDetailsRouteParams | undefined)?.jobId;
+    const dispatch = useAppDispatch();
+    const hydratedFromJobIdRef = useRef<string | null>(null);
+    const prevJobDetailsSaveLoading = useRef(false);
+
+    const {
+        generateDescriptionLoading,
+        generatedJobDescription,
+        loading: createJobLoading,
+        error: createJobError,
+        selectedJob,
+        jobDetailLoading,
+        jobDetailsSaveLoading,
+    } = useAppSelector((state) => ({
+        generateDescriptionLoading: state.jobs.generateDescriptionLoading,
+        generatedJobDescription: state.jobs.generatedJobDescription,
+        loading: state.jobs.loading,
+        error: state.jobs.error,
+        selectedJob: state.jobs.selectedJob,
+        jobDetailLoading: state.jobs.jobDetailLoading,
+        jobDetailsSaveLoading: state.jobs.jobDetailsSaveLoading,
+    }));
+
+    /** Only used to re-run navigation effect; read latest job via `store.getState()` inside the effect (avoids stale closure vs mount clear). */
+    const createdJobWizardId = useAppSelector((state) => state.jobs.createdJobForWizard?.id);
+
     const [jobTitle, setJobTitle] = useState('');
     const [skills, setSkills] = useState<string[]>([]);
     const [extraSkillOptions, setExtraSkillOptions] = useState<{ id: string; name: string }[]>([]);
     const [location, setLocation] = useState('');
+    const [locationDetail, setLocationDetail] =
+        useState<LocationAutocompleteItem | null>(null);
     const [employmentId, setEmploymentId] = useState('full_time');
     const [expMinId, setExpMinId] = useState('0');
     const [expMaxId, setExpMaxId] = useState('1');
     const [closingDateIso, setClosingDateIso] = useState<string | null>(null);
     const [dateModalOpen, setDateModalOpen] = useState(false);
-    const [salaryCurrencyId, setSalaryCurrencyId] = useState('USD');
+    /** Valid ISO currency codes only — never include '' or invalid codes (would create id `recent_` and break CommonDropdown labels). */
+    const [recentCurrencies, setRecentCurrencies] = useState<string[]>([]);
+    const [salaryCurrencyId, setSalaryCurrencyId] = useState('');
     const [salaryMinAmount, setSalaryMinAmount] = useState('');
     const [salaryMaxAmount, setSalaryMaxAmount] = useState('');
     const [description, setDescription] = useState('');
@@ -319,6 +414,87 @@ const JobCreateDetailsScreen = () => {
         certification: 10,
     });
     const [fieldErrors, setFieldErrors] = useState<Partial<Record<JobFieldKey, string>>>({});
+
+    useEffect(() => {
+        hydratedFromJobIdRef.current = null;
+    }, [jobIdParam]);
+
+    useEffect(() => {
+        dispatch(clearSelectedLocation());
+        dispatch(clearCreatedJobForWizard());
+        if (jobIdParam) {
+            dispatch(getJobDetailRequestAction(jobIdParam));
+        } else {
+            dispatch(setSelectedJob(null));
+        }
+    }, [dispatch, jobIdParam]);
+
+    useEffect(() => {
+        if (!jobIdParam || !selectedJob || selectedJob.id !== jobIdParam) return;
+        if (hydratedFromJobIdRef.current === selectedJob.id) return;
+        hydratedFromJobIdRef.current = selectedJob.id;
+
+        setJobTitle(selectedJob.title ?? '');
+        const labels =
+            selectedJob.must_have_skills?.map((s) => (s.label || s.value || '').trim()).filter(Boolean) ??
+            [];
+        setSkills(labels);
+        const extras = labels
+            .filter(
+                (name) =>
+                    !STATIC_SKILL_OPTIONS.some((o) => o.name.toLowerCase() === name.toLowerCase())
+            )
+            .map((name) => ({ id: `sk-loaded-${name}`, name }));
+        setExtraSkillOptions(extras);
+
+        setLocation(selectedJob.location ?? '');
+        if (selectedJob.location_detail) {
+            setLocationDetail(locationDetailToAutocomplete(selectedJob.location_detail));
+        } else {
+            setLocationDetail(null);
+        }
+
+        setEmploymentId(employmentApiValueToDropdownId(selectedJob.employment_type ?? ''));
+        setExpMinId(String(selectedJob.min_experience ?? 0));
+        setExpMaxId(String(selectedJob.max_experience ?? selectedJob.experience ?? 0));
+
+        const close = selectedJob.close_date;
+        if (close && typeof close === 'string') {
+            setClosingDateIso(close.slice(0, 10));
+        } else {
+            setClosingDateIso(null);
+        }
+
+        setDescription(selectedJob.jd_html?.trim() ? selectedJob.jd_html : selectedJob.description ?? '');
+        setResumeScreening(selectedJob.resume_screening_enabled !== false);
+
+        setWeights(scoreWeightToUiWeights(selectedJob.score_weight));
+
+        const cur = selectedJob.salary_currency?.trim();
+        if (cur && CURRENCY_COUNTRIES[cur]) {
+            setSalaryCurrencyId(cur);
+            setRecentCurrencies((prev) => {
+                const next = prev.filter((c) => c && c !== cur);
+                return [cur, ...next].slice(0, 5);
+            });
+        } else {
+            setSalaryCurrencyId('');
+        }
+
+        const minS = selectedJob.min_salary;
+        const maxS = selectedJob.max_salary;
+        const minNum =
+            minS == null || minS === '' ? NaN : Math.round(Number.parseFloat(String(minS)));
+        const maxNum =
+            maxS == null || maxS === '' ? NaN : Math.round(Number.parseFloat(String(maxS)));
+        setSalaryMinAmount(Number.isFinite(minNum) && minNum > 0 ? String(minNum) : '');
+        setSalaryMaxAmount(Number.isFinite(maxNum) && maxNum > 0 ? String(maxNum) : '');
+    }, [jobIdParam, selectedJob]);
+
+    const weightSum = useMemo(
+        () => WEIGHT_ORDER.reduce((acc, k) => acc + weights[k], 0),
+        [weights]
+    );
 
     const clearFieldError = useCallback((key: JobFieldKey) => {
         setFieldErrors((prev) => ({ ...prev, [key]: undefined }));
@@ -334,6 +510,8 @@ const JobCreateDetailsScreen = () => {
         }
         if (!location.trim()) {
             next.location = 'Location is required';
+        } else if (!locationDetail?.id) {
+            next.location = 'Select or confirm a verified location';
         }
         const minY = Number.parseInt(expMinId, 10);
         const maxY = Number.parseInt(expMaxId, 10);
@@ -346,32 +524,193 @@ const JobCreateDetailsScreen = () => {
         }
         if (!closingDateIso) {
             next.closingDate = 'Close date is required';
+        } else if (closingDateIso < dayjs().format('YYYY-MM-DD')) {
+            next.closingDate = 'Close date cannot be in the past';
         }
         if (richTextLooksEmpty(description)) {
             next.description = 'Job description is required';
         }
+        if (weightSum !== 100) {
+            next.weights = 'Weights should add up to 100%';
+        }
+
+        const minSalStr = salaryMinAmount.replace(/\D/g, '').trim();
+        const maxSalStr = salaryMaxAmount.replace(/\D/g, '').trim();
+        const hasMin = minSalStr.length > 0;
+        const hasMax = maxSalStr.length > 0;
+
+        let salaryMessage: string | undefined;
+        let hasCompleteValidSalaryPair = false;
+
+        if (!hasMin && !hasMax) {
+            // Salary is optional — no validation.
+        } else if (hasMin !== hasMax) {
+            salaryMessage = SALARY_PAIR_INCOMPLETE;
+        } else {
+            const minSal = Number.parseInt(minSalStr, 10);
+            const maxSal = Number.parseInt(maxSalStr, 10);
+            if (
+                !Number.isFinite(minSal) ||
+                !Number.isFinite(maxSal) ||
+                minSal <= 0 ||
+                maxSal <= 0 ||
+                maxSal <= minSal
+            ) {
+                salaryMessage = SALARY_PAIR_INVALID;
+            } else {
+                hasCompleteValidSalaryPair = true;
+            }
+        }
+        if (salaryMessage) {
+            next.salary = salaryMessage;
+        }
+
+        if (
+            hasCompleteValidSalaryPair &&
+            (!salaryCurrencyId || !CURRENCY_COUNTRIES[salaryCurrencyId])
+        ) {
+            next.currency = CURRENCY_REQUIRED_ERROR;
+        }
+
         return next;
-    }, [jobTitle, skills.length, location, expMinId, expMaxId, closingDateIso, description]);
+    }, [
+        jobTitle,
+        skills.length,
+        location,
+        locationDetail?.id,
+        expMinId,
+        expMaxId,
+        closingDateIso,
+        description,
+        weightSum,
+        salaryMinAmount,
+        salaryMaxAmount,
+        salaryCurrencyId,
+    ]);
+
+    const buildCreateJobPayload = useCallback((): CreateJobRequest => {
+        const plainDesc = htmlToPlainDescription(description);
+
+        const minY = parseInt(expMinId, 10);
+        const maxY = parseInt(expMaxId, 10);
+        const minSal = parseInt(salaryMinAmount || '0', 10);
+        const maxSal = parseInt(salaryMaxAmount || '0', 10);
+
+        const payload: CreateJobRequest = {
+            title: jobTitle.trim(),
+            description: plainDesc,
+            jd_html: description,
+            location: location.trim(),
+            location_id: locationDetail?.id ?? undefined,
+            employment_type:
+                EMPLOYMENT_API_BY_ID[employmentId] ??
+                EMPLOYMENT_OPTIONS.find((e) => e.id === employmentId)?.name ??
+                'Full Time',
+            min_experience: minY,
+            max_experience: maxY,
+            experience: maxY,
+            must_have_skills: skills.map((s) => ({ label: s, value: s })),
+            close_date: closingDateIso ?? undefined,
+            published: false,
+            resume_screening_enabled: resumeScreening,
+            score_weight: {
+                skills: weights.skills / 100,
+                work_experience: weights.experience / 100,
+                projects: weights.projects / 100,
+                education: weights.education / 100,
+                certifications: weights.certification / 100,
+            },
+        };
+        if (minSal > 0) {
+            payload.min_salary = minSal;
+        }
+
+        if (maxSal > 0) {
+            payload.max_salary = maxSal;
+        }
+        if (salaryCurrencyId && CURRENCY_COUNTRIES[salaryCurrencyId]) {
+            payload.salary_currency = salaryCurrencyId;
+        }
+
+        return payload;
+    }, [
+        description,
+        jobTitle,
+        location,
+        locationDetail?.id,
+        employmentId,
+        expMinId,
+        expMaxId,
+        skills,
+        closingDateIso,
+        resumeScreening,
+        salaryCurrencyId,
+        salaryMinAmount,
+        salaryMaxAmount,
+        weights,
+    ]);
+
+    const buildPatchJobRequest = useCallback((): PatchJobDetailsRequest | null => {
+        if (!jobIdParam) return null;
+        const body = buildCreateJobPayload();
+        return {
+            ...body,
+            jobId: jobIdParam,
+            published:
+                selectedJob?.id === jobIdParam ? Boolean(selectedJob.published) : Boolean(body.published),
+        };
+    }, [jobIdParam, buildCreateJobPayload, selectedJob?.id, selectedJob?.published]);
 
     const onNextPress = useCallback(() => {
         const next = validateJobFields();
         const keys = Object.keys(next) as JobFieldKey[];
         setFieldErrors(next);
         if (keys.length === 0) {
-            navigate('ApplicationForm');
+            dispatch(clearError());
+            if (jobIdParam) {
+                const patchPayload = buildPatchJobRequest();
+                if (patchPayload) {
+                    dispatch(patchJobDetailsRequestAction(patchPayload));
+                }
+                return;
+            }
+            dispatch(createJobRequestAction(buildCreateJobPayload()));
         }
-    }, [validateJobFields]);
+    }, [validateJobFields, dispatch, buildCreateJobPayload, buildPatchJobRequest, jobIdParam]);
 
-    const weightSum = useMemo(
-        () => WEIGHT_ORDER.reduce((acc, k) => acc + weights[k], 0),
-        [weights]
-    );
+    useEffect(() => {
+        if (
+            prevJobDetailsSaveLoading.current &&
+            !jobDetailsSaveLoading &&
+            jobIdParam
+        ) {
+            if (!store.getState().jobs.error) {
+                navigate('ApplicationForm', {
+                    jobId: jobIdParam,
+                    locationDisplay: location.trim(),
+                    locationDetail,
+                });
+            }
+        }
+        prevJobDetailsSaveLoading.current = jobDetailsSaveLoading;
+    }, [jobDetailsSaveLoading, jobIdParam, location, locationDetail]);
+
+    useEffect(() => {
+        const wizardJob = store.getState().jobs.createdJobForWizard;
+        if (!wizardJob?.id) return;
+        navigate('ApplicationForm', {
+            jobId: wizardJob.id,
+            locationDisplay: location.trim(),
+            locationDetail,
+        });
+        dispatch(clearCreatedJobForWizard());
+    }, [createdJobWizardId, dispatch, location, locationDetail]);
 
     const gaugeSegmentPaths = useMemo(() => buildGaugeDonutPaths(weights), [weights]);
-
     const onWeightChange = useCallback((key: WeightKey, val: number) => {
         setWeights((w) => ({ ...w, [key]: val }));
-    }, []);
+        clearFieldError('weights');
+    }, [clearFieldError]);
 
     const allSkillOptions = useMemo(
         () => [...STATIC_SKILL_OPTIONS, ...extraSkillOptions],
@@ -427,10 +766,148 @@ const JobCreateDetailsScreen = () => {
         []
     );
 
+    /** Closing date: only today and future (calendar + apply guard). */
+    const closingDateMinIso = useMemo(
+        () => dayjs().format('YYYY-MM-DD'),
+        [dateModalOpen]
+    );
+
+    const onGenerate = useCallback(() => {
+        if (!jobTitle) return;
+        const promptText = description.replace(/<[^>]+>/g, ' ').trim();
+        dispatch(
+            generateJobDescriptionRequestAction({
+                job_title: jobTitle,
+                employment_type:
+                    EMPLOYMENT_OPTIONS.find((e) => e.id === employmentId)?.name || 'Full Time',
+                min_experience: parseInt(expMinId, 10) || 0,
+                max_experience: parseInt(expMaxId, 10) || 1,
+                must_have_skills: skills,
+                user_prompt: promptText,
+            })
+        );
+    }, [jobTitle, description, employmentId, expMinId, expMaxId, skills, dispatch]);
+
+    useEffect(() => {
+        if (!generatedJobDescription) return;
+        const res = generatedJobDescription;
+        if (res.job_desc_html) {
+            setDescription(res.job_desc_html);
+            clearFieldError('description');
+        }
+        if (res.must_have_skills?.length) {
+            res.must_have_skills.forEach((skill) => {
+                const label = skill.label || skill.value;
+                if (label) appendSkill(label);
+            });
+            clearFieldError('skills');
+        }
+        dispatch(clearGeneratedJobDescription());
+    }, [generatedJobDescription, dispatch, appendSkill, clearFieldError]);
+
+    const currencyDropdownOptions = useMemo(() => {
+        const options: any[] = [];
+        const addedCodes = new Set<string>();
+
+        const buildOption = (code: string, prefix: string) => ({
+            id: `${prefix}_${code}`,
+            realId: code,
+            name: `${code} ${CURRENCY_SYMBOLS[code] ? `(${CURRENCY_SYMBOLS[code]})` : ''}`,
+            countryCode: CURRENCY_COUNTRIES[code],
+            searchLabel: code // ensure it matches the search by code
+        });
+
+        const validRecent = recentCurrencies.filter(
+            (c) => c && CURRENCY_COUNTRIES[c]
+        );
+        if (validRecent.length > 0) {
+            options.push({
+                id: 'header-recent',
+                name: 'RECENT CURRENCY',
+                isHeader: true,
+                searchLabel: `RECENT CURRENCY ${validRecent.join(' ')}`
+            });
+            validRecent.forEach((code) => {
+                options.push(buildOption(code, 'recent'));
+                addedCodes.add(code);
+            });
+        }
+
+        const popularToAdd = POPULAR_CURRENCIES.filter(code => !addedCodes.has(code));
+        if (popularToAdd.length > 0) {
+            options.push({
+                id: 'header-popular',
+                name: 'POPULAR CURRENCY',
+                isHeader: true,
+                searchLabel: `POPULAR CURRENCY ${popularToAdd.join(' ')}`
+            });
+            popularToAdd.forEach(code => {
+                options.push(buildOption(code, 'popular'));
+                addedCodes.add(code);
+            });
+        }
+
+        const allToAdd = Object.keys(CURRENCY_COUNTRIES).filter(code => !addedCodes.has(code));
+        if (allToAdd.length > 0) {
+            options.push({
+                id: 'header-all',
+                name: 'ALL CURRENCY',
+                isHeader: true,
+                searchLabel: `ALL CURRENCY ${allToAdd.join(' ')}`
+            });
+            allToAdd.forEach(code => {
+                options.push(buildOption(code, 'all'));
+                addedCodes.add(code);
+            });
+        }
+
+        return options;
+    }, [recentCurrencies]);
+
+    const handleCurrencySelect = useCallback(
+        (codeRaw: string) => {
+            const code = codeRaw.replace(/^(recent_|popular_|all_)/, '');
+            if (!code || !CURRENCY_COUNTRIES[code]) return;
+            setSalaryCurrencyId(code);
+            setRecentCurrencies((prev) => {
+                const next = prev.filter((c) => c && c !== code);
+                return [code, ...next].slice(0, 5);
+            });
+            clearFieldError('currency');
+        },
+        [clearFieldError]
+    );
+
+    /** No value when nothing selected so the field shows the placeholder (avoids matching a bogus `recent_` option). */
+    const activeCurrencyValueId = useMemo(() => {
+        if (!salaryCurrencyId || !CURRENCY_COUNTRIES[salaryCurrencyId]) {
+            return undefined;
+        }
+        if (recentCurrencies.includes(salaryCurrencyId)) return `recent_${salaryCurrencyId}`;
+        if (POPULAR_CURRENCIES.includes(salaryCurrencyId)) return `popular_${salaryCurrencyId}`;
+        return `all_${salaryCurrencyId}`;
+    }, [salaryCurrencyId, recentCurrencies]);
+
+    const formatSalaryNumber = (numStr: string) => {
+        const parsed = parseInt(numStr.replace(/\D/g, ''), 10);
+        if (isNaN(parsed)) return '';
+        return new Intl.NumberFormat('en-US').format(parsed);
+    };
+    const minFormatted = formatSalaryNumber(salaryMinAmount);
+    const maxFormatted = formatSalaryNumber(salaryMaxAmount);
+    let salaryPreview = '';
+    if (minFormatted && maxFormatted) {
+        salaryPreview = `${salaryCurrencyId} ${minFormatted} - ${maxFormatted}`;
+    } else if (minFormatted) {
+        salaryPreview = `${salaryCurrencyId} ${minFormatted}`;
+    } else if (maxFormatted) {
+        salaryPreview = `${salaryCurrencyId} 0 - ${maxFormatted}`;
+    }
+
     return (
         <CustomSafeAreaView style={styles.safe}>
             <KeyboardAvoidingView
-                style={styles.flex}
+                style={[styles.flex, styles.kbRelative]}
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             >
                 <Header
@@ -496,20 +973,34 @@ const JobCreateDetailsScreen = () => {
                         />
                     </View>
 
-                    <TextField
-                        lable="Location"
-                        isRequired
-                        placeholder="Search location"
-                        value={location}
-                        onChangeText={(t) => {
-                            setLocation(t);
-                            clearFieldError('location');
-                        }}
-                        startIcon={<Icon size={20} name={'location'} iconFamily={'Octicons'} color={colors.gray[400]}/>}
-                        size="Medium"
-                        isError={!!fieldErrors.location}
-                        error={fieldErrors.location}
-                    />
+                    <View style={styles.locationFieldBlock}>
+                        <LocationAutocompleteField
+                            lable="Location"
+                            isRequired
+                            placeholder="Search location"
+                            value={location}
+                            onChangeText={(t) => {
+                                setLocation(t);
+                                setLocationDetail(null);
+                                clearFieldError('location');
+                            }}
+                            onSelectLocation={(item: LocationAutocompleteItem | null) => {
+                                setLocationDetail(item);
+                                clearFieldError('location');
+                            }}
+                            startIcon={
+                                <Icon
+                                    size={20}
+                                    name="location"
+                                    iconFamily="Octicons"
+                                    color={colors.gray[400]}
+                                />
+                            }
+                            size="Medium"
+                            isError={!!fieldErrors.location}
+                            error={fieldErrors.location}
+                        />
+                    </View>
 
                     <View style={styles.block}>
                         <Typography variant="semiBoldTxtsm" color={colors.gray[800]} style={styles.labelSpacing}>
@@ -625,33 +1116,54 @@ const JobCreateDetailsScreen = () => {
                             placeholder="Enter job description..."
                             error={fieldErrors.description}
                         />
-                        <TagList data={['Keep it concise and action oriented', 'Emphasize ownership, impact, and growth.', 'Highlight remote-friendly culture and async work.']} bgColor={colors.brand[50]} borderColor={colors.brand[200]} textColor={colors.brand[700]} />
-                        <Button startIcon={<SvgXml xml={sparkles.replace(/fill="[^"]*"/g, `fill="${colors.base.white}"`)} color={colors.base.white} fill={colors.base.white} />}>Genarate</Button>
+                        <TagList
+                            data={['Keep it concise and action oriented', 'Emphasize ownership, impact, and growth.', 'Highlight remote-friendly culture and async work.']}
+                            bgColor={colors.brand[50]}
+                            borderColor={colors.brand[200]}
+                            textColor={colors.brand[700]}
+                            onSelect={(item) => {
+                                const currentText = description.replace(/<[^>]+>/g, '').trim();
+                                if (currentText) {
+                                    setDescription(description + `<p>${item}</p>`);
+                                } else {
+                                    setDescription(`<p>${item}</p>`);
+                                }
+                                clearFieldError('description');
+                            }}
+                        />
+                        <Button
+                            startIcon={<SvgXml xml={sparkles.replace(/fill="[^"]*"/g, `fill="${colors.base.white}"`)} color={colors.base.white} fill={colors.base.white} />}
+                            disabled={!jobTitle || generateDescriptionLoading}
+                            isLoading={generateDescriptionLoading}
+                            onPress={onGenerate}
+                        >
+                            Generate
+                        </Button>
                     </View>
-                    <Divider/>
+                    <Divider />
                     <Card style={styles.compensationCard}>
                         <View>
                             <Typography variant="semiBoldTxtlg" color={colors.gray[900]}>
                                 Compensation
                             </Typography>
                         </View>
-                        <View style={{gap:6}}>
+                        <View style={{ gap: 6 }}>
                             <Typography variant="semiBoldTxtsm" color={colors.gray[800]} >
                                 Salary Currency
                             </Typography>
                             <View style={styles.currencyDropdownRow}>
-                                <Ionicons
+                                {/* <Ionicons
                                     name="search-outline"
                                     size={20}
                                     color={colors.gray[500]}
                                     style={styles.currencySearchIcon}
-                                />
+                                /> */}
                                 <View style={styles.currencyDropdownFlex}>
                                     <CommonDropdown
                                         placeholder="Select currency..."
-                                        options={CURRENCY_OPTIONS}
-                                        value={salaryCurrencyId}
-                                        onChange={(v) => setSalaryCurrencyId(String(v))}
+                                        options={currencyDropdownOptions}
+                                        value={activeCurrencyValueId as string | undefined}
+                                        onChange={(v) => handleCurrencySelect(String(v))}
                                         labelKey="name"
                                         valueKey="id"
                                         searchable
@@ -659,26 +1171,44 @@ const JobCreateDetailsScreen = () => {
                                         searchField="label"
                                         mode="default"
                                         dropdownPosition="bottom"
+                                        highlightError={!!fieldErrors.currency}
                                         containerStyle={styles.currencyDropdownInner}
+                                        renderLeftIcon={(item) => {
+                                            if (item.isHeader || !item.countryCode) return null;
+                                            return (
+                                                <View style={{ width: 24, height: 18, borderRadius: 2, overflow: 'hidden', backgroundColor: '#f0f0f0' }}>
+                                                    <SvgUri
+                                                        width="100%"
+                                                        height="100%"
+                                                        uri={`https://purecatamphetamine.github.io/country-flag-icons/3x2/${item.countryCode}.svg`}
+                                                    />
+                                                </View>
+                                            );
+                                        }}
                                     />
                                 </View>
                             </View>
+                             <Typography variant="regularTxtsm" color={colors.error[500]}>{fieldErrors.currency}</Typography>
                         </View>
-                        <View style={{ gap:10}}>
+                        <View style={{ gap: 10 }}>
                             <Typography
                                 variant="semiBoldTxtxs"
                             >
                                 QUICK CURRENCY PICKS
                             </Typography>
                             <TagList
-                                data={QUICK_CURRENCY_CODES}
+                                data={POPULAR_CURRENCIES}
                                 renderIcon={(code) => (
-                                    <Typography variant="regularTxtxs" style={styles.quickFlag}>
-                                        {QUICK_CURRENCY_FLAGS[code]}
-                                    </Typography>
+                                    <View style={{ width: 20, height: 15, borderRadius: 2, overflow: 'hidden', backgroundColor: '#f0f0f0', marginRight: 4 }}>
+                                        <SvgUri
+                                            width="100%"
+                                            height="100%"
+                                            uri={`https://purecatamphetamine.github.io/country-flag-icons/3x2/${CURRENCY_COUNTRIES[code]}.svg`}
+                                        />
+                                    </View>
                                 )}
-                                onSelect={(item) => setSalaryCurrencyId(String(item))}
-                                selectedItem={salaryCurrencyId}
+                                onSelect={(item) => handleCurrencySelect(String(item))}
+                                selectedItem={salaryCurrencyId || undefined}
                                 textColor={colors.gray[700]}
                                 bgColor={colors.gray[25]}
                                 borderColor={colors.gray[200]}
@@ -696,9 +1226,15 @@ const JobCreateDetailsScreen = () => {
                                     lable={'Minimum Salary'}
                                     placeholder="e.g., 50000"
                                     value={salaryMinAmount}
-                                    onChangeText={setSalaryMinAmount}
+                                    onChangeText={(text) => {
+                                        const onlyNumbers = text.replace(/[^0-9]/g, '');
+                                        setSalaryMinAmount(onlyNumbers);
+                                        clearFieldError('salary');
+                                        clearFieldError('currency');
+                                    }}
                                     keyboardType="number-pad"
                                     size="Medium"
+                                    isError={!!fieldErrors.salary}
                                 />
                             </View>
                             <View style={styles.half}>
@@ -706,12 +1242,30 @@ const JobCreateDetailsScreen = () => {
                                     lable={'Maximum Salary'}
                                     placeholder="e.g., 80000"
                                     value={salaryMaxAmount}
-                                    onChangeText={setSalaryMaxAmount}
+                                    onChangeText={(text) => {
+                                        const onlyNumbers = text.replace(/[^0-9]/g, '');
+                                        setSalaryMaxAmount(onlyNumbers);
+                                        clearFieldError('salary');
+                                        clearFieldError('currency');
+                                    }}
                                     keyboardType="number-pad"
                                     size="Medium"
+                                    isError={!!fieldErrors.salary}
                                 />
                             </View>
                         </View>
+                        {fieldErrors.salary ? (
+                            <Typography variant="regularTxtsm" color={colors.error[500]} style={styles.fieldErrorText}>
+                                {fieldErrors.salary}
+                            </Typography>
+                        ) : null}
+                        {(minFormatted || maxFormatted) ? (
+                            <View style={{ marginTop: 4, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: colors.brand[50], borderRadius: 8, borderWidth: 1, borderColor: colors.brand[200] }}>
+                                <Typography variant="semiBoldTxtsm" color={colors.gray[700]}>
+                                    Salary preview: <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>{salaryPreview}</Typography>
+                                </Typography>
+                            </View>
+                        ) : null}
                     </Card>
                     <Card style={styles.scoreCard}>
                         <View style={styles.scoreHeader}>
@@ -777,7 +1331,7 @@ const JobCreateDetailsScreen = () => {
                                                 onChange={(v) => onWeightChange(key, v)}
                                                 min={0}
                                                 max={100}
-                                                step={1}
+                                                step={10}
                                                 unitLabel="%"
                                                 padLength={1}
                                                 editable
@@ -788,7 +1342,11 @@ const JobCreateDetailsScreen = () => {
                             ))}
                         </View>
 
-                        {weightSum !== 100 ? (
+                        {fieldErrors.weights ? (
+                            <Typography variant="regularTxtxs" color={colors.error[500]} style={styles.hintErr}>
+                                {fieldErrors.weights}
+                            </Typography>
+                        ) : weightSum !== 100 ? (
                             <Typography variant="regularTxtxs" color={colors.error[500]} style={styles.hintErr}>
                                 Weights should add up to 100% (currently {weightSum}%)
                             </Typography>
@@ -813,15 +1371,26 @@ const JobCreateDetailsScreen = () => {
                         </View>
                     </Card>
                 </ScrollView>
-                <View style={{ paddingHorizontal: 16 }}>
+                <View style={{ paddingHorizontal: 16, gap: 8 }}>
+                    {createJobError ? (
+                        <Typography variant="regularTxtsm" color={colors.error[500]}>
+                            {createJobError}
+                        </Typography>
+                    ) : null}
                     <Button
                         size={48}
                         buttonColor={colors.brand[600]}
                         textColor={colors.base.white}
                         borderRadius={10}
                         onPress={onNextPress}
+                        disabled={
+                            createJobLoading ||
+                            jobDetailsSaveLoading ||
+                            (jobDetailLoading && !!jobIdParam)
+                        }
+                        isLoading={jobIdParam ? jobDetailsSaveLoading : createJobLoading}
                     >
-                        Next
+                        {jobIdParam ? 'Save & Continue' : 'Next'}
                     </Button>
                 </View>
 
@@ -834,14 +1403,17 @@ const JobCreateDetailsScreen = () => {
                             <DateRangePicker
                                 mode="single"
                                 hidePresets
+                                minDate={closingDateMinIso}
                                 initialValue={closingDateIso ? { start: closingDateIso } : undefined}
                                 onClose={() => setDateModalOpen(false)}
                                 onApply={(range) => {
                                     const picked = range.start ?? range.end;
                                     if (picked && String(picked).trim() !== '') {
                                         const iso = String(picked).slice(0, 10);
-                                        setClosingDateIso(iso);
-                                        clearFieldError('closingDate');
+                                        if (iso >= closingDateMinIso) {
+                                            setClosingDateIso(iso);
+                                            clearFieldError('closingDate');
+                                        }
                                     }
                                     setDateModalOpen(false);
                                 }}
@@ -849,6 +1421,12 @@ const JobCreateDetailsScreen = () => {
                         </Pressable>
                     </Pressable>
                 </Modal>
+
+                {jobDetailLoading && jobIdParam ? (
+                    <View style={[StyleSheet.absoluteFillObject, styles.jobDetailLoadingOverlay]}>
+                        <ActivityIndicator size="large" color={colors.brand[600]} />
+                    </View>
+                ) : null}
             </KeyboardAvoidingView>
         </CustomSafeAreaView>
     );
@@ -863,6 +1441,15 @@ const styles = StyleSheet.create({
     flex: {
         flex: 1,
     },
+    kbRelative: {
+        position: 'relative',
+    },
+    jobDetailLoadingOverlay: {
+        backgroundColor: 'rgba(255,255,255,0.78)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 50,
+    },
     progress: {
         height: 4,
         backgroundColor: colors.gray[100],
@@ -876,6 +1463,10 @@ const styles = StyleSheet.create({
     },
     block: {
         gap: 6,
+    },
+    locationFieldBlock: {
+        zIndex: 10,
+        elevation: 4,
     },
     labelRow: {
         flexDirection: 'row',
@@ -919,7 +1510,7 @@ const styles = StyleSheet.create({
         borderColor: colors.error[500],
     },
     fieldErrorText: {
-        marginTop: 4,
+        //marginTop: 4,
     },
     compensationCard: {
         padding: 16,
@@ -1080,7 +1671,7 @@ const styles = StyleSheet.create({
     },
     gaugeTotal: {
         marginTop: -2,
-        marginRight:10
+        marginRight: 10
     },
     legendBox: {
         backgroundColor: colors.gray[50],
@@ -1095,7 +1686,7 @@ const styles = StyleSheet.create({
     legendRowInner: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        alignSelf:'center',
+        alignSelf: 'center',
         //justifyContent: 'space-around',
         gap: 12,
     },
@@ -1103,7 +1694,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        justifyContent:'space-between'
+        justifyContent: 'space-between'
         //maxWidth: '32%',
         //minWidth: '28%',
     },
@@ -1172,3 +1763,4 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
 });
+

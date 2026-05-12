@@ -1,3 +1,6 @@
+export { default as SkillTagComposer } from './skilltagcomposer';
+export { default as LocationAutocompleteField } from './locationautocompletefield';
+
 // Molecules - Simple combinations of atoms
 export { default as StatCard } from './statcard';
 export { default as QuestionOptionsField } from './questionoptionsfield';

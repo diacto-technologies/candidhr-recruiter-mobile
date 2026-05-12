@@ -1,5 +1,22 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { JobsState, Job, CreateJobRequest, UpdateJobRequest, JobsListApiResponse, GetJobsParams, JobDetail, JobNamesListApiResponse } from "./types";
+import {
+  JobsState,
+  Job,
+  CreateJobRequest,
+  UpdateJobRequest,
+  JobsListApiResponse,
+  GetJobsParams,
+  JobDetail,
+  JobNamesListApiResponse,
+  GenerateJobDescriptionResponse,
+  SubmitJobApplicationFormStepPayload,
+  PatchJobUsersSharedPayload,
+  PatchJobDetailsRequest,
+  PatchJobPublishedPayload,
+  SoftDeleteJobPayload,
+  ApplicationFormDraftData,
+  AssignWorkflowToJobPayload,
+} from "./types";
 
 export const jobsInitialState: JobsState = {
   publishedJobs: [],
@@ -33,9 +50,9 @@ export const jobsInitialState: JobsState = {
     total: 0,
   },
   favouritesPagination: {
-  page: 1,
-  limit: 10,
-  total: 0,
+    page: 1,
+    limit: 10,
+    total: 0,
   },
   publishedHasMore: true,
   unpublishedHasMore: true,
@@ -57,6 +74,26 @@ export const jobsInitialState: JobsState = {
   jobNameListPage: 1,
   jobNameListNext: null,
   jobNameListSearch: "",
+  generateDescriptionLoading: false,
+  generatedJobDescription: null,
+  createdJobForWizard: null,
+  applicationFormSubmitLoading: false,
+  applicationFormSubmitError: null,
+  jobUsersSharedSubmitLoading: false,
+  jobUsersSharedSubmitError: null,
+  jobUsersSharedSubmitSucceeded: false,
+  jobDetailLoading: false,
+  jobDetailRequestJobId: null,
+  jobDetailsSaveLoading: false,
+  applicationFormDraft: null,
+  applicationFormDraftLoading: false,
+  applicationFormDraftError: null,
+  latestApplicationFormDraftJobId: null,
+  patchJobPublishedLoadingJobId: null,
+  softDeleteJobLoadingJobId: null,
+  assignWorkflowLoadingJobId: null,
+  assignWorkflowSubmitError: null,
+  assignWorkflowSubmitSucceeded: false,
 };
 
 
@@ -197,38 +234,273 @@ const jobsSlice = createSlice({
       state.favouritesListLoading = false;
       state.favouritesIsTabLoading = false;
     },
-    getJobDetailRequest: (state, _action: PayloadAction<string>) => {
-      state.loading = true;
+    getJobDetailRequest: (state, action: PayloadAction<string>) => {
+      state.jobDetailLoading = true;
+      state.jobDetailRequestJobId = action.payload;
       state.error = null;
     },
     getJobDetailSuccess: (state, action: PayloadAction<JobDetail>) => {
-      state.loading = false;
+      state.jobDetailLoading = false;
+      state.jobDetailRequestJobId = null;
       state.selectedJob = action.payload;
       state.error = null;
     },
     getJobDetailFailure: (state, action: PayloadAction<string>) => {
-      state.loading = false;
+      state.jobDetailLoading = false;
+      state.jobDetailRequestJobId = null;
       state.error = action.payload;
     },
     createJobRequest: (state, _action: PayloadAction<any>) => {
       state.loading = true;
       state.error = null;
+      state.createdJobForWizard = null;
     },
     createJobSuccess: (state, action: PayloadAction<Job>) => {
       state.loading = false;
+      state.createdJobForWizard = action.payload;
+
       if (action.payload.published) {
         state.publishedJobs.unshift(action.payload);
-        state.publishedCount += 1;
-        state.publishedPagination.total += 1;
       } else {
         state.unpublishedJobs.unshift(action.payload);
-        state.unpublishedCount += 1;
-        state.unpublishedPagination.total += 1;
       }
-      state.error = null;
     },
     createJobFailure: (state, action: PayloadAction<string>) => {
       state.loading = false;
+      state.error = action.payload;
+    },
+    clearCreatedJobForWizard: (state) => {
+      state.createdJobForWizard = null;
+    },
+    submitApplicationFormStepRequest: (
+      state,
+      _action: PayloadAction<SubmitJobApplicationFormStepPayload>
+    ) => {
+      state.applicationFormSubmitLoading = true;
+      state.applicationFormSubmitError = null;
+    },
+    submitApplicationFormStepSuccess: (state) => {
+      state.applicationFormSubmitLoading = false;
+      state.applicationFormSubmitError = null;
+    },
+    submitApplicationFormStepFailure: (state, action: PayloadAction<string>) => {
+      state.applicationFormSubmitLoading = false;
+      state.applicationFormSubmitError = action.payload;
+    },
+    clearApplicationFormSubmitError: (state) => {
+      state.applicationFormSubmitError = null;
+    },
+    fetchApplicationFormDraftRequest: (state, action: PayloadAction<{ jobId: string }>) => {
+      state.applicationFormDraftLoading = true;
+      state.applicationFormDraftError = null;
+      state.latestApplicationFormDraftJobId = action.payload.jobId;
+    },
+    fetchApplicationFormDraftSuccess: (
+      state,
+      action: PayloadAction<ApplicationFormDraftData>
+    ) => {
+      state.applicationFormDraftLoading = false;
+      if (state.latestApplicationFormDraftJobId !== action.payload.jobId) {
+        return;
+      }
+      state.applicationFormDraft = action.payload;
+      state.applicationFormDraftError = null;
+    },
+    fetchApplicationFormDraftFailure: (state, action: PayloadAction<string>) => {
+      state.applicationFormDraftLoading = false;
+      state.applicationFormDraftError = action.payload;
+    },
+    clearApplicationFormDraft: (state) => {
+      state.applicationFormDraft = null;
+      state.applicationFormDraftLoading = false;
+      state.applicationFormDraftError = null;
+      state.latestApplicationFormDraftJobId = null;
+    },
+    clearApplicationFormDraftError: (state) => {
+      state.applicationFormDraftError = null;
+    },
+    patchJobUsersSharedRequest: (state, _action: PayloadAction<PatchJobUsersSharedPayload>) => {
+      state.jobUsersSharedSubmitLoading = true;
+      state.jobUsersSharedSubmitError = null;
+      state.jobUsersSharedSubmitSucceeded = false;
+    },
+    patchJobUsersSharedSuccess: (state) => {
+      state.jobUsersSharedSubmitLoading = false;
+      state.jobUsersSharedSubmitError = null;
+      state.jobUsersSharedSubmitSucceeded = true;
+    },
+    patchJobUsersSharedFailure: (state, action: PayloadAction<string>) => {
+      state.jobUsersSharedSubmitLoading = false;
+      state.jobUsersSharedSubmitError = action.payload;
+      state.jobUsersSharedSubmitSucceeded = false;
+    },
+    clearJobUsersSharedSubmitSuccess: (state) => {
+      state.jobUsersSharedSubmitSucceeded = false;
+    },
+    patchJobDetailsRequest: (state, _action: PayloadAction<PatchJobDetailsRequest>) => {
+      state.jobDetailsSaveLoading = true;
+      state.error = null;
+    },
+    patchJobDetailsSuccess: (state, action: PayloadAction<JobDetail>) => {
+      state.jobDetailsSaveLoading = false;
+      const job = action.payload;
+
+      const inPublishedIdx = state.publishedJobs.findIndex((j) => j.id === job.id);
+      const inUnpublishedIdx = state.unpublishedJobs.findIndex((j) => j.id === job.id);
+
+      if (job.published) {
+        if (inUnpublishedIdx !== -1) {
+          state.unpublishedJobs.splice(inUnpublishedIdx, 1);
+          state.publishedJobs.unshift(job as any);
+        } else if (inPublishedIdx !== -1) {
+          state.publishedJobs[inPublishedIdx] = job as any;
+        }
+      } else {
+        if (inPublishedIdx !== -1) {
+          state.publishedJobs.splice(inPublishedIdx, 1);
+          state.unpublishedJobs.unshift(job as any);
+        } else if (inUnpublishedIdx !== -1) {
+          state.unpublishedJobs[inUnpublishedIdx] = job as any;
+        }
+      }
+
+      if (state.selectedJob?.id === job.id) {
+        state.selectedJob = job;
+      }
+      state.error = null;
+    },
+    patchJobDetailsFailure: (state, action: PayloadAction<string>) => {
+      state.jobDetailsSaveLoading = false;
+      state.error = action.payload;
+    },
+    patchJobPublishedRequest: (state, action: PayloadAction<PatchJobPublishedPayload>) => {
+      state.patchJobPublishedLoadingJobId = action.payload.jobId;
+      state.error = null;
+    },
+    patchJobPublishedSuccess: (state, action: PayloadAction<JobDetail>) => {
+      state.patchJobPublishedLoadingJobId = null;
+      const job = action.payload;
+
+      const inPublishedIdx = state.publishedJobs.findIndex((j) => j.id === job.id);
+      const inUnpublishedIdx = state.unpublishedJobs.findIndex((j) => j.id === job.id);
+
+      if (job.published) {
+        if (inUnpublishedIdx !== -1) {
+          state.unpublishedJobs.splice(inUnpublishedIdx, 1);
+          state.publishedJobs.unshift(job as any);
+        } else if (inPublishedIdx !== -1) {
+          state.publishedJobs[inPublishedIdx] = job as any;
+        }
+      } else {
+        if (inPublishedIdx !== -1) {
+          state.publishedJobs.splice(inPublishedIdx, 1);
+          state.unpublishedJobs.unshift(job as any);
+        } else if (inUnpublishedIdx !== -1) {
+          state.unpublishedJobs[inUnpublishedIdx] = job as any;
+        }
+      }
+
+      const favIdx = state.favouriteJobs.findIndex((j) => j.id === job.id);
+      if (favIdx !== -1) {
+        state.favouriteJobs[favIdx] = { ...state.favouriteJobs[favIdx], ...job } as Job;
+      }
+
+      if (state.selectedJob?.id === job.id) {
+        state.selectedJob = job;
+      }
+      state.error = null;
+    },
+    patchJobPublishedFailure: (state, action: PayloadAction<string>) => {
+      state.patchJobPublishedLoadingJobId = null;
+      state.error = action.payload;
+    },
+    assignWorkflowToJobRequest: (state, action: PayloadAction<AssignWorkflowToJobPayload>) => {
+      state.assignWorkflowLoadingJobId = action.payload.jobId;
+      state.assignWorkflowSubmitError = null;
+      state.assignWorkflowSubmitSucceeded = false;
+    },
+    assignWorkflowToJobFailure: (state, action: PayloadAction<string>) => {
+      state.assignWorkflowLoadingJobId = null;
+      state.assignWorkflowSubmitError = action.payload;
+      state.assignWorkflowSubmitSucceeded = false;
+    },
+    clearAssignWorkflowSubmitSuccess: (state) => {
+      state.assignWorkflowSubmitSucceeded = false;
+      state.assignWorkflowSubmitError = null;
+    },
+    /** Jobs list: workflow assigned — merge detail into lists (saga after POST /workflow/assign/). */
+    patchJobWorkflowSuccess: (state, action: PayloadAction<JobDetail>) => {
+      const job = action.payload;
+      if (state.assignWorkflowLoadingJobId === job.id) {
+        state.assignWorkflowLoadingJobId = null;
+        state.assignWorkflowSubmitError = null;
+        state.assignWorkflowSubmitSucceeded = true;
+      }
+
+      const inPublishedIdx = state.publishedJobs.findIndex((j) => j.id === job.id);
+      const inUnpublishedIdx = state.unpublishedJobs.findIndex((j) => j.id === job.id);
+
+      if (job.published) {
+        if (inUnpublishedIdx !== -1) {
+          state.unpublishedJobs.splice(inUnpublishedIdx, 1);
+          state.publishedJobs.unshift(job as any);
+        } else if (inPublishedIdx !== -1) {
+          state.publishedJobs[inPublishedIdx] = job as any;
+        }
+      } else {
+        if (inPublishedIdx !== -1) {
+          state.publishedJobs.splice(inPublishedIdx, 1);
+          state.unpublishedJobs.unshift(job as any);
+        } else if (inUnpublishedIdx !== -1) {
+          state.unpublishedJobs[inUnpublishedIdx] = job as any;
+        }
+      }
+
+      const favIdx = state.favouriteJobs.findIndex((j) => j.id === job.id);
+      if (favIdx !== -1) {
+        state.favouriteJobs[favIdx] = { ...state.favouriteJobs[favIdx], ...job } as Job;
+      }
+
+      if (state.selectedJob?.id === job.id) {
+        state.selectedJob = job;
+      }
+      state.error = null;
+    },
+    softDeleteJobRequest: (state, action: PayloadAction<SoftDeleteJobPayload>) => {
+      state.softDeleteJobLoadingJobId = action.payload.jobId;
+      state.error = null;
+    },
+    softDeleteJobSuccess: (state, action: PayloadAction<string>) => {
+      state.softDeleteJobLoadingJobId = null;
+      const jobId = action.payload;
+      const beforePub = state.publishedJobs.length;
+      const beforeUnpub = state.unpublishedJobs.length;
+
+      state.publishedJobs = state.publishedJobs.filter((job) => job.id !== jobId);
+      state.unpublishedJobs = state.unpublishedJobs.filter((job) => job.id !== jobId);
+
+      if (state.publishedJobs.length !== beforePub) {
+        state.publishedCount = Math.max(0, state.publishedCount - 1);
+        state.publishedPagination.total = Math.max(0, state.publishedPagination.total - 1);
+      }
+      if (state.unpublishedJobs.length !== beforeUnpub) {
+        state.unpublishedCount = Math.max(0, state.unpublishedCount - 1);
+        state.unpublishedPagination.total = Math.max(0, state.unpublishedPagination.total - 1);
+      }
+
+      if (state.favouriteJobIds.includes(jobId)) {
+        state.favouriteJobIds = state.favouriteJobIds.filter((id: string) => id !== jobId);
+        state.favouriteJobs = state.favouriteJobs.filter((job: Job) => job.id !== jobId);
+        state.favouritesCount = state.favouriteJobIds.length;
+      }
+
+      if (state.selectedJob?.id === jobId) {
+        state.selectedJob = null;
+      }
+      state.error = null;
+    },
+    softDeleteJobFailure: (state, action: PayloadAction<string>) => {
+      state.softDeleteJobLoadingJobId = null;
       state.error = action.payload;
     },
     updateJobRequest: (state, _action: PayloadAction<any>) => {
@@ -423,6 +695,27 @@ const jobsSlice = createSlice({
       state.jobNameListLoading = false;
     },
 
+    generateJobDescriptionRequest: (state) => {
+      state.generateDescriptionLoading = true;
+      state.error = null;
+      state.generatedJobDescription = null;
+    },
+    generateJobDescriptionSuccess: (
+      state,
+      action: PayloadAction<GenerateJobDescriptionResponse>
+    ) => {
+      state.generateDescriptionLoading = false;
+      state.error = null;
+      state.generatedJobDescription = action.payload;
+    },
+    generateJobDescriptionFailure: (state, action: PayloadAction<string>) => {
+      state.generateDescriptionLoading = false;
+      state.error = action.payload;
+    },
+    clearGeneratedJobDescription: (state) => {
+      state.generatedJobDescription = null;
+    },
+
     // ⭐ Hydrate favourites from persistent storage
     setFavouriteJobIds: (state, action: PayloadAction<string[]>) => {
       state.favouriteJobIds = action.payload;
@@ -482,6 +775,37 @@ export const {
   getJobNameListSuccess,
   getJobNameListFailure,
   clearJobNameList,
+  generateJobDescriptionRequest,
+  generateJobDescriptionSuccess,
+  generateJobDescriptionFailure,
+  clearGeneratedJobDescription,
+  clearCreatedJobForWizard,
+  submitApplicationFormStepRequest,
+  submitApplicationFormStepSuccess,
+  submitApplicationFormStepFailure,
+  clearApplicationFormSubmitError,
+  fetchApplicationFormDraftRequest,
+  fetchApplicationFormDraftSuccess,
+  fetchApplicationFormDraftFailure,
+  clearApplicationFormDraft,
+  clearApplicationFormDraftError,
+  patchJobUsersSharedRequest,
+  patchJobUsersSharedSuccess,
+  patchJobUsersSharedFailure,
+  clearJobUsersSharedSubmitSuccess,
+  patchJobDetailsRequest,
+  patchJobDetailsSuccess,
+  patchJobDetailsFailure,
+  patchJobPublishedRequest,
+  patchJobPublishedSuccess,
+  patchJobPublishedFailure,
+  assignWorkflowToJobRequest,
+  assignWorkflowToJobFailure,
+  clearAssignWorkflowSubmitSuccess,
+  patchJobWorkflowSuccess,
+  softDeleteJobRequest,
+  softDeleteJobSuccess,
+  softDeleteJobFailure,
   setFavouriteJobIds,
   toggleFavouriteJob,
   clearFavouriteJobs,

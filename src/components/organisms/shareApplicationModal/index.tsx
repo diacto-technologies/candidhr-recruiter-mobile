@@ -28,6 +28,7 @@ import {
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import type { UsersListItem } from '../../../features/profile/users/types';
 import { updateApplicationShareRequestAction } from '../../../features/applications/actions';
+import { patchJobUsersSharedRequestAction } from '../../../features/jobs/actions';
 import { Button } from '../../atoms';
 import { trashIcon } from '../../../assets/svg/trash';
 
@@ -42,10 +43,12 @@ export interface TeamMemberOption {
 export interface ShareApplicationModalProps {
   visible: boolean;
   onClose: () => void;
-  /** Optional: pre-filled shared member ids (e.g. from application.users_shared_with) */
+  /** Optional: pre-filled shared member ids (e.g. from application.users_shared_with or job.users_shared_with) */
   initialSharedMemberIds?: string[];
-  /** Application id used by share API: /applications/v1/{id}/share/ */
-  applicationId: string;
+  /** Application id: /applications/v1/{id}/share/ */
+  applicationId?: string;
+  /** Job id: PATCH /job/v1/jobs/:id/ with `users_shared_with_ids` */
+  jobId?: string;
   /** Called when user closes after potentially changing shared list (optional, for future API) */
   onSharedMembersChange?: (memberIds: string[]) => void;
 }
@@ -63,6 +66,7 @@ const ShareApplicationModal = ({
   onClose,
   initialSharedMemberIds = [],
   applicationId,
+  jobId,
   onSharedMembersChange,
 }: ShareApplicationModalProps) => {
   const [sharedMemberIds, setSharedMemberIds] = useState<string[]>([]);
@@ -85,10 +89,9 @@ const ShareApplicationModal = ({
   );
 
   useEffect(() => {
-    if (visible && initialSharedMemberIds.length > 0) {
-      setSharedMemberIds(initialSharedMemberIds);
-    }
-    if (!visible) {
+    if (visible) {
+      setSharedMemberIds([...(initialSharedMemberIds ?? [])]);
+    } else {
       setSharedMemberIds([]);
       setHasRequestedUsers(false);
     }
@@ -117,9 +120,9 @@ const ShareApplicationModal = ({
     setSharedMemberIds((prev) => {
       const nextIds = prev.filter((x) => x !== id);
 
-      // When a user is removed from the shared list, immediately persist
-      // the updated list to the backend via the share API.
-      if (applicationId && Array.isArray(usersList)) {
+      if (jobId) {
+        dispatch(patchJobUsersSharedRequestAction({ jobId, usersSharedWithIds: nextIds }));
+      } else if (applicationId && Array.isArray(usersList)) {
         const remainingUsers = usersList.filter((u) => nextIds.includes(u.id));
         dispatch(
           updateApplicationShareRequestAction({
@@ -134,6 +137,8 @@ const ShareApplicationModal = ({
     });
   };
 
+  const isJobShare = Boolean(jobId);
+
   return (
     <Modal visible={visible} transparent animationType="fade">
       <KeyboardAvoidingView
@@ -147,7 +152,7 @@ const ShareApplicationModal = ({
               <View style={styles.headerLeft}>
                 <View>
                   <Typography variant="semiBoldTxtlg" color={colors.gray[900]}>
-                    Share Application
+                    {isJobShare ? 'Share Job' : 'Share Application'}
                   </Typography>
                 </View>
               </View>
@@ -164,7 +169,9 @@ const ShareApplicationModal = ({
             >
               <View style={styles.section}>
                 <Typography variant="semiBoldTxtsm">
-                  Share application with Team Members
+                  {isJobShare
+                    ? 'Share job with team members'
+                    : 'Share application with Team Members'}
                 </Typography>
                 <CommonDropdown
                   placeholder="Search or select team members"
@@ -174,8 +181,14 @@ const ShareApplicationModal = ({
                     const nextIds = Array.isArray(nextValue) ? nextValue : [];
                     setSharedMemberIds(nextIds);
 
-                    // Map selected ids back to full user objects from usersList
-                    if (applicationId && Array.isArray(usersList)) {
+                    if (jobId) {
+                      dispatch(
+                        patchJobUsersSharedRequestAction({
+                          jobId,
+                          usersSharedWithIds: nextIds,
+                        })
+                      );
+                    } else if (applicationId && Array.isArray(usersList)) {
                       const selectedUsers = usersList.filter((u) =>
                         nextIds.includes(u.id)
                       );

@@ -25,6 +25,7 @@ type AddScreeningQuestionModalProps = {
     visible: boolean;
     onClose: () => void;
     onAdd: (payload: AddScreeningQuestionPayload) => void;
+    isSubmitting?: boolean;
 };
 
 function FieldLabel({ children }: { children: string }) {
@@ -43,6 +44,7 @@ export default function AddScreeningQuestionModal({
     visible,
     onClose,
     onAdd,
+    isSubmitting = false,
 }: AddScreeningQuestionModalProps) {
     const [text, setText] = useState('');
     const [durationSec, setDurationSec] = useState(30);
@@ -123,7 +125,7 @@ export default function AddScreeningQuestionModal({
                     textColor={colors.base.white}
                     borderRadius={12}
                     onPress={handleAdd}
-                    disabled={!text.trim()}
+                    disabled={!text.trim() || isSubmitting}
                     startIcon={<Ionicons name="add" size={20} color={colors.base.white} />}
                 >
                     Add

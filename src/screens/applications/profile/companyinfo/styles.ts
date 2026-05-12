@@ -33,6 +33,29 @@ export const useStyles = () => {
     label: {
       marginBottom: 6,
     },
+    fieldInputRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    fieldInputFlex: {
+      flex: 1,
+    },
+    editButtonWrap: {
+      alignSelf: 'flex-start',
+      marginTop: 4,
+    },
+    editButton: {
+      width: 40,
+      height: 40,
+      paddingHorizontal: 0,
+      paddingVertical: 0,
+      borderRadius: 10,
+      backgroundColor: colors.gray[50],
+      borderColor: colors.gray[200],
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
     textArea: {
       height: 128,
       textAlignVertical: 'top',

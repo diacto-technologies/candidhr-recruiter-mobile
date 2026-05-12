@@ -1,5 +1,13 @@
 import React from 'react';
-import { Modal, Pressable, View, StyleProp, ViewStyle, TextStyle } from 'react-native';
+import {
+  Modal,
+  Pressable,
+  View,
+  StyleProp,
+  ViewStyle,
+  TextStyle,
+  StyleSheet,
+} from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import Typography from '../../atoms/typography';
 import { colors } from '../../../theme/colors';
@@ -17,9 +25,7 @@ export interface DropdownMenuItem {
   icon: string;
   onPress: () => void;
   closeOnPress?: boolean;
-  /** Optional icon color for this item (overrides iconColor from props) */
   iconColor?: string;
-  /** Optional label color (e.g. destructive actions) */
   labelColor?: string;
 }
 
@@ -30,15 +36,12 @@ export interface DropdownMenuProps {
   items: DropdownMenuItem[];
   renderContent?: () => React.ReactNode;
   width?: number;
-  iconWidth:number,
-  iconHight:number
-
-  /** styles from parent */
+  iconWidth?: number;
+  iconHight?: number;
   dropdownStyle?: StyleProp<ViewStyle>;
   itemStyle?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
   iconStyle?: StyleProp<ViewStyle>;
-  /** Dynamic color for all icons (stroke/fill). Overridable per item via item.iconColor */
   iconColor?: string;
 }
 
@@ -49,8 +52,8 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
   items,
   renderContent,
   width = 140,
-  iconWidth=16,
-  iconHight=16,
+  iconWidth = 16,
+  iconHight = 16,
   dropdownStyle,
   itemStyle,
   textStyle,
@@ -59,9 +62,17 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
 }) => {
   if (!visible) return null;
 
+  const flattenedTextStyle =
+    textStyle != null ? StyleSheet.flatten(textStyle) : undefined;
+
   return (
     <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
-      <Pressable style={dropdownMenuStyles.backdrop} onPress={onClose}>
+      <View style={dropdownMenuStyles.modalRoot}>
+        <Pressable
+          style={[StyleSheet.absoluteFillObject, dropdownMenuStyles.backdropDim]}
+          onPress={onClose}
+          accessibilityLabel="Dismiss menu"
+        />
         <Pressable
           style={[
             dropdownMenuStyles.dropdown,
@@ -70,7 +81,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
               top: position.top,
               width,
             },
-            dropdownStyle, // external dropdown style
+            dropdownStyle,
           ]}
           onPress={(e) => e.stopPropagation()}
         >
@@ -80,7 +91,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
             items.map((item, index) => (
               <Pressable
                 key={index}
-                style={[dropdownMenuStyles.dropdownItem, itemStyle]} // external item style
+                style={[dropdownMenuStyles.dropdownItem, itemStyle]}
                 onPress={() => {
                   item.onPress();
                   if (item.closeOnPress !== false) {
@@ -90,11 +101,11 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
               >
                 <SvgXml
                   xml={
-                    (item.iconColor ?? iconColor)
+                    item.iconColor ?? iconColor
                       ? applySvgColor(item.icon, item.iconColor ?? iconColor!)
                       : item.icon
                   }
-                  style={[dropdownMenuStyles.dropdownItemIcon, iconStyle]} // external icon style
+                  style={[dropdownMenuStyles.dropdownItemIcon, iconStyle]}
                   width={iconWidth}
                   height={iconHight}
                 />
@@ -102,7 +113,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
                 <Typography
                   variant="semiBoldTxtsm"
                   color={item.labelColor ?? colors.gray[700]}
-                  style={textStyle} // external text style
+                  style={flattenedTextStyle}
                 >
                   {item.label}
                 </Typography>
@@ -110,7 +121,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
             ))
           )}
         </Pressable>
-      </Pressable>
+      </View>
     </Modal>
   );
 };

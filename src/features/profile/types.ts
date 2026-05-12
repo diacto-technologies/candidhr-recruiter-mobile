@@ -2,10 +2,11 @@ export interface Profile {
   id: string;
   name: string;
   email: string;
-  contact: number;
+  contact: number | null;
   state: string;
   country: string;
-  position: string;
+  /** Job title / position (GET `core/user/`). */
+  position: string | null;
   profile_pic: string;
   is_active: boolean;
   is_superadmin: boolean;

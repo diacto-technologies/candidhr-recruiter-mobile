@@ -8,14 +8,22 @@ export const useStyles = () => {
     const isTablet = DeviceInfo.isTablet();
     return StyleSheet.create({
         card: {
-            width:isTablet ? '49%':"100%",
+            width:"100%",
             marginHorizontal:isTablet ? 5:0,
             backgroundColor: colors.common.white,
             borderRadius: 12,
             padding: 16,
             borderWidth: 0.5,
             borderColor: '#E5E7EB',
-            ...shadowStyles.shadow_xs
+            ...shadowStyles.shadow_xs,
+        },
+        titlePressable: {
+            flex: 1,
+            marginRight: 8,
+            minWidth: 0,
+        },
+        threeDotHit: {
+            padding: 4,
         },
         row: { flexDirection: 'row', alignItems: 'center'},
         rowBetween: {flexDirection: 'row', justifyContent: 'space-between'},

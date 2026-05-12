@@ -10,6 +10,21 @@ export interface UsersListItem {
   is_admin: boolean;
   created_at: string;
   last_login: string | null;
+  invited_by?: { id: string; name: string; email: string } | null;
+  [key: string]: unknown;
+}
+
+/** GET /core/v2/invites/ row */
+export interface InviteListItem {
+  id: string;
+  email: string;
+  name: string;
+  role: { id: number; name: string };
+  status: string;
+  expires_at: string | null;
+  accepted_at: string | null;
+  created_at: string;
+  invited_by: { id: string; name: string; email: string } | null;
   [key: string]: unknown;
 }
 
@@ -34,16 +49,31 @@ export interface CreateUserRequest {
   role_id: number;
 }
 
+export interface UsersListSlice {
+  items: UsersListItem[];
+  count: number;
+  next: string | null;
+  previous: string | null;
+  page: number;
+  loading: boolean;
+  error: string | null;
+}
+
+export interface InvitesListSlice {
+  items: InviteListItem[];
+  count: number;
+  next: string | null;
+  previous: string | null;
+  page: number;
+  loading: boolean;
+  error: string | null;
+}
+
 export interface UsersState {
-  list: {
-    items: UsersListItem[];
-    count: number;
-    next: string | null;
-    previous: string | null;
-    page: number;
-    loading: boolean;
-    error: string | null;
-  };
+  list: UsersListSlice;
+  invites: InvitesListSlice;
+  /** GET /core/users/list/?page= — job invite / team picker without clashing with `list` (options). */
+  directoryList: UsersListSlice;
   roles: {
     items: RoleListItem[];
     count: number;

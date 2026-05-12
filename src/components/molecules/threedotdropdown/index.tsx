@@ -7,16 +7,18 @@ import {
   Text,
 } from "react-native";
 import { useStyles } from "./styles";
-interface MenuItem {
+export interface ThreeDotMenuItem {
   name: string;
   title?: string;
   onPress: () => void;
+  /** Renders label in error red (e.g. Delete). */
+  destructive?: boolean;
 }
 
 interface ThreeDotDropdownProps {
   visible: boolean;
   onClose: () => void;
-  menuItems: MenuItem[];
+  menuItems: ThreeDotMenuItem[];
   top?: number;
   right?: number;
   left?: number;
@@ -49,7 +51,12 @@ const ThreeDotDropdown: React.FC<ThreeDotDropdownProps> = ({
   }
 
   return (
-    <Modal transparent visible={visible} animationType="fade">
+    <Modal
+      transparent
+      visible={visible}
+      animationType="fade"
+      onRequestClose={onClose}
+    >
       <Pressable style={styles.overlay} onPress={onClose}>
         <View style={[styles.dropdownContainer, positionStyle]}>
           {menuItems.map((item, index) => (
@@ -63,7 +70,14 @@ const ThreeDotDropdown: React.FC<ThreeDotDropdownProps> = ({
                   onClose();
                 }}
               >
-                <Text style={styles.dropdownTitle}>{item.name}</Text>
+                <Text
+                  style={[
+                    styles.dropdownTitle,
+                    item.destructive ? styles.dropdownTitleDestructive : null,
+                  ]}
+                >
+                  {item.name}
+                </Text>
               </Pressable>
             </View>
           ))}

@@ -18,6 +18,8 @@ type CreateQuestionSetModalProps = {
     visible: boolean;
     onClose: () => void;
     onCreate: (payload: CreateQuestionSetPayload) => void;
+    /** True while POST /question-sets/ is in flight (disables Create). */
+    isSubmitting?: boolean;
 };
 
 function FieldLabel({ children }: { children: string }) {
@@ -42,6 +44,7 @@ export default function CreateQuestionSetModal({
     visible,
     onClose,
     onCreate,
+    isSubmitting = false,
 }: CreateQuestionSetModalProps) {
     const [name, setName] = useState('');
 
@@ -111,7 +114,7 @@ export default function CreateQuestionSetModal({
                         textColor: colors.base.white,
                         borderRadius: 12,
                         onPress: handleCreate,
-                        disabled: !name.trim(),
+                        disabled: !name.trim() || isSubmitting,
                     }}
                 />
             </View>

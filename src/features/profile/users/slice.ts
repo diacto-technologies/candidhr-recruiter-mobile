@@ -1,16 +1,38 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import type { PaginatedResponse, RoleListItem, UsersListItem, UsersState } from "./types";
+import type {
+  InviteListItem,
+  PaginatedResponse,
+  RoleListItem,
+  UsersListItem,
+  UsersListSlice,
+  InvitesListSlice,
+  UsersState,
+} from "./types";
+
+const createEmptyUserListSlice = (): UsersListSlice => ({
+  items: [],
+  count: 0,
+  next: null,
+  previous: null,
+  page: 1,
+  loading: false,
+  error: null,
+});
+
+const createEmptyInvitesListSlice = (): InvitesListSlice => ({
+  items: [],
+  count: 0,
+  next: null,
+  previous: null,
+  page: 1,
+  loading: false,
+  error: null,
+});
 
 const initialState: UsersState = {
-  list: {
-    items: [],
-    count: 0,
-    next: null,
-    previous: null,
-    page: 1,
-    loading: false,
-    error: null,
-  },
+  list: createEmptyUserListSlice(),
+  invites: createEmptyInvitesListSlice(),
+  directoryList: createEmptyUserListSlice(),
   roles: {
     items: [],
     count: 0,
@@ -59,6 +81,54 @@ const usersSlice = createSlice({
     getUsersFailure: (state, action: PayloadAction<string>) => {
       state.list.loading = false;
       state.list.error = action.payload;
+    },
+
+    getInvitesRequest: (state, action: PayloadAction<{ page: number }>) => {
+      state.invites.loading = true;
+      state.invites.error = null;
+      state.invites.page = action.payload.page;
+    },
+    getInvitesSuccess: (
+      state,
+      action: PayloadAction<{ page: number; response: PaginatedResponse<InviteListItem> }>
+    ) => {
+      const { page, response } = action.payload;
+      state.invites.loading = false;
+      state.invites.count = response.count;
+      state.invites.next = response.next;
+      state.invites.previous = response.previous;
+      state.invites.page = page;
+      state.invites.error = null;
+      state.invites.items =
+        page <= 1 ? response.results : [...state.invites.items, ...response.results];
+    },
+    getInvitesFailure: (state, action: PayloadAction<string>) => {
+      state.invites.loading = false;
+      state.invites.error = action.payload;
+    },
+
+    directoryListRequest: (state, action: PayloadAction<{ page: number }>) => {
+      state.directoryList.loading = true;
+      state.directoryList.error = null;
+      state.directoryList.page = action.payload.page;
+    },
+    directoryListSuccess: (
+      state,
+      action: PayloadAction<{ page: number; response: PaginatedResponse<UsersListItem> }>
+    ) => {
+      const { page, response } = action.payload;
+      state.directoryList.loading = false;
+      state.directoryList.count = response.count;
+      state.directoryList.next = response.next;
+      state.directoryList.previous = response.previous;
+      state.directoryList.page = page;
+      state.directoryList.error = null;
+      state.directoryList.items =
+        page <= 1 ? response.results : [...state.directoryList.items, ...response.results];
+    },
+    directoryListFailure: (state, action: PayloadAction<string>) => {
+      state.directoryList.loading = false;
+      state.directoryList.error = action.payload;
     },
 
     getRolesRequest: (state, action: PayloadAction<{ page: number }>) => {
@@ -129,6 +199,12 @@ export const {
   getUsersRequest,
   getUsersSuccess,
   getUsersFailure,
+  getInvitesRequest,
+  getInvitesSuccess,
+  getInvitesFailure,
+  directoryListRequest,
+  directoryListSuccess,
+  directoryListFailure,
   getRolesRequest,
   getRolesSuccess,
   getRolesFailure,

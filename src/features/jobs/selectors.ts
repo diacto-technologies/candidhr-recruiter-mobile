@@ -23,6 +23,11 @@ export const selectJobsLoading = createSelector(
   (jobs) => jobs.loading
 );
 
+export const selectJobDetailLoading = createSelector(
+  [selectJobsState],
+  (jobs) => jobs.jobDetailLoading
+);
+
 export const selectJobsListLoading = createSelector(
   [selectJobsState],
   (jobs) =>
@@ -140,4 +145,23 @@ export const selectJobNameListHasMore = createSelector(
   (next) => next != null
 );
 
+export const selectApplicationFormSubmitLoading = createSelector(
+  [selectJobsState],
+  (jobs) => jobs.applicationFormSubmitLoading
+);
+
+export const selectApplicationFormSubmitError = createSelector(
+  [selectJobsState],
+  (jobs) => jobs.applicationFormSubmitError
+);
+
+export const selectJobUsersSharedSubmitLoading = createSelector(
+  [selectJobsState],
+  (jobs) => jobs.jobUsersSharedSubmitLoading
+);
+
+export const selectJobUsersSharedSubmitSucceeded = createSelector(
+  [selectJobsState],
+  (jobs) => jobs.jobUsersSharedSubmitSucceeded
+);
 

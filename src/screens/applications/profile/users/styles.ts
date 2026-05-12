@@ -118,7 +118,7 @@ export const useStyles = () => {
   
     buttonContainer: {
       paddingHorizontal: 16,
-      paddingTop: 16,
+      // paddingTop: 16,
       backgroundColor: colors.base.white,
       borderTopWidth: 1,
       borderTopColor: colors.gray[100],
@@ -135,6 +135,26 @@ export const useStyles = () => {
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
+    },
+    inviteActionCell: {
+      minWidth: 140,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      gap: 8,
+      marginRight: 16,
+    },
+    inviteActionBtn: {
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 8,
+    },
+    statusPill: {
+      alignSelf: 'flex-start',
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 999,
+      borderWidth:1
     },
     dropdownBackdrop: {
       flex: 1,

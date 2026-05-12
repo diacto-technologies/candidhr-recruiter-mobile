@@ -19,5 +19,20 @@ export const JOBS_ACTION_TYPES = {
   CLEAR_ERROR: 'jobs/CLEAR_ERROR',
   SET_SELECTED_JOB: 'jobs/SET_SELECTED_JOB',
   GET_JOB_NAME_LIST_REQUEST: "jobs/GET_JOB_NAME_LIST_REQUEST",
+  GENERATE_JOB_DESCRIPTION_REQUEST: "jobs/GENERATE_JOB_DESCRIPTION_REQUEST",
+  /** Wizard application form: POST or PATCH screening preferences + bulk criteria */
+  SUBMIT_APPLICATION_FORM_STEP_REQUEST: "jobs/SUBMIT_APPLICATION_FORM_STEP_REQUEST",
+  /** PATCH /job/v1/jobs/:id/ with `users_shared_with_ids` (team invite step). */
+  PATCH_JOB_USERS_SHARED_REQUEST: "jobs/PATCH_JOB_USERS_SHARED_REQUEST",
+  /** PATCH /job/v1/jobs/:id/ — save job details from wizard step 1. */
+  PATCH_JOB_DETAILS_REQUEST: "jobs/PATCH_JOB_DETAILS_REQUEST",
+  /** GET resume-screening-preferences + GET job criteria (application form step 2). */
+  FETCH_APPLICATION_FORM_DRAFT_REQUEST: "jobs/FETCH_APPLICATION_FORM_DRAFT_REQUEST",
+  /** PATCH /job/v1/jobs/:id/ with `{ published }` from jobs list overflow menu. */
+  PATCH_JOB_PUBLISHED_REQUEST: "jobs/PATCH_JOB_PUBLISHED_REQUEST",
+  /** PATCH /job/v1/jobs/:id/ with `{ is_deleted: true, deleted_by }`. */
+  SOFT_DELETE_JOB_REQUEST: "jobs/SOFT_DELETE_JOB_REQUEST",
+  /** POST /workflow/assign/:jobId/ — assign workflow + invite options. */
+  ASSIGN_WORKFLOW_TO_JOB_REQUEST: "jobs/ASSIGN_WORKFLOW_TO_JOB_REQUEST",
 } as const;
 

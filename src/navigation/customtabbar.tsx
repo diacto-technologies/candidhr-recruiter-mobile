@@ -80,23 +80,23 @@ const CustomTabBar: FC<BottomTabBarProps> = (props) => {
         })}
 
         {/* Three-dot */}
-        <TouchableOpacity
+        {/* <TouchableOpacity
           activeOpacity={0.7}
           onPress={() => setDropdownVisible(true)}
         >
           <SvgXml xml={horizontalThreedotIcon} height={24} width={24} />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       {/* Dropdown */}
-      <ThreeDotDropdown
+      {/* <ThreeDotDropdown
         visible={dropdownVisible}
         onClose={() => setDropdownVisible(false)}
         menuItems={menuItemsWithHandlers}
         // Anchor the dropdown to the bottom-left of the tab bar area.
         bottom={bottom.bottom + 8}
         right={16}
-      />
+      /> */}
     </View>
   );
 };

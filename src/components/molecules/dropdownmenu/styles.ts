@@ -3,9 +3,11 @@ import { colors } from '../../../theme/colors';
 import { shadowStyles } from '../../../theme/shadowcolor';
 
 export const dropdownMenuStyles = StyleSheet.create({
-  backdrop: {
+  modalRoot: {
     flex: 1,
-    backgroundColor: 'transparent',
+  },
+  backdropDim: {
+    backgroundColor: 'rgba(15, 23, 42, 0.35)',
   },
   dropdown: {
     position: 'absolute',
@@ -14,7 +16,7 @@ export const dropdownMenuStyles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: colors.gray[200],
-    zIndex: 999,
+    zIndex: 2,
     ...shadowStyles.shadow_3xl,
   },
   dropdownItem: {

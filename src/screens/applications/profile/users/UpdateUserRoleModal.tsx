@@ -14,10 +14,12 @@ import { Button, CommonDropdown } from '../../../../components';
 import { closeIcon } from '../../../../assets/svg/closeicon';
 import { SvgXml } from 'react-native-svg';
 import { DEFAULT_ROLE_OPTIONS } from './usersTable.config';
+import CustomSwitch from '../../../../components/atoms/switchbutton';
 
 export interface UpdateUserRoleValues {
   userId: string;
   role: string;
+  is_active: boolean;
 }
 
 export interface UpdateUserRoleUser {
@@ -25,6 +27,7 @@ export interface UpdateUserRoleUser {
   name: string;
   email: string;
   role: string;
+  is_active?: boolean;
 }
 
 interface UpdateUserRoleModalProps {
@@ -45,13 +48,16 @@ export const UpdateUserRoleModal: React.FC<UpdateUserRoleModalProps> = ({
   const styles = useStyles();
   const roles = useMemo(() => roleOptions ?? DEFAULT_ROLE_OPTIONS, [roleOptions]);
   const [role, setRole] = useState<string>('');
+  const [isActive, setIsActive] = useState<boolean>(true);
 
   useEffect(() => {
     if (!visible) {
       setRole('');
+      setIsActive(true);
       return;
     }
     setRole(user?.role && user.role !== '-' ? user.role : roles[0] ?? '');
+    setIsActive(user?.is_active ?? true);
   }, [roles, user?.role, visible]);
 
   const handleClose = useCallback(() => {
@@ -60,8 +66,8 @@ export const UpdateUserRoleModal: React.FC<UpdateUserRoleModalProps> = ({
 
   const handleSubmit = useCallback(() => {
     if (!user?.id || !role) return;
-    onSubmit({ userId: user.id, role });
-  }, [onSubmit, role, user?.id]);
+    onSubmit({ userId: user.id, role, is_active: isActive });
+  }, [isActive, onSubmit, role, user?.id]);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
@@ -100,6 +106,25 @@ export const UpdateUserRoleModal: React.FC<UpdateUserRoleModalProps> = ({
                 mode="default"
                 dropdownPosition="bottom"
               />
+            </View>
+
+            <View style={{ marginTop: 8 }}>
+              <Typography variant="semiBoldTxtsm" color={colors.gray[800]} style={{ marginBottom: 10 }}>
+                Account status
+              </Typography>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <CustomSwitch
+                  value={isActive}
+                  onValueChange={(v) => setIsActive(Boolean(v))}
+                  backgroundActive={colors.brand[600]}
+                  backgroundInactive={colors.gray[300]}
+                  circleActiveColor={colors.base.white}
+                  circleInActiveColor={colors.base.white}
+                />
+                <Typography variant="semiBoldTxtsm" color={colors.gray[900]}>
+                  {isActive ? 'Active' : 'Inactive'}
+                </Typography>
+              </View>
             </View>
 
             {!!role && (

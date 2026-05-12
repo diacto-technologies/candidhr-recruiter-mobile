@@ -1,5 +1,17 @@
 import { JOBS_ACTION_TYPES } from "./constants";
-import { CreateJobRequest, UpdateJobRequest, Job, GetJobsParams } from "./types";
+import {
+  CreateJobRequest,
+  UpdateJobRequest,
+  Job,
+  GetJobsParams,
+  GenerateJobDescriptionRequest,
+  SubmitJobApplicationFormStepPayload,
+  PatchJobUsersSharedPayload,
+  PatchJobDetailsRequest,
+  PatchJobPublishedPayload,
+  SoftDeleteJobPayload,
+  AssignWorkflowToJobPayload,
+} from "./types";
 
 export interface GetJobsRequestActionPayload extends GetJobsParams {
   append?: boolean; // false / undefined = replace list, true = append
@@ -78,6 +90,48 @@ export type GetJobNameListPayload = {
 
 export const getJobNameListRequestAction = (payload?: GetJobNameListPayload) => ({
   type: JOBS_ACTION_TYPES.GET_JOB_NAME_LIST_REQUEST,
+  payload,
+});
+
+export const generateJobDescriptionRequestAction = (payload: GenerateJobDescriptionRequest) => ({
+  type: JOBS_ACTION_TYPES.GENERATE_JOB_DESCRIPTION_REQUEST,
+  payload,
+});
+
+export const submitApplicationFormStepRequestAction = (
+  payload: SubmitJobApplicationFormStepPayload
+) => ({
+  type: JOBS_ACTION_TYPES.SUBMIT_APPLICATION_FORM_STEP_REQUEST,
+  payload,
+});
+
+export const patchJobUsersSharedRequestAction = (payload: PatchJobUsersSharedPayload) => ({
+  type: JOBS_ACTION_TYPES.PATCH_JOB_USERS_SHARED_REQUEST,
+  payload,
+});
+
+export const patchJobDetailsRequestAction = (payload: PatchJobDetailsRequest) => ({
+  type: JOBS_ACTION_TYPES.PATCH_JOB_DETAILS_REQUEST,
+  payload,
+});
+
+export const fetchApplicationFormDraftRequestAction = (payload: { jobId: string }) => ({
+  type: JOBS_ACTION_TYPES.FETCH_APPLICATION_FORM_DRAFT_REQUEST,
+  payload,
+});
+
+export const patchJobPublishedRequestAction = (payload: PatchJobPublishedPayload) => ({
+  type: JOBS_ACTION_TYPES.PATCH_JOB_PUBLISHED_REQUEST,
+  payload,
+});
+
+export const softDeleteJobRequestAction = (payload: SoftDeleteJobPayload) => ({
+  type: JOBS_ACTION_TYPES.SOFT_DELETE_JOB_REQUEST,
+  payload,
+});
+
+export const assignWorkflowToJobRequestAction = (payload: AssignWorkflowToJobPayload) => ({
+  type: JOBS_ACTION_TYPES.ASSIGN_WORKFLOW_TO_JOB_REQUEST,
   payload,
 });
 
