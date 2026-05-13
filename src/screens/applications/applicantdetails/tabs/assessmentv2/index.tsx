@@ -63,6 +63,15 @@ type AssessmentV2Props = {
   onSelectedAssignmentIdChange: (id: string | null) => void;
 };
 
+const logLatestActivityMs = (log: {
+  action_taken_at?: string | null;
+  updated_at?: string | null;
+  assigned_at?: string;
+}) =>
+  new Date(
+    log.action_taken_at || log.updated_at || log.assigned_at || 0
+  ).getTime();
+
 const AssessmentV2 = ({
   sessionContentId,
   onSessionContentIdChange,
@@ -119,7 +128,10 @@ const AssessmentV2 = ({
     );
 
     if (!sessionContentId || !currentExists) {
-      onSessionContentIdChange(filteredV2Logs[0]?.content_id ?? null);
+      const latest = [...filteredV2Logs].sort(
+        (a, b) => logLatestActivityMs(b) - logLatestActivityMs(a)
+      )[0];
+      onSessionContentIdChange(latest?.content_id ?? null);
     }
   }, [filteredV2Logs, sessionContentId, onSessionContentIdChange]);
 
@@ -177,11 +189,16 @@ const AssessmentV2 = ({
 
   // Map status_text to STATUS_OPTIONS id format
 
-  const currentSessionLog = useMemo(
-    () =>
-      filteredV2Logs?.find((item) => item.content_id === sessionContentId) ?? null,
-    [filteredV2Logs, sessionContentId]
-  );
+  const currentSessionLog = useMemo(() => {
+    if (!sessionContentId || !filteredV2Logs?.length) return null;
+    const matches = filteredV2Logs.filter(
+      (item) => item.content_id === sessionContentId
+    );
+    if (!matches.length) return null;
+    return [...matches].sort(
+      (a, b) => logLatestActivityMs(b) - logLatestActivityMs(a)
+    )[0];
+  }, [filteredV2Logs, sessionContentId]);
   const isReviewed = currentSessionLog?.session_status === 'reviewed';
 
   const assessmentStage = useMemo(
@@ -210,16 +227,11 @@ const AssessmentV2 = ({
 
   // Get current status id from selected session
   const currentStatusId = useMemo(() => {
-    if (sessionContentId && filteredV2Logs?.length) {
-      const currentSession = filteredV2Logs.find(
-        (item) => item.content_id === sessionContentId
-      );
-      if (currentSession?.status_text) {
-        return mapStatusTextToId(currentSession.status_text);
-      }
+    if (currentSessionLog?.status_text) {
+      return mapStatusTextToId(currentSessionLog.status_text);
     }
     return '';
-  }, [sessionContentId, filteredV2Logs]);
+  }, [currentSessionLog]);
 
   const assessmentStatus =
     stages?.find(stage => stage.stage_type === "assessment_v2")?.status
@@ -306,8 +318,8 @@ const AssessmentV2 = ({
           },
         }}
       />
-      <View style={{zIndex: 1000,}}>
-        <Card style={{gap: 4,width:"100%"}}>
+      <View style={{ zIndex: 1000, }}>
+        <Card style={{ gap: 4, width: "100%" }}>
           <Typography variant="regularTxtxs" style={{ backgroundColor: colors?.brand['200'], borderTopEndRadius: 12, borderTopStartRadius: 12, padding: 5 }} numberOfLines={2}>
             Stage was {assessmentStatus} by{" "}
             {stages?.find(s => s.stage_type === "assessment_v2")?.reviewed_by?.name ??
@@ -322,63 +334,37 @@ const AssessmentV2 = ({
             )}
           </Typography>
           <View style={{ paddingHorizontal: 16, paddingVertical: 10 }}>
-            <Dropdown
-              label="Session"
-              dropdownLabel="Session"
-              options={filteredV2Logs?.map((item, index) => ({
-                id: item.content_id,
-                name: `Session`,
-                status_text: item?.session_status ?? "—",
-                raw: item,
-              })) ?? []}
-              setValue={sessionContentId ?? ''}
-              statusKey="status_text"
-              labelKey="name"
-              valueKey="id"
-              onSelect={item => onSessionContentIdChange(item?.id ?? null)}
-              onChangeText={() => { }}
-            />
             <View style={styles.reviewRow}>
               <Typography variant="regularTxtxs" style={{ flex: 1 }}>
-                {filteredV2Logs
-                  ?.find(item => item.content_id === sessionContentId)
-                  ?.action_taken_by?.name ? (
-                  <>
-                    Reviewed by{" "}
-                    {
-                      filteredV2Logs.find(item => item.content_id === sessionContentId)
-                        ?.action_taken_by?.name
-                    }{" "}
-                    ·{" "}
-                    {formatMonDDYYYY(
-                      filteredV2Logs.find(item => item.content_id === sessionContentId)
-                        ?.action_taken_at,
-                      "DD MMM YYYY HH:mm",
-                      "IST"
-                    )}
-                  </>
-                ) : filteredV2Logs?.find(item => item.content_id === sessionContentId)
-                  ?.workflow_status_updated_at ? (
-                  <>
-                    Reviewed by Workflow ·{" "}
-                    {formatMonDDYYYY(
-                      filteredV2Logs.find(item => item.content_id === sessionContentId)
-                        ?.workflow_status_updated_at,
-                      "DD MMM YYYY HH:mm",
-                      "IST"
-                    )}
-                  </>
-                ) : filteredV2Logs?.find(item => item.content_id === sessionContentId)
-                  ?.updated_at ? (
-                  <>
-                    ·{" "}
-                    {formatMonDDYYYY(
-                      filteredV2Logs.find(item => item.content_id === sessionContentId)
-                        ?.updated_at,
-                      "DD MMM YYYY HH:mm",
-                      "IST"
-                    )}
-                  </>
+                {isReviewed ? (
+                  currentSessionLog?.action_taken_by?.name ? (
+                    <>
+                      Reviewed by {currentSessionLog.action_taken_by.name} ·{" "}
+                      {formatMonDDYYYY(
+                        currentSessionLog.action_taken_at,
+                        "DD MMM YYYY HH:mm",
+                        "IST"
+                      )}
+                    </>
+                  ) : currentSessionLog?.workflow_status_updated_at ? (
+                    <>
+                      Reviewed by Workflow ·{" "}
+                      {formatMonDDYYYY(
+                        currentSessionLog.workflow_status_updated_at,
+                        "DD MMM YYYY HH:mm",
+                        "IST"
+                      )}
+                    </>
+                  ) : currentSessionLog?.updated_at ? (
+                    <>
+                      ·{" "}
+                      {formatMonDDYYYY(
+                        currentSessionLog.updated_at,
+                        "DD MMM YYYY HH:mm",
+                        "IST"
+                      )}
+                    </>
+                  ) : null
                 ) : null}
               </Typography>
 
@@ -468,7 +454,7 @@ const AssessmentV2 = ({
       />
 
       {!shouldShowEmptyState && (
-        <CustomTimeline progress={progress} data={timelineData} />
+        <CustomTimeline title={"Assessment Timeline"} progress={progress} data={timelineData} />
       )}
 
       <AssessmentsDetailsV2 />

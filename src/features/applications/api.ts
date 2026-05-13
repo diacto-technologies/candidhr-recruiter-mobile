@@ -1,6 +1,6 @@
 import { apiClient } from "../../api/client";
 import { API_ENDPOINTS } from "../../api/endpoints";
-import { CreateApplicationRequest, UpdateApplicationStatusRequest, Application, GetApplicationsParams, ApplicationsListResponse, ApplicationDetailResponse, GetApplicationResponsesParams, ApplicationResponsesApiResponse, ResumeScreeningApiResponse, AssessmentLogApiResponse, AssessmentReportApiResponse, AssessmentDetailedReportApiResponse, ScreeningAssessment, PersonalityScreeningResponse, ApplicationStagesResponse, SessionReviewedResponse, ReasonCategory, ReasonListItem, UpdateStageStatusPayload, PerformanceReportResponse, AssessmentOptionsReportResponse, ExportAssessmentReportRequest } from "./types";
+import { CreateApplicationRequest, UpdateApplicationStatusRequest, Application, GetApplicationsParams, ApplicationsListResponse, ApplicationDetailResponse, GetApplicationResponsesParams, ApplicationResponsesApiResponse, ResumeScreeningApiResponse, ResumeScreeningReportApiResponse, AssessmentLogApiResponse, AssessmentReportApiResponse, AssessmentDetailedReportApiResponse, ScreeningAssessment, PersonalityScreeningResponse, PersonalityScreeningResponsesPayload, ApplicationStagesResponse, SessionReviewedResponse, ReasonCategory, ReasonListItem, UpdateStageStatusPayload, PerformanceReportResponse, AssessmentOptionsReportResponse, ExportAssessmentReportRequest } from "./types";
 
 export const applicationsApi = {
   // getApplications: async (params?: GetApplicationsParams): Promise<ApplicationsListResponse> => {
@@ -173,7 +173,7 @@ getApplications: async (
     params: GetApplicationResponsesParams
   ): Promise<ApplicationResponsesApiResponse> => {
     const query = new URLSearchParams({
-      application_id: params.application_id,
+      stage_id: params.application_id,
       job_id: params.job_id,
     }).toString();
 
@@ -185,6 +185,14 @@ getApplications: async (
     applicationId: string
   ): Promise<ResumeScreeningApiResponse> => {
     const url = API_ENDPOINTS.APPLICATIONS.ScreeningQus(applicationId);
+    const res = await apiClient.get(url);
+    return res?.data ?? res;
+  },
+
+  getResumeScreeningReport: async (
+    contentId: string
+  ): Promise<ResumeScreeningReportApiResponse> => {
+    const url = API_ENDPOINTS.APPLICATIONS.RESUME_SCREENING_REPORT(contentId);
     const res = await apiClient.get(url);
     return res?.data ?? res;
   },
@@ -247,9 +255,7 @@ getApplications: async (
     page: number = 1
   ): Promise<AssessmentOptionsReportResponse> => {
     const url = `/assessments/v2/assignment-options/?application_id=${application_id}&page=${page}`;
-  
     const res = await apiClient.get(url);
-  
     return res?.data ?? res;
   },
 
@@ -279,7 +285,10 @@ getApplications: async (
 
   getPersonalityScreeningResponses: async (
     screeningId: string
-  ): Promise<PersonalityScreeningResponse[]> => {
+  ): Promise<
+    | PersonalityScreeningResponsesPayload
+    | PersonalityScreeningResponse[]
+  > => {
     const url =
       API_ENDPOINTS.APPLICATIONS.PERSONALITY_SCREENING_RESPONSES(
         screeningId

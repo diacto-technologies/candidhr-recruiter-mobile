@@ -104,6 +104,12 @@ export interface UpdateJobRequest extends Partial<CreateJobRequest> {
   id: string;
 }
 
+/** PATCH `/job/v1/jobs/{id}/` — share job with team members */
+export interface UpdateJobShareRequest {
+  jobId: string;
+  users_shared_with_ids: string[];
+}
+
 export interface GetJobsParams {
   page?: number;
   limit?: number;

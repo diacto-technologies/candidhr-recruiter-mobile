@@ -6,7 +6,7 @@ import {
 import Header from "../../../components/organisms/header";
 import { goBack } from "../../../utils/navigationUtils";
 import SortingAndFilter from "../../../components/organisms/sortingandfilter";
-import { applicantFiltersOption} from "../../../utils/dummaydata";
+import { applicantFiltersOption } from "../../../utils/dummaydata";
 import { BottomSheet, FilterSheetContent, StatusBar, Typography } from "../../../components";
 import JobHeader from "../../../components/organisms/jobs/jobheader/jobheader";
 import { colors } from "../../../theme/colors";
@@ -20,8 +20,8 @@ import CustomSafeAreaView from "../../../components/atoms/customsafeareaview";
 import { useIsFocused, useRoute } from "@react-navigation/native";
 import { useAppDispatch } from "../../../hooks/useAppDispatch";
 import { useAppSelector } from "../../../hooks/useAppSelector";
-import {selectSelectedJob } from "../../../features/jobs/selectors";
-import { getJobDetailRequestAction } from "../../../features/jobs/actions";
+import { selectJobsLoading, selectSelectedJob } from "../../../features/jobs/selectors";
+import { getJobDetailRequestAction, updateJobRequestAction } from "../../../features/jobs/actions";
 import { setApplicationsFilters, setSort } from "../../../features/applications/slice";
 import { selectApplicationsFilters, selectApplicationsPagination } from "../../../features/applications/selectors";
 import Clipboard from "@react-native-clipboard/clipboard";
@@ -31,6 +31,8 @@ import { store } from "../../../store";
 import ApplicantsTab from "./tabs/applicantstab";
 import OverviewTab from "./tabs/overviewtab";
 import { screenHeight } from "../../../utils/devicelayout";
+import { usePermission } from "../../../hooks/usePermission";
+import { PERMISSIONS } from "../../../utils/permission.constants";
 
 const tabs: string[] = ["Overview", "Applicants"];
 
@@ -43,10 +45,12 @@ const JobDetailScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("Overview");
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const dispatch = useAppDispatch();
+  const { can } = usePermission();
   const pagination = useAppSelector(selectApplicationsPagination);
   const isFocused = useIsFocused();
   const filters = useAppSelector(selectApplicationsFilters);
   const jobs = useAppSelector(selectSelectedJob);
+  const jobsLoading = useAppSelector(selectJobsLoading);
 
   useEffect(() => {
     if (!jobId) return;
@@ -67,25 +71,25 @@ const JobDetailScreen: React.FC = () => {
   const handleApplyFilters = () => {
     setFilterSheet(false);
   }
-  
+
   const handleSort = (item: string) => {
     const isSortable = item === 'Applied' || item === 'Last Update';
-  
+
     if (isSortable) {
       const isSameField = filters.sortBy === item;
-  
+
       dispatch(setSort({
         sortBy: item,
         sortDir: isSameField
-          ? (filters.sortDir === 'desc' ? 'asc' : 'desc')   
-          : 'desc',                                         
+          ? (filters.sortDir === 'desc' ? 'asc' : 'desc')
+          : 'desc',
       }));
     } else {
       setSelectedTab(item);
       setFilterSheet(true)
     }
   };
-  
+
   const renderTabScreen = () => {
     switch (activeTab) {
       case "Overview":
@@ -106,17 +110,25 @@ const JobDetailScreen: React.FC = () => {
       showToastMessage('Job Form URL not available', 'error');
       return;
     }
-  
+
     const url = `${organizationalOrigin(store.getState())}/app/candidate/${jobs.encrypted}/`;
-  
+
     Clipboard.setString(url);
-  
+
     showToastMessage('Job Form URL copied to clipboard', 'success');
+  };
+
+  const isPublished = Boolean(jobs?.published);
+  const canPublish = can(PERMISSIONS.PUBLISH_JOB);
+
+  const handlePublishToggle = () => {
+    if (!jobId || jobs == null || !canPublish || jobsLoading) return;
+    dispatch(updateJobRequestAction({ id: jobId, published: !jobs.published }));
   };
 
   return (
     <CustomSafeAreaView>
-      <Header backNavigation={true} onBack={goBack}/>
+      <Header backNavigation={true} onBack={goBack} />
       {activeTab !== "Applicants" && <JobHeader />}
       <View style={styles.tabContainer}>
         <SlideAnimatedTab
@@ -139,14 +151,14 @@ const JobDetailScreen: React.FC = () => {
         onPressFilter={() => setFilterSheet(true)}
         setSelectedTab={setSelectedTab}
         selectedTab={selectedTab}
-         onItemPress={(t)=>{handleSort(t)}}/>
+        onItemPress={(t) => { handleSort(t) }} />
 
       <BottomSheet
         visible={filterSheet}
         onClose={() => setFilterSheet(false)}
         onClearAll={() => handleClearAllFilters()}
         title="Filter by"
-        showHeadline  hight={screenHeight* 0.8}        
+        showHeadline hight={screenHeight * 0.8}
       >
         <FilterSheetContent
           onCancel={() => setFilterSheet(false)}
@@ -155,30 +167,31 @@ const JobDetailScreen: React.FC = () => {
           selectedTab={selectedTab}
           setSelectedTab={setSelectedTab}
           job_Id={""}
-          filtersConfig={applicantFiltersOption} 
-          mode={"applicant"}       
-           />
+          filtersConfig={applicantFiltersOption}
+          mode={"applicant"}
+        />
       </BottomSheet>
       <View>
         <FooterButtons
           leftButtonProps={{
-            children: "Unpublish",
+            children: isPublished ? "Unpublish" : "Publish",
             variant: "contain",
             size: 44,
-            buttonColor: styles.leftButton.backgroundColor,
-            textColor: styles.leftButtonText.color,
-            borderColor: colors.error[300],
+            buttonColor: isPublished ? styles.leftButton.backgroundColor:"",
+            textColor: isPublished ? styles.leftButtonText.color:"",
+            borderColor: isPublished ? colors.error[300] : "",
             borderRadius: styles.leftButton.borderRadius,
-            borderWidth: 1,
-            onPress: () => console.log("Unpublish"),
+            borderWidth: isPublished? 1:0,
+            onPress: handlePublishToggle,
             startIcon: (
               <Icon
                 size={20}
-                name={"close"}
+                name={isPublished ? "close" : "check"}
                 iconFamily={"AntDesign"}
-                color={styles.iconRed.color}
+                color={isPublished ? styles.iconRed.color :colors.base.white}
               />
             ),
+            disabled: !canPublish || jobsLoading || !jobs,
           }}
           rightButtonProps={{
             children: "Copy URL",
@@ -189,7 +202,7 @@ const JobDetailScreen: React.FC = () => {
             borderColor: styles.rightButton.borderColor,
             borderWidth: 1,
             borderRadius: styles.rightButton.borderRadius,
-            onPress:handleCopyUrl,
+            onPress: handleCopyUrl,
             startIcon: <SvgXml xml={copyIcon} />,
           }}
         />

@@ -140,21 +140,26 @@ const ChangeStatusModal = ({
     }));
   }, [reasonList, selectedCategories]);
 
-  const currentLabel = currentStatus ? (STATUS_LABELS[currentStatus] ?? currentStatus.replace(/_/g, ' ')) : '—';
+  const currentStatusStr =
+    typeof currentStatus === 'string' ? currentStatus : currentStatus != null ? String(currentStatus) : '';
+
+  const currentLabel = currentStatusStr
+    ? STATUS_LABELS[currentStatusStr] ?? currentStatusStr.replace(/_/g, ' ')
+    : '—';
   const newStatusOptionsFiltered = useMemo(
     () =>
       (newStatusOptions ?? []).filter(
-        (o) => (o?.id ?? '').toLowerCase() !== (currentStatus ?? '').toLowerCase()
+        (o) => (o?.id ?? '').toLowerCase() !== currentStatusStr.toLowerCase()
       ),
-    [newStatusOptions, currentStatus]
+    [newStatusOptions, currentStatusStr]
   );
   useEffect(() => {
-    if (visible && selectedNewStatusId != null && currentStatus != null) {
-      if ((selectedNewStatusId ?? '').toLowerCase() === (currentStatus ?? '').toLowerCase()) {
+    if (visible && selectedNewStatusId != null && currentStatusStr) {
+      if ((selectedNewStatusId ?? '').toLowerCase() === currentStatusStr.toLowerCase()) {
         setSelectedNewStatusId(null);
       }
     }
-  }, [visible, currentStatus, selectedNewStatusId]);
+  }, [visible, currentStatusStr, selectedNewStatusId]);
   const selectedNewOption = newStatusOptionsFiltered.find((o) => o.id === selectedNewStatusId);
 
   const isEmailFieldsInvalid = emailCandidate && (!subject.trim() || !message.trim());

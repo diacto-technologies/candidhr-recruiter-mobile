@@ -1,6 +1,6 @@
 import { apiClient } from "../../api/client";
 import { API_ENDPOINTS } from "../../api/endpoints";
-import { CreateJobRequest, UpdateJobRequest, Job, GetJobsParams, JobsListApiResponse, JobDetailApiResponse } from "./types";
+import { CreateJobRequest, UpdateJobRequest, Job, GetJobsParams, JobsListApiResponse, JobDetailApiResponse, JobDetail } from "./types";
 
 export const jobsApi = {
   getJobs: async (params?: GetJobsParams): Promise<JobsListApiResponse> => {
@@ -62,8 +62,26 @@ export const jobsApi = {
     return apiClient.post(API_ENDPOINTS.JOBS.CREATE, data);
   },
 
-  updateJob: async (data: UpdateJobRequest): Promise<{ job: Job }> => {
-    return apiClient.put(API_ENDPOINTS.JOBS.UPDATE(data.id), data);
+  updateJob: async (data: UpdateJobRequest): Promise<JobDetail> => {
+    const { id, ...body } = data;
+    const res = await apiClient.put(API_ENDPOINTS.JOBS.PATCH(id), body);
+    if (res && typeof res === "object" && "job" in res && (res as { job: JobDetail }).job) {
+      return (res as { job: JobDetail }).job;
+    }
+    return res as JobDetail;
+  },
+
+  patchJobShare: async (
+    jobId: string,
+    users_shared_with_ids: string[]
+  ): Promise<Job> => {
+    const res = await apiClient.patch(API_ENDPOINTS.JOBS.PATCH(jobId), {
+      users_shared_with_ids,
+    });
+    if (res && typeof res === 'object' && 'job' in res && (res as { job: Job }).job) {
+      return (res as { job: Job }).job;
+    }
+    return res as Job;
   },
 
   deleteJob: async (id: string): Promise<void> => {

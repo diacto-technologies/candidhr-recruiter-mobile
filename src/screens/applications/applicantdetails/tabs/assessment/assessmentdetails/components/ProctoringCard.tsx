@@ -1,31 +1,19 @@
-import { View, TouchableOpacity, Image, Platform, Linking } from "react-native";
+import { View, TouchableOpacity, Image } from "react-native";
 import Typography from "../../../../../../../components/atoms/typography";
 import { colors } from "../../../../../../../theme/colors";
-import Ring from "../../../../../../../components/atoms/ring";
 import VideoPlayerBox from "../../../../../../../components/molecules/videoplayer";
 import SnapshotModal from "../../../../../../../components/molecules/snapshotmodal";
 import Card from "../../../../../../../components/atoms/card";
 import { useMemo, useState } from "react";
-import React = require("react");
+import React from "react";
 
 type Props = {
   proctoring: any;
   styles: any;
 };
 
-const toLabelFromKey = (value?: string) => {
-  const v = String(value ?? "").trim();
-  if (!v) return "";
-  return v
-    .replace(/_/g, " ")
-    .split(/\s+/g)
-    .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-};
-
 export default function ProctoringCard({ proctoring, styles }: Props) {
-  const [visibleCount, setVisibleCount] = useState(5);
+  const [visibleCount, setVisibleCount] = useState(6);
   const [snapshotModalVisible, setSnapshotModalVisible] = useState(false);
   const [selectedSnapshot, setSelectedSnapshot] = useState<string | null>(null);
 
@@ -33,6 +21,40 @@ export default function ProctoringCard({ proctoring, styles }: Props) {
     () => proctoring?.gaze_snapshots?.snapshots ?? [],
     [proctoring]
   );
+
+  const violationsByType = useMemo(
+    () => proctoring?.violations_by_type ?? {},
+    [proctoring]
+  );
+
+  const getViolationCount = (keys: string[]) => {
+    for (const k of keys) {
+      const v = (violationsByType as any)?.[k];
+      if (v !== undefined && v !== null && Number.isFinite(Number(v))) return Number(v);
+    }
+    return 0;
+  };
+
+  const metrics = useMemo(
+    () => [
+      {
+        label: "Tab switches",
+        value: getViolationCount(["tab_switches", "tab_switch", "tab_switch_count"]),
+      },
+      {
+        label: "Mouse leave",
+        value: getViolationCount(["mouse_leave", "mouse_leaves", "mouse_leave_count"]),
+      },
+      {
+        label: "Screen exit",
+        value: getViolationCount(["screen_exit", "screen_exits", "screen_exit_count"]),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [violationsByType]
+  );
+
+  const hiddenSnapshotCount = Math.max(0, gazeSnapshots.length - visibleCount);
 
   if (!proctoring) return null;
 
@@ -46,123 +68,126 @@ export default function ProctoringCard({ proctoring, styles }: Props) {
         </View>
       </View>
 
-      <View style={{ flexDirection: "row", gap: 14, alignItems: "center" }}>
-        <Ring percent={Number(proctoring?.integrity_score ?? 0)} showText />
-        <View style={{ flex: 1, gap: 2 }}>
-          <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
-            Integrity Score
-          </Typography>
-          <Typography variant="regularTxtsm" color={colors.gray[600]}>
-            {String(proctoring?.integrity_status ?? "").trim() || "—"}
-          </Typography>
-          <Typography variant="regularTxtsm" color={colors.gray[600]}>
-            {`${proctoring?.total_violations ?? 0} violations detected`}
-          </Typography>
-        </View>
+      <View
+        style={{
+          borderRadius: 18,
+          overflow: "hidden",
+          backgroundColor: colors.gray[100],
+        }}
+      >
+        <VideoPlayerBox source={proctoring?.video_url ?? ""} />
       </View>
-
-      {!!proctoring?.violations_by_type && (
-        <View style={{ gap: 6 }}>
-          <Typography variant="mediumTxtxs" color={colors.gray[500]}>
-            VIOLATIONS BY TYPE
-          </Typography>
-          {Object.entries(proctoring.violations_by_type ?? {}).map(([k, v]) => (
-            <View key={String(k)} style={styles.violationRow}>
-              <Typography variant="regularTxtsm" color={colors.gray[600]}>
-                {toLabelFromKey(String(k))}
+      <View
+        style={{
+          flexDirection: "row",
+          borderBottomWidth: 1,
+          borderBottomColor: colors.gray[200],
+          paddingBottom: 8,
+        }}
+      >
+        {metrics.map((m, idx) => (
+          <React.Fragment key={m.label}>
+            <View style={{ flex: 1, gap: 4 }}>
+              <Typography variant="semiBoldDxs" color={colors.gray[900]}>
+                {String(m.value).padStart(2, "0")}
               </Typography>
-              <Typography variant="semiBoldTxtsm" color={colors.gray[900]}>
-                {String(v ?? 0)}
+              <Typography variant="regularTxtmd" color={colors.gray[600]}>
+                {m.label}
               </Typography>
             </View>
-          ))}
-        </View>
-      )}
-
-      <View style={{ gap: 10 }}>
-        <Typography variant="semiBoldTxtlg" color={colors.gray[900]}>
-          Recording
-        </Typography>
-          <VideoPlayerBox source={proctoring?.video_url ?? ""} />
+            {idx !== metrics.length - 1 && (
+              <View
+                style={{
+                  height:'100%',
+                  width: 2,
+                  backgroundColor: colors.gray[200],
+                  marginHorizontal: 14,
+                }}
+              />
+            )}
+          </React.Fragment>
+        ))}
       </View>
 
       {/* ================= GAZE SNAPSHOTS ================= */}
       {gazeSnapshots.length > 0 && (
-        <View style={{ marginTop: 10, gap: 16 }}>
-          <View style={{ gap: 2 }}>
-            <View style={{ flexDirection: "row" }}>
-              <Typography variant="semiBoldTxtlg" color={colors.gray[900]}>
-                Gaze snapshots
-              </Typography>
-              <View
-                style={{
-                  paddingHorizontal: 14,
-                  borderRadius: 20,
-                  backgroundColor: colors.gray[100],
-                  alignSelf: "center",
-                  marginLeft: 10,
-                }}
-              >
-                <Typography variant="mediumTxtsm" color={colors.gray[700]}>
-                  {gazeSnapshots.length} captured
-                </Typography>
-              </View>
+        <View style={{ marginTop: 6, gap: 12 }}>
+          <Typography
+            variant="mediumTxtxs"
+            color={colors.gray[400]}
+            style={{ letterSpacing: 0.9 }}
+          >
+            {`SNAPSHOTS (${String(gazeSnapshots.length).padStart(2, "0")})`}
+          </Typography>
+
+          <View style={{ position: "relative" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                flexWrap: "wrap",
+                justifyContent: "space-between",
+                rowGap: 12,
+              }}
+            >
+              {gazeSnapshots.slice(0, Math.min(visibleCount, gazeSnapshots.length)).map((snapshot: any, idx: number) => {
+                const uri = snapshot?.image_url ?? snapshot?.image ?? null;
+                const isFadedPreview = gazeSnapshots.length > 4 && visibleCount <= 6 && idx >= 4;
+
+                return (
+                  <TouchableOpacity
+                    key={snapshot?.id ?? uri ?? String(idx)}
+                    onPress={() => {
+                      setSelectedSnapshot(uri);
+                      setSnapshotModalVisible(true);
+                    }}
+                    style={{
+                      width: "23%",
+                      aspectRatio: 1,
+                      borderRadius: 16,
+                      overflow: "hidden",
+                      backgroundColor: colors.gray[100],
+                      opacity: isFadedPreview ? 0.25 : 1,
+                    }}
+                  >
+                    {!!uri && (
+                      <Image
+                        source={{ uri }}
+                        style={{ width: "100%", height: "100%" }}
+                        resizeMode="cover"
+                      />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
-            <Typography variant="regularTxtsm" color={colors.gray[600]}>
-              Extreme gaze moments from the proctoring video.
-            </Typography>
-          </View>
 
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-            {gazeSnapshots.slice(0, visibleCount).map((snapshot: any) => (
+            {visibleCount < gazeSnapshots.length && (
               <TouchableOpacity
-                key={snapshot?.id ?? snapshot?.image_url ?? snapshot?.image}
-                onPress={() => {
-                  setSelectedSnapshot(snapshot?.image_url ?? snapshot?.image ?? null);
-                  setSnapshotModalVisible(true);
-                }}
+                onPress={() => setVisibleCount(gazeSnapshots.length)}
                 style={{
-                  width: "48%",
-                  aspectRatio: 1.6,
-                  borderRadius: 16,
-                  overflow: "hidden",
-                  backgroundColor: colors.gray[100],
-                }}
-              >
-                <Image
-                  source={{ uri: snapshot?.image_url ?? snapshot?.image }}
-                  style={{ width: "100%", height: "100%" }}
-                  resizeMode="cover"
-                />
-              </TouchableOpacity>
-            ))}
-
-            {gazeSnapshots.length > visibleCount && (
-              <TouchableOpacity
-                onPress={() => setVisibleCount((prev) => prev + 5)}
-                style={{
-                  width: "48%",
-                  aspectRatio: 1.6,
-                  borderRadius: 16,
-                  borderWidth: 1,
-                  borderStyle: "dashed",
-                  borderColor: colors.brand[300],
-                  justifyContent: "center",
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  bottom: 12,
                   alignItems: "center",
-                  backgroundColor: colors.brand[50],
                 }}
               >
-                <Typography variant="semiBoldTxtlg" color={colors.brand[600]}>
-                  +
-                </Typography>
-
-                <Typography variant="semiBoldTxtsm" color={colors.brand[600]}>
-                  Show next 5
-                </Typography>
-
-                <Typography variant="regularTxtsm" color={colors.brand[700]}>
-                  {gazeSnapshots.length - visibleCount} more
-                </Typography>
+                <View
+                  style={{
+                    paddingHorizontal: 18,
+                    paddingVertical: 10,
+                    borderRadius: 14,
+                    borderWidth: 1,
+                    borderColor: colors.gray[200],
+                    backgroundColor: colors.common.white,
+                  }}
+                >
+                  <Typography variant="semiBoldTxtmd" color={colors.gray[700]}>
+                    {hiddenSnapshotCount > 1
+                      ? `View all (${hiddenSnapshotCount})`
+                      : "View all"}
+                  </Typography>
+                </View>
               </TouchableOpacity>
             )}
           </View>

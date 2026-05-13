@@ -6,7 +6,7 @@ const getModalWidth = (width: number) =>
   Math.max(320, Math.min(width - 32, 400));
 
 export const useStyles = () => {
-    const { insetsBottom, insetsTop } = useRNSafeAreaInsets();
+   const { insetsBottom, insetsTop } = useRNSafeAreaInsets();
     const { width } = useWindowDimensions();
     const modalWidth = getModalWidth(width);
     return StyleSheet.create({
@@ -14,7 +14,7 @@ export const useStyles = () => {
       flex: 1,
     },
     container: {
-      flex: 1,
+      // flex: 1,
       backgroundColor: colors.gray[50],
     },
     avatarSection: {
@@ -106,7 +106,7 @@ export const useStyles = () => {
     },
     buttonContainer: {
       paddingHorizontal: 16,
-      paddingTop: insetsTop,
+      paddingBottom: insetsBottom,
     },
     saveButton: {
       width: '100%',

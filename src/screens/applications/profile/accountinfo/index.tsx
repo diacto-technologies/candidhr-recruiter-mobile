@@ -1,4 +1,4 @@
-import React, { Fragment, useState, useEffect, useCallback } from 'react';
+import React, { Fragment, useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Pressable,
@@ -42,10 +42,10 @@ const AccountInfo = () => {
   const [email, setEmail] = useState('');
   const [phoneCode, setPhoneCode] = useState('+91');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [country, setCountry] = useState('');
   const [location, setLocation] = useState('');
   const [role, setRole] = useState('');
-
-  // Selected image state for avatar upload
+  const [jobTitle, setJobTitle] = useState('');
   const [selectedImage, setSelectedImage] = useState<Asset | null>(null);
 
   // Local loading state for image upload
@@ -61,86 +61,112 @@ const AccountInfo = () => {
       if (profile.contact) {
         const contactStr = String(profile.contact);
         setPhoneNumber(contactStr);
+      } else {
+        setPhoneNumber('');
       }
-      // Set location from country
-      setLocation(profile.country || '');
-      setRole(profile.role?.name || profile.position || '');
+      setCountry(profile.country || '');
+      setLocation(profile.state || '');
+      setRole(profile.role?.name || '');
+      setJobTitle(profile.position || '');
     }
   }, [profile]);
 
+  const phoneDigits = useMemo(
+    () => phoneNumber.replace(/\D/g, ''),
+    [phoneNumber]
+  );
+  const phoneIncomplete =
+    phoneDigits.length > 0 && phoneDigits.length < 10;
+
   const handleSave = useCallback(async () => {
-    // Use FormData when there's an image to upload - call API directly to avoid Redux serialization issue
-    if (selectedImage?.uri) {
-      const formData = new FormData();
+    const parsedContact =
+      phoneNumber && phoneNumber.trim()
+        ? parseInt(phoneNumber.replace(/\s/g, ''), 10)
+        : null;
 
-      // Append text fields - only append if they have values
-      if (fullName?.trim()) {
-        formData.append('name', fullName.trim());
-      }
+    if (phoneDigits.length > 0 && phoneDigits.length < 10) {
+      showToastMessage('Contact number must be 10 digits', 'error');
+      return;
+    }
 
-      if (location?.trim()) {
-        formData.append('country', location.trim());
-      }
+  // =========================
+  // ✅ IMAGE CASE (FormData)
+  // =========================
+  if (selectedImage?.uri) {
+    const formData = new FormData();
 
-      if (phoneNumber && phoneNumber.trim()) {
-        const parsedContact = parseInt(phoneNumber.replace(/\s/g, ''), 10);
-        if (!isNaN(parsedContact)) {
-          formData.append('contact', String(parsedContact));
-        }
-      }
+    // Basic fields
+    formData.append('name', fullName?.trim() || '');
+    formData.append('email', email?.trim() || '');
 
-      // Append the image file
-      const imageUri = Platform.OS === 'ios'
+    // Country & State
+    formData.append('country', country?.trim() || '');
+    formData.append('state', location?.trim() || '');
+
+    // Phone
+    if (parsedContact && !isNaN(parsedContact)) {
+      formData.append('contact', String(parsedContact));
+    }
+
+    formData.append('position', jobTitle?.trim() ?? '');
+
+    // Image
+    const imageUri =
+      Platform.OS === 'ios'
         ? selectedImage.uri?.replace('file://', '')
         : selectedImage.uri;
 
-      formData.append('profile_pic', {
-        uri: imageUri,
-        name: selectedImage.fileName || `profile_${Date.now()}.jpg`,
-        type: selectedImage.type || 'image/jpeg',
-      } as any);
+    formData.append('profile_pic', {
+      uri: imageUri,
+      name: selectedImage.fileName || `profile_${Date.now()}.jpg`,
+      type: selectedImage.type || 'image/jpeg',
+    } as any);
 
-      if (__DEV__) {
-        console.log('Uploading profile with image:', {
-          uri: imageUri,
-          name: selectedImage.fileName,
-          type: selectedImage.type,
-        });
-      }
+    try {
+      setIsUploading(true);
 
-      try {
-        setIsUploading(true);
-        await apiClient.patch(API_ENDPOINTS.PROFILE.UPDATE, formData);
-        // Clear selected image after successful upload
-        setSelectedImage(null);
-        // Refresh profile data
-        dispatch(getProfileRequestAction());
-        showToastMessage('Profile updated successfully', 'success');
-      } catch (error: any) {
-        console.log('Upload error:', error);
-        showToastMessage(error.message || 'Failed to update profile', 'error');
-      } finally {
-        setIsUploading(false);
-      }
-    } else {
-      // Regular JSON payload when no image - use Redux
-      const updatePayload: Record<string, any> = {
-        name: fullName || null,
-      };
+      await apiClient.patch(API_ENDPOINTS.PROFILE.UPDATE, formData);
 
-      if (phoneNumber && phoneNumber.trim()) {
-        const parsedContact = parseInt(phoneNumber.replace(/\s/g, ''), 10);
-        if (!isNaN(parsedContact)) {
-          updatePayload.contact = parsedContact;
-        }
-      } else {
-        updatePayload.contact = null;
-      }
-      updatePayload.country = location && location.trim() ? location.trim() : null;
-
-      dispatch(updateProfileRequestAction(updatePayload));
+      setSelectedImage(null);
+      dispatch(getProfileRequestAction());
+      showToastMessage('Profile updated successfully', 'success');
+    } catch (error: any) {
+      console.log('Upload error:', error);
+      showToastMessage(error.message || 'Failed to update profile', 'error');
+    } finally {
+      setIsUploading(false);
     }
-  }, [dispatch, fullName, phoneNumber, location, selectedImage]);
+  }
+
+  // =========================
+  // ✅ NORMAL CASE (JSON)
+  // =========================
+  else {
+    const updatePayload: Record<string, any> = {
+      name: fullName?.trim() || null,
+      email: email?.trim() || null,
+
+      // Country & State
+      country: country?.trim() || null,
+      state: location?.trim() || null,
+
+      position: jobTitle?.trim() || null,
+      contact: parsedContact && !isNaN(parsedContact) ? parsedContact : null,
+    };
+
+    dispatch(updateProfileRequestAction(updatePayload));
+  }
+}, [
+  dispatch,
+  fullName,
+  email,
+  phoneNumber,
+  phoneDigits,
+  location,
+  country,
+  jobTitle,
+  selectedImage,
+]);
 
   const PROFILE_IMAGE_SIZE = 500;
   const getCropOptions = () => ({
@@ -206,7 +232,6 @@ const AccountInfo = () => {
       />
       <CustomSafeAreaView>
         <Header title="Account info" backNavigation={true} onBack={() => goBack()} />
-
         <KeyboardAvoidingView
           style={styles.keyboardView}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -279,6 +304,12 @@ const AccountInfo = () => {
                       onBlur={() => { }}
                       value={phoneNumber}
                       onChangeText={setPhoneNumber}
+                      isError={phoneIncomplete}
+                      error={
+                        phoneIncomplete
+                          ? 'Contact number must be 10 digits'
+                          : undefined
+                      }
                     />
                   </View>
                 </View>
@@ -287,12 +318,40 @@ const AccountInfo = () => {
               {/* Location */}
               <View style={styles.fieldContainer}>
                 <Typography variant="mediumTxtsm" color={colors.gray[700]} style={styles.label}>
-                  Location
+                  Country
+                </Typography>
+                <TextField
+                  value={country}
+                  onChangeText={ setCountry }
+                  placeholder="Enter your location"
+                  keyboardType="default"
+                  autoCapitalize="none"
+                  size="Medium"
+                />
+              </View>
+
+              <View style={styles.fieldContainer}>
+                <Typography variant="mediumTxtsm" color={colors.gray[700]} style={styles.label}>
+                  State
                 </Typography>
                 <TextField
                   value={location}
                   onChangeText={setLocation}
                   placeholder="Enter your location"
+                  keyboardType="default"
+                  autoCapitalize="none"
+                  size="Medium"
+                />
+              </View>
+
+              <View style={styles.fieldContainer}>
+                <Typography variant="mediumTxtsm" color={colors.gray[700]} style={styles.label}>
+                  Job title
+                </Typography>
+                <TextField
+                  value={jobTitle}
+                  onChangeText={setJobTitle}
+                  placeholder=""
                   keyboardType="default"
                   autoCapitalize="none"
                   size="Medium"
@@ -313,7 +372,8 @@ const AccountInfo = () => {
                 />
               </View>
             </View>
-            <View style={styles.buttonContainer}>
+
+             <View style={styles.buttonContainer}>
               <Button
                 onPress={handleSave}
                 isLoading={loading || isUploading}
@@ -323,7 +383,6 @@ const AccountInfo = () => {
               </Button>
             </View>
           </ScrollView>
-          {/* Save Button */}
         </KeyboardAvoidingView>
       </CustomSafeAreaView>
     </Fragment>

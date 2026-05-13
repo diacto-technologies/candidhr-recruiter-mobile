@@ -1,390 +1,255 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { SvgXml } from "react-native-svg";
-import { useAppSelector } from "../../../../../../hooks/useAppSelector";
-import { selectSelectedApplication } from "../../../../../../features/applications/selectors";
 import Shimmer from "../../../../../../components/atoms/shimmer";
 import Typography from "../../../../../../components/atoms/typography";
 import { sparkles } from "../../../../../../assets/svg/sparkles";
 import { colors } from "../../../../../../theme/colors";
-import Divider from "../../../../../../components/atoms/divider";
-import Icon from "../../../../../../components/atoms/vectoricon";
 import { shadowStyles } from "../../../../../../theme/shadowcolor";
 
-interface Props {
-  summary: string;
-  matchScore: number;
-  readinessScore: number;
-  matchedSkills: ResumeSkill[];
-  quickFacts: {
-    lastRole: string;
-    lastCompany: string;
-    education: string;
-    experience: string[];
-    certifications: string[];
-    applicantDetails:string;
-  };
-  risks: string[];
-  isloading: boolean
+/** Scorecard v3 `ai_summary` — overview, strengths, gaps, recruiter note */
+export interface AiSummaryProps {
+  isloading: boolean;
+  overview: string;
+  strengths: string[];
+  gaps: string[];
+  redFlags?: string[];
+  recruiterNote: string;
+  headline?: string;
 }
 
-interface ResumeSkill {
-  name: string;
-  relevance: string;
-  relevance_score: number;
-}
+const OVERVIEW_BG = "#F5F7FF";
+const OVERVIEW_BORDER = "#E0E7FF";
+const OVERVIEW_LABEL = "#5B21B6";
 
+const STRENGTHS_BG = "#F0FDF4";
+const STRENGTHS_BORDER = "#BBF7D0";
+const STRENGTHS_LABEL = "#166534";
+const STRENGTHS_BODY = "#14532D";
 
-const AiSummaryShimmer = () => {
-  return (
-    <View style={styles.card}>
-      {/* Header */}
-      <View style={styles.headerRow}>
-        <Shimmer width={20} height={16} borderRadius={4} />
-        <Shimmer width="35%" height={18} />
+const GAPS_BG = "#FFFBEB";
+const GAPS_BORDER = "#FDE68A";
+const GAPS_LABEL = "#B45309";
+const GAPS_BODY = colors.gray[600];
+
+const RECRUITER_BG = "#F9FAFB";
+const RECRUITER_BORDER = colors.gray[200];
+const RECRUITER_LABEL_MUTED = colors.gray[500];
+const RECRUITER_LABEL_BADGE = colors.gray[700];
+const RECRUITER_BADGE_BG = colors.gray[200];
+
+const AiSummaryShimmer = () => (
+  <View style={styles.card}>
+    <View style={styles.headerRow}>
+      <Shimmer width={20} height={16} borderRadius={4} />
+      <Shimmer width="40%" height={18} borderRadius={4} />
+    </View>
+    <View style={[styles.sectionBox, { backgroundColor: OVERVIEW_BG }]}>
+      <Shimmer width="28%" height={12} borderRadius={4} />
+      <Shimmer width="100%" height={14} borderRadius={4} />
+      <Shimmer width="95%" height={14} borderRadius={4} />
+    </View>
+    <View style={styles.strengthsGapsRow}>
+      <View style={[styles.sectionBox, { flex: 1, backgroundColor: STRENGTHS_BG }]}>
+        <Shimmer width="50%" height={12} borderRadius={4} />
+        <Shimmer width="100%" height={12} borderRadius={4} />
+        <Shimmer width="88%" height={12} borderRadius={4} />
       </View>
-
-      {/* Narrative summary */}
-      <View style={styles.narrativeBox}>
-        <Shimmer width="40%" height={14} />
-        <Shimmer width="100%" height={14} />
-        <Shimmer width="95%" height={14} />
-        <Shimmer width="85%" height={14} />
-      </View>
-
-      {/* Match score */}
-      <Shimmer width="30%" height={16} />
-      <Shimmer width="60%" height={8} borderRadius={8} />
-
-      {/* Job readiness */}
-      <Shimmer width="35%" height={16} />
-      <Shimmer width="60%" height={8} borderRadius={8} />
-
-      {/* Snapshot */}
-      <View style={styles.snapshotRow}>
-        <Shimmer width="45%" height={48} borderRadius={8} />
-        <Shimmer width="45%" height={48} borderRadius={8} />
-      </View>
-
-      {/* Tags */}
-      <View>
-        {[1, 2, 3, 4].map(i => (
-          <Shimmer key={i} width={70} height={24} borderRadius={6} />
-        ))}
-      </View>
-
-      {/* Quick facts */}
-      {[1, 2, 3].map(i => (
-        <View key={i}>
-          <Shimmer width="30%" height={12} />
-          <Shimmer width="50%" height={14} />
-        </View>
-      ))}
-
-      {/* Risks */}
-      <View style={styles.riskBox}>
-        <Shimmer width="60%" height={14} />
-        <Shimmer width="90%" height={12} />
-        <Shimmer width="85%" height={12} />
+      <View style={[styles.sectionBox, { flex: 1, backgroundColor: GAPS_BG }]}>
+        <Shimmer width="35%" height={12} borderRadius={4} />
+        <Shimmer width="100%" height={12} borderRadius={4} />
       </View>
     </View>
-  );
-};
+    <View style={[styles.sectionBox, { backgroundColor: RECRUITER_BG }]}>
+      <Shimmer width="45%" height={12} borderRadius={4} />
+      <Shimmer width="100%" height={14} borderRadius={4} />
+    </View>
+  </View>
+);
 
 const AiSummary = ({
-  summary,
-  matchScore,
-  readinessScore,
-  matchedSkills,
-  quickFacts,
-  risks,
-  isloading
-}: Props) => {
-  const [expanded, setExpanded] = useState(false);
-  const application = useAppSelector(selectSelectedApplication);
+  isloading,
+  overview,
+  strengths,
+  gaps,
+  redFlags = [],
+  recruiterNote,
+  headline,
+}: AiSummaryProps) => {
+  const [overviewExpanded, setOverviewExpanded] = useState(false);
+
+  const gapLines = useMemo(() => {
+    const merged = [...(gaps ?? []), ...(redFlags ?? [])]
+      .map(s => String(s).trim())
+      .filter(Boolean);
+    return [...new Set(merged)];
+  }, [gaps, redFlags]);
+
   if (isloading) {
-    return <AiSummaryShimmer />
+    return <AiSummaryShimmer />;
   }
+
+  const overviewTrimmed = (overview ?? "").trim();
+  const showOverviewToggle = overviewTrimmed.length > 220;
+
   return (
     <View style={styles.card}>
-      {/* Header */}
       <View style={styles.headerRow}>
-        <SvgXml xml={sparkles} height={15} width={20} />
+        <SvgXml xml={sparkles} height={20} width={20} />
         <Typography variant="semiBoldTxtlg" color={colors.gray[900]}>
-          AI Summary
+          AI Candidate Summary
         </Typography>
       </View>
 
-      {/* Narrative Summary */}
-      <View style={styles.narrativeBox}>
-        <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>
-          Narrative summary
+      {/* OVERVIEW */}
+      <View
+        style={[
+          styles.sectionBox,
+          styles.overviewBox,
+          { backgroundColor: OVERVIEW_BG, borderColor: OVERVIEW_BORDER },
+        ]}
+      >
+        <Typography
+          variant="semiBoldTxtsm"
+          color={colors.gray[800]}
+        >
+          Overview
         </Typography>
-        <View style={{ position: "relative" }}>
-          <Typography
-            variant="regularTxtsm"
-            color={colors.gray[600]}
-            style={{ lineHeight: 20, flexShrink: 1 }}
-            numberOfLines={expanded ? undefined : 4}
+        <Typography
+          variant="regularTxtsm"
+          color={colors.gray[700]}
+          style={styles.bodyText}
+          numberOfLines={overviewExpanded ? undefined : 6}
+        >
+          {overviewTrimmed || "—"}
+        </Typography>
+        {showOverviewToggle ? (
+          <TouchableOpacity
+            onPress={() => setOverviewExpanded(!overviewExpanded)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            {summary}
+            <Typography variant="semiBoldTxtsm" color={colors.brand[600]}>
+              {overviewExpanded ? "Read less" : "Read more"}
+            </Typography>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+
+      {/* STRENGTHS | GAPS */}
+      <View style={styles.strengthsGapsRow}>
+        <View
+          style={[
+            styles.sectionBox,
+            styles.halfColumn,
+            {
+              backgroundColor: STRENGTHS_BG,
+              borderColor: STRENGTHS_BORDER,
+            },
+          ]}
+        >
+          <Typography
+            variant="semiBoldTxtsm"
+            color={colors.success[900]}
+          >
+            Strengths
           </Typography>
-          {summary?.length > 120 && (
-            <TouchableOpacity
-              onPress={() => setExpanded(!expanded)}
-              style={{ alignSelf: "flex-end" }}
-            >
-              <Typography
-                variant="semiBoldTxtsm"
-                color={colors.brand[600]}
-              >
-                {expanded ? "read less" : "read more"}
-              </Typography>
-            </TouchableOpacity>
+          {(strengths ?? []).filter(s => String(s).trim()).length ? (
+            <View style={styles.bulletBlock}>
+              {(strengths ?? [])
+                .map(s => String(s).trim())
+                .filter(Boolean)
+                .map((line, i) => (
+                  <View key={i} style={styles.bulletRow}>
+                    <Typography
+                      variant="regularTxtsm"
+                      color={STRENGTHS_BODY}
+                    >
+                      <Typography
+                        variant="regularTxtsm"
+                        color={STRENGTHS_LABEL}
+                        style={styles.bulletGlyph}
+                      >
+                        {"\u2022 "}
+                      </Typography>
+                      {line}
+                    </Typography>
+                  </View>
+                ))}
+            </View>
+          ) : (
+            <Typography variant="regularTxtsm" color={GAPS_BODY}>
+              No strengths listed.
+            </Typography>
+          )}
+        </View>
+
+        <View
+          style={[
+            styles.sectionBox,
+            styles.halfColumn,
+            { backgroundColor: GAPS_BG, borderColor: GAPS_BORDER },
+          ]}
+        >
+          <Typography
+            variant="semiBoldTxtsm"
+            color={colors.warning[900]}
+          >
+            Gaps
+          </Typography>
+          {gapLines.length ? (
+            <View style={styles.bulletBlock}>
+              {gapLines.map((line, i) => (
+                <View key={i} style={styles.bulletRow}>
+                  <Typography
+                    variant="regularTxtsm"
+                    color={GAPS_BODY}
+                  // style={[styles.bodyText, styles.bulletText]}
+                  >
+                     <Typography
+                    variant="regularTxtsm"
+                    color={GAPS_LABEL}
+                    style={styles.bulletGlyph}
+                  >
+                    {"\u2022 "}
+                  </Typography> 
+                    {line}
+                  </Typography>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Typography variant="regularTxtsm" color={GAPS_BODY}>
+              No significant gaps identified.
+            </Typography>
           )}
         </View>
       </View>
 
-      <Divider color={colors.gray[200]} />
-
-      {/* Narrative Summary */}
-      <View style={styles.narrativeBox}>
-        <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>
-          Recruiter Recommendation
-        </Typography>
-        <View style={{ position: "relative" }}>
-          <Typography
-            variant="regularTxtsm"
-            color={colors.gray[600]}
-            style={{ lineHeight: 20, flexShrink: 1 }}
-            numberOfLines={expanded ? undefined : 4}
-          >
-            {quickFacts.applicantDetails}
-          </Typography>
-          {summary?.length > 120 && (
-            <TouchableOpacity
-              onPress={() => setExpanded(!expanded)}
-              style={{ alignSelf: "flex-end" }}
-            >
-              <Typography
-                variant="semiBoldTxtsm"
-                color={colors.brand[600]}
-              >
-                {expanded ? "read less" : "read more"}
-              </Typography>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-
-      {/* Divider */}
-      <Divider color={colors.gray[200]} />
-
-      {/* Match Score */}
-      <View>
-        <Typography variant="semiBoldTxtmd" color={"#1F2937"}>Match Score</Typography>
-        <Typography variant="regularTxtsm" color={colors.gray[600]}>
-          Fit against job requirements
-        </Typography>
-      </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <View style={styles.progressBar}>
-          <View
-            style={[styles.progressFill, { width: matchScore + "%" }]}
-          />
-        </View>
-        <Typography variant="mediumTxtsm" style={{ textAlign: "right" }} color={colors.gray[700]}>
-          {matchScore}%
-        </Typography>
-      </View>
-      <Divider />
-      {/* Job Readiness */}
-      <View>
-        <Typography variant="semiBoldTxtmd" color={"#1F2937"}>
-          Job Readiness
-        </Typography>
-        <Typography variant="regularTxtsm" color={colors.gray[600]}>
-          On-the-job capability
-        </Typography>
-      </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <View style={styles.progressBar}>
-          <View
-            style={[styles.progressFill, { width: readinessScore + "%" }]}
-          />
-        </View>
-
-        <Typography variant="mediumTxtsm" style={{ textAlign: "right" }} color={colors.gray[700]}>
-          {readinessScore}%
-        </Typography>
-      </View>
-
-      <Divider />
-      {/* Skills Snapshot */}
-      <View>
-        <Typography variant="semiBoldTxtmd" color={"#1F2937"}>
-          Skills Snapshot
-        </Typography>
-        <Typography variant="regularTxtsm" color={colors.gray[600]}>
-          Matched vs. gaps
-        </Typography>
-      </View>
-
-      <View style={styles.snapshotRow}>
-        <View style={[styles.snapshotBox, { backgroundColor: colors.success[50] }]}>
-          <Typography variant="semiBoldTxtmd" color={colors.success[500]}>
-            {application?.resume?.ai_summary_json?.matched_skills.length ?? 0}
-          </Typography>
-          <Typography variant="regularTxtsm" color={colors.gray[600]}>
-            Matched
-          </Typography>
-        </View>
-
-        <View style={[styles.snapshotBox, { backgroundColor: colors.Rose[50] }]}>
-          <Typography variant="semiBoldTxtmd" color={colors.error[500]}>
-            {application?.resume?.ai_summary_json?.missing_skills.length ?? 0}
-          </Typography>
-          <Typography variant="regularTxtsm" color={colors.gray[600]}>
-            Missing
-          </Typography>
-        </View>
-      </View>
-
-      <Divider />
-      {/* Matched Skills */}
-      <Typography variant="semiBoldTxtmd" color={"#1F2937"}>
-        Matched skills
-      </Typography>
-
-      <View style={styles.tagContainer}>
-        {application?.resume?.ai_summary_json?.matched_skills?.map((item, index) => (
-          <View key={index} style={styles.tag}>
-            <Typography variant="mediumTxtsm" color={colors.success[700]}>
-              {item}
-            </Typography>
-          </View>
-        ))}
-      </View>
-      <Divider />
-
-      <Typography variant="semiBoldTxtmd" color={"#1F2937"}>
-        Missing Skills
-      </Typography>
-
-      <View style={styles.tagContainer}>
-        {application?.resume?.ai_summary_json?.missing_skills?.map((item, index) => (
-          <View key={index} style={styles.missingtag}>
-            <Typography variant="mediumTxtsm" color={colors.error[700]}>
-              {item}
-            </Typography>
-          </View>
-        ))}
-      </View>
-
-      <Divider />
-      {/* Quick Facts */}
-      <Typography variant="semiBoldTxtmd" color={"#1F2937"}>
-        Quick facts
-      </Typography>
-
-      <View>
-        <Typography variant="regularTxtsm" color={colors.gray[600]}>
-          Last role
-        </Typography>
-        <Typography variant="semiBoldTxtsm" color={colors.gray[900]}>
-          {quickFacts.lastRole}
-        </Typography>
-      </View>
-
-      <View>
-        <Typography variant="regularTxtsm" color={colors.gray[600]}>
-          Last company
-        </Typography>
-        <Typography variant="semiBoldTxtsm" color={colors.gray[900]}>
-          {quickFacts.lastCompany}
-        </Typography>
-      </View>
-
-      <View>
-        <Typography variant="regularTxtsm" color={colors.gray[600]} >
-          Highest education
-        </Typography>
-        <Typography variant="semiBoldTxtsm" color={colors.gray[900]}>
-          {quickFacts.education}
-        </Typography>
-      </View>
-
-      <View>
-        <Typography variant="regularTxtsm" color={colors.gray[600]}>
-          Relevant experience
-        </Typography>
-        {quickFacts.experience.length > 0 ? (
-          quickFacts.experience.map((item, index) => (
+      {/* RECRUITER NOTE */}
+      <View
+        style={[
+          styles.sectionBox,
+          {
+            backgroundColor: RECRUITER_BG,
+            borderColor: RECRUITER_BORDER,
+          },
+        ]}
+      >
+        <View style={styles.recruiterTitleRow}>
             <Typography
-              key={index}
               variant="semiBoldTxtsm"
-              color={colors.gray[900]}
+              color={colors.gray[800]}
             >
-              • {item}
-            </Typography>
-          ))
-        ) : (
-          <Typography
-            variant="semiBoldTxtsm"
-            color={colors.gray[900]}
-          >
-            Not provided
-          </Typography>
-        )}
-      </View>
-
-      <View>
-        <Typography variant="regularTxtsm" color={colors.gray[600]}>
-          Notable Certifications
-        </Typography>
-        {quickFacts.certifications.length > 0 ? (
-          quickFacts.certifications.map((cert, index) => (
-            <Typography
-              key={index}
-              variant="semiBoldTxtsm"
-              color={colors.gray[900]}
-            >
-              {cert}
-            </Typography>
-          ))
-        ) : (
-          <Typography
-            variant="semiBoldTxtsm"
-            color={colors.gray[900]}
-          >
-            None listed
-          </Typography>
-        )}
-      </View>
-
-      {/* Divider */}
-      <Divider />
-
-      {/* Risks */}
-      <View style={styles.riskBox}>
-        <View style={styles.riskHeader}>
-          <Icon size={20} name={"alert-circle"} iconFamily={"Feather"} color={colors.error[600]} />
-          <Typography
-            variant="semiBoldTxtsm"
-            color={colors.error[600]}
-          >
-            Potential Risks / Red Flags
-          </Typography>
-        </View>
-
-        {risks.map((risk, index) => (
-          <View key={index} style={{ flexDirection: 'row', alignContent: 'center' }}>
-            <Icon size={20} name={"dot-single"} iconFamily={"Entypo"} color={colors.error[600]} />
-            <Typography variant="regularTxtsm" color={colors.error[600]}>
-              {risk}
+              Recruiter Note
             </Typography>
           </View>
-        ))}
+        <Typography
+          variant="regularTxtsm"
+          color={colors.gray[800]}
+          style={styles.bodyText}
+        >
+          {(recruiterNote ?? "").trim() || "—"}
+        </Typography>
       </View>
     </View>
   );
@@ -399,121 +264,82 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: colors.gray[200],
     padding: 16,
-    gap: 16,
-    // shadowColor: '#0A0D12',
-    // shadowOffset: { width: 0, height: 1 },
-    // shadowOpacity: 0.05,
-    // shadowRadius: 3,
-    // elevation: 1,
-    ...shadowStyles.shadow_xs
+    gap: 12,
+    ...shadowStyles.shadow_xs,
   },
 
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    //paddingVertical:16
+    marginBottom: 4,
   },
 
-  narrativeBox: {
-    backgroundColor: colors.brand[25],
+  sectionBox: {
+    borderRadius: 12,
     borderWidth: 1,
-    gap: 8,
-    padding: 20,
-    borderRadius: 10,
-    borderColor: colors.brand[200]
+    padding: 16,
+    gap: 10,
+
   },
 
-  readMore: {
-    textDecorationLine: "underline",
-  },
-
-  divider: {
-    height: 1,
-    backgroundColor: colors.gray[200],
-    marginVertical: 16,
-  },
-
-  progressBar: {
-    //marginTop: 8,
-    height: 8,
-    width: '90%',
-    backgroundColor: colors.gray[200],
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-
-  progressFill: {
-    height: "100%",
-    backgroundColor: colors.brand[600],
-    borderRadius: 8,
-  },
-
-  sectionSpacing: {
-    marginTop: 20,
-  },
-
-  snapshotRow: {
-    flexDirection: "row",
+  overviewBox: {
     gap: 8,
   },
 
-  snapshotBox: {
+  sectionLabel: {
+    // letterSpacing: 0.6,
+  },
+
+  bodyText: {
+    lineHeight: 22,
+  },
+
+  strengthsGapsRow: {
+    // flexDirection: "row",
+    alignItems: "stretch",
+    gap: 12,
+  },
+
+  halfColumn: {
     flex: 1,
-    padding: 10,
-    borderRadius: 8,
-    gap: 8
+    minWidth: 0,
   },
 
-  tagContainer: {
+  bulletBlock: {
+    gap: 6,
+  },
+
+  bulletRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 2,
+    flexWrap: "wrap",
+  },
+
+  bulletGlyph: {
+    //lineHeight: 22,
+    marginTop: 0,
+    width: 14,
+  },
+
+  bulletText: {
+    flex: 1,
+    flexShrink: 1,
+    minWidth: 0,
+  },
+
+  recruiterTitleRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
-  },
-
-  tag: {
-    backgroundColor: colors.success[50],
-    paddingVertical: 2,
-    paddingHorizontal: 10,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: colors.success[200]
-  },
-  missingtag: {
-    backgroundColor: colors.error[50],
-    paddingVertical: 2,
-    paddingHorizontal: 10,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: colors.error[200]
-  },
-
-  factRow: {
-    marginTop: 10,
-  },
-
-  factValue: {
-    marginTop: 2,
-    fontWeight: "600",
-  },
-
-  riskBox: {
-    backgroundColor: colors.error[50],
-    borderWidth: 1,
-    borderColor: colors.error[200],
-    borderRadius: 10,
-    padding: 12,
-    gap: 8
-  },
-
-  riskHeader: {
-    flexDirection: "row",
     alignItems: "center",
-    gap: 8
+    gap: 6,
   },
 
-  riskItem: {
-    marginTop: 4,
+  recruiterBadge: {
+    backgroundColor: RECRUITER_BADGE_BG,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
 });
-

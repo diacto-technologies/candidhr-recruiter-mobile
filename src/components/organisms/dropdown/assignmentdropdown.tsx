@@ -20,6 +20,17 @@ interface Props {
     onSelect: (item: Item) => void;
 }
 
+/** Display label: capitalize first letter of each word (e.g. `passed` → `Passed`). */
+const formatStatusLabel = (status?: string) => {
+    const s = String(status ?? "").trim();
+    if (!s) return "";
+    return s
+        .split(/[\s_-]+/)
+        .filter(Boolean)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(" ");
+};
+
 const AssignmentDropdown: React.FC<Props> = ({
     data,
     selectedId,
@@ -31,6 +42,11 @@ const AssignmentDropdown: React.FC<Props> = ({
         () => data.find((i) => i.id === selectedId),
         [data, selectedId]
     );
+
+    const selectedIndex = useMemo(() => {
+        if (!selectedId) return -1;
+        return data.findIndex((i) => i.id === selectedId);
+    }, [data, selectedId]);
 
     return (
         <View style={localStyles.wrapper}>
@@ -45,7 +61,9 @@ const AssignmentDropdown: React.FC<Props> = ({
                 <View style={localStyles.selectedRow}>
                     <View style={localStyles.selectedLeft}>
                         <Typography variant="semiBoldTxtmd" color={colors.gray[900]} numberOfLines={1}>
-                            {selectedItem?.id || "Select Assignment"}
+                            {selectedItem
+                                ? `Assignment ${selectedIndex >= 0 ? selectedIndex + 1 : ""}`.trim()
+                                : "Select Assignment"}
                         </Typography>
 
                         {!!selectedItem && (
@@ -69,7 +87,7 @@ const AssignmentDropdown: React.FC<Props> = ({
                                     ]}
                                 />
                                 <Typography style={dropdownStyles.statusText} numberOfLines={1}>
-                                    {selectedItem.status}
+                                    {formatStatusLabel(selectedItem.status)}
                                 </Typography>
                             </View>
                         )}
@@ -90,7 +108,7 @@ const AssignmentDropdown: React.FC<Props> = ({
                         data={data}
                         keyExtractor={(item) => item.id}
                         nestedScrollEnabled={true}
-                        renderItem={({ item }) => {
+                        renderItem={({ item, index }) => {
                             const isSelected = item.id === selectedId;
 
                             return (
@@ -115,7 +133,7 @@ const AssignmentDropdown: React.FC<Props> = ({
                                     >
                                         <View style={localStyles.optionTopRow}>
                                             <Typography style={dropdownStyles.optionNameText} numberOfLines={1} ellipsizeMode="tail">
-                                                {item.id}
+                                                {`Assignment ${index + 1}`}
                                             </Typography>
 
                                             <View style={localStyles.optionRight}>
@@ -127,7 +145,7 @@ const AssignmentDropdown: React.FC<Props> = ({
                                                         ]}
                                                     />
                                                     <Typography style={dropdownStyles.statusText} numberOfLines={1}>
-                                                        {item.status}
+                                                        {formatStatusLabel(item.status)}
                                                     </Typography>
                                                 </View>
                                             </View>

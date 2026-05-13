@@ -22,12 +22,19 @@ export interface ApplicationsState {
   applications: Application[];
   applicationResponses: ApplicationResponseItem[];
   resumeScreeningResponses?: ResumeScreeningResponseItem[];
+  /** Full report from GET /applications/v1/resume-screening-reports/{content_id}/ */
+  resumeScreeningReport: ResumeScreeningReportApiResponse | null;
+  resumeScreeningReportContentId: string | null;
+  loadingResumeScreeningReport: boolean;
+  resumeScreeningReportError: string | null;
   assessmentDetailedReport: AssessmentDetailedReport | null;
   assessmentLogs: AssessmentLog[];
   assessmentReport: AssessmentReport | null
-  selectedApplication: Application | null;
+  selectedApplication: ApplicationProfileDetails | null;
   personalityScreeningList: ScreeningAssessment[];
   personalityScreeningResponses: PersonalityScreeningResponse[];
+  /** Top-level `ai_summary` from GET personality screening responses (when API returns envelope) */
+  personalityScreeningAiSummary: ScreeningSummary | null;
   /** Reason categories from GET /notifications/v1/category-list/ */
   reasonCategoryList: ReasonCategory[];
   loadingReasonCategoryList: boolean;
@@ -157,7 +164,7 @@ export interface UpdateStageStatusRequest {
 
 export interface Application {
   id: string;
-
+  name: string;
   candidate: {
     id: string;
     name: string;
@@ -194,7 +201,7 @@ export interface Application {
   resume?: ResumeData;
   applied_at: string;
   last_updated?: any;
-  status: string;
+  status: any;
   workflow_status?: string;
   source?: string;
 
@@ -439,6 +446,176 @@ export interface ResumeScreeningApiResponse {
   results: ResumeScreeningResponseItem[];
 }
 
+/** JSON:API envelope: GET /applications/v1/resume-screening-reports/{content_id}/ */
+export type ResumeScreeningReportApiResponse = {
+    id: string;
+    type: string;
+    attributes: {
+      application?: {
+        application_id?: string;
+        applicant_name?: string;
+        email?: string;
+        applied_at?: string;
+      };
+
+      scorecard?: {
+        total_score?: number;
+        scale_max?: number;
+        components?: [
+          {
+          key?: string;
+          label?: string;
+          score?: number;
+          weight_percent?: number;
+          weighted_max_score?: number;
+          summary_text?: string;
+          summary_tone?: string;
+          }
+        ][];
+      };
+
+      scorecard_v3?: {
+        status?: string;
+        overall_score?: number;
+        overall_score_percent?: number;
+        components?: {
+          key?: string;
+          label?: string;
+          raw_score_percent?: number;
+          score?: number;
+          max_score?: number;
+          weight_percent?: number;
+          tier_breakdown?: {
+            high?: number;
+            medium?: number;
+            low?: number;
+          };
+          tiered_items?: {
+            name?: string;
+            tier?: "high" | "medium" | "low";
+            reason?: string;
+
+            // experience
+            title?: string;
+            months?: number;
+            company?: string;
+            start_date?: string;
+            end_date?: string;
+            responsibilities?: string[];
+            technologies?: string[];
+
+            // education
+            degree?: string;
+            school?: string;
+            institution?: string;
+            degree_type?: string;
+            field_of_study?: string;
+
+            // projects
+            description?: string;
+
+            // certifications
+            issuer?: string;
+            year?: number | null;
+          }[];
+        }[];
+        weights_used?: {
+          skills?: number;
+          projects?: number;
+          education?: number;
+          certifications?: number;
+          work_experience?: number;
+        };
+        ai_summary?: {
+          headline?: string;
+          overview?: string;
+          strengths?: string[];
+          gaps?: string[];
+          red_flags?: string[];
+          recruiter_note?: string;
+        };
+      };
+
+      skill_intelligence?: {
+        totals?: {
+          total_skills?: number;
+          matched_skills?: number;
+          must_have_matched?: number | null;
+          must_have_count?: number | null;
+          coverage_percent?: number | null;
+          quality_percent?: number | null;
+          quality_explanation?: string | null;
+        };
+        items?: {
+          name?: string;
+          is_matched?: boolean;
+          relevance?: string;
+          relevance_score?: number;
+          match_type?: string | null;
+          match_score?: number | null;
+          match_info?: string | null;
+          proficiency_level?: string | null;
+          proficiency_score?: number | null;
+          proficiency_evidence?: string | null;
+        }[];
+      };
+
+      ai_summary?: {
+        summary?: string;
+        recruiter_recommendation?: string;
+        match_score?: number;
+        job_readiness_score?: number;
+        potential_red_flags?: string[];
+        relevant_experience?: string[];
+        last_position_held?: string;
+        last_company?: string;
+        highest_education?: string;
+        notable_certifications?: string[];
+      };
+
+      resume_details?: {
+        work_experience?: {
+          position?: string;
+          company?: string;
+          start_date?: string;
+          end_date?: string;
+          description?: string;
+          relevance?: string;
+        }[];
+        projects?: {
+          name?: string;
+          description?: string;
+          relevance?: string;
+        }[];
+        education?: {
+          school?: string;
+          degree?: string;
+          start_date?: string;
+          end_date?: string;
+          percent?: string;
+          cgpa?: string;
+          relevance?: string;
+        }[];
+        certifications?: {
+          name?: string;
+          description?: string;
+          relevance?: string;
+        }[];
+      };
+    };
+
+  meta?: {
+    generated_at?: string;
+    schema_version?: string;
+    report_status?: string;
+    status_message?: string;
+  };
+
+  links?: {
+    self?: string;
+  };
+};
+
 export interface ResumeJson {
   score_breakdown: any;
   name: string;
@@ -537,6 +714,7 @@ export interface AssessmentLog {
   completed_at: string | number | null | undefined;
   content_type: string;
   content_id: string;
+  stage_id?: string;
   progress_status: string;
   session_status: string;
   id: string;
@@ -1205,6 +1383,12 @@ export interface PersonalityScreeningResponse {
   submitted_at: string;
 }
 
+/** GET personality screening responses: `{ ai_summary, responses }` */
+export interface PersonalityScreeningResponsesPayload {
+  responses: PersonalityScreeningResponse[];
+  ai_summary: ScreeningSummary | null;
+}
+
 export interface ApplicationStage {
   id: string;
   stage_type: string;
@@ -1262,4 +1446,89 @@ export interface AssessmentOptionsReportResponse {
 export interface ExportAssessmentReportRequest {
   assignment_ids: string[];
   select_all?: boolean;
+}
+
+
+export interface ApplicationProfileDetails {
+  id: string;
+  applied_at: string;
+  source: string;
+  resume_id: string;
+  resume_file: string;
+
+  applicant: Applicant;
+
+  application_context: ApplicationContext;
+
+  status: Status;
+
+  workflow: Workflow;
+
+  job: Job;
+
+  meta: Meta;
+}
+
+export interface Applicant {
+  candidate_id: string;
+  name: string;
+  email: string;
+  contact: string;
+  linkedin: string;
+  github: string;
+  personal_website: string | null;
+  profile_pic: string | null;
+  introduction_video: string | null;
+  location: Location;
+}
+
+export interface Location {
+  city: string;
+  state: string;
+}
+
+export interface ApplicationContext {
+  expected_ctc: number | null;
+  current_ctc: number | null;
+  notice_period_in_months: number | null;
+  last_increment: number | null;
+  relevant_experience_in_months: number | null;
+}
+
+export interface Status {
+  value: string;
+  updated_by: string | null;
+  updated_at: string | null;
+  is_overridden_by_user: boolean;
+}
+
+export interface Workflow {
+  enabled: boolean;
+  name: string;
+  version: number;
+  status: string;
+  last_status: string;
+  has_been_updated: boolean;
+  status_updated_at: string;
+  executed_by_workflow: boolean;
+  current_stage: CurrentStage;
+}
+
+export interface CurrentStage {
+  id: string;
+  name: string;
+}
+
+export interface Job {
+  id: string;
+  title: string;
+}
+
+export interface Meta {
+  applied_device_type: string;
+  applied_browser: string;
+  applied_os: string;
+  candidate_timezone: string;
+  form_completion_time_seconds: number;
+  edit_count: number;
 }

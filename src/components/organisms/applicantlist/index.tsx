@@ -7,7 +7,6 @@ import {
   StyleSheet,
   ViewStyle,
   DimensionValue,
-  Share,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { navigate } from '../../../utils/navigationUtils';
@@ -31,6 +30,10 @@ import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { updateApplicationStatusRequestAction } from '../../../features/applications/actions';
 import { applicantUserIcon } from '../../../assets/svg/applicantUser';
 import { shareIcon } from '../../../assets/svg/share';
+import { screenshotIcon } from '../../../assets/svg/screenshot';
+import { captureAndShareView } from '../../../utils/captureAndShareView';
+import { usePermission } from '../../../hooks/usePermission';
+import { PERMISSIONS } from '../../../utils/permission.constants';
 
 interface ApplicantCardProps {
   item?: Application | null;
@@ -90,12 +93,14 @@ const ShimmerBox: React.FC<{
 const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = false, cardWidth }) => {
   const styles = useStyles();
   const dispatch = useAppDispatch();
+  const { can } = usePermission();
   const [menuVisible, setMenuVisible] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState<{ left: number; top: number }>({
     left: 0,
     top: 0,
   });
   const menuTriggerRef = useRef<View | null>(null);
+  const cardCaptureRef = useRef<View | null>(null);
   const [changeStatusVisible, setChangeStatusVisible] = useState(false);
   const [shareModalVisible, setShareModalVisible] = useState(false);
 
@@ -119,7 +124,7 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
       (menuTriggerRef.current as any).measureInWindow(
         (x: number, y: number, width: number, height: number) => {
           setDropdownPosition({
-            left: x + width - 140,
+            left: Math.max(8, x + width - 160),
             top: y + height - 5,
           });
           setMenuVisible(true);
@@ -175,71 +180,73 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
 
   return (
     <Pressable style={[styles.card]} onPress={() => handlePress(item?.id, item?.job?.id)}>
-      {/* Top Row - Avatar + Name */}
-      <View style={styles.rowBetween}>
-        <View style={styles.row}>
-          <View style={[styles.borderWrapper]}>
-            {item?.candidate?.profile_pic ?
-              <Image
-                source={{ uri: item?.candidate?.profile_pic }}
-                style={styles.avatar}
-                resizeMode="cover"
-              />
-              :
-              // <View style={[styles.initialCircle]}>
-              <Typography variant="semiBoldTxtlg" color={colors?.gray[700]} style={{ paddingRight: 5 }}> {(item?.name?.trim()?.[0] ?? "?").toUpperCase()}</Typography>
-              // </View>
-            }
+      <View ref={cardCaptureRef} collapsable={false} style={{ width: '100%', gap: 12 }}>
+        {/* Top Row - Avatar + Name */}
+        <View style={styles.rowBetween}>
+          <View style={styles.row}>
+            <View style={[styles.borderWrapper]}>
+              {item?.candidate?.profile_pic ?
+                <Image
+                  source={{ uri: item?.candidate?.profile_pic }}
+                  style={styles.avatar}
+                  resizeMode="cover"
+                />
+                :
+                // <View style={[styles.initialCircle]}>
+                <Typography variant="semiBoldTxtlg" color={colors?.gray[700]} style={{ paddingRight: 5 }}> {(item?.name?.trim()?.[0] ?? "?").toUpperCase()}</Typography>
+                // </View>
+              }
+            </View>
+            <View style={{ marginLeft: 12 }}>
+              <Typography variant="semiBoldTxtmd">
+                {item?.name ?? (item?.id ? "?" : '')}
+              </Typography>
+              <Typography variant="regularTxtsm" color={colors.gray[600]}>
+                Applied on : {item?.applied_at ? formatMonDDYYYY(item?.applied_at) : "_"}
+              </Typography>
+            </View>
           </View>
-          <View style={{ marginLeft: 12 }}>
-            <Typography variant="semiBoldTxtmd">
-              {item?.name ?? (item?.id ? "?" : '')}
-            </Typography>
-            <Typography variant="regularTxtsm" color={colors.gray[600]}>
-              Applied on : {item?.applied_at ? formatMonDDYYYY(item?.applied_at) : "_"}
-            </Typography>
+
+          <View style={{ alignSelf: 'flex-start' }}>
+            <View
+              ref={(el) => {
+                menuTriggerRef.current = el;
+              }}
+              collapsable={false}
+            >
+              <Pressable onPress={handleOpenMenu}>
+                <SvgXml xml={horizontalThreedotIcon} height={20} width={20} />
+              </Pressable>
+            </View>
           </View>
         </View>
 
-        <View style={{ alignSelf: 'flex-start' }}>
-          <View
-            ref={(el) => {
-              menuTriggerRef.current = el;
-            }}
-            collapsable={false}
-          >
-            <Pressable onPress={handleOpenMenu}>
-              <SvgXml xml={horizontalThreedotIcon} height={20} width={20} />
-            </Pressable>
-          </View>
-        </View>
-      </View>
-
-      {/* Applied For */}
-      <Typography variant="regularTxtsm" color={colors.gray[600]}>
-        Applied for :{' '}
-        <Typography variant="mediumTxtsm" color={colors.gray[700]}>
-          {item?.job?.title ?? "_"}
-        </Typography>
-      </Typography>
-
-      <Divider />
-
-      {/* Stage + Status */}
-      <View style={styles.rowBetween}>
-        <View style={{ flex: 1 }}>
-          <Typography variant="regularTxtsm" color={colors.gray[500]}>
-            {item?.latest_stage?.stage_name ?? "_"}
+        {/* Applied For */}
+        <Typography variant="regularTxtsm" color={colors.gray[600]}>
+          Applied for :{' '}
+          <Typography variant="mediumTxtsm" color={colors.gray[700]}>
+            {item?.job?.title ?? "_"}
           </Typography>
-        </View>
-        {item?.status &&
-          <View style={styles.statusBadge}>
-            <View style={[styles.statusDot, { backgroundColor: getStatusColor(item?.status_label) }]} />
-            <Typography variant="mediumTxtxs" color={colors.gray[700]}>
-              {item?.status_label ?? "_"}
+        </Typography>
+
+        <Divider />
+
+        {/* Stage + Status */}
+        <View style={styles.rowBetween}>
+          <View style={{ flex: 1 }}>
+            <Typography variant="regularTxtsm" color={colors.gray[500]}>
+              {item?.latest_stage?.stage_name ?? "_"}
             </Typography>
           </View>
-        }
+          {item?.status &&
+            <View style={styles.statusBadge}>
+              <View style={[styles.statusDot, { backgroundColor: getStatusColor(item?.status_label) }]} />
+              <Typography variant="mediumTxtxs" color={colors.gray[700]}>
+                {item?.status_label ?? "_"}
+              </Typography>
+            </View>
+          }
+        </View>
       </View>
 
       <DropdownMenu
@@ -257,42 +264,51 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
         itemStyle={{
           //paddingVertical: 12,
         }}
-        textStyle={{
-          color: 'red',
-        }}
         iconStyle={{
           marginRight: 12,
         }}
         iconHight={20}
         iconWidth={20}
         items={[
-          {
-            label: 'Profile',
-            icon: applicantUserIcon,
-            onPress: () => {
-              if (item?.id && item?.job?.id) {
-                navigate('ApplicantDetails', {
-                  application_id: item.id,
-                  job_id: item.job.id,
-                });
-              }
+          ...(can(PERMISSIONS.VIEW_APPLICATION_PROFILE) ? [
+            {
+              label: 'Profile',
+              icon: applicantUserIcon,
+              onPress: () => {
+                if (item?.id && item?.job?.id) {
+                  navigate('ApplicantDetails', {
+                    application_id: item.id,
+                    job_id: item.job.id,
+                  });
+                }
+              },
             },
-          },
-          {
-            label: 'Change status',
-            icon: editIcon,
-            onPress: () => {
-              setChangeStatusVisible(true);
-            },
-          },
-          {
-            label: 'Share',
-            icon: shareIcon,
-            onPress: () => {
-              setMenuVisible(false);
-              setShareModalVisible(true);
-            },
-          },
+          ]
+            : []),
+          ...(can(PERMISSIONS.UPDATE_APPLICATION_STATUS)
+            ? [
+              {
+                label: 'Change status',
+                icon: editIcon,
+                onPress: () => {
+                  setChangeStatusVisible(true);
+                },
+              },
+            ]
+            : []),
+
+          ...(can(PERMISSIONS.SHARE_APPLICATION)
+            ? [
+              {
+                label: 'Share',
+                icon: shareIcon,
+                onPress: () => {
+                  setMenuVisible(false);
+                  setShareModalVisible(true);
+                },
+              },
+            ]
+            : []),
         ]}
       />
 

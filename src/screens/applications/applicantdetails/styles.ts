@@ -71,5 +71,6 @@ export const useStyles = () => {
           right: 24,
           bottom: inset.insetsBottom + 88,
         },
+        callContainer:{paddingVertical:inset.insetsBottom-10,paddingHorizontal:16}
     });
 };

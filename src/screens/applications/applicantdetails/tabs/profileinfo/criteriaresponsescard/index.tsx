@@ -6,7 +6,31 @@ import Shimmer from "../../../../../../components/atoms/shimmer";
 import Typography from "../../../../../../components/atoms/typography";
 import { colors } from "../../../../../../theme/colors";
 import { shadowStyles } from "../../../../../../theme/shadowcolor";
+import { SvgXml } from "react-native-svg";
+import { commentIcon } from "../../../../../../assets/svg/comments";
+import { Illustrations } from "../../../../../../assets/svg/illustrations";
 
+/** API may return strings or `{ label, value }` (dropdown/radio) — Text cannot render objects. */
+function formatCriteriaField(value: unknown): string {
+  if (value == null || value === "") return "";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    return value.map(formatCriteriaField).filter(Boolean).join(", ");
+  }
+  if (typeof value === "object") {
+    const o = value as Record<string, unknown>;
+    if (o.label != null && o.label !== "") return String(o.label);
+    if (o.value != null && o.value !== "") return String(o.value);
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return "";
+    }
+  }
+  return String(value);
+}
 
 const CriteriaResponsesCardShimmer = () => {
   return (
@@ -46,8 +70,21 @@ const CriteriaResponsesCard = () => {
       </Typography>
 
       {ApplicationResponses?.length > 0 ? (
-        ApplicationResponses.map((item, index) => (
-          <View key={index} style={styles.innerCard}>
+        ApplicationResponses.map((item, index) => {
+          const questionText = formatCriteriaField(item?.criteria?.question as unknown);
+          const responseText = formatCriteriaField(item?.response as unknown);
+          const expectedText = formatCriteriaField(item?.criteria?.expected_response as unknown);
+          const matchesExpected =
+            responseText !== "" &&
+            expectedText !== "" &&
+            responseText === expectedText;
+          const rowKey =
+            (item?.criteria?.id != null && String(item.criteria.id)) ||
+            item.id ||
+            `idx-${index}`;
+
+          return (
+          <View key={rowKey} style={styles.innerCard}>
             {/* Question */}
             <View style={{ flexDirection: 'row' }}>
               <Typography variant="mediumTxtmd" color="#1F2937">
@@ -55,12 +92,12 @@ const CriteriaResponsesCard = () => {
               </Typography>
               <Typography variant="mediumTxtmd" color="#1F2937">
                 {" "}
-                {item?.criteria?.question}
+                {questionText}
               </Typography>
             </View>
 
             {/* Response */}
-            {item?.response && (
+            {responseText !== "" && (
               <View style={styles.row}>
                 <Typography variant="regularTxtsm" color={colors.gray[600]}>
                   Response :
@@ -68,31 +105,32 @@ const CriteriaResponsesCard = () => {
                 <Typography
                   variant="semiBoldTxtsm"
                   color={
-                    item.response === item?.criteria?.expected_response
+                    matchesExpected
                       ? colors.success[500]
                       : colors.error[500]
                   }
                 >
                   {"  "}
-                  {item.response}
+                  {responseText}
                 </Typography>
               </View>
             )}
 
             {/* Expected */}
-            {item?.criteria?.expected_response && (
+            {expectedText !== "" && (
               <View style={styles.row}>
                 <Typography variant="regularTxtsm" color={colors.gray[600]}>
                   Expected response :
                 </Typography>
                 <Typography variant="semiBoldTxtsm" color={colors.success[500]}>
                   {"  "}
-                  {item.criteria.expected_response}
+                  {expectedText}
                 </Typography>
               </View>
             )}
           </View>
-        ))
+          );
+        })
       ) : (
         /* EMPTY STATE */
         <View style={styles.emptyState}>

@@ -262,6 +262,13 @@ const jobsSlice = createSlice({
         }
       }
 
+      const favIdx = state.favouriteJobs.findIndex(
+        (job) => job.id === action.payload.id
+      );
+      if (favIdx !== -1) {
+        state.favouriteJobs[favIdx] = action.payload as any;
+      }
+
       if (state.selectedJob?.id === action.payload.id) {
         state.selectedJob = action.payload;
       }

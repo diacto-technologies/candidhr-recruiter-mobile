@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Pressable, Linking, Platform, TouchableOpacity, Alert } from 'react-native';
+import { View, Pressable, Linking, Platform, TouchableOpacity, Alert } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { SvgXml } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
@@ -10,17 +10,22 @@ import { locationIcon } from '../../../assets/svg/location';
 import { singleDotIcon } from '../../../assets/svg/singledot';
 import { formatMonDDYYYY } from '../../../utils/dateformatter';
 import { formatExperience } from '../../../utils/experienceformatter';
-import { Application } from '../../../features/applications/types';
 import { exportIcon } from '../../../assets/svg/export';
+import { PERMISSIONS } from '../../../utils/permission.constants';
+import { usePermission } from '../../../hooks/usePermission';
+import { useAppSelector } from '../../../hooks/useAppSelector';
+import { selectSelectedApplication } from '../../../features/applications/selectors';
+import { useStyles } from './styles';
+import { ApplicationProfileDetails } from '../../../features/applications';
 
 export interface Props {
-  application: Application | null;
   loading: boolean;
   onPressExport?: () => void; // download
   onPressPreview?: () => void; // preview
 }
 
 const ProfileCardShimmer = () => {
+   const styles = useStyles();
   return (
     <View style={styles.container}>
       <Shimmer height={90} borderRadius={12} style={{ margin: 4 }} />
@@ -48,17 +53,23 @@ const ProfileCardShimmer = () => {
   );
 };
 
-const ProfileCart: React.FC<Props> = ({ application, loading, onPressExport, onPressPreview }) => {
-
+const ProfileCart: React.FC<Props> = ({loading, onPressExport, onPressPreview }) => {
+  const { can } = usePermission();
+   const styles = useStyles();
+   const application = useAppSelector(selectSelectedApplication) as ApplicationProfileDetails | null;
   if (loading) {
     return <ProfileCardShimmer />;
   }
 
-  const candidate = application?.candidate;
-  const location = candidate?.location;
+  const person = application?.applicant;
+  const location = person?.location;
   const job = application?.job;
-  const hasLocation = location?.city || location?.state;
-  const hasExperience = job?.score_weight?.work_experience;
+  const hasLocation = Boolean(location?.city || location?.state);
+  const relevantExpMonths = application?.application_context?.relevant_experience_in_months;
+  const relevantExpYears =
+    typeof relevantExpMonths === 'number' ? relevantExpMonths / 12 : null;
+  const hasExperience = typeof relevantExpYears === 'number' && relevantExpYears > 0;
+  const personalWebsite = person?.personal_website ?? null;
   const openGitHub = async (url: string) => {
     if (!url) return;
 
@@ -144,8 +155,8 @@ const ProfileCart: React.FC<Props> = ({ application, loading, onPressExport, onP
       {/* Profile Image */}
       <View style={styles.photoWrapper}>
         <ProfileAvatar
-          imageUrl={candidate?.profile_pic}
-          name={application?.name ?? "?"}
+          imageUrl={person?.profile_pic}
+          name={person?.name ?? `****${String(application?.id ?? '').slice(-4)}`}
           size={88}
           fontVariant="semiBoldDxs"
           outerSize={16}
@@ -153,18 +164,20 @@ const ProfileCart: React.FC<Props> = ({ application, loading, onPressExport, onP
       </View>
       {/* Info */}
       <View style={styles.infoContainer}>
-        <TouchableOpacity
-          onPress={handlePressExport}
-          // disabled={!onPressExport && !onPressPreview}
-          style={{ position: 'absolute', alignSelf: 'flex-end', margin: 10 }}
-        >
-          <SvgXml xml={exportIcon} color={colors.gray[400]} height={20} width={20}/>
+        {can(PERMISSIONS.EXPORT_APPLICATION_PROFILE) &&
+          <TouchableOpacity
+            onPress={handlePressExport}
+            // disabled={!onPressExport && !onPressPreview}
+            style={{ position: 'absolute', alignSelf: 'flex-end', margin: 10 }}
+          >
+            <SvgXml xml={exportIcon} color={colors.gray[400]} height={20} width={20} />
           </TouchableOpacity>
+        }
         <View style={{ gap: 4 }}>
           {/* Name OR Application ID */}
           <Typography variant="semiBoldDxs">
-            {application?.name
-              ? application.name
+            {person?.name
+              ? person?.name
               : `Application ID: ****${String(application?.id ?? '').slice(-4)}`}
           </Typography>
 
@@ -198,7 +211,7 @@ const ProfileCart: React.FC<Props> = ({ application, loading, onPressExport, onP
                 <>
                   <SvgXml xml={jobIcon} width={20} height={20} />
                   <Typography variant="regularTxtsm" color={colors.gray[600]}>
-                    {formatExperience(job.score_weight.work_experience)}
+                    {formatExperience(relevantExpYears)}
                   </Typography>
                 </>
               )}
@@ -209,96 +222,35 @@ const ProfileCart: React.FC<Props> = ({ application, loading, onPressExport, onP
         {/* Social Icons */}
         <View style={styles.iconRow}>
           {/* LinkedIn */}
-          {application?.candidate?.linkedin && (
+          {person?.linkedin ? (
             <Pressable
-              onPress={() => openLinkedIn(application.candidate.linkedin)}
+              onPress={() => openLinkedIn(person.linkedin)}
               style={styles.iconBox}
             >
               <Icon name="logo-linkedin" size={20} color="#0A66C2" iconFamily="Ionicons" />
             </Pressable>
-          )}
+          ) : null}
           {/* GitHub */}
-          {application?.candidate?.github && (
+          {person?.github ? (
             <Pressable
-              onPress={() => openGitHub(application.candidate.github)}
+              onPress={() => openGitHub(person.github)}
               style={styles.iconBox}
             >
               <Icon name="logo-github" size={20} color="#000" iconFamily="Ionicons" />
             </Pressable>
-          )}
+          ) : null}
           {/* Website */}
-          {application?.resume?.personal_website && (
+          {personalWebsite ? (
             <Pressable
-              onPress={() => openWebsite(application.resume!.personal_website!)}
+              onPress={() => openWebsite(String(personalWebsite))}
               style={styles.iconBox}
             >
               <Icon name="globe" size={20} color="#444" iconFamily="Entypo" />
             </Pressable>
-          )}
+          ) : null}
         </View>
       </View>
     </View>
   );
 };
-
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.base.white,
-    overflow: 'hidden',
-  },
-  header: {
-    height: 90,
-    borderRadius: 12,
-    margin: 4
-  },
-  photoWrapper: {
-    position: 'absolute',
-    top: 35,
-    left: 18,
-    zIndex: 10,
-  },
-  shimmerBorder: {
-    width: 105,
-    height: 105,
-    borderRadius: 999,
-    backgroundColor: colors.base.white,
-    padding: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-  },
-  infoContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 52,
-    paddingBottom: 16,
-    gap: 16,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  iconRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  iconBox: {
-    width: 40,
-    height: 40,
-    backgroundColor: colors.base.white,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.gray[300],
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-});
-
 export default ProfileCart;

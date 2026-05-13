@@ -1,5 +1,5 @@
 import { JOBS_ACTION_TYPES } from "./constants";
-import { CreateJobRequest, UpdateJobRequest, Job, GetJobsParams } from "./types";
+import { CreateJobRequest, UpdateJobRequest, UpdateJobShareRequest, Job, GetJobsParams } from "./types";
 
 export interface GetJobsRequestActionPayload extends GetJobsParams {
   append?: boolean; // false / undefined = replace list, true = append
@@ -25,6 +25,11 @@ export const createJobRequestAction = (payload: CreateJobRequest) => ({
 
 export const updateJobRequestAction = (payload: UpdateJobRequest) => ({
   type: JOBS_ACTION_TYPES.UPDATE_JOB_REQUEST,
+  payload,
+});
+
+export const updateJobShareRequestAction = (payload: UpdateJobShareRequest) => ({
+  type: JOBS_ACTION_TYPES.UPDATE_JOB_SHARE_REQUEST,
   payload,
 });
 

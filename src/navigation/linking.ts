@@ -5,7 +5,7 @@ const linking = {
       Dashboard: "dashboard",
       ApplicantScreen: "applicant/:id",
       JobDetailScreen: {
-        path: 'app/candidate/:jobId',
+        path: 'apply/:jobId',
         parse: {
           jobId: (jobId: string) => jobId.replace(/\/$/, ''),
         },

@@ -1,7 +1,7 @@
-import React from "react";
-import { View, FlatList, Pressable, Touchable, TouchableOpacity } from "react-native";
+import React, { useMemo, useRef, useState } from "react";
+import { View, FlatList, Pressable, TouchableOpacity } from "react-native";
 import { SvgXml } from "react-native-svg";
-import { Button, Typography } from "../../../atoms";
+import { Typography } from "../../../atoms";
 import Divider from "../../../atoms/divider";
 import { useStyles } from "./styles";
 import { Job } from "../../../../features/jobs";
@@ -16,6 +16,212 @@ import BackgroundPattern from "../../../atoms/backgroundpattern";
 import { Illustrations } from "../../../../assets/svg/illustrations";
 import { horizontalThreedotIcon } from "../../../../assets/svg/horizontalthreedoticon";
 import { heartIcon } from "../../../../assets/svg/heart";
+import { DropdownMenu } from "../../../molecules/dropdownmenu";
+import { copyIcon } from "../../../../assets/svg/copy";
+import Clipboard from "@react-native-clipboard/clipboard";
+import { showToastMessage } from "../../../../utils/toast";
+import { organizationalOrigin } from "../../../../features/auth";
+import { store } from "../../../../store";
+import { shareIcon } from "../../../../assets/svg/share";
+import ShareJobModal from "../../shareJobModal";
+import { PERMISSIONS } from '../../../../utils/permission.constants';
+import { usePermission } from '../../../../hooks/usePermission';
+
+export interface JobCardListProps {
+    tabs: string[];
+    activeTab: string;
+    jobsList: Job[];
+    loading: boolean;
+    isTabLoading: boolean;
+    publishedCount: number;
+    unpublishedCount: number;
+    favouritesCount: number;
+    isConnected: boolean;
+    onChangeTab: (label: string) => void;
+    onLoadMore: () => void;
+    onJobPress: (jobId: string) => void;
+    favouriteJobIds?: string[];
+    onToggleFavourite?: (jobId: string) => void;
+    hasMore?: boolean;
+}
+
+interface JobCardRowProps {
+    item: Job;
+    cardStyles: ReturnType<typeof useStyles>;
+    onJobPress: (jobId: string) => void;
+    favouriteJobIds: string[];
+    onToggleFavourite?: (jobId: string) => void;
+}
+
+const JobCardRow: React.FC<JobCardRowProps> = ({
+    item,
+    cardStyles,
+    onJobPress,
+    favouriteJobIds,
+    onToggleFavourite,
+}) => {
+    const { can } = usePermission();
+    const [menuVisible, setMenuVisible] = useState(false);
+    const [dropdownPosition, setDropdownPosition] = useState({ left: 0, top: 0 });
+    const [shareModalVisible, setShareModalVisible] = useState(false);
+    const menuTriggerRef = useRef<View | null>(null);
+    const initialSharedMemberIds = useMemo(
+        () => (item.users_shared_with ?? []).map((u) => u.id).filter(Boolean),
+        [item.users_shared_with]
+    );
+
+    const handleOpenMenu = () => {
+        if (menuTriggerRef.current && "measureInWindow" in menuTriggerRef.current) {
+            (menuTriggerRef.current as any).measureInWindow(
+                (x: number, y: number, width: number, height: number) => {
+                    setDropdownPosition({
+                        left: Math.max(8, x + width - 160),
+                        top: y + height - 5,
+                    });
+                    setMenuVisible(true);
+                }
+            );
+        } else {
+            setMenuVisible(true);
+        }
+    };
+
+    const handleCopyJobFormUrl = () => {
+        if (!item?.encrypted) {
+            showToastMessage("Job Form URL not available", "error");
+            return;
+        }
+        const url = `${organizationalOrigin(store.getState())}/app/candidate/${item.encrypted}/`;
+        Clipboard.setString(url);
+        showToastMessage("Job Form URL copied to clipboard", "success");
+    };
+
+    return (
+        <View style={cardStyles.card}>
+            <View collapsable={false} style={{ width: "100%" }}>
+                <View style={cardStyles.rowBetween}>
+                    <Pressable style={{ flex: 1, paddingRight: 8 }} onPress={() => onJobPress(item.id)}>
+                        <Typography variant="semiBoldTxtmd">{item.title ?? ""}</Typography>
+                    </Pressable>
+                    <View
+                        ref={(el) => {
+                            menuTriggerRef.current = el;
+                        }}
+                        collapsable={false}
+                    >
+                        <Pressable onPress={handleOpenMenu} hitSlop={8}>
+                            <SvgXml xml={horizontalThreedotIcon} height={20} width={20} />
+                        </Pressable>
+                    </View>
+                </View>
+
+                <Pressable onPress={() => onJobPress(item.id)}>
+                    <View style={cardStyles.row}>
+                        <Typography variant="regularTxtsm" color={colors.gray[500]}>
+                            Open until : {""}
+                        </Typography>
+                        <Typography variant="mediumTxtsm" color={colors.gray[600]}>
+                            {formatMonDDYYYY(item.close_date ?? 0)}
+                        </Typography>
+                    </View>
+                    <TouchableOpacity
+                        onPress={() => onToggleFavourite?.(item.id)}
+                        style={{ alignSelf: "flex-end" }}
+                    >
+                        <SvgXml
+                            xml={heartIcon}
+                            height={20}
+                            width={20}
+                            color={
+                                favouriteJobIds?.includes?.(item.id)
+                                    ? colors.warning[400]
+                                    : colors.gray[300]
+                            }
+                            fill={
+                                favouriteJobIds?.includes?.(item.id)
+                                    ? colors.warning[400]
+                                    : colors.gray[300]
+                            }
+                        />
+                    </TouchableOpacity>
+                    <View style={{ marginVertical: 4 }}>
+                        <Divider
+                            height={1.2}
+                            marginVertical={8}
+                            color={colors.mainColors.borderColor}
+                        />
+                    </View>
+
+                    <View style={cardStyles.rowBetween}>
+                        <View style={{ flexDirection: "row", gap: 12 }}>
+                            <View style={{ flexDirection: "row", gap: 4 }}>
+                                <SvgXml xml={eyeVisibleIcon} width={20} height={20} />
+                                <Typography variant="mediumTxtsm" color={colors.gray[600]}>
+                                    {item.views_count ?? ""}
+                                </Typography>
+                            </View>
+
+                            <View style={{ flexDirection: "row", gap: 4 }}>
+                                <SvgXml xml={userApplicationIcon} width={20} height={20} />
+                                <Typography variant="mediumTxtsm" color={colors.gray[600]}>
+                                    {item.applicants_count ?? ""}
+                                </Typography>
+                            </View>
+                        </View>
+
+                        <Typography variant="regularTxtsm" color={colors.gray[500]}>
+                            {item.owner?.name ?? ""}
+                        </Typography>
+                    </View>
+                </Pressable>
+            </View>
+
+            <ShareJobModal
+                visible={shareModalVisible}
+                onClose={() => setShareModalVisible(false)}
+                jobId={item.id}
+                initialSharedMemberIds={initialSharedMemberIds}
+            />
+
+            <DropdownMenu
+                visible={menuVisible}
+                onClose={() => setMenuVisible(false)}
+                position={dropdownPosition}
+                iconColor={colors?.gray[400]}
+                width={160}
+                iconStyle={{
+                    marginRight: 12,
+                }}
+                iconHight={20}
+                iconWidth={20}
+                items={[
+                    {
+                        label: "View",
+                        icon: eyeVisibleIcon,
+                        onPress: () => onJobPress(item.id),
+                    },
+                    {
+                        label: "Copy URL",
+                        icon: copyIcon,
+                        onPress: handleCopyJobFormUrl,
+                    },
+                    ...(can(PERMISSIONS.SHARE_JOB)
+                        ? [
+                              {
+                                  label: "Share",
+                                  icon: shareIcon,
+                                  onPress: () => {
+                                      setMenuVisible(false);
+                                      setShareModalVisible(true);
+                                  },
+                              },
+                          ]
+                        : []),
+                ]}
+            />
+        </View>
+    );
+};
 
 const JobCardList: React.FC<JobCardListProps> = ({
     tabs,
@@ -26,7 +232,7 @@ const JobCardList: React.FC<JobCardListProps> = ({
     publishedCount,
     unpublishedCount,
     favouritesCount,
-    isConnected,
+    isConnected: _isConnected,
     onChangeTab,
     onLoadMore,
     onJobPress,
@@ -36,11 +242,8 @@ const JobCardList: React.FC<JobCardListProps> = ({
     const isTablet = DeviceInfo.isTablet();
     const styles = useStyles();
 
-
     const renderShimmerCard = () => (
-        <View
-            style={styles.card}
-        >
+        <View style={styles.card}>
             <Shimmer width="70%" height={18} style={{ marginBottom: 12 }} />
             <Shimmer width="50%" height={14} style={{ marginBottom: 16 }} />
 
@@ -58,30 +261,10 @@ const JobCardList: React.FC<JobCardListProps> = ({
             </View>
         </View>
     );
-    // if (!isConnected && jobsList.length === 0) {
-    //     return (
-    //         <>
-    //             <View style={styles.tabContainer}>
-    //                 <SlideAnimatedTab
-    //                     tabs={tabs}
-    //                     activeTab={activeTab}
-    //                     onChangeTab={onChangeTab}
-    //                     countShow={true}
-    //                 />
-    //                 <View style={styles.bottomBorder} />
-    //             </View>
-    //             <BackgroundPattern>
-    //                 <View style={{ alignItems: "center", marginTop: 60, paddingHorizontal: 16 }}>
-    //                     <Typography variant="semiBoldTxtmd">No results found</Typography>
-    //                 </View>
-    //             </BackgroundPattern>
-    //         </>
-    //     );
-    // }
+
     if (isTabLoading || (loading && jobsList.length === 0)) {
         return (
             <>
-                {/* Tabs */}
                 <View style={styles.tabContainer}>
                     <SlideAnimatedTab
                         tabs={tabs}
@@ -97,14 +280,13 @@ const JobCardList: React.FC<JobCardListProps> = ({
                     <View style={styles.bottomBorder} />
                 </View>
 
-                {/* Shimmer List */}
                 <View style={{ paddingHorizontal: 16, paddingVertical: 20 }}>
                     <FlatList
                         data={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]}
                         keyExtractor={(item) => String(item)}
                         renderItem={() => renderShimmerCard()}
                         numColumns={isTablet ? 2 : 1}
-                        key={isTablet ? "tablet-shimmer-2" : "mobile-shimmer-1"} // ✅ important
+                        key={isTablet ? "tablet-shimmer-2" : "mobile-shimmer-1"}
                         columnWrapperStyle={isTablet ? { justifyContent: "space-between" } : undefined}
                         contentContainerStyle={{ gap: 12 }}
                         showsVerticalScrollIndicator={false}
@@ -115,77 +297,17 @@ const JobCardList: React.FC<JobCardListProps> = ({
     }
 
     const renderItem = ({ item }: { item: Job }) => (
-        <View style={styles.card}>
-            <Pressable onPress={() => onJobPress(item.id)}>
-                <View style={styles.rowBetween}>
-                    <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between' }}>
-                        <Typography variant="semiBoldTxtmd">{item.title ?? ""}</Typography>
-                        <SvgXml xml={horizontalThreedotIcon} height={20} width={20} />
-                    </View>
-                </View>
-
-                <View style={styles.row}>
-                    <Typography variant="regularTxtsm" color={colors.gray[500]}>
-                        Open until : {""}
-                    </Typography>
-                    <Typography variant="mediumTxtsm" color={colors.gray[600]}>
-                        {formatMonDDYYYY(item.close_date ?? 0)}
-                    </Typography>
-                </View>
-                <TouchableOpacity onPress={() => onToggleFavourite(item.id)}   style={{ alignSelf: "flex-end" }}>
-                  <SvgXml
-                    xml={heartIcon}
-                    height={20}
-                    width={20}
-                    color={
-                      favouriteJobIds?.includes?.(item.id)
-                        ? colors.warning[400]
-                        : colors.gray[300]
-                    }
-                    fill={
-                      favouriteJobIds?.includes?.(item.id)
-                        ? colors.warning[400]
-                        : colors.gray[300]
-                    }
-                  />
-                </TouchableOpacity>
-                <View style={{ marginVertical: 4 }}>
-                    <Divider
-                        height={1.2}
-                        marginVertical={8}
-                        color={colors.mainColors.borderColor}
-                    />
-                </View>
-
-
-                <View style={styles.rowBetween}>
-                    <View style={{ flexDirection: "row", gap: 12 }}>
-                        <View style={{ flexDirection: "row", gap: 4 }}>
-                            <SvgXml xml={eyeVisibleIcon} width={20} height={20} />
-                            <Typography variant="mediumTxtsm" color={colors.gray[600]}>
-                                {item.views_count ?? ""}
-                            </Typography>
-                        </View>
-
-                        <View style={{ flexDirection: "row", gap: 4 }}>
-                            <SvgXml xml={userApplicationIcon} width={20} height={20} />
-                            <Typography variant="mediumTxtsm" color={colors.gray[600]}>
-                                {item.applicants_count ?? ""}
-                            </Typography>
-                        </View>
-                    </View>
-
-                    <Typography variant="regularTxtsm" color={colors.gray[500]}>
-                        {item.owner?.name ?? ""}
-                    </Typography>
-                </View>
-            </Pressable>
-        </View>
+        <JobCardRow
+            item={item}
+            cardStyles={styles}
+            onJobPress={onJobPress}
+            favouriteJobIds={favouriteJobIds}
+            onToggleFavourite={onToggleFavourite}
+        />
     );
 
     return (
         <>
-            {/* Tabs */}
             <View style={styles.tabContainer}>
                 <SlideAnimatedTab
                     counts={{
@@ -199,37 +321,7 @@ const JobCardList: React.FC<JobCardListProps> = ({
                 />
                 <View style={styles.bottomBorder} />
             </View>
-            {/* {!loading && !isTabLoading && jobsList.length === 0 && (
-                <BackgroundPattern bgStyle={{
-                    height: '100%',
-                    width: '100%',
-                    top: 90,
-                }}>
-                    <View
-                        style={{
-                            flex: 1,
-                            alignItems: "center",
-                            justifyContent: "center",
-                            paddingHorizontal: 16,
-                            zIndex: 999
-                        }}
-                    >
-                        <Typography variant="semiBoldTxtmd">
-                            No results found
-                        </Typography>
 
-                        <Typography
-                            variant="regularTxtsm"
-                            color={colors.gray[500]}
-                            style={{ marginTop: 6, textAlign: "center" }}
-                        >
-                            Try adjusting your search or filters
-                        </Typography>
-                    </View>
-                </BackgroundPattern>
-            )} */}
-
-            {/* Job List */}
             <FlatList
                 data={jobsList}
                 keyExtractor={(item) => item.id}
@@ -238,7 +330,7 @@ const JobCardList: React.FC<JobCardListProps> = ({
                     paddingHorizontal: 16,
                     paddingVertical: 16,
                     gap: 12,
-                    flexGrow: 1, // 👈 VERY IMPORTANT for centering
+                    flexGrow: 1,
                 }}
                 initialNumToRender={10}
                 maxToRenderPerBatch={10}
@@ -247,53 +339,46 @@ const JobCardList: React.FC<JobCardListProps> = ({
                 onEndReached={onLoadMore}
                 onEndReachedThreshold={0.5}
                 numColumns={isTablet ? 2 : 1}
-
                 ListEmptyComponent={
                     !loading && !isTabLoading ? (
-                        <BackgroundPattern bgStyle={{
-                            height: '100%',
-                            width: '100%',
-                            top: -90,
-                            //zIndex: 10
-                        }}>
-                            <View style={{ flex: 1, alignSelf: 'center', alignContent: 'center', justifyContent: "center", }}>
+                        <BackgroundPattern
+                            bgStyle={{
+                                height: "100%",
+                                width: "100%",
+                                top: -90,
+                            }}
+                        >
+                            <View
+                                style={{
+                                    flex: 1,
+                                    alignSelf: "center",
+                                    alignContent: "center",
+                                    justifyContent: "center",
+                                }}
+                            >
                                 <View
                                     style={{
-                                        alignItems: 'center',
+                                        alignItems: "center",
                                         paddingHorizontal: 16,
                                         zIndex: 10,
                                         marginBottom: 10,
                                     }}
                                 >
-                                    <SvgXml xml={Illustrations} style={{ zIndex: -1, }} />
-                                    <Typography variant="semiBoldTxtmd">
-                                        No results found
-                                    </Typography>
+                                    <SvgXml xml={Illustrations} style={{ zIndex: -1 }} />
+                                    <Typography variant="semiBoldTxtmd">No results found</Typography>
 
                                     <Typography
                                         variant="regularTxtsm"
                                         color={colors.gray[500]}
-                                        style={{ textAlign: 'center' }}
+                                        style={{ textAlign: "center" }}
                                     >
                                         Try adjusting your search or filters
                                     </Typography>
                                 </View>
-                                {/* <Button
-                                    buttonColor={colors.mainColors.slateBlue}
-                                    textColor={colors.common.white}
-                                    borderColor={colors.mainColors.borderColor}
-                                    borderRadius={8}
-                                    borderWidth={1}
-                                    size={'Medium'}
-                                    onPress={() => { }}
-                                >
-                                    Add new job
-                                </Button> */}
                             </View>
-                        </BackgroundPattern >
+                        </BackgroundPattern>
                     ) : null
                 }
-
                 ListFooterComponent={
                     loading && jobsList.length > 0 ? (
                         <View style={{ paddingHorizontal: 16, paddingVertical: 10 }}>

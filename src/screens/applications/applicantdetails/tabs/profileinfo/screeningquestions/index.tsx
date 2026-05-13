@@ -58,14 +58,37 @@ const ScreeningQuestions = () => {
   >({});
 
   /* ------------------ FORMAT DATA ------------------ */
+  // API shape can vary:
+  // - Old: { type, question: { text }, text, audio_file }
+  // - New: { response_type, question_text, text_answer, audio_url }
   const formattedData =
-    screeningResponses?.map((item: any, idx: number) => ({
-      id: idx + 1,
-      type: item?.type, // 'audio' | 'text'
-      question: item?.question?.text,
-      textAnswer: item?.text,
-      audioUrl: item?.audio_file,
-    })) ?? [];
+    (screeningResponses ?? []).map((item: any, idx: number) => {
+      const type: 'audio' | 'text' =
+        (item?.response_type ?? item?.type) === 'audio' ? 'audio' : 'text';
+
+      const question =
+        item?.question_text ??
+        item?.question?.text ??
+        '';
+
+      const textAnswer =
+        item?.text_answer ??
+        item?.text ??
+        '';
+
+      const audioUrl =
+        item?.audio_url ??
+        item?.audio_file ??
+        undefined;
+
+      return {
+        id: idx + 1,
+        type,
+        question,
+        textAnswer,
+        audioUrl,
+      };
+    });
 
   const tabs: Array<'All' | 'Audio' | 'Text'> = ['All', 'Audio', 'Text'];
 
@@ -316,7 +339,7 @@ const ScreeningQuestions = () => {
                   >
                     <SvgXml
                       xml={
-                        playingId === item.id ? playIcon : pauseIcon
+                        playingId === item.id ? playIcon:pauseIcon
                       }
                       width={24}
                       height={24}

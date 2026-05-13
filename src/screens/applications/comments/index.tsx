@@ -1,17 +1,15 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
-  StyleSheet,
   View,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
   Pressable,
 } from 'react-native';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { colors } from '../../../theme/colors';
 import { Header } from '../../../components/organisms';
 import { goBack } from '../../../utils/navigationUtils';
-import { FloatingActionButton, ProfileAvatar, TextField, Typography } from '../../../components/atoms';
+import { FloatingActionButton, TextField, Typography } from '../../../components/atoms';
 import { sendButton } from '../../../assets/svg/send';
 import CustomSafeAreaView from '../../../components/atoms/customsafeareaview';
 import { useAppSelector } from '../../../hooks/useAppSelector';
@@ -19,7 +17,7 @@ import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { DropdownMenu } from '../../../components/molecules/dropdownmenu';
 import { deleteIcon } from '../../../assets/svg/deleteicon';
 import { editAvatarIcon } from '../../../assets/svg/editavatar';
-import { ConfirmModal, ThreeDotDropdown } from '../../../components';
+import { ConfirmModal } from '../../../components';
 import {
   selectSelectedApplication,
   selectApplicationReasonsList,
@@ -56,6 +54,8 @@ import { SvgXml } from 'react-native-svg';
 import { horizontalThreedotIcon } from '../../../assets/svg/horizontalthreedoticon';
 import { CommonDropdown } from '../../../components/organisms';
 import type { ReasonListItem } from '../../../features/applications/types';
+import { useStyles } from "./styles";
+import Shimmer from '../../../components/atoms/shimmer';
 
 /** Application reasons item (has reason[].note) */
 interface ApplicationReasonItem {
@@ -113,6 +113,7 @@ function toDisplayItem(
 }
 
 export default function CommentsScreen() {
+  const styles = useStyles();
   const dispatch = useAppDispatch();
   const route = useRoute<RouteProp<{ params: CommentsRouteParams }, 'params'>>();
   const application = useAppSelector(selectSelectedApplication);
@@ -283,18 +284,44 @@ export default function CommentsScreen() {
     closeReasonEditor();
   };
 
+  const renderCommentsShimmer = () => (
+    <View style={{ paddingVertical: 8 }}>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <View key={`comments-shimmer-${i}`} style={styles.card}>
+          <View style={styles.headerRow}>
+            <View style={styles.userRow}>
+              <Shimmer width={40} height={40} borderRadius={20} />
+              <View style={{ flex: 1, gap: 8, paddingTop: 2 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Shimmer width="38%" height={14} borderRadius={6} />
+                  <Shimmer width={52} height={16} borderRadius={8} />
+                </View>
+                <Shimmer width="68%" height={12} borderRadius={6} />
+                <Shimmer width="46%" height={12} borderRadius={6} />
+              </View>
+            </View>
+            <View style={styles.rightRow}>
+              <Shimmer width={18} height={18} borderRadius={9} />
+            </View>
+          </View>
+
+          <View style={{ marginTop: 10, gap: 8 }}>
+            <Shimmer width="92%" height={12} borderRadius={6} />
+            <Shimmer width="72%" height={12} borderRadius={6} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+
   return (
     <CustomSafeAreaView>
       <View style={styles.container}>
         <Header title="Comments" backNavigation onBack={goBack} />
 
         <View style={styles.content}>
-          <ScrollView>
-            {loading && (
-              <View style={styles.loadingWrap}>
-                <ActivityIndicator size="large" color={colors.brand[600]} />
-              </View>
-            )}
+          <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
+            {loading ? renderCommentsShimmer() : null}
             {!loading && showError && (
               <Typography variant="regularTxtsm" color={colors.gray[600]} style={styles.errorText}>
                 {error}
@@ -560,150 +587,3 @@ export default function CommentsScreen() {
     </CustomSafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.base.white,
-  },
-  content: {
-    flex: 1,
-    padding: 16,
-  },
-  loadingWrap: {
-    paddingVertical: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  errorText: {
-    padding: 16,
-  },
-  emptyText: {
-    padding: 16,
-    textAlign: 'center',
-  },
-  hintText: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-  },
-  card: {
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderColor: colors.gray[200],
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  userRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.gray[200],
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  tag: {
-   backgroundColor: colors.brand[25],
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-    borderColor:colors.brand[200],
-    borderWidth:1
-  },
-  rightRow: {
-    alignItems: 'flex-end',
-  },
-  menuDot: {
-    paddingTop: 4,
-  },
-  commentText: {
-    marginTop: 10,
-  },
-  reasonPillsWrap: {
-    marginTop: 10,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  reasonPill: {
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderColor: colors.brand[200],
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 2,
-    backgroundColor: colors.brand[50],
-  },
-  commentContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderTopWidth: 1,
-    borderColor: colors.gray[200],
-  },
-  buttonRow: {
-    paddingLeft: 5,
-  },
-  reasonEditPanel: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
-    borderTopWidth: 1,
-    borderColor: colors.gray[200],
-    gap: 12,
-    backgroundColor: colors.base.white,
-  },
-  reasonInlineEditor: {
-    marginTop: 12,
-    gap: 12,
-  },
-  categoryPillsWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 8,
-  },
-  categoryPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.gray[300],
-    backgroundColor: colors.base.white,
-  },
-  categoryPillSelected: {
-    backgroundColor: colors.brand[50],
-    borderColor: colors.brand[400],
-  },
-  reasonEditActions: {
-    flexDirection: 'row',
-    gap: 12,
-    justifyContent: 'flex-end',
-    marginTop: 4,
-  },
-  reasonEditCancel: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.gray[300],
-    backgroundColor: colors.base.white,
-  },
-  reasonEditSave: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: colors.brand[600],
-  },
-  reasonEditSaveDisabled: {
-    opacity: 0.55,
-  },
-});

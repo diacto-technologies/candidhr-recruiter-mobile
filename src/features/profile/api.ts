@@ -6,7 +6,7 @@ export const profileApi = {
   getProfile: async (): Promise<Profile> => {
     return apiClient.get(API_ENDPOINTS.PROFILE.GET);
   },
-  updateProfile: async (data: UpdateProfileRequest): Promise<{ profile: Profile }> => {
+  updateProfile: async (data: UpdateProfileRequest): Promise<Profile | { profile: Profile }> => {
     return apiClient.patch(API_ENDPOINTS.PROFILE.UPDATE, data);
   },
 

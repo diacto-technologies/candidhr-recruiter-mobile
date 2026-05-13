@@ -31,6 +31,9 @@ import {
   getResumeScreeningResponsesRequest,
   getResumeScreeningResponsesSuccess,
   getResumeScreeningResponsesFailure,
+  getResumeScreeningReportRequest,
+  getResumeScreeningReportSuccess,
+  getResumeScreeningReportFailure,
   getAssessmentLogsRequest,
   getAssessmentLogsSuccess,
   getAssessmentLogsFailure,
@@ -82,7 +85,7 @@ import {
   exportAssessmentReportFailure,
 } from "./slice";
 import { applicationsApi } from "./api";
-import { AssessmentDetailedReportApiResponse, AssessmentLog, AssessmentLogApiResponse, AssessmentReportApiResponse, ExportAssessmentReportRequest, GetApplicationResponsesParams, GetApplicationsParams, GetApplicationsSagaAction, PersonalityScreeningResponse, ResumeScreeningApiResponse, ScreeningAssessment, SessionReviewedResponse, UpdateApplicationShareRequest } from "./types";
+import { AssessmentDetailedReportApiResponse, AssessmentLog, AssessmentLogApiResponse, AssessmentReportApiResponse, ExportAssessmentReportRequest, GetApplicationResponsesParams, GetApplicationsParams, GetApplicationsSagaAction, PersonalityScreeningResponse, ResumeScreeningApiResponse, ResumeScreeningReportApiResponse, ScreeningAssessment, SessionReviewedResponse, UpdateApplicationShareRequest } from "./types";
 import { getAssessmentDetailedReportRequestAction, getAssessmentReportRequestAction, getApplicationDetailRequestAction, getApplicationStagesRequestAction, getApplicationReasonsListRequestAction } from "./actions";
 import { showToastMessage } from "../../utils/toast";
 import { selectProfile } from "../profile/selectors";
@@ -119,6 +122,7 @@ function* getApplicationsWorker(
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : "Something went wrong";
+    console.log("Something went wrongSomething went wrong")
     yield put(getApplicationsFailure(message));
   }
 }
@@ -316,6 +320,7 @@ function* getApplicationDetailWorker(action: { type: string; payload: string }):
     console.log(response, "getApplicationDetailWorkergetApplicationDetailWorker")
     yield put(getApplicationDetailSuccess(response));
   } catch (error: any) {
+    console.log(error.message,"error.message");
     yield put(getApplicationDetailFailure(error.message || "Failed to fetch application details"));
   }
 }
@@ -384,6 +389,34 @@ function* getResumeScreeningResponsesWorker(
     yield put(getResumeScreeningResponsesSuccess(res.results));
   } catch (err: any) {
     yield put(getResumeScreeningResponsesFailure(err.message));
+  }
+}
+
+function* getResumeScreeningReportWorker(
+  action: { type: string; payload: string }
+): Generator<any, void, any> {
+  const contentId = String(action.payload ?? "").trim();
+  if (!contentId) {
+    yield put(getResumeScreeningReportFailure("Missing resume screening content id"));
+    return;
+  }
+  try {
+    yield put(getResumeScreeningReportRequest(contentId));
+    const res: ResumeScreeningReportApiResponse = yield call(
+      applicationsApi.getResumeScreeningReport,
+      contentId
+    );
+    if (__DEV__) {
+      console.log("[getResumeScreeningReport] response", res);
+    }
+    console.log(res,"resres")
+    yield put(getResumeScreeningReportSuccess(res));
+  } catch (err: any) {
+    yield put(
+      getResumeScreeningReportFailure(
+        err?.message || "Failed to fetch resume screening report"
+      )
+    );
   }
 }
 
@@ -535,17 +568,13 @@ function* getAssessmentOptionsReportWorker(
 ): Generator<any, void, any> {
   try {
     const { application_id, page = 1 } = action.payload;
-
-    // sets loading=true and resets when needed (page=1 or application changes)
     yield put(getAssessmentOptionsReportRequest({ application_id, page }));
-
     const res: AssessmentOptionsReportResponse = yield call(
       applicationsApi.getAssessmentOptionsReport,
       application_id,
       page
     );
     console.log(res,"getAssessmentOptionsReportWorkergetAssessmentOptionsReportWorker")
-
     yield put(
       getAssessmentOptionsReportSuccess({
         application_id,
@@ -713,12 +742,14 @@ function* getPersonalityScreeningResponsesWorker(
 
     console.log(res, "getPersonalityScreeningResponsesWorker");
 
-    // 🔥 FIX: extract responses array properly
-    yield put(
-      getPersonalityScreeningResponsesSuccess(
-        Array.isArray(res?.responses) ? res.responses : []
-      )
-    );
+    const payload = Array.isArray(res)
+      ? { responses: res, ai_summary: null }
+      : {
+          responses: Array.isArray(res?.responses) ? res.responses : [],
+          ai_summary: res?.ai_summary ?? null,
+        };
+
+    yield put(getPersonalityScreeningResponsesSuccess(payload));
   } catch (err: any) {
     yield put(
       getPersonalityScreeningResponsesFailure(
@@ -1038,6 +1069,7 @@ export function* applicationsSaga() {
   yield takeLatest(APPLICATIONS_ACTION_TYPES.UPDATE_APPLICATION_STATUS_REQUEST, updateApplicationStatusWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_APPLICATION_RESPONSES_REQUEST, getApplicationResponsesWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_RESUME_SCREENING_REQUEST, getResumeScreeningResponsesWorker);
+  yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_RESUME_SCREENING_REPORT_REQUEST, getResumeScreeningReportWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_ASSESSMENT_LOGS_REQUEST, getAssessmentLogsWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_ASSESSMENT_LOGS_BATCH_REQUEST, getAssessmentLogsBatchWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_ASSESSMENT_REPORT_REQUEST, getAssessmentReportWorker);

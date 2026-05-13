@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { useAppSelector } from "../../../../../../hooks/useAppSelector";
 import { selectApplicationsDetailLoading, selectSelectedApplication } from "../../../../../../features/applications/selectors";
 import Shimmer from "../../../../../../components/atoms/shimmer";
@@ -14,8 +14,12 @@ import { colors } from "../../../../../../theme/colors";
 import { walletIcon } from "../../../../../../assets/svg/wallet";
 import { currencyRuppeIcon } from "../../../../../../assets/svg/currencyruppe";
 import { calenderIcon } from "../../../../../../assets/svg/calender";
-import { shadowStyles } from "../../../../../../theme/shadowcolor";
+import { useStyles } from "./styles";
+import { ApplicationContext, OverviewApplication } from "./overView";
+const fallbackContext: ApplicationContext = {};
+
 const OverviewCardShimmer = () => {
+  const styles = useStyles();
   return (
     <View style={styles.card}>
       <Shimmer height={20} width="40%" />
@@ -36,11 +40,70 @@ const OverviewCardShimmer = () => {
 };
 
 const OverviewCard = () => {
-  const application = useAppSelector(selectSelectedApplication);
+  const styles = useStyles();
+  const application = useAppSelector(selectSelectedApplication) as OverviewApplication | null;
   const loading = useAppSelector(selectApplicationsDetailLoading);
   if (loading) {
     return <OverviewCardShimmer />;
   }
+
+  // API payloads can have `applicant` (list/filter API) or `candidate` (detail API).
+  const person = application?.applicant ?? application?.candidate;
+  const ctx = application?.application_context ?? fallbackContext;
+
+  const data = {
+    contact: String(person?.contact ?? ""),
+    email: String(person?.email ?? ""),
+    introductionVideo:
+      person?.introduction_video ??
+      application?.resume?.introduction_video ??
+      "",
+    currentCtc:
+      ctx?.current_ctc ?? application?.current_ctc ?? 0,
+    expectedCtc:
+      ctx?.expected_ctc ?? application?.expected_ctc ?? 0,
+    noticePeriodMonths:
+      ctx?.notice_period_in_months ??
+      person?.notice_period_in_months ??
+      0,
+    relevantExpMonths:
+      ctx?.relevant_experience_in_months ??
+      application?.resume?.relevant_experience_in_months ??
+      0,
+  };
+
+  const InfoRow = ({
+    icon,
+    title,
+    value,
+    copyText,
+  }: {
+    icon: string;
+    title: string;
+    value: string;
+    copyText?: string;
+  }) => (
+    <View style={styles.row}>
+      <View style={styles.iconBox}>
+        <SvgXml xml={icon} height={20} width={20} />
+      </View>
+
+      <View style={styles.textBox}>
+        <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>
+          {value || "Not provided"}
+        </Typography>
+        <Typography variant="regularTxtsm" color={colors.gray[600]}>
+          {title}
+        </Typography>
+      </View>
+
+      {!!copyText && (
+        <CopyText text={copyText} message={`${title} copied`}>
+          <SvgXml xml={copyIcon} height={20} width={20} />
+        </CopyText>
+      )}
+    </View>
+  );
 
   return (
     <View style={styles.card}>
@@ -48,50 +111,24 @@ const OverviewCard = () => {
       {/* Phone Number */}
       <View style={styles.videoBox}>
         <VideoPlayerBox
-          source={
-            application?.resume?.introduction_video
-              ? application.resume.introduction_video
-              : ""
-          }
+          source={data.introductionVideo}
         />
       </View>
       <View style={{ gap: 12 }}>
-        <View style={styles.row}>
-          <View style={styles.iconBox}>
-            <SvgXml xml={phoneIcon} height={20} width={20} />
-          </View>
-          <View style={styles.textBox}>
-            <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>{application?.candidate?.contact ?? "Not provided"}</Typography>
-            <Typography variant="regularTxtsm" color={colors.gray[600]}>
-              Phone number
-            </Typography>
-          </View>
-          {application?.candidate?.contact &&
-            <CopyText text={(application?.candidate?.contact ?? "").toString()} message="Number copied">
-              <SvgXml xml={copyIcon} height={20} width={20} />
-            </CopyText>
-          }
-        </View>
+        <InfoRow
+          icon={phoneIcon}
+          title="Phone number"
+          value={data.contact}
+          copyText={data.contact || undefined}
+        />
 
         {/* Email */}
-        <View style={styles.row}>
-          <View style={styles.iconBox}>
-            <SvgXml xml={emailIcon} height={20} width={20} />
-          </View>
-
-          <View style={styles.textBox}>
-            <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>{application?.candidate?.email ?? ""}</Typography>
-            <Typography variant="regularTxtsm" color={colors.gray[600]}>
-              Email address
-            </Typography>
-          </View>
-
-          {application?.candidate?.email &&
-            <CopyText text={application?.candidate?.email ?? ""} message="Email copied">
-              <SvgXml xml={copyIcon} height={20} width={20} />
-            </CopyText>
-          }
-        </View>
+        <InfoRow
+          icon={emailIcon}
+          title="Email address"
+          value={data.email}
+          copyText={data.email || undefined}
+        />
       </View>
       <View style={styles.divider} />
 
@@ -102,7 +139,9 @@ const OverviewCard = () => {
         </View>
 
         <View style={styles.textBox}>
-          <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>₹ {application?.current_ctc ?? "0"}</Typography>
+          <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>
+            ₹ {data.currentCtc || 0}
+          </Typography>
           <Typography variant="P2" color={colors.gray[600]}>
             Current salary
           </Typography>
@@ -116,7 +155,9 @@ const OverviewCard = () => {
         </View>
 
         <View style={styles.textBox}>
-          <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>₹ {application?.expected_ctc ?? "0"}</Typography>
+          <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>
+            ₹ {data.expectedCtc || 0}
+          </Typography>
           <Typography variant="regularTxtsm" color={colors.gray[600]}>
             Expected salary
           </Typography>
@@ -129,7 +170,9 @@ const OverviewCard = () => {
         </View>
 
         <View style={styles.textBox}>
-          <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>{application?.candidate?.notice_period_in_months ?? 0} days</Typography>
+          <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>
+            {data.noticePeriodMonths || 0} months
+          </Typography>
           <Typography variant="regularTxtsm" color={colors.gray[600]}>
             Notice period
           </Typography>
@@ -141,7 +184,9 @@ const OverviewCard = () => {
         </View>
 
         <View style={styles.textBox}>
-          <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>{application?.resume?.relevant_experience_in_months ?? 0} months</Typography>
+          <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>
+            {data.relevantExpMonths || 0} months
+          </Typography>
           <Typography variant="regularTxtsm" color={colors.gray[600]}>
             Relevant Experience
           </Typography>
@@ -152,80 +197,3 @@ const OverviewCard = () => {
 };
 
 export default OverviewCard;
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.common.white,
-    borderRadius: 12,
-    borderWidth: 0.5,
-    borderColor: colors.gray[200],
-    gap: 16,
-    padding: 16,
-    // shadowColor: '#0A0D12',
-    // shadowOffset: { width: 0, height: 1 },
-    // shadowOpacity: 0.05,
-    // shadowRadius: 3,
-    // elevation: 1,
-    ...shadowStyles.shadow_xs
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  iconBox: {
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    backgroundColor: colors.base.white,
-    borderColor: colors.gray[300],
-    justifyContent: "center",
-    alignItems: "center",
-    //shadowColor: '#000',
-    //shadowOffset: { width: 0, height: 1 },
-    //shadowOpacity: 0.1,
-    //shadowRadius: 2,
-    //elevation: 1,
-  },
-
-  textBox: {
-    flex: 1,
-    marginLeft: 14,
-  },
-
-  divider: {
-    height: 1,
-    backgroundColor: colors.gray[200],
-  },
-  videoBox: {
-    flex: 1,
-    width: "100%",
-    //height: 180,
-    borderRadius: 14,
-    //overflow: "hidden",
-    // position: "relative",
-  },
-  video: {
-    width: "100%",
-    height: "100%",
-  },
-  insetTop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 5,
-    backgroundColor: "rgba(10,13,18,0.05)",
-    zIndex: 1,
-  },
-
-  insetBottom: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 6,
-    backgroundColor: "rgba(10,13,18,0.04)",
-    zIndex: 1,
-  },
-
-});

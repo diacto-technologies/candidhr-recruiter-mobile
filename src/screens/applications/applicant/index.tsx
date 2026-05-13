@@ -23,12 +23,15 @@ import BackgroundPattern from '../../../components/atoms/backgroundpattern';
 import { Illustrations } from '../../../assets/svg/illustrations';
 import { SvgXml } from 'react-native-svg';
 import { screenHeight } from '../../../utils/devicelayout';
+import { PERMISSIONS } from '../../../utils/permission.constants';
+import { usePermission } from '../../../hooks/usePermission';
 
 const SKELETON_ROWS = 20;
 
 type RowItem = Application | { __skeleton: true; __id: string };
 
 const ApplicantScreen = () => {
+  const { can } = usePermission();
   const [filterSheet, setFilterSheet] = useState(false);
   const [selectedTab, setSelectedTab] = useState('Name');
   const [openSearch, setOpenSearch] = useState(false);
@@ -53,12 +56,12 @@ const ApplicantScreen = () => {
 
   function useDebouncedValue<T>(value: T, delay = 400): T {
     const [debounced, setDebounced] = useState(value);
-  
+
     useEffect(() => {
       const timer = setTimeout(() => setDebounced(value), delay);
       return () => clearTimeout(timer);
     }, [value, delay]);
-  
+
     return debounced;
   }
 
@@ -76,16 +79,16 @@ const ApplicantScreen = () => {
       if (filters.sort) params.sort = filters.sort;
       if (filters.latestStageStatus)
         params.latestStageStatus = filters.latestStageStatus;
-  
+
       if (filters.source)
         params.source = filters.source;
-  
+
       if (filters.status)
         params.status = filters.status;
-  
+
       if (filters.latestStageName)
         params.latestStageName = filters.latestStageName;
-  
+
       return params;
     },
     [
@@ -101,14 +104,14 @@ const ApplicantScreen = () => {
       pagination.limit,
     ]
   );
-  
+
   useFocusEffect(
     useCallback(() => {
       dispatch(getApplicationsRequestAction(getApiParams(1)));
     }, [dispatch, getApiParams])
   );
-  
-  
+
+
 
   // // Refetch when filters or sort change (permanent fix - no setTimeout)
   // useEffect(() => {
@@ -200,7 +203,7 @@ const ApplicantScreen = () => {
       <CustomSafeAreaView>
         <Header
           title="Applicants"
-          threedot
+          threedot={can(PERMISSIONS.EXPORT_APPLICATIONS)}
           onThreeDotPress={() => setThreeDotOpen(true)}
         />
         {/* {!loading && applications.length === 0 && (
@@ -336,7 +339,7 @@ const ApplicantScreen = () => {
         onClose={() => setFilterSheet(false)}
         onClearAll={() => handleClearAllFilters()}
         title="Filter by"
-        showHeadline hight={screenHeight* 0.8}      >
+        showHeadline hight={screenHeight * 0.8}      >
         <FilterSheetContent
           onCancel={() => setFilterSheet(false)}
           onApply={() => handleApplyFilters()}

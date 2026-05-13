@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   ScrollView,
@@ -29,6 +29,7 @@ import { useStyles } from "./styles";
 import { SvgXml } from "react-native-svg";
 import { arrowDown } from "../../../../../../assets/svg/arrowdown";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import ProgressBar from "react-native-paper";
 
 type AssessmentCard = {
   id: string;
@@ -42,22 +43,12 @@ interface Props {
   style?: ViewStyle;
 }
 
-type TabType = "QUESTIONS" | "CODING";
-
 const formatDifficulty = (difficulty?: string) => {
   if (!difficulty) return "Easy";
   return (difficulty.charAt(0).toUpperCase() + difficulty.slice(1)) as
     | "Easy"
     | "Medium"
     | "Hard";
-};
-
-const getTabForReport = (report: any): TabType => {
-  const questions: any[] = report?.question_analysis?.questions ?? [];
-  const hasNonCoding = questions.some((q) => q?.question_type !== "coding");
-  const hasCoding = questions.some((q) => q?.question_type === "coding");
-  if (!hasNonCoding && hasCoding) return "CODING";
-  return "QUESTIONS";
 };
 
 const isAcceptedStatus = (status: any) => {
@@ -192,7 +183,6 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
   /** Below this width, stack metrics in one column so pairs don’t squeeze or clip. */
   const isCompactMetrics = windowWidth < 420;
   const dispatch = useAppDispatch();
-  const [activeTab, setActiveTab] = useState<TabType>("QUESTIONS");
   const [expandedAI, setExpandedAI] = useState<string | null>(null);
   const [snapshotModalVisible, setSnapshotModalVisible] = useState(false);
   const [selectedSnapshot, setSelectedSnapshot] = useState<string | null>(null);
@@ -225,8 +215,8 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
   const overallConsideredApi = (overall as any)?.questions_considered;
   const aggregateConsideredKpi =
     overallConsideredApi !== undefined &&
-    overallConsideredApi !== null &&
-    Number.isFinite(Number(overallConsideredApi))
+      overallConsideredApi !== null &&
+      Number.isFinite(Number(overallConsideredApi))
       ? `${Number(overallConsideredApi)} / ${overallTotalQuestions}`
       : hasConsideredFromSections && overallTotalQuestions > 0
         ? `${sumQuestionsConsideredSections} / ${overallTotalQuestions}`
@@ -242,11 +232,6 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
     if (!assessmentLogId) return;
     dispatch(getPerformanceReportRequestAction(assessmentLogId));
   }, [assessmentLogId, dispatch]);
-
-  useEffect(() => {
-    if (!performanceReport) return;
-    setActiveTab(getTabForReport(performanceReport));
-  }, [performanceReport]);
 
   if (shouldShowEmptyState) {
     return (
@@ -348,14 +333,14 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
     <View style={[styles.container, style]}>
       <View
         style={{
-          flexDirection: isNarrowHeader ? "column" : "row",
-          alignItems: isNarrowHeader ? "stretch" : "center",
+          flexDirection: "row",
+          alignItems: "center",
           justifyContent: "space-between",
-          gap: isNarrowHeader ? 12 : 8,
+          gap: 4,
           width: "100%",
         }}
       >
-        <View style={{ flex: isNarrowHeader ? undefined : 1, minWidth: 0 }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
           <Typography variant="semiBoldTxtlg" color={colors.gray[900]}>
             Assessments
           </Typography>
@@ -364,12 +349,12 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
           style={{
             flexDirection: "row",
             flexWrap: "wrap",
-            gap: 10,
+            gap: 8,
             alignItems: "center",
             justifyContent: isNarrowHeader ? "flex-start" : "flex-end",
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
             <View
               style={{
                 width: 8,
@@ -386,7 +371,7 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
             </Typography>
           </View>
 
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
             <View
               style={{
                 width: 8,
@@ -533,8 +518,8 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
                 style={[
                   styles.statTile,
                   {
-                    backgroundColor: colors.Rose[25],
-                    borderColor: colors.Rose[200],
+                    backgroundColor: colors.gray[50],
+                    borderColor: colors.gray[200],
                   },
                 ]}
               >
@@ -727,23 +712,23 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
                           </View>
                         )}
                       </View>
-
-                      <Typography
+                    </View>
+                       <Typography
                         variant="semiBoldTxtlg"
                         color={colors.gray[900]}
                         style={{ flexShrink: 0, minWidth: 56, textAlign: "right" }}
                       >
                         {formatSectionPercent(pct)}
                       </Typography>
-                    </View>
-
                     <View
                       style={{
+                        flex:1,
+                        flexDirection: 'row',
                         marginTop: 10,
-                        height: 4,
+                        height: 6,
                         width: "100%",
                         backgroundColor: colors.gray[100],
-                        borderRadius: 2,
+                        borderRadius: 999,
                         overflow: "hidden",
                       }}
                     >
@@ -751,11 +736,13 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
                         style={{
                           height: "100%",
                           borderRadius: 2,
-                          backgroundColor: colors.error[500],
+                          backgroundColor: colors.brand[500],
                           width: `${Math.min(100, Math.max(0, pct))}%`,
                         }}
                       />
                     </View>
+                    <View>
+                  </View>
                   </View>
                 );
               })
@@ -764,8 +751,8 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
         </View>
       )}
 
-      {/* ---------- QUESTIONS TAB (Non-coding) ---------- */}
-      {activeTab === "QUESTIONS" && hasQuestions && (
+      {/* ---------- Non-coding questions ---------- */}
+      {hasQuestions && (
         <ScrollView nestedScrollEnabled>
           {questions
             .filter((q) => q?.question_type !== "coding")
@@ -880,25 +867,25 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
 
                                 const isProvided = providedSet.has(idNum);
                                 const isCorrectOpt = correctSet.has(idNum);
-                                const isFullyCorrect =
-                                  providedSet.size === correctSet.size &&
-                                  [...providedSet].every((id) => correctSet.has(id));
-                                const isSelectedCorrect = isFullyCorrect && isProvided && isCorrectOpt;
-                                const isSelectedWrong = isProvided && (!isCorrectOpt || !isFullyCorrect);
+                                /** Per choice: only wrong selections use error color; correct picks stay success. */
+                                const isSelectedCorrectPick =
+                                  isProvided && isCorrectOpt;
+                                const isSelectedWrongPick =
+                                  isProvided && !isCorrectOpt;
 
-                                const backgroundColor = isSelectedCorrect
+                                const backgroundColor = isSelectedCorrectPick
                                   ? colors.success[50]
-                                  : isSelectedWrong
+                                  : isSelectedWrongPick
                                     ? colors.error[50]
                                     : colors.common.white;
-                                const borderColor = isSelectedCorrect
+                                const borderColor = isSelectedCorrectPick
                                   ? colors.success[200]
-                                  : isSelectedWrong
+                                  : isSelectedWrongPick
                                     ? colors.error[200]
                                     : colors.gray[200];
-                                const color = isSelectedCorrect
+                                const color = isSelectedCorrectPick
                                   ? colors.success[700]
-                                  : isSelectedWrong
+                                  : isSelectedWrongPick
                                     ? colors.error[700]
                                     : colors.gray[700];
 
@@ -1272,9 +1259,9 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
         </ScrollView>
       )}
 
-      {/* ---------- CODING TAB ---------- */}
-      {activeTab === "CODING" && hasCoding && (
-        <View style={{ gap: 12 }}>
+      {/* ---------- Coding questions ---------- */}
+      {hasCoding && (
+        <View style={{ gap: 12, marginTop: hasQuestions ? 16 : 0 }}>
           {questions
             .filter((q) => q?.question_type === "coding")
             .map((q: any, index: number) => {

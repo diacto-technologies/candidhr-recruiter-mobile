@@ -1,13 +1,18 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ApplicationsState, Application, ApplicationsListResponse, ApplicationResponseItem, ResumeScreeningResponseItem, AssessmentLog, AssessmentReport, AssessmentDetailedReport, ScreeningAssessment, PersonalityScreeningResponse, ApplicationStage, ReasonCategory, ReasonListItem, PerformanceReportResponse, AssessmentOptionsReportResponse, AssessmentOption } from "./types";
+import { ApplicationsState, Application, ApplicationsListResponse, ApplicationResponseItem, ResumeScreeningResponseItem, ResumeScreeningReportApiResponse, AssessmentLog, AssessmentReport, AssessmentDetailedReport, ScreeningAssessment, PersonalityScreeningResponsesPayload, ApplicationStage, ReasonCategory, ReasonListItem, PerformanceReportResponse, AssessmentOptionsReportResponse, AssessmentOption } from "./types";
 
 const initialState: ApplicationsState = {
   applications: [],
   applicationResponses: [],
   resumeScreeningResponses: [],
+  resumeScreeningReport: null,
+  resumeScreeningReportContentId: null,
+  loadingResumeScreeningReport: false,
+  resumeScreeningReportError: null,
   assessmentLogs: [],
   personalityScreeningList: [],
   personalityScreeningResponses: [],
+  personalityScreeningAiSummary: null,
   reasonCategoryList: [],
   loadingReasonCategoryList: false,
   reasonCategoryListError: null,
@@ -141,6 +146,9 @@ const applicationsSlice = createSlice({
     getApplicationDetailRequest: (state, _action: PayloadAction<string>) => {
       state.loadingApplicationDetail = true;
       state.error = null;
+      state.resumeScreeningReport = null;
+      state.resumeScreeningReportContentId = null;
+      state.resumeScreeningReportError = null;
     },
     getApplicationDetailSuccess: (state, action: PayloadAction<Application>) => {
       state.loadingApplicationDetail = false;
@@ -229,6 +237,31 @@ const applicationsSlice = createSlice({
       state.error = action.payload;
     },
 
+    getResumeScreeningReportRequest: (
+      state,
+      action: PayloadAction<string>
+    ) => {
+      state.loadingResumeScreeningReport = true;
+      state.resumeScreeningReportError = null;
+      state.resumeScreeningReportContentId = action.payload;
+    },
+    getResumeScreeningReportSuccess: (
+      state,
+      action: PayloadAction<ResumeScreeningReportApiResponse>
+    ) => {
+      state.loadingResumeScreeningReport = false;
+      state.resumeScreeningReport = action.payload;
+      state.resumeScreeningReportError = null;
+    },
+    getResumeScreeningReportFailure: (
+      state,
+      action: PayloadAction<string>
+    ) => {
+      state.loadingResumeScreeningReport = false;
+      state.resumeScreeningReport = null;
+      state.resumeScreeningReportError = action.payload;
+    },
+
     getAssessmentLogsRequest: (state) => {
       state.loadingAssessment = true;
       state.error = null;
@@ -240,6 +273,9 @@ const applicationsSlice = createSlice({
       state,
       action: PayloadAction<AssessmentLog[]>
     ) => {
+      if (__DEV__) {
+        console.log("[getAssessmentLogsSuccess] payload (logs stored in Redux)", action.payload);
+      }
       state.loadingAssessment = false;
       state.assessmentLogs = action.payload;
     },
@@ -387,6 +423,7 @@ const applicationsSlice = createSlice({
 
       if (action.payload.length === 0) {
         state.personalityScreeningResponses = [];
+        state.personalityScreeningAiSummary = null;
       }
     },
 
@@ -399,19 +436,23 @@ const applicationsSlice = createSlice({
       state.error = action.payload;
       state.personalityScreeningList = [];
       state.personalityScreeningResponses = [];
+      state.personalityScreeningAiSummary = null;
     },
 
     getPersonalityScreeningResponsesRequest: state => {
       state.loadingPersonality = true;
       state.error = null;
+      state.personalityScreeningResponses = [];
+      state.personalityScreeningAiSummary = null;
     },
 
     getPersonalityScreeningResponsesSuccess: (
       state,
-      action: PayloadAction<PersonalityScreeningResponse[]>
+      action: PayloadAction<PersonalityScreeningResponsesPayload>
     ) => {
       state.loadingPersonality = false;
-      state.personalityScreeningResponses = action.payload;
+      state.personalityScreeningResponses = action.payload.responses;
+      state.personalityScreeningAiSummary = action.payload.ai_summary;
     },
 
     getPersonalityScreeningResponsesFailure: (
@@ -421,6 +462,7 @@ const applicationsSlice = createSlice({
       state.loadingPersonality = false;
       state.error = action.payload;
       state.personalityScreeningResponses = [];
+      state.personalityScreeningAiSummary = null;
     },
 
     setApplicationsFilters: (state, action) => {
@@ -463,6 +505,7 @@ const applicationsSlice = createSlice({
     resetPersonalityScreeningState: (state) => {
       state.personalityScreeningList = [];
       state.personalityScreeningResponses = [];
+      state.personalityScreeningAiSummary = null;
       state.assessmentReport = null;
       state.assessmentDetailedReport = null;
       state.loadingPersonality = false;
@@ -723,6 +766,9 @@ export const {
   getResumeScreeningResponsesRequest,
   getResumeScreeningResponsesSuccess,
   getResumeScreeningResponsesFailure,
+  getResumeScreeningReportRequest,
+  getResumeScreeningReportSuccess,
+  getResumeScreeningReportFailure,
   getApplicationResponsesRequest,
   getApplicationResponsesSuccess,
   getApplicationResponsesFailure,

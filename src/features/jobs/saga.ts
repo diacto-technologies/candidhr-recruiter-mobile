@@ -21,6 +21,7 @@ import {
   getJobNameListFailure,
 } from "./slice";
 import { jobsApi } from "./api";
+import { showToastMessage } from "../../utils/toast";
 import { GetJobsRequestActionPayload } from "./actions";
 import { JobNamesListApiResponse, JobsListApiResponse } from "./types";
 import { PayloadAction } from "@reduxjs/toolkit";
@@ -129,10 +130,37 @@ function* createJobWorker(action: { type: string; payload: any }): Generator<any
 function* updateJobWorker(action: { type: string; payload: any }): Generator<any, void, any> {
   try {
     yield put(updateJobRequest(action.payload));
-    const response = yield call(jobsApi.updateJob, action.payload);
-    yield put(updateJobSuccess(response.job));
+    const job = yield call(jobsApi.updateJob, action.payload);
+    yield put(updateJobSuccess(job));
+    if (typeof action.payload?.published === "boolean") {
+      showToastMessage(
+        action.payload.published ? "Job published" : "Job unpublished",
+        "success"
+      );
+    }
   } catch (error: any) {
-    yield put(updateJobFailure(error.message || "Failed to update job"));
+    const message = error?.message || "Failed to update job";
+    yield put(updateJobFailure(message));
+    if (typeof action.payload?.published === "boolean") {
+      showToastMessage(message, "error");
+    }
+  }
+}
+
+function* updateJobShareWorker(action: {
+  type: string;
+  payload: { jobId: string; users_shared_with_ids: string[] };
+}): Generator<any, void, any> {
+  const { jobId, users_shared_with_ids } = action.payload;
+  try {
+    yield put(updateJobRequest({ id: jobId }));
+    const job = yield call(jobsApi.patchJobShare, jobId, users_shared_with_ids);
+    yield put(updateJobSuccess(job));
+    showToastMessage('Job sharing updated', 'success');
+  } catch (error: any) {
+    const message = error?.message || 'Failed to update job sharing';
+    yield put(updateJobFailure(message));
+    showToastMessage(message, 'error');
   }
 }
 
@@ -183,6 +211,7 @@ export function* jobsSaga() {
   yield takeLatest(JOBS_ACTION_TYPES.GET_JOB_DETAIL_REQUEST, getJobDetailWorker);
   yield takeLatest(JOBS_ACTION_TYPES.CREATE_JOB_REQUEST, createJobWorker);
   yield takeLatest(JOBS_ACTION_TYPES.UPDATE_JOB_REQUEST, updateJobWorker);
+  yield takeLatest(JOBS_ACTION_TYPES.UPDATE_JOB_SHARE_REQUEST, updateJobShareWorker);
   yield takeLatest(JOBS_ACTION_TYPES.DELETE_JOB_REQUEST, deleteJobWorker);
   yield takeLatest(JOBS_ACTION_TYPES.GET_JOB_NAME_LIST_REQUEST, getJobNameListWorker);
 }

@@ -1,45 +1,15 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { useAppSelector } from "../../../../../../hooks/useAppSelector";
-import { selectApplicationsDetailLoading, selectSelectedApplication } from "../../../../../../features/applications/selectors";
+import { selectApplicationsDetailLoading, selectResumeScreeningReport } from "../../../../../../features/applications/selectors";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { colors } from "../../../../../../theme/colors";
 import Shimmer from "../../../../../../components/atoms/shimmer";
 import Typography from "../../../../../../components/atoms/typography";
 import { formatMonDDYYYY } from "../../../../../../utils/dateformatter";
 import { shadowStyles } from "../../../../../../theme/shadowcolor";
+import type { ResumeScreeningReportApiResponse } from "../../../../../../features/applications/types";
 
-interface WorkItem {
-  title: string;
-  company: string;
-  start: string;
-  end: string;
-  description: string;
-  relevant?: boolean;
-}
-
-interface ProjectItem {
-  title: string;
-  description: string;
-}
-
-interface EducationItem {
-  title: string;
-  university: string;
-  start: string;
-  end: string;
-  percentage: string;
-}
-
-interface CertificateItem {
-  title: string;
-  issuer: string;
-  year: string;
-}
-
-interface Props {
-  work: WorkItem[];
-}
 export type RelevanceLevel = string;
 
 export const formatRelevance = (
@@ -54,7 +24,7 @@ export const formatRelevance = (
     low: "Low",
   };
 
-  return map[relevance];
+  return map[relevance] ?? relevance;
 };
 
 export const relevanceStyleMap: Record<
@@ -101,18 +71,42 @@ export const getRelevanceStyles = (
 
 const RELEVANCE_ORDER: RelevanceLevel[] = ["matched", "high", "medium", "low"];
 
-const sortByRelevance = <T extends { relevance?: RelevanceLevel }>(
+const tierIndex = (t?: RelevanceLevel) =>
+  t && RELEVANCE_ORDER.indexOf(t) >= 0
+    ? RELEVANCE_ORDER.indexOf(t)
+    : RELEVANCE_ORDER.length;
+
+/** Scorecard v3 uses `tier`; resume_details uses `relevance`. */
+const sortByTierOrRelevance = <
+  T extends { tier?: RelevanceLevel; relevance?: RelevanceLevel },
+>(
   items: T[]
 ): T[] =>
   [...(items ?? [])].sort((a, b) => {
-    const ai = a.relevance
-      ? RELEVANCE_ORDER.indexOf(a.relevance)
-      : RELEVANCE_ORDER.length;
-    const bi = b.relevance
-      ? RELEVANCE_ORDER.indexOf(b.relevance)
-      : RELEVANCE_ORDER.length;
-    return ai - bi;
+    const ta = a.tier ?? a.relevance;
+    const tb = b.tier ?? b.relevance;
+    return tierIndex(ta) - tierIndex(tb);
   });
+
+type ScorecardComponent = NonNullable<
+  NonNullable<
+    NonNullable<
+      ResumeScreeningReportApiResponse["attributes"]["scorecard_v3"]
+    >["components"]
+  >[number]
+>;
+
+function tieredItemsForKeys(
+  components: ScorecardComponent[] | undefined,
+  keys: readonly string[]
+) {
+  const list = components ?? [];
+  for (const k of keys) {
+    const found = list.find(c => c?.key === k);
+    if (found?.tiered_items?.length) return found.tiered_items;
+  }
+  return [];
+}
 
 const DetailedResumeShimmer = () => {
   return (
@@ -155,15 +149,36 @@ const EmptyState = ({ text }: { text: string }) => (
 );
 
 
+/** Snake_case dates from scorecard / resume_details. */
+const pickStartDate = (item: {
+  start_date?: string;
+  startDate?: string;
+}) => item.start_date ?? item.startDate;
+
+const pickEndDate = (item: { end_date?: string; endDate?: string }) =>
+  item.end_date ?? item.endDate;
+
+const pickTierLabel = (item: {
+  tier?: RelevanceLevel;
+  relevance?: RelevanceLevel;
+}) => item.tier ?? item.relevance;
+
 const DetailedResume = () => {
-  const application = useAppSelector(selectSelectedApplication);
+  const report = useAppSelector(selectResumeScreeningReport);
   const loading = useAppSelector(selectApplicationsDetailLoading);
 
   if (loading) {
     return <DetailedResumeShimmer />;
   }
 
-  const resume = application?.resume;
+  const components = report?.attributes?.scorecard_v3?.components ?? [];
+  const workExperience = tieredItemsForKeys(components, [
+    "experience",
+    "work_experience",
+  ]);
+  const projects = tieredItemsForKeys(components, ["projects"]);
+  const education = tieredItemsForKeys(components, ["education"]);
+  const certifications = tieredItemsForKeys(components, ["certifications"]);
 
   return (
     <View style={styles.card}>
@@ -171,65 +186,98 @@ const DetailedResume = () => {
         Detailed Resume
       </Typography>
 
-      {/* ================= WORK EXPERIENCE ================= */}
+      {/* ================= WORK EXPERIENCE (scorecard_v3 experience) ================= */}
       <View style={styles.sectionHeader}>
         <Typography variant="mediumTxtsm" color={colors.gray[600]}>
           WORK EXPERIENCE
         </Typography>
         <View style={styles.roundedConatiner}>
           <Typography variant="semiBoldTxtxs" color={colors.gray[600]}>
-            {resume?.work_experience?.length ?? 0}
+            {workExperience.length}
           </Typography>
         </View>
       </View>
 
-      {resume?.work_experience?.length ? (
-        sortByRelevance(resume.work_experience).map((item, index) => (
-          <View key={index} style={styles.block}>
-            <View style={styles.row}>
-              <View style={{ flex: 1 }}>
-                <Typography variant="semiBoldTxtmd" color={colors.gray[900]} numberOfLines={2}
-                  ellipsizeMode="tail">
-                  {item?.position ?? "_"}
-                </Typography>
-              </View>
-
-              {item?.relevance && (
-                <View
-                  style={[
-                    styles.relevantPill,
-                    {
-                      backgroundColor:
-                        getRelevanceStyles(item.relevance).backgroundColor,
-                      borderColor:
-                        getRelevanceStyles(item.relevance).borderColor,
-                    },
-                  ]}
-                >
+      {workExperience.length ? (
+        sortByTierOrRelevance(workExperience).map((item, index) => {
+          const tierLabel = pickTierLabel(item);
+          return (
+            <View key={index} style={styles.block}>
+              <View style={styles.row}>
+                <View style={{ flex: 1 }}>
                   <Typography
-                    variant="mediumTxtxs"
-                    color={getRelevanceStyles(item.relevance).textColor}
+                    variant="semiBoldTxtmd"
+                    color={colors.gray[900]}
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
                   >
-                    {formatRelevance(item.relevance)}
+                    {item?.title ?? item?.name ?? "_"}
                   </Typography>
                 </View>
-              )}
+
+                {tierLabel ? (
+                  <View
+                    style={[
+                      styles.relevantPill,
+                      {
+                        backgroundColor:
+                          getRelevanceStyles(tierLabel).backgroundColor,
+                        borderColor:
+                          getRelevanceStyles(tierLabel).borderColor,
+                      },
+                    ]}
+                  >
+                    <Typography
+                      variant="mediumTxtxs"
+                      color={getRelevanceStyles(tierLabel).textColor}
+                    >
+                      {formatRelevance(tierLabel)}
+                    </Typography>
+                  </View>
+                ) : null}
+              </View>
+
+              <Typography variant="mediumTxtsm" color={colors.gray[700]}>
+                {item?.company ?? "_"}
+              </Typography>
+
+              {/* <Typography variant="regularTxtsm" color={colors.gray[600]}>
+                {formatMonDDYYYY(pickStartDate(item), "MMM YYYY")} –{" "}
+                {formatMonDDYYYY(pickEndDate(item), "MMM YYYY")}
+              </Typography> */}
+
+              {item?.months != null ? (
+                <Typography variant="regularTxtsm" color={colors.gray[600]}>
+                  Duration: {item.months} months
+                </Typography>
+              ) : null}
+
+              {item?.technologies?.length ? (
+                <Typography variant="regularTxtsm" color={colors.gray[600]}>
+                  Tech: {item.technologies.join(", ")}
+                </Typography>
+              ) : null}
+
+              {item?.responsibilities?.length ? (
+                <View style={styles.bulletList}>
+                  {item.responsibilities.map((line, i) => (
+                    <Typography
+                      key={i}
+                      variant="regularTxtsm"
+                      color={colors.gray[600]}
+                    >
+                      • {line}
+                    </Typography>
+                  ))}
+                </View>
+              ) : item?.description ? (
+                <Typography variant="regularTxtsm" color={colors.gray[600]}>
+                  {item.description}
+                </Typography>
+              ) : null}
             </View>
-
-            <Typography variant="mediumTxtsm" color={colors.gray[700]}>
-              {item?.company ?? "_"}
-            </Typography>
-
-            <Typography variant="regularTxtsm" color={colors.gray[600]}>
-              {formatMonDDYYYY(item?.startDate, "MMM YYYY")} –{" "}
-              {formatMonDDYYYY(item?.endDate, "MMM YYYY")}
-            </Typography>
-
-            <Typography variant="regularTxtsm" color={colors.gray[600]}>
-              {item?.description ?? "-"}
-            </Typography>
-          </View>
-        ))
+          );
+        })
       ) : (
         <EmptyState text="No work experience found." />
       )}
@@ -241,49 +289,61 @@ const DetailedResume = () => {
         </Typography>
         <View style={styles.roundedConatiner}>
           <Typography variant="semiBoldTxtxs" color={colors.gray[600]}>
-            {resume?.projects?.length ?? 0}
+            {projects.length}
           </Typography>
         </View>
       </View>
 
-      {resume?.projects?.length ? (
-        sortByRelevance(resume.projects).map((item, index) => (
-          <View key={index} style={styles.block}>
-            <View style={styles.row}>
-              <View style={{flex:1}}>
-              <Typography variant="semiBoldTxtmd" color={colors.gray[900]} numberOfLines={3}
-                  ellipsizeMode="tail">
-                {index + 1}. {item?.name ?? "_"}
-              </Typography>
-              </View>
-
-              {item?.relevance && (
-                <View
-                  style={[
-                    styles.relevantPill,
-                    {
-                      backgroundColor:
-                        getRelevanceStyles(item.relevance).backgroundColor,
-                      borderColor:
-                        getRelevanceStyles(item.relevance).borderColor,
-                    },
-                  ]}
-                >
+      {projects.length ? (
+        sortByTierOrRelevance(projects).map((item, index) => {
+          const tierLabel = pickTierLabel(item);
+          return (
+            <View key={index} style={styles.block}>
+              <View style={styles.row}>
+                <View style={{ flex: 1 }}>
                   <Typography
-                    variant="mediumTxtxs"
-                    color={getRelevanceStyles(item.relevance).textColor}
+                    variant="semiBoldTxtmd"
+                    color={colors.gray[900]}
+                    numberOfLines={3}
+                    ellipsizeMode="tail"
                   >
-                    {formatRelevance(item.relevance)}
+                    {index + 1}. {item?.name ?? "_"}
                   </Typography>
                 </View>
-              )}
-            </View>
 
-            <Typography variant="regularTxtsm" color={colors.gray[600]}>
-              {item?.description ?? "-"}
-            </Typography>
-          </View>
-        ))
+                {tierLabel ? (
+                  <View
+                    style={[
+                      styles.relevantPill,
+                      {
+                        backgroundColor:
+                          getRelevanceStyles(tierLabel).backgroundColor,
+                        borderColor:
+                          getRelevanceStyles(tierLabel).borderColor,
+                      },
+                    ]}
+                  >
+                    <Typography
+                      variant="mediumTxtxs"
+                      color={getRelevanceStyles(tierLabel).textColor}
+                    >
+                      {formatRelevance(tierLabel)}
+                    </Typography>
+                  </View>
+                ) : null}
+              </View>
+              <Typography variant="regularTxtsm" color={colors.gray[600]}>
+                {item?.description ?? "-"}
+              </Typography>
+
+              {item?.technologies?.length ? (
+                <Typography variant="regularTxtsm" color={colors.gray[600]}>
+                  Tech: {item.technologies.join(", ")}
+                </Typography>
+              ) : null}
+            </View>
+          );
+        })
       ) : (
         <EmptyState text="No project details found." />
       )}
@@ -294,60 +354,79 @@ const DetailedResume = () => {
           EDUCATION
         </Typography>
         <View style={styles.roundedConatiner}>
-          <Typography variant="semiBoldTxtxs" color={colors.gray[600]} numberOfLines={2}
-                  ellipsizeMode="tail">
-            {resume?.education?.length ?? 0}
+          <Typography
+            variant="semiBoldTxtxs"
+            color={colors.gray[600]}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+          >
+            {education.length}
           </Typography>
         </View>
       </View>
 
-      {resume?.education?.length ? (
-        sortByRelevance(resume.education).map((item, index) => (
-          <View key={index} style={styles.block}>
-            <View style={styles.row}>
-              <View style={{ flex: 1 }}>
-                <Typography variant="semiBoldTxtmd" color={colors.gray[900]} numberOfLines={3}
-                  ellipsizeMode="tail">
-                  {item?.school ?? "_"}
-                </Typography>
-              </View>
-
-              {item?.relevance && (
-                <View
-                  style={[
-                    styles.relevantPill,
-                    {
-                      backgroundColor:
-                        getRelevanceStyles(item.relevance).backgroundColor,
-                      borderColor:
-                        getRelevanceStyles(item.relevance).borderColor,
-                    },
-                  ]}
-                >
+      {education.length ? (
+        sortByTierOrRelevance(education).map((item, index) => {
+          const tierLabel = pickTierLabel(item);
+          const school =
+            item?.school ?? item?.institution ?? "_";
+          return (
+            <View key={index} style={styles.block}>
+              <View style={styles.row}>
+                <View style={{ flex: 1 }}>
                   <Typography
-                    variant="mediumTxtxs"
-                    color={getRelevanceStyles(item.relevance).textColor}
+                    variant="semiBoldTxtmd"
+                    color={colors.gray[900]}
+                    numberOfLines={3}
+                    ellipsizeMode="tail"
                   >
-                    {formatRelevance(item.relevance)}
+                  {item?.degree ?? "_"} 
                   </Typography>
                 </View>
-              )}
+
+                {tierLabel ? (
+                  <View
+                    style={[
+                      styles.relevantPill,
+                      {
+                        backgroundColor:
+                          getRelevanceStyles(tierLabel).backgroundColor,
+                        borderColor:
+                          getRelevanceStyles(tierLabel).borderColor,
+                      },
+                    ]}
+                  >
+                    <Typography
+                      variant="mediumTxtxs"
+                      color={getRelevanceStyles(tierLabel).textColor}
+                    >
+                      {formatRelevance(tierLabel)}
+                    </Typography>
+                  </View>
+                ) : null}
+              </View>
+
+              <Typography variant="mediumTxtsm" color={colors.gray[700]}>
+                {school ?? "_"}
+              </Typography>
+
+              {item?.field_of_study || item?.degree_type ? (
+                <Typography variant="regularTxtsm" color={colors.gray[600]}>
+                  {[item?.degree_type, item?.field_of_study]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </Typography>
+              ) : null}
+
+              {pickStartDate(item) || pickEndDate(item) ? (
+                <Typography variant="regularTxtsm" color={colors.gray[600]}>
+                  {formatMonDDYYYY(pickStartDate(item))} –{" "}
+                  {formatMonDDYYYY(pickEndDate(item))}
+                </Typography>
+              ) : null}
             </View>
-
-            <Typography variant="mediumTxtsm" color={colors.gray[700]}>
-              {item?.degree ?? "_"}
-            </Typography>
-
-            <Typography variant="regularTxtsm" color={colors.gray[600]}>
-              {formatMonDDYYYY(item?.startDate)} –{" "}
-              {formatMonDDYYYY(item?.endDate)}
-            </Typography>
-
-            <Typography variant="regularTxtsm" color={colors.gray[600]}>
-             Percentage: {item?.percent}%
-            </Typography>
-          </View>
-        ))
+          );
+        })
       ) : (
         <EmptyState text="No education details found." />
       )}
@@ -359,48 +438,61 @@ const DetailedResume = () => {
         </Typography>
         <View style={styles.roundedConatiner}>
           <Typography variant="semiBoldTxtxs" color={colors.gray[600]}>
-            {resume?.certifications?.length ?? 0}
+            {certifications.length}
           </Typography>
         </View>
       </View>
 
-      {resume?.certifications?.length ? (
-        sortByRelevance(resume.certifications).map((item, index) => (
-          <View key={index} style={styles.block}>
-            <View style={styles.row}>
-              <View style={{flex:1}}>
-                <Typography variant="semiBoldTxtmd" color={colors.gray[900]} numberOfLines={3} ellipsizeMode="tail">
-                  {item?.name ?? "_"}
-                </Typography>
+      {certifications.length ? (
+        sortByTierOrRelevance(certifications).map((item, index) => {
+          const tierLabel = pickTierLabel(item);
+          const issuerLine = [item?.issuer, item?.year != null ? String(item.year) : null]
+            .filter(Boolean)
+            .join(" · ");
+          return (
+            <View key={index} style={styles.block}>
+              <View style={styles.row}>
+                <View style={{ flex: 1 }}>
+                  <Typography
+                    variant="semiBoldTxtmd"
+                    color={colors.gray[900]}
+                    numberOfLines={3}
+                    ellipsizeMode="tail"
+                  >
+                    {item?.name ?? "_"}
+                  </Typography>
                 </View>
 
-                {item?.relevance && (
+                {tierLabel ? (
                   <View
                     style={[
                       styles.relevantPill,
                       {
                         backgroundColor:
-                          getRelevanceStyles(item.relevance).backgroundColor,
+                          getRelevanceStyles(tierLabel).backgroundColor,
                         borderColor:
-                          getRelevanceStyles(item.relevance).borderColor,
+                          getRelevanceStyles(tierLabel).borderColor,
                       },
                     ]}
                   >
                     <Typography
                       variant="mediumTxtxs"
-                      color={getRelevanceStyles(item.relevance).textColor}
+                      color={getRelevanceStyles(tierLabel).textColor}
                     >
-                      {formatRelevance(item.relevance)}
+                      {formatRelevance(tierLabel)}
                     </Typography>
                   </View>
-                )}
-            </View>
+                ) : null}
+              </View>
 
-            <Typography variant="mediumTxtsm" color={colors.gray[700]}>
-              {item?.description ?? "_"}
-            </Typography>
-          </View>
-        ))
+              {issuerLine ? (
+                <Typography variant="mediumTxtsm" color={colors.gray[700]}>
+                  {issuerLine}
+                </Typography>
+              ) : null}
+            </View>
+          );
+        })
       ) : (
         <EmptyState text="No certifications found." />
       )}
@@ -440,7 +532,12 @@ const styles = StyleSheet.create({
   },
 
   block: {
-    gap: 4
+    gap: 4,
+  },
+
+  bulletList: {
+    gap: 4,
+    marginTop: 2,
   },
 
   row: {

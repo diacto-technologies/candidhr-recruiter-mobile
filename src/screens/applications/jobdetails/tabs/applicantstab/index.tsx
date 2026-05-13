@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { View, FlatList, StyleSheet } from "react-native";
+import { View, FlatList, StyleSheet, TouchableOpacity } from "react-native";
 import { colors } from "../../../../../theme/colors";
 import { useAppDispatch } from "../../../../../hooks/useAppDispatch";
 import { useAppSelector } from "../../../../../hooks/useAppSelector";
@@ -12,7 +12,7 @@ import {
   selectApplicationsFilters,
 } from "../../../../../features/applications/selectors";
 
-import { getApplicationsRequestAction } from "../../../../../features/applications/actions";
+import { exportApplicationsRequestAction, getApplicationsRequestAction } from "../../../../../features/applications/actions";
 import { setApplicationsFilters } from "../../../../../features/applications/slice";
 import { Illustrations } from "../../../../../assets/svg/illustrations";
 import { SvgXml } from "react-native-svg";
@@ -25,11 +25,12 @@ import CustomSwitch from "../../../../../components/atoms/switchbutton";
 import { useStyles } from "./styles";
 
 const SKELETON_ROWS = 6;
+const AI_RECOMMENDATION_SORT = "-resume_score";
 
 const ApplicantsTab = () => {
   const styles = useStyles();
   const [aiEnabled, setAiEnabled] = useState(false);
-
+  
   const dispatch = useAppDispatch();
   const applications = useAppSelector(selectApplications);
   const loading = useAppSelector(selectApplicationsLoading);
@@ -44,7 +45,7 @@ const ApplicantsTab = () => {
     if (!jobId) return;
 
     const sortValue = aiEnabled
-      ? "-resume__resume_score__overall_score"
+      ? AI_RECOMMENDATION_SORT
       : (filters.sort || "-last_updated");
 
     dispatch(
@@ -57,6 +58,10 @@ const ApplicantsTab = () => {
         email: filters.email || "",
         jobTitle: filters.appliedFor || "",
         contact: filters.contact || "",
+        latestStageStatus: filters.latestStageStatus || undefined,
+        source: filters.source || undefined,
+        status: filters.status || undefined,
+        latestStageName: filters.latestStageName || undefined,
         sort: sortValue,
       })
     );
@@ -66,17 +71,21 @@ const ApplicantsTab = () => {
     filters.appliedFor,
     filters.contact,
     filters.sort,
+    filters.latestStageStatus,
+    filters.source,
+    filters.status,
+    filters.latestStageName,
     aiEnabled,
     jobId,
     pagination.limit,
   ]);
-  
+
   const handleLoadMore = useCallback(() => {
     if (loading || !hasMore) return;
 
     // Use AI sort if enabled, otherwise use Redux filters.sort
     const sortValue = aiEnabled
-      ? "-resume__resume_score__overall_score"
+      ? AI_RECOMMENDATION_SORT
       : (filters.sort || "-last_updated");
 
     dispatch(
@@ -86,10 +95,34 @@ const ApplicantsTab = () => {
         append: true,
         applicantName: filters.name.trim() || undefined,
         jobId,
-        sort: sortValue, // Use Redux filters.sort when AI is disabled
+        email: filters.email || "",
+        jobTitle: filters.appliedFor || "",
+        contact: filters.contact || "",
+        latestStageStatus: filters.latestStageStatus || undefined,
+        source: filters.source || undefined,
+        status: filters.status || undefined,
+        latestStageName: filters.latestStageName || undefined,
+        sort: sortValue,
       })
     );
-  }, [loading, hasMore, pagination.page, pagination.limit, filters.name, filters.sort, jobId, aiEnabled, dispatch]);
+  }, [
+    loading,
+    hasMore,
+    pagination.page,
+    pagination.limit,
+    filters.name,
+    filters.email,
+    filters.appliedFor,
+    filters.contact,
+    filters.sort,
+    filters.latestStageStatus,
+    filters.source,
+    filters.status,
+    filters.latestStageName,
+    jobId,
+    aiEnabled,
+    dispatch,
+  ]);
 
   const dataSource = useMemo(() => {
     if (loading && applications.length === 0) {
@@ -99,7 +132,7 @@ const ApplicantsTab = () => {
       }));
     }
     return applications;
-  }, [loading, applications, aiEnabled]);
+  }, [loading, applications]);
 
   return (
     <View style={{ flex: 1 }}>
@@ -113,11 +146,45 @@ const ApplicantsTab = () => {
           }
         />
 
-        <View style={styles.switchContainer}>
-          <CustomSwitch value={aiEnabled} onValueChange={setAiEnabled} />
-          <Typography variant="H4" color={colors.mainColors.carbonGray}>
-            AI recommendation
-          </Typography>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', }}>
+          <View style={styles.switchContainer}>
+            <CustomSwitch value={aiEnabled} onValueChange={setAiEnabled} />
+            <Typography variant="H4" color={colors.mainColors.carbonGray}>
+              AI recommendation
+            </Typography>
+          </View>
+          <TouchableOpacity
+            style={styles.switchContainer}
+            onPress={() => {
+              if (!jobId) return;
+              const sortValue = aiEnabled
+                ? AI_RECOMMENDATION_SORT
+                : (filters.sort || "-last_updated");
+
+              dispatch(
+                exportApplicationsRequestAction({
+                  mode: 'download',
+                  params: {
+                    page: 1,
+                    jobId,
+                    applicantName: filters.name.trim() || undefined,
+                    email: filters.email || "",
+                    jobTitle: filters.appliedFor || "",
+                    contact: filters.contact || "",
+                    latestStageStatus: filters.latestStageStatus || undefined,
+                    source: filters.source || undefined,
+                    status: filters.status || undefined,
+                    latestStageName: filters.latestStageName || undefined,
+                    sort: sortValue,
+                  },
+                })
+              );
+            }}
+          >
+            <Typography variant="H4" color={colors.brand[600]}>
+              + Export
+            </Typography>
+          </TouchableOpacity>
         </View>
       </View>
 

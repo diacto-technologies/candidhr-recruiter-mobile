@@ -95,7 +95,7 @@ const SkillScore = ({ title, overall, status, data, isloading }: Props) => {
       {/* Header */}
       <View style={styles.headerRow}>
         <Typography variant="semiBoldTxtlg">{title}</Typography>
-        <View
+        {/* <View
           style={[
             styles.statusPill,
             {
@@ -110,7 +110,7 @@ const SkillScore = ({ title, overall, status, data, isloading }: Props) => {
           >
             {status}
           </Typography>
-        </View>
+        </View> */}
       </View>
 
       {/* Gradient score bar */}

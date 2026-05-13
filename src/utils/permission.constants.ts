@@ -22,7 +22,7 @@ export const PERMISSIONS = {
   
     UPDATE_ORGANIZATION_DETAILS: 'update_organization_details',
   
-    VIEW_APPLICATION: 'view_application',
+    VIEW_APPLICATION: 'view_application_list',
     UPDATE_APPLICATION_STATUS: 'update_application_status',
     SHARE_APPLICATION: 'share_application',
     NOTIFY_APPLICANT: 'notify_applicant',

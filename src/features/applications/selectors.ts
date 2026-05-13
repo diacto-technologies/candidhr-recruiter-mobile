@@ -1,5 +1,30 @@
 import { createSelector } from "@reduxjs/toolkit";
 import { RootState } from "../../store";
+import type { ApplicationResponseItem } from "./types";
+
+/**
+ * `/application-responses/` sometimes returns multiple rows for the same criterion
+ * (e.g. re-submissions or duplicate joins). Collapse to one row per criterion for UI.
+ * Last occurrence wins so the latest answer is shown.
+ */
+function dedupeApplicationCriteriaResponses(
+  items: ApplicationResponseItem[]
+): ApplicationResponseItem[] {
+  if (!items?.length) return items;
+  const map = new Map<string, ApplicationResponseItem>();
+  for (const item of items) {
+    const criteriaId =
+      item?.criteria?.id != null && String(item.criteria.id).trim() !== ""
+        ? String(item.criteria.id).trim()
+        : "";
+    const qRaw = item?.criteria?.question;
+    const q =
+      typeof qRaw === "string" ? qRaw.trim().toLowerCase() : "";
+    const key = criteriaId || (q ? `q:${q}` : item.id);
+    map.set(key, item);
+  }
+  return Array.from(map.values());
+}
 
 const selectApplicationsState = (state: RootState) => state.applications;
 
@@ -13,6 +38,10 @@ export const selectSelectedApplication = createSelector(
   (applications) => applications.selectedApplication
 );
 
+export const selectSelectedApplicationError= createSelector(
+  [selectApplicationsState],
+  (applications) => applications.error
+)
 export const selectApplicationsLoading = createSelector(
   [selectApplicationsState],
   (applications) => applications.loading
@@ -55,12 +84,28 @@ export const selectApplicationsHasMore = createSelector(
 
 export const selectApplicationResponses = createSelector(
   [selectApplicationsState],
-  (state) => state.applicationResponses
+  (state) =>
+    dedupeApplicationCriteriaResponses(state.applicationResponses)
 );
 
 export const selectResumeScreeningResponses = createSelector(
   [selectApplicationsState],
   (state) => state.resumeScreeningResponses
+);
+
+export const selectResumeScreeningReport = createSelector(
+  [selectApplicationsState],
+  (state) => state.resumeScreeningReport
+);
+
+export const selectResumeScreeningReportLoading = createSelector(
+  [selectApplicationsState],
+  (state) => state.loadingResumeScreeningReport ?? false
+);
+
+export const selectResumeScreeningReportError = createSelector(
+  [selectApplicationsState],
+  (state) => state.resumeScreeningReportError ?? null
 );
 
 export const selectAssessmentLogs = createSelector(
@@ -97,6 +142,11 @@ export const selectAssessmentLoading = createSelector(
 export const selectPersonalityScreeningResponses = createSelector(
   [(state: RootState) => state.applications],
   state => state.personalityScreeningResponses
+);
+
+export const selectPersonalityScreeningAiSummary = createSelector(
+  [(state: RootState) => state.applications],
+  state => state.personalityScreeningAiSummary
 );
 
 

@@ -3,7 +3,7 @@ import { View, TouchableOpacity, Image, ScrollView, Dimensions } from 'react-nat
 import { SvgXml } from 'react-native-svg';
 import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
 import { getPersonalityScreeningListRequestAction, getPersonalityScreeningResponsesRequestAction, markSessionAsReviewedRequestAction } from '../../../../../features/applications/actions';
-import { selectApplicationStages, selectAssessmentLogs, selectMarkSessionReviewedLoading, selectPersonalityScreeningList, selectPersonalityScreeningLoading, selectPersonalityScreeningResponses, selectSelectedApplication } from '../../../../../features/applications/selectors';
+import { selectApplicationStages, selectAssessmentLogs, selectMarkSessionReviewedLoading, selectPersonalityScreeningAiSummary, selectPersonalityScreeningList, selectPersonalityScreeningLoading, selectPersonalityScreeningResponses, selectSelectedApplication } from '../../../../../features/applications/selectors';
 import { useAppSelector } from '../../../../../hooks/useAppSelector';
 import { useStyles } from "./styles";
 import Dropdown from '../../../../../components/organisms/dropdown';
@@ -62,6 +62,8 @@ export default function VideoInterview({
     );
   }, [assessmentLogs]);
   const responses = useAppSelector(selectPersonalityScreeningResponses);
+  /** Populated from GET screening responses `{ ai_summary, responses }` — not the list endpoint. */
+  const personalityAiSummary = useAppSelector(selectPersonalityScreeningAiSummary);
   const stages = useAppSelector(selectApplicationStages);
   const loadingMarkReviewed = useAppSelector(selectMarkSessionReviewedLoading);
 
@@ -77,16 +79,16 @@ export default function VideoInterview({
     return () => subscription?.remove();
   }, []);
 
-  useEffect(() => {
-    if (!applicant?.id || !applicant?.job?.id) return;
+  // useEffect(() => {
+  //   if (!applicant?.id || !applicant?.job?.id) return;
 
-    dispatch(
-      getPersonalityScreeningListRequestAction({
-        application_id: applicant?.id,
-        job_id: applicant?.job.id,
-      })
-    );
-  }, []);
+  //   dispatch(
+  //     getPersonalityScreeningListRequestAction({
+  //       application_id: applicant?.id,
+  //       job_id: applicant?.job.id,
+  //     })
+  //   );
+  // }, []);
 
   useEffect(() => {
     if (!sessionContentId) return;
@@ -103,14 +105,14 @@ export default function VideoInterview({
       return;
     }
     if (!isResponsesLoading) return;
-    if (responses?.length > 0) {
+    if (responses?.length > 0 || personalityAiSummary) {
       setIsResponsesLoading(false);
       return;
     }
     // Fallback to avoid shimmer being stuck if API returns empty array
     const timeout = setTimeout(() => setIsResponsesLoading(false), 4000);
     return () => clearTimeout(timeout);
-  }, [sessionContentId, isResponsesLoading, responses?.length]);
+  }, [sessionContentId, isResponsesLoading, responses?.length, personalityAiSummary]);
 
   useEffect(() => {
     if (!filteredVideoLogs?.length) {
@@ -170,19 +172,22 @@ export default function VideoInterview({
   const screening = useMemo(() => {
     if (!PersonalityScreeningList?.length || !sessionContentId) return null;
 
-    return PersonalityScreeningList.find(
-      item => item.id === sessionContentId
-    ) ?? null;
-  }, [PersonalityScreeningList, sessionContentId]);
+    return (
+      PersonalityScreeningList.find((item) => item.id === sessionContentId) ??
+      PersonalityScreeningList.find((item) => item.id === responses[0]?.screening_id) ??
+      null
+    );
+  }, [PersonalityScreeningList, sessionContentId, responses]);
 
-
+  /** List `id` is screening id; session dropdown uses log `content_id` — responses payload carries `ai_summary`. */
+  const summarySource = personalityAiSummary ?? screening?.summary ?? null;
 
   const summaryData = useMemo(() => {
-    if (!screening?.summary) {
+    if (!summarySource) {
       return { score: null, text: "No summary available" };
     }
 
-    const s = screening.summary;
+    const s = summarySource;
 
     switch (activeTab) {
       case "Articulation":
@@ -218,7 +223,7 @@ export default function VideoInterview({
       default:
         return { score: null, text: "No summary available" };
     }
-  }, [screening, activeTab]);
+  }, [summarySource, activeTab]);
 
 
   const scorePercent =
@@ -244,15 +249,22 @@ export default function VideoInterview({
 
   const getTranscriptionText = () => {
     const currentResponse = responses?.[activeIndex];
-    if (!currentResponse?.video_analysis) return "No transcription available";
+    if (!currentResponse) return "No transcription available";
 
-    const analyses = currentResponse.video_analysis.audio_analyses;
-
-    if (Array.isArray(analyses) && analyses.length) {
-      // Usually all have same transcription – take first non-empty one
-      const item = analyses.find(a => a?.transcription);
+    const nested = currentResponse.video_analysis?.audio_analyses;
+    if (Array.isArray(nested) && nested.length) {
+      const item = nested.find((a) => a?.transcription);
       if (item?.transcription) return item.transcription;
     }
+
+    const top = currentResponse.audio_analysis;
+    if (Array.isArray(top) && top.length) {
+      const item = top.find((a) => a?.transcription);
+      if (item?.transcription) return item.transcription;
+    }
+
+    const t = (currentResponse as { text?: string }).text;
+    if (typeof t === "string" && t.trim()) return t;
 
     return "No transcription available";
   };
@@ -310,11 +322,13 @@ export default function VideoInterview({
     return getApprovalStageStatusOptions(currentStageStatus);
   }, [currentStageStatus]);
 
-  /** List load (no screenings yet) or responses load for selected session */
+  /** While fetching responses for the selected session (list fetch is optional). */
   const showVideoContentShimmer =
-    personalityLoading &&
-    (!!sessionContentId || !PersonalityScreeningList?.length);
+    personalityLoading && !!sessionContentId;
   const showContentShimmer = showVideoContentShimmer || isResponsesLoading;
+
+  const hasVideoSessionContent =
+    (responses?.length ?? 0) > 0 || Boolean(personalityAiSummary);
 
   return (
     <View style={styles.container}>
@@ -342,7 +356,7 @@ export default function VideoInterview({
         />
       </View>
       <View style={{ zIndex: 1000 }}>
-        <Card style={{ gap: 4,flex:1,width:'100%' }}>
+        <Card style={{ gap: 4, flex: 1, width: '100%' }}>
           <Typography variant="regularTxtxs" style={{ backgroundColor: colors?.brand['200'], borderTopEndRadius: 12, borderTopStartRadius: 12, padding: 5 }} numberOfLines={2}>
             Stage was {assessmentStatus} by{" "}
             {stages?.find(s => s.stage_type === "automated_video_interview")?.reviewed_by?.name ??
@@ -378,48 +392,52 @@ export default function VideoInterview({
                 </>
               ) : (
                 <>
-                  <Typography variant="regularTxtxs" style={{ flex: 1 }}>
-                    {filteredVideoLogs
-                      ?.find(item => item.content_id === sessionContentId)
-                      ?.action_taken_by?.name ? (
-                      <>
-                        Reviewed by{" "}
-                        {
-                          filteredVideoLogs.find(item => item.content_id === sessionContentId)
-                            ?.action_taken_by?.name
-                        }{" "}
-                        ·{" "}
-                        {formatMonDDYYYY(
-                          filteredVideoLogs.find(item => item.content_id === sessionContentId)
-                            ?.action_taken_at,
-                          "DD MMM YYYY HH:mm",
-                          "IST"
-                        )}
-                      </>
-                    ) : filteredVideoLogs?.find(item => item.content_id === sessionContentId)
-                      ?.workflow_status_updated_at ? (
-                      <>
-                        Reviewed by Workflow ·{" "}
-                        {formatMonDDYYYY(
-                          filteredVideoLogs.find(item => item.content_id === sessionContentId)
-                            ?.workflow_status_updated_at,
-                          "DD MMM YYYY HH:mm",
-                          "IST"
-                        )}
-                      </>
-                    ) : filteredVideoLogs?.find(item => item.content_id === sessionContentId)
-                      ?.updated_at ? (
-                      <>
-                        ·{" "}
-                        {formatMonDDYYYY(
-                          filteredVideoLogs.find(item => item.content_id === sessionContentId)
-                            ?.updated_at,
-                          "DD MMM YYYY HH:mm",
-                          "IST"
-                        )}
-                      </>
-                    ) : null}
-                  </Typography>
+                  <View style={{flex:2}}>
+                    {isReviewed ?
+                      <Typography variant="regularTxtxs" style={{ flex: 1 }}>
+                        {filteredVideoLogs
+                          ?.find(item => item.content_id === sessionContentId)
+                          ?.action_taken_by?.name ? (
+                          <>
+                            Reviewed by{" "}
+                            {
+                              filteredVideoLogs.find(item => item.content_id === sessionContentId)
+                                ?.action_taken_by?.name
+                            }{" "}
+                            ·{" "}
+                            {formatMonDDYYYY(
+                              filteredVideoLogs.find(item => item.content_id === sessionContentId)
+                                ?.action_taken_at,
+                              "DD MMM YYYY HH:mm",
+                              "IST"
+                            )}
+                          </>
+                        ) : filteredVideoLogs?.find(item => item.content_id === sessionContentId)
+                          ?.workflow_status_updated_at ? (
+                          <>
+                            Reviewed by Workflow ·{" "}
+                            {formatMonDDYYYY(
+                              filteredVideoLogs.find(item => item.content_id === sessionContentId)
+                                ?.workflow_status_updated_at,
+                              "DD MMM YYYY HH:mm",
+                              "IST"
+                            )}
+                          </>
+                        ) : filteredVideoLogs?.find(item => item.content_id === sessionContentId)
+                          ?.updated_at ? (
+                          <>
+                            ·{" "}
+                            {formatMonDDYYYY(
+                              filteredVideoLogs.find(item => item.content_id === sessionContentId)
+                                ?.updated_at,
+                              "DD MMM YYYY HH:mm",
+                              "IST"
+                            )}
+                          </>
+                        ) : null}
+                      </Typography>
+                      : null}
+                  </View>
                   <Button
                     variant="outline"
                     borderRadius={20}
@@ -493,7 +511,7 @@ export default function VideoInterview({
           <Shimmer width="100%" height={180} borderRadius={16} />
           <Shimmer width="100%" height={220} borderRadius={12} />
         </View>
-      ) : responses.length === 0 ? (
+      ) : !hasVideoSessionContent ? (
         <View style={{
           flex: 1,
           justifyContent: 'center',
@@ -509,7 +527,7 @@ export default function VideoInterview({
             <View style={{ flexDirection: "row", alignItems: 'center', gap: 8 }}>
               <SvgXml xml={sparkles} height={20} width={20} />
               <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
-                Video Interview - AI Summary
+                Video Interview — AI Summary
               </Typography>
             </View>
 
@@ -559,6 +577,7 @@ export default function VideoInterview({
 
           </View>
 
+          {responses.length > 0 ? (
           <View style={styles.responsesCard}>
             <View style={styles.rowBetween}>
               <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
@@ -782,6 +801,13 @@ export default function VideoInterview({
               </View>
             </View>
           </View>
+          ) : (
+            <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
+              <Typography variant="regularTxtsm" color={colors.gray[600]}>
+                Question-level video and transcription will appear here when response data is available.
+              </Typography>
+            </View>
+          )}
         </>
       )}
     </View>

@@ -63,8 +63,7 @@ const ResumeScore = ({ overall, status, details,isloading }: Props) => {
       {/* Header */}
       <View style={styles.headerRow}>
         <Typography variant="semiBoldTxtlg">Resume Score</Typography>
-
-        <View
+        {/* <View
           style={[
             styles.statusPill,
             {
@@ -79,7 +78,7 @@ const ResumeScore = ({ overall, status, details,isloading }: Props) => {
           >
             {status}
           </Typography>
-        </View>
+        </View> */}
       </View>
       {/* Gradient Score Bar */}
       <View style={styles.gradientWrapper}>
@@ -124,7 +123,7 @@ const ResumeScore = ({ overall, status, details,isloading }: Props) => {
             </Typography>
           </View>
 
-          <Typography variant="semiBoldTxtmd" color={colors.gray[700]}>{formatPercentage(item.value)}</Typography>
+          <Typography variant="semiBoldTxtmd" color={colors.gray[700]}>{item.value}</Typography>
         </View>
       ))}
     </View>

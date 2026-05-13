@@ -11,6 +11,7 @@ import {
   AssessmentDetailedReport,
   ScreeningAssessment,
   PersonalityScreeningResponse,
+  PersonalityScreeningResponsesPayload,
   SessionReviewedResponse,
   UpdateStageStatusRequest,
   UpdateApplicationShareRequest,
@@ -85,6 +86,11 @@ export const getResumeScreeningResponsesFailure = (payload: string) => ({
   payload,
 });
 
+/** `content_id` from resume_screening session log (or application `resume_id`). */
+export const getResumeScreeningReportRequestAction = (contentId: string) => ({
+  type: APPLICATIONS_ACTION_TYPES.GET_RESUME_SCREENING_REPORT_REQUEST,
+  payload: contentId,
+});
 
 export const getAssessmentLogsRequestAction = (stageId: string) => ({
   type: APPLICATIONS_ACTION_TYPES.GET_ASSESSMENT_LOGS_REQUEST,
@@ -212,7 +218,7 @@ export const getPersonalityScreeningResponsesRequestAction = (
 });
 
 export const getPersonalityScreeningResponsesSuccess = (
-  payload: PersonalityScreeningResponse[]
+  payload: PersonalityScreeningResponsesPayload
 ) => ({
   type: APPLICATIONS_ACTION_TYPES.GET_PERSONALITY_RESPONSES_SUCCESS,
   payload,

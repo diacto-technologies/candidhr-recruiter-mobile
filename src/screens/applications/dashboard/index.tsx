@@ -1,13 +1,14 @@
 import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { View, ScrollView } from 'react-native';
-import { Header, StatCard, ApplicationStageChart, FeatureConsumptionChart, ApplicationStageOverview } from '../../../components';
+import { Header, StatCard, ApplicationStageChart, FeatureConsumptionChart, ApplicationStageOverview, Typography } from '../../../components';
 import { useStyles } from './styles';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { getProfileRequestAction } from '../../../features/profile/actions';
 import { getAnalyticsRequestAction, getFeatureConsumptionRequestAction, getStageGraphOverviewRequestAction, getStageGraphRequestAction, getWeeklyGraphRequestAction } from '../../../features/dashbaord/actions';
 import { selectAnalyticsData, selectAnalyticsLoaded, selectApplicantStageGraphLoading, selectApplicantStageGraphResults, selectFeatureConsumption, selectFeatureConsumptionLoading, selectStageGraphOverview, selectStageGraphOverviewLoading } from '../../../features/dashbaord/selectors';
-import { selectProfileLoading } from '../../../features/profile';
+import { selectProfile, selectProfileError, selectProfileLoading } from '../../../features/profile';
 import CustomSafeAreaView from '../../../components/atoms/customsafeareaview';
+import Shimmer from '../../../components/atoms/shimmer';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import {
     getJobNameListRequestAction,
@@ -18,11 +19,21 @@ import {
     setSelectedJobAction,
 } from '../../../features/jobs';
 import { navigate } from '../../../utils/navigationUtils';
+import { PERMISSIONS } from '../../../utils/permission.constants';
+import { usePermission } from '../../../hooks/usePermission';
+import { colors } from '../../../theme/colors';
+import { SvgXml } from 'react-native-svg';
+import { permissionDeniedIcon } from '../../../assets/svg/permissionDenied';
 
 const Dashboard = () => {
     const dispatch = useAppDispatch();
     const styles = useStyles();
-    const profileLoaded = useAppSelector(selectProfileLoading);
+    const profile = useAppSelector(selectProfile);
+    const profileLoading = useAppSelector(selectProfileLoading);
+    const profileError = useAppSelector(selectProfileError);
+    /** Until profile exists (or fetch failed), `can()` is unreliable — don’t show “no access” yet. */
+    const dashboardAccessLoading =
+        profileLoading || (profile === null && profileError === null);
     const analyticsData = useAppSelector(selectAnalyticsData);
     const analyticsLoaded = useAppSelector(selectAnalyticsLoaded);
     const stageData = useAppSelector(selectApplicantStageGraphResults);
@@ -42,9 +53,10 @@ const Dashboard = () => {
     const jobNameListNext = useAppSelector(selectJobNameListNext);
     const jobNameListLoading = useAppSelector(selectJobNameListLoading);
     const selectedJob = useAppSelector(selectSelectedJob);
+    const { can } = usePermission();
 
     useEffect(() => {
-        if (!profileLoaded) {
+        if (!profileLoading) {
             dispatch(getProfileRequestAction());
         }
         if (!analyticsLoaded) {
@@ -54,7 +66,7 @@ const Dashboard = () => {
             // dispatch(getWeeklyGraphRequestAction());
             dispatch(getStageGraphOverviewRequestAction());
         }
-    }, [profileLoaded, analyticsLoaded])
+    }, [profileLoading, analyticsLoaded, dispatch])
 
     useEffect(() => {
         if (openSearch) {
@@ -161,125 +173,139 @@ const Dashboard = () => {
     return (
         <Fragment>
             <CustomSafeAreaView>
-                <Header
-                    title="Dashboard"
-                    enableJobSearch={true}
-                    jobNameList={jobNameList}
-                    jobNameListLoading={jobNameListLoading}
-                    jobNameListNext={jobNameListNext}
-                    searchText={searchText}
-                    onSearchTextChange={handleSearchTextChange}
-                    openSearch={openSearch}
-                    onSearchToggle={setOpenSearch}
-                    onLoadMore={handleLoadMore}
-                    onJobSelect={handleSelectJob}
-                    onSearchClear={handleSearchClear}
-                    selectedJob={selectedJob}
-                />
-                <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false} bounces={false}>
-                    <View style={styles.listContainer}>
-                        <View style={styles.statGrid}>
-                            <View style={styles.statItem}>
-                                <StatCard
-                                    title="Total Applications"
-                                    value={String(analyticsData?.total_applicants ?? 0)}
-                                    percentage=""
-                                    subText=""
-                                    tooltipText="Total number of applicants"
-                                />
-                            </View>
-
-                            <View style={styles.statItem}>
-                                <StatCard
-                                    title="Total Jobs"
-                                    value={String(analyticsData?.total_jobs ?? 0)}
-                                    percentage=""
-                                    subText=""
-                                    onPressInfo={() => console.log("Info clicked")}
-                                    tooltipText="Total number of job postings currently on the platform."
-                                />
-                            </View>
-
-                            <View style={styles.statItem}>
-                                <StatCard
-                                    title="Applicant to Assessment Ratio"
-                                    value={String(analyticsData?.assessment_ratio ?? 0)}
-                                    percentage=""
-                                    subText=""
-                                    onPressInfo={() => console.log("Info clicked")}
-                                    tooltipText="How many applicants proceed from application to assessment."
-                                />
-                            </View>
-
-                            <View style={styles.statItem}>
-                                <StatCard
-                                    title="Applicant to Interview Ratio"
-                                    value={String(analyticsData?.personality_screening_ratio ?? 0)}
-                                    percentage=""
-                                    subText=""
-                                    onPressInfo={() => console.log("Info clicked")}
-                                    tooltipText="Percentage of applicants who reached the interview stage."
-                                />
-                            </View>
-
-                            <View style={styles.statItem}>
-                                <StatCard
-                                    title="Days to Fill"
-                                    value={String(analyticsData?.close_fill ?? 0)}
-                                    percentage=""
-                                    subText=""
-                                    onPressInfo={() => console.log("Info clicked")}
-                                    tooltipText="Average days taken to close a job after it was posted."
-                                />
-                            </View>
-
-                            <View style={styles.statItem}>
-                                <StatCard
-                                    title="Job Views"
-                                    value={String(analyticsData?.job_views ?? 0)}
-                                    percentage=""
-                                    subText=""
-                                    onPressInfo={() => console.log("Info clicked")}
-                                    tooltipText="Total number of views."
-                                />
-                            </View>
-
-                            <View style={styles.statItem}>
-                                <StatCard
-                                    title="Active Candidates"
-                                    value={String(analyticsData?.active_applications ?? 0)}
-                                    percentage=""
-                                    subText=""
-                                    onPressInfo={() => console.log("Info clicked")}
-                                    tooltipText="Candidates who are actively in the hiring process pipeline (Not rejected or hired yet)."
-                                />
-                            </View>
-
-                            <View style={styles.statItem}>
-                                <StatCard
-                                    title="Drop-off Rate"
-                                    value={String(analyticsData?.drop_off_rate ?? "0")}
-                                    percentage=""
-                                    subText=""
-                                    tooltipText="Percentage of candidates who started but did not complete the application or assessment process."
-                                />
-                            </View>
-                        </View>
-                        <ApplicationStageChart
-                            stageData={stageData}
-                            loading={stageDataLoading}
+                {dashboardAccessLoading|| can(PERMISSIONS.VIEW_DASHBOARD) ? (
+                    <>
+                        <Header
+                            title="Dashboard"
+                            enableJobSearch={true}
+                            jobNameList={jobNameList}
+                            jobNameListLoading={jobNameListLoading}
+                            jobNameListNext={jobNameListNext}
+                            searchText={searchText}
+                            onSearchTextChange={handleSearchTextChange}
+                            openSearch={openSearch}
+                            onSearchToggle={setOpenSearch}
+                            onLoadMore={handleLoadMore}
+                            onJobSelect={handleSelectJob}
+                            onSearchClear={handleSearchClear}
+                            selectedJob={selectedJob}
                         />
-                        <FeatureConsumptionChart
-                            featureData={featureData}
-                            loading={featureLoading}
-                        />
-                        <ApplicationStageOverview
-                            overview={stageGraphOverview}
-                            loading={stageGraphOverviewLoading}
-                            onViewMore={() => navigate('ApplicationOverviewDetails')}
-                        />
+                        <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false} bounces={false}>
+                            <View style={styles.listContainer}>
+                                <View style={styles.statGrid}>
+                                    <View style={styles.statItem}>
+                                        <StatCard
+                                            title="Total Applications"
+                                            value={String(analyticsData?.total_applicants ?? 0)}
+                                            percentage=""
+                                            subText=""
+                                            tooltipText="Total number of applicants"
+                                        />
+                                    </View>
+                                    <View style={styles.statItem}>
+                                        <StatCard
+                                            title="Total Jobs"
+                                            value={String(analyticsData?.total_jobs ?? 0)}
+                                            percentage=""
+                                            subText=""
+                                            onPressInfo={() => console.log("Info clicked")}
+                                            tooltipText="Total number of job postings currently on the platform."
+                                        />
+                                    </View>
+
+                                    <View style={styles.statItem}>
+                                        <StatCard
+                                            title="Applicant to Assessment Ratio"
+                                            value={String(analyticsData?.assessment_ratio ?? 0)}
+                                            percentage=""
+                                            subText=""
+                                            onPressInfo={() => console.log("Info clicked")}
+                                            tooltipText="How many applicants proceed from application to assessment."
+                                        />
+                                    </View>
+
+                                    <View style={styles.statItem}>
+                                        <StatCard
+                                            title="Applicant to Interview Ratio"
+                                            value={String(analyticsData?.personality_screening_ratio ?? 0)}
+                                            percentage=""
+                                            subText=""
+                                            onPressInfo={() => console.log("Info clicked")}
+                                            tooltipText="Percentage of applicants who reached the interview stage."
+                                        />
+                                    </View>
+
+                                    <View style={styles.statItem}>
+                                        <StatCard
+                                            title="Days to Fill"
+                                            value={String(analyticsData?.close_fill ?? 0)}
+                                            percentage=""
+                                            subText=""
+                                            onPressInfo={() => console.log("Info clicked")}
+                                            tooltipText="Average days taken to close a job after it was posted."
+                                        />
+                                    </View>
+
+                                    <View style={styles.statItem}>
+                                        <StatCard
+                                            title="Job Views"
+                                            value={String(analyticsData?.job_views ?? 0)}
+                                            percentage=""
+                                            subText=""
+                                            onPressInfo={() => console.log("Info clicked")}
+                                            tooltipText="Total number of views."
+                                        />
+                                    </View>
+
+                                    <View style={styles.statItem}>
+                                        <StatCard
+                                            title="Active Candidates"
+                                            value={String(analyticsData?.active_applications ?? 0)}
+                                            percentage=""
+                                            subText=""
+                                            onPressInfo={() => console.log("Info clicked")}
+                                            tooltipText="Candidates who are actively in the hiring process pipeline (Not rejected or hired yet)."
+                                        />
+                                    </View>
+
+                                    <View style={styles.statItem}>
+                                        <StatCard
+                                            title="Drop-off Rate"
+                                            value={String(analyticsData?.drop_off_rate ?? "0")}
+                                            percentage=""
+                                            subText=""
+                                            tooltipText="Percentage of candidates who started but did not complete the application or assessment process."
+                                        />
+                                    </View>
+                                </View>
+                                <ApplicationStageChart
+                                    stageData={stageData}
+                                    loading={stageDataLoading}
+                                />
+                                <FeatureConsumptionChart
+                                    featureData={featureData}
+                                    loading={featureLoading}
+                                />
+                                <ApplicationStageOverview
+                                    overview={stageGraphOverview}
+                                    loading={stageGraphOverviewLoading}
+                                    onViewMore={() => navigate('ApplicationOverviewDetails')}
+                                />
+                            </View>
+                        </ScrollView>
+                    </>
+                ) : (
+                    <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+                        <SvgXml xml={permissionDeniedIcon} color={colors.brand[600]} />
+                        <Typography
+                            variant="semiBoldTxtsm"
+                            color={colors.gray[600]}
+                            style={{ textAlign: 'center' }}
+                        >
+                            No access to view Dashboard.
+                        </Typography>
                     </View>
-                </ScrollView>
+                )}
             </CustomSafeAreaView>
             {/* </SafeAreaView> */}
         </Fragment>

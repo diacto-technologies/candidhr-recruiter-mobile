@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import ProfileCart from '../../../components/organisms/profile';
-import { FloatingActionButton, Header, ResumeModal } from '../../../components';
+import { Button, FloatingActionButton, Header, ResumeModal, Typography } from '../../../components';
 import { goBack, navigate } from '../../../utils/navigationUtils';
 import SlideAnimatedTab from '../../../components/molecules/slideanimatedtab';
 import { colors } from '../../../theme/colors';
@@ -20,9 +20,9 @@ import { telePhoneIcon } from '../../../assets/svg/telephone';
 import { fileIcon } from '../../../assets/svg/file';
 import CustomSafeAreaView from '../../../components/atoms/customsafeareaview';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
-import { getApplicationDetailRequestAction, getApplicationResponsesRequestAction, getAssessmentLogsBatchRequestAction, getResumeScreeningResponsesRequestAction, getPersonalityScreeningListRequestAction, getApplicationStagesRequestAction, updateApplicationStatusRequestAction } from '../../../features/applications/actions';
+import { getApplicationDetailRequestAction, getApplicationResponsesRequestAction, getAssessmentLogsBatchRequestAction, getResumeScreeningReportRequestAction, getResumeScreeningResponsesRequestAction, getPersonalityScreeningListRequestAction, getApplicationStagesRequestAction, updateApplicationStatusRequestAction } from '../../../features/applications/actions';
 import { useRoute } from '@react-navigation/native';
-import { selectApplicationsDetailLoading, selectApplicationStages, selectAssessmentLogs, selectPersonalityScreeningList, selectSelectedApplication } from '../../../features/applications/selectors';
+import { selectApplicationsDetailLoading, selectApplicationStages, selectAssessmentLogs, selectPersonalityScreeningList, selectResumeScreeningReport, selectSelectedApplication, selectSelectedApplicationError } from '../../../features/applications/selectors';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { showToastMessage } from '../../../utils/toast';
 import DeviceInfo from 'react-native-device-info';
@@ -39,6 +39,24 @@ import { formatMonDDYYYY } from '../../../utils/dateformatter';
 import { buildApplicationPdfHtml } from './tabs/profileinfo/applicationdetails/buildApplicationPdfHtml';
 import { commentIcon } from '../../../assets/svg/comments';
 import navigation from '../../../navigation';
+import { usePermission } from '../../../hooks/usePermission';
+import { PERMISSIONS, type PermissionCodename } from '../../../utils/permission.constants';
+import { permissionDeniedIcon } from '../../../assets/svg/permissionDenied';
+
+/** Backend sometimes returns `ai_summary_json` as a stringified JSON object. */
+function parseResumeAiSummaryJson(raw: unknown): Record<string, any> {
+  if (raw == null || raw === '') return {};
+  if (typeof raw === 'string') {
+    try {
+      const o = JSON.parse(raw);
+      return o && typeof o === 'object' ? (o as Record<string, any>) : {};
+    } catch {
+      return {};
+    }
+  }
+  if (typeof raw === 'object') return raw as Record<string, any>;
+  return {};
+}
 
 export default function ApplicantDetails() {
   const route = useRoute();
@@ -46,15 +64,17 @@ export default function ApplicantDetails() {
   const styles = useStyles();
   const initialTabLabel = !tab ? 'Profile Info' : tab;
   const [activeTab, setActiveTab] = useState(initialTabLabel);
-  /** Tabs that have been opened at least once — kept mounted so switching back does not remount (fixes Assessment V2 flash). */
   const [visitedTabKeys, setVisitedTabKeys] = useState(() => new Set<string>([initialTabLabel]));
   const [resumeModalVisible, setResumeModalVisible] = useState(false);
   const [htmlPreviewVisible, setHtmlPreviewVisible] = useState(false);
   const [htmlPreview, setHtmlPreview] = useState<string>('');
+  /** Remount WebView each open so Android/iOS reliably paint inline HTML. */
+  const [htmlPreviewMountKey, setHtmlPreviewMountKey] = useState(0);
   const dispatch = useAppDispatch();
+  const { can } = usePermission();
   const selectedApplication = useAppSelector(selectSelectedApplication);
+  const selectApplicationError = useAppSelector(selectSelectedApplicationError)
   const selectApplicationStage = useAppSelector(selectApplicationStages)
-  // Status options for dropdown – API-only statuses (e.g. "Applied") are not in the list; they still show as selected when coming from API
   const STATUS_OPTIONS = [
     { id: "shortlisted", name: "Shortlisted" },
     { id: "rejected", name: "Rejected" },
@@ -71,12 +91,13 @@ export default function ApplicantDetails() {
   ];
 
   // Get resume URL from selected application
-  const resumeUrl = selectedApplication?.resume?.resume_file || null;
-  const candidateName = selectedApplication?.candidate?.name || 'Candidate';
+  const resumeUrl = selectedApplication?.resume_file || null;
+  const candidateName = selectedApplication?.applicant?.name || 'N/A';
   const application = useAppSelector(selectSelectedApplication);
   const loading = useAppSelector(selectApplicationsDetailLoading);
   const assessmentLogs = useAppSelector(selectAssessmentLogs);
   const personalityScreeningList = useAppSelector(selectPersonalityScreeningList);
+  const resumeScreeningReport = useAppSelector(selectResumeScreeningReport);
 
   const hasAssessments = Boolean(assessmentLogs && assessmentLogs.length > 0);
   const hasVideoInterview = Boolean(
@@ -142,7 +163,7 @@ export default function ApplicantDetails() {
     dispatch(getApplicationDetailRequestAction(application_id));
     dispatch(getApplicationResponsesRequestAction({ application_id, job_id }));
     dispatch(getResumeScreeningResponsesRequestAction(application_id));
-    dispatch(getPersonalityScreeningListRequestAction({ application_id, job_id }));
+    // dispatch(getPersonalityScreeningListRequestAction({ application_id, job_id }));
   }, [application_id, job_id]);
 
   /** Sessions API uses `?stage_id=` — fetch each relevant stage and merge (see saga batch). */
@@ -151,6 +172,7 @@ export default function ApplicantDetails() {
     const stageIds = stages
       .filter(
         (s) =>
+          s.stage_type === 'resume_screening' ||
           s.stage_type === 'assessment' ||
           s.stage_type === 'assessment_v2' ||
           s.stage_type === 'automated_video_interview'
@@ -160,6 +182,33 @@ export default function ApplicantDetails() {
     if (!stageIds.length) return;
     dispatch(getAssessmentLogsBatchRequestAction(stageIds));
   }, [stages, application_id, dispatch]);
+
+  /** Same `content_id` resolution as `ResumeScreening` — loads `scorecard_v3` for HTML/PDF preview without opening that tab first. */
+  const resumeStage = useMemo(
+    () => stages?.find((s) => s.stage_type === 'resume_screening'),
+    [stages]
+  );
+
+  const resumeSessionLog = useMemo(() => {
+    if (!resumeStage?.id) return null;
+    return (
+      assessmentLogs?.find(
+        (l: { stage_id?: string; content_type?: string; content_id?: string }) =>
+          l?.stage_id === resumeStage.id && l?.content_type === 'resume_screening'
+      ) ?? null
+    );
+  }, [assessmentLogs, resumeStage?.id]);
+
+  const resumeScreeningContentId = useMemo(() => {
+    const fromLog = String(resumeSessionLog?.content_id ?? '').trim();
+    if (fromLog) return fromLog;
+    return String(application?.resume_id ?? '').trim();
+  }, [resumeSessionLog?.content_id, application?.resume_id]);
+
+  useEffect(() => {
+    if (!resumeScreeningContentId) return;
+    dispatch(getResumeScreeningReportRequestAction(resumeScreeningContentId));
+  }, [resumeScreeningContentId, dispatch]);
 
   useEffect(() => {
     if (!tabs.includes(activeTab)) {
@@ -173,30 +222,32 @@ export default function ApplicantDetails() {
       case 'Profile Info':
         return <ProfileInfo />;
       case 'Resume Screening':
-        return <ResumeScreening />;
+        return can(PERMISSIONS.VIEW_RESUME_SCREENING_STAGE) && (
+          <ResumeScreening />
+        )
       case 'Assessments':
-        return (
+        return can(PERMISSIONS.VIEW_ASSESSMENT_STAGE) && (
           <Assessment
             sessionContentId={assessmentSessionContentId}
             onSessionContentIdChange={setAssessmentSessionContentId}
           />
         );
       case 'Assessment V2':
-        return (
+        return can(PERMISSIONS.VIEW_ASSESSMENT_STAGE) && (
           <AssessmentV2
             sessionContentId={assessmentV2SessionContentId}
             onSessionContentIdChange={setAssessmentV2SessionContentId}
             selectedAssignmentId={assessmentV2SelectedAssignmentId}
             onSelectedAssignmentIdChange={setAssessmentV2SelectedAssignmentId}
           />
-        );
+        )
       case 'Automated Video Interview':
-        return (
+        return can(PERMISSIONS.VIEW_AUTOMATED_VIDEO_INTERVIEW_STAGE) && (
           <VideoInterview
             sessionContentId={videoInterviewSessionContentId}
             onSessionContentIdChange={setVideoInterviewSessionContentId}
           />
-        );
+        )
       default:
         return <View />;
     }
@@ -226,7 +277,7 @@ export default function ApplicantDetails() {
       return '';
     }
 
-    const applicant = application?.candidate;
+    const applicant = application?.applicant;
     const appliedAt =
       application?.applied_at ? formatMonDDYYYY(application.applied_at) : 'N/A';
 
@@ -234,15 +285,18 @@ export default function ApplicantDetails() {
       id: s.id,
       name: s.stage_name,
       statusText: humanizeStatus(s.status || s.workflow_last_status),
+      rawStatus: String(s.workflow_last_status || s.status || ''),
       date: formatMonDDYYYY(s.workflow_status_updated_at || s.updated_at || s.created_at),
     }));
 
-    const ai: any = application?.resume?.ai_summary_json ?? {};
+    const ai: any = parseResumeAiSummaryJson(application?.resume?.ai_summary_json);
+
+    const scorecardV3 = resumeScreeningReport?.attributes?.scorecard_v3 ?? null;
 
     const html = buildApplicationPdfHtml({
       application,
       applicant: {
-        name: applicant?.name ?? application?.name ?? 'Candidate',
+        name: applicant?.name ?? applicant?.name ?? 'Candidate',
         appliedAt,
         email: applicant?.email ?? 'N/A',
         contact: String(applicant?.contact ?? 'N/A'),
@@ -252,6 +306,7 @@ export default function ApplicantDetails() {
         title: application?.job?.title ?? 'N/A',
       },
       stages: stageCards,
+      scorecardV3,
       aiSummary: {
         summary: ai?.summary ?? 'No data found.',
         potentialRedFlags: Array.isArray(ai?.potentialRedFlags)
@@ -272,6 +327,7 @@ export default function ApplicantDetails() {
             : [],
         jobReadinessScore: Number(ai?.jobReadinessScore ?? ai?.job_readiness_score ?? 0),
         matchScore: Number(ai?.matchScore ?? ai?.match_score ?? 0),
+        keyInsights: Array.isArray(ai?.key_insights) ? ai.key_insights : [],
       },
     });
 
@@ -279,10 +335,17 @@ export default function ApplicantDetails() {
   };
 
   const handlePreviewHtml = () => {
-    const html = buildHtmlPreview();
-    if (!html) return;
-    setHtmlPreview(html);
-    setHtmlPreviewVisible(true);
+    try {
+      const html = buildHtmlPreview();
+      if (!html) return;
+      setHtmlPreview(html);
+      setHtmlPreviewMountKey((k) => k + 1);
+      setHtmlPreviewVisible(true);
+    } catch (e) {
+      console.error('HTML preview build failed', e);
+      const msg = e instanceof Error ? e.message : String(e);
+      showToastMessage(`Could not build preview: ${msg}`, 'error');
+    }
   };
 
   const handleDownloadHtmlPreview = async () => {
@@ -350,19 +413,19 @@ export default function ApplicantDetails() {
         <Header
           backNavigation={true}
           onBack={() => goBack()}
-          statusDropdown={true}
+          statusDropdown={can(PERMISSIONS.UPDATE_APPLICATION_STATUS)}
           // threedot={true}
           statusOptions={STATUS_OPTIONS}
           statusLabelKey="name"
           statusValueKey="id"
-          statusValue={application?.status ?? ''}
+          statusValue={application?.status?.value ?? ''}
           onStatusSelect={(item) => {
             dispatch(updateApplicationStatusRequestAction({ id: application_id, status: item.id }));
           }}
           statusOpenModalOnSelect={true}
           statusChangeStatusModalProps={{
             applicantName: candidateName,
-            currentStatus: application?.status ?? null,
+            currentStatus: application?.status?.value ?? null,
             newStatusOptions: STATUS_OPTIONS,
             onUpdateStatus: (selectedStatusId) => {
               // selectedStatusId is the STATUS_OPTIONS id (e.g. "on_hold") — sent as ?status=on_hold
@@ -373,108 +436,141 @@ export default function ApplicantDetails() {
             initialEmailMessage: 'Hi {{candidate_name}},\n\nYour application status has been updated to "{{application_status}}".\n\nThanks,\n{{company}}',
           }}
         />
-        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} bounces={false}>
-          <View style={styles.subContainer}>
-            <ProfileCart
-              application={application}
-              loading={loading}
-              onPressPreview={handlePreviewHtml}
-              onPressExport={handleDownloadHtmlPreview}
-            />
-            <View style={styles.tabContainer}>
-              <SlideAnimatedTab
-                tabs={tabs}
-                activeTab={activeTab}
-                onChangeTab={(label) => setActiveTab(label)}
-              />
+        {application || loading ? <>
+              <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} bounces={false}>
+                <View style={styles.subContainer}>
+                  <ProfileCart
+                    loading={loading}
+                    onPressPreview={handlePreviewHtml}
+                    onPressExport={handleDownloadHtmlPreview}
+                  />
+                  <View style={styles.tabContainer}>
+                    <SlideAnimatedTab
+                      tabs={tabs}
+                      activeTab={activeTab}
+                      onChangeTab={(label) => setActiveTab(label)}
+                    />
 
-              <View style={styles.bottomBorder} />
-            </View>
-            <View style={{ paddingHorizontal: 16, paddingVertical: 16 }}>
-              {tabs
-                .filter(
-                  (tabName) => visitedTabKeys.has(tabName) || tabName === activeTab
-                )
-                .map((tabName) => {
-                  const isActive = activeTab === tabName;
-                  return (
-                    <View
-                      key={tabName}
-                      collapsable={false}
-                      style={
-                        isActive
-                          ? { width: '100%' }
-                          : {
-                              width: '100%',
-                              height: 0,
-                              overflow: 'hidden',
-                              opacity: 0,
-                              position: 'absolute',
-                              left: 0,
-                              right: 0,
-                              zIndex: -1,
+                    <View style={styles.bottomBorder} />
+                  </View>
+                  <View style={{ paddingHorizontal: 16, paddingVertical: 16 }}>
+                    {tabs
+                      .filter(
+                        (tabName) => visitedTabKeys.has(tabName) || tabName === activeTab
+                      )
+                      .map((tabName) => {
+                        const isActive = activeTab === tabName;
+                        return (
+                          <View
+                            key={tabName}
+                            collapsable={false}
+                            style={
+                              isActive
+                                ? { width: '100%' }
+                                : {
+                                  width: '100%',
+                                  height: 0,
+                                  overflow: 'hidden',
+                                  opacity: 0,
+                                  position: 'absolute',
+                                  left: 0,
+                                  right: 0,
+                                  zIndex: -1,
+                                }
                             }
-                      }
-                      pointerEvents={isActive ? 'auto' : 'none'}
-                    >
-                      {renderTabPanel(tabName)}
-                    </View>
-                  );
-                })}
-            </View>
-          </View>
-        </ScrollView>
-        <View>
-          <FooterButtons
-            leftButtonProps={{
-              children: "View resume",
-              variant: "contain",
-              size: 44,
-              buttonColor: colors.base.white,
-              textColor: colors.gray[700],
-              borderColor: colors.gray[300],
-              borderWidth: 1,
-              borderRadius: 8,
-              borderGradientOpacity: 0.25,
-              shadowColor: colors.gray[700],
-              onPress: handleViewResume,
-              startIcon: <SvgXml xml={fileIcon} />,
-              disabled: !resumeUrl,
-            }}
-            rightButtonProps={{
-              children: "call",
-              variant: "contain",
-              size: 44,
-              borderWidth: 1,
-              buttonColor: colors.brand[600],
-              textColor: colors.base.white,
-              borderColor: colors.base.white,
-              borderRadius: 8,
-              onPress: () => { handleCall(application?.candidate?.contact ?? "") },
-              startIcon: <SvgXml xml={telePhoneIcon} />,
-            }}
-          />
-        </View>
-        <View style={styles.floatingButton}>
-          <FloatingActionButton
-            value={commentIcon}
-            backgroundColor={colors.brand[600]}
-            iconColor={colors.base.white}
-            size={50}
-            onPress={() => {
-             navigate('Comments', { application_id, job_id });
-            }}
-          />
-        </View>
+                            pointerEvents={isActive ? 'auto' : 'none'}
+                          >
+                            {renderTabPanel(tabName)}
+                          </View>
+                        );
+                      })}
+                  </View>
+                </View>
+              </ScrollView>
+              <View style={styles.floatingButton}>
+                <FloatingActionButton
+                  value={commentIcon}
+                  backgroundColor={colors.brand[600]}
+                  iconColor={colors.base.white}
+                  size={50}
+                  onPress={() => {
+                    navigate('Comments', { application_id, job_id });
+                  }}
+                />
+              </View>
+              <View>
+                {can(PERMISSIONS.EXPORT_APPLICATION_PROFILE) &&
+                  <FooterButtons
+                    leftButtonProps={{
+                      children: "View resume",
+                      variant: "contain",
+                      size: 44,
+                      buttonColor: colors.base.white,
+                      textColor: colors.gray[700],
+                      borderColor: colors.gray[300],
+                      borderWidth: 1,
+                      borderRadius: 8,
+                      borderGradientOpacity: 0.25,
+                      shadowColor: colors.gray[700],
+                      onPress: handleViewResume,
+                      startIcon: <SvgXml xml={fileIcon} />,
+                      disabled: !resumeUrl,
+                    }}
+
+                    rightButtonProps={{
+                      children: "call",
+                      variant: "contain",
+                      size: 44,
+                      borderWidth: 1,
+                      buttonColor: colors.brand[600],
+                      textColor: colors.base.white,
+                      borderColor: colors.base.white,
+                      borderRadius: 8,
+                      onPress: () => { handleCall(application?.applicant?.contact ?? "") },
+                      startIcon: <SvgXml xml={telePhoneIcon} />,
+                    }}
+                  />
+                }
+              </View>
+            </>
+              :
+              <View style={{ alignSelf: 'center', justifyContent: 'center', flex: 1, paddingBottom: '30%' }}>
+                <SvgXml xml={permissionDeniedIcon} style={{ alignSelf: 'center' }} color={colors.brand[600]} />
+                <Typography variant="semiBoldTxtsm"
+                  color={colors.gray[600]}
+                  style={{ textAlign: 'center' }}>{selectApplicationError}</Typography>
+              </View>
+              }
       </CustomSafeAreaView>
 
       <Modal
         visible={htmlPreviewVisible}
         animationType="slide"
+        presentationStyle="fullScreen"
         onRequestClose={() => setHtmlPreviewVisible(false)}
       >
         <View style={{ flex: 1, backgroundColor: '#fff' }}>
-          <WebView originWhitelist={['*']} source={{ html: htmlPreview }} style={{ flex: 1 }} />
+          {htmlPreviewVisible && htmlPreview ? (
+            <WebView
+              key={htmlPreviewMountKey}
+              originWhitelist={['*']}
+              source={{
+                html: htmlPreview,
+                baseUrl: '',
+              }}
+              style={{ flex: 1, backgroundColor: '#fff' }}
+              javaScriptEnabled
+              domStorageEnabled={Platform.OS === 'android'}
+              mixedContentMode="always"
+              setBuiltInZoomControls={false}
+              onError={(ev) => {
+                if (__DEV__) {
+                  console.warn('WebView preview error', ev.nativeEvent);
+                }
+                showToastMessage('Preview failed to load in the browser view.', 'error');
+              }}
+            />
+          ) : null}
           <TouchableOpacity
             onPress={() => setHtmlPreviewVisible(false)}
             style={{

@@ -15,13 +15,14 @@ interface TimelineItem {
 interface Props {
   progress: number;
   data: TimelineItem[];
+  title:string;
 }
 
-const CustomTimeline = ({ progress, data }: Props) => {
+const CustomTimeline = ({ progress, data,title="Timeline" }: Props) => {
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
-        <Typography variant="semiBoldTxtlg" color={colors.gray[900]}>Timeline</Typography>
+        <Typography variant="semiBoldTxtlg" color={colors.gray[900]}>{title}</Typography>
 
         {/* Progress circle */}
         <View style={styles.progressContainer}>

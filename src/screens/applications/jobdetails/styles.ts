@@ -52,5 +52,17 @@ export const useStyles = () => {
           iconRed: {
             color: "#D92D20",
           },
+          publishLeftButton: {
+            backgroundColor: colors.common.white,
+            borderColor: colors.brand[300],
+            borderRadius: 8,
+            height: 44,
+          },
+          publishLeftButtonText: {
+            color: colors.brand[700],
+          },
+          iconBrand: {
+            color: colors.brand[700],
+          },
     });
 };

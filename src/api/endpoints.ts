@@ -12,7 +12,7 @@ export const API_ENDPOINTS = {
   // Profile endpoints
   PROFILE: {
     GET: '/core/user/',
-    UPDATE: '/core/users/details/update/',
+    UPDATE: '/core/v2/me/',
     AVATAR: '/profile/avatar',
   },
   USERS: {
@@ -30,6 +30,8 @@ export const API_ENDPOINTS = {
   JOBS: {
     LIST: '/job/v1/filter',
     DETAIL: (id: string) => `/job/v1/job-detail/${id}/`,
+    /** PATCH share / partial updates — e.g. `{ users_shared_with_ids: [...] }` */
+    PATCH: (id: string) => `/job/v1/jobs/${id}/`,
     CREATE: '/jobs',
     UPDATE: (id: string) => `/jobs/${id}`,
     DELETE: (id: string) => `/jobs/${id}`,
@@ -52,6 +54,9 @@ export const API_ENDPOINTS = {
       `/applications/v1/status-update/${id}/?status=${encodeURIComponent(status)}`,
     RESPONSES: '/applications/v1/application-responses/',
     ScreeningQus: (id: string) => `/applications/v1/${id}/response/resume-screening/`,
+    /** JSON:API resume screening scorecard — `content_id` from sessions log or `resume_id` on application */
+    RESUME_SCREENING_REPORT: (contentId: string) =>
+      `/applications/v1/resume-screening-reports/${contentId}/`,
     ASSESSMENT_LOGS: (applicationId: string) => `/applications/v1/sessions/?stage_id=${applicationId}`,
     SESSION_MARK_REVIEWED: (sessionId: string) => `/applications/v1/sessions/${sessionId}/reviewed/`,
     /** PATCH stage status: /applications/v1/stages/{stageId}/{status}/ */

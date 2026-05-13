@@ -26,7 +26,8 @@ function* updateProfileWorker(action: { type: string; payload: any }): Generator
   try {
     yield put(updateProfileRequest(action.payload));
     const response = yield call(profileApi.updateProfile, action.payload);
-    yield put(updateProfileSuccess(response.profile));
+    const nextProfile = response?.profile ?? response;
+    yield put(updateProfileSuccess(nextProfile));
   } catch (error: any) {
     yield put(updateProfileFailure(error.message || "Failed to update profile"));
   }

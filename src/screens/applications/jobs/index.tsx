@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text } from 'react-native';
-import { SortingAndFilter, Header, JobCardList, BottomSheet, FilterSheetContent } from '../../../components';
+import { SortingAndFilter, Header, JobCardList, BottomSheet, FilterSheetContent, Typography } from '../../../components';
 import { jobFiltersOption } from '../../../utils/dummaydata';
 import { useStyles } from './styles';
 import CustomSafeAreaView from '../../../components/atoms/customsafeareaview';
@@ -33,8 +33,9 @@ import { selectToken } from '../../../features/auth/selectors';
 import { jobTabs } from './config';
 import { usePermission } from '../../../hooks/usePermission';
 import { PERMISSIONS } from '../../../utils/permission.constants';
-import { selectProfile } from '../../../features/profile/selectors';
+import { selectProfile, selectProfileError, selectProfileLoading } from '../../../features/profile/selectors';
 import { screenHeight } from '../../../utils/devicelayout';
+import { colors } from '../../../theme/colors';
 
 const JobsScreen = () => {
   const styles = useStyles();
@@ -57,6 +58,10 @@ const JobsScreen = () => {
   const favouriteJobIds = useAppSelector(selectFavouriteJobIds);
   const token = useAppSelector(selectToken);
   const isConnected = useNetworkConnectivity();
+  const profileLoading = useAppSelector(selectProfileLoading);
+  const profileError = useAppSelector(selectProfileError);
+  const accessLoading =
+  profileLoading || (profile === null && profileError === null);
 
   useFocusEffect(
     useCallback(() => {
@@ -112,7 +117,7 @@ const JobsScreen = () => {
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [jobFilters, isConnected, pagination.limit, dispatch, activeTab]);
+  }, [jobFilters, isConnected, pagination.limit, activeTab]);
 
   const handleApplyFilters = () => {
     if (!isConnected) return;
@@ -123,9 +128,9 @@ const JobsScreen = () => {
         limit: pagination.limit,
         ...(activeTab === "Favourites"
           ? {
-              favourites: true,
-              idIn: favouriteJobIds.join(","),
-            }
+            favourites: true,
+            idIn: favouriteJobIds.join(","),
+          }
           : { published: activeTab === "Published" }),
         append: false,
         ...jobFilters,
@@ -184,9 +189,9 @@ const JobsScreen = () => {
         append: true,
         ...(activeTab === "Favourites"
           ? {
-              favourites: true,
-              idIn: favouriteJobIds.join(","),
-            }
+            favourites: true,
+            idIn: favouriteJobIds.join(","),
+          }
           : { published: activeTab === "Published" }),
         ...jobFilters,
       })
@@ -219,26 +224,36 @@ const JobsScreen = () => {
           setOpenSearch(false);
         }}
       />
-
-      <View style={styles.container}>
-        <JobCardList
-          tabs={jobTabs}
-          activeTab={activeTab}
-          jobsList={jobsList}
-          loading={loading}
-          isTabLoading={isTabLoading}
-          hasMore={hasMore}
-          publishedCount={publishedCount}
-          unpublishedCount={unpublishedCount}
-          favouritesCount={favouritesCount}
-          isConnected={isConnected}
-          onChangeTab={handleChangeTab}
-          onLoadMore={handleLoadMore}
-          onJobPress={(jobId) => navigate('JobDetailScreen', { jobId })}
-          favouriteJobIds={favouriteJobIds}
-          onToggleFavourite={(jobId) => dispatch(toggleFavouriteJob(jobId))}
-        />
-      </View>
+      {accessLoading || can(PERMISSIONS.VIEW_JOB) ?
+        <View style={styles.container}>
+          <JobCardList
+            tabs={jobTabs}
+            activeTab={activeTab}
+            jobsList={jobsList}
+            loading={loading}
+            isTabLoading={isTabLoading}
+            hasMore={hasMore}
+            publishedCount={publishedCount}
+            unpublishedCount={unpublishedCount}
+            favouritesCount={favouritesCount}
+            isConnected={isConnected}
+            onChangeTab={handleChangeTab}
+            onLoadMore={handleLoadMore}
+            onJobPress={(jobId) => navigate('JobDetailScreen', { jobId })}
+            favouriteJobIds={favouriteJobIds}
+            onToggleFavourite={(jobId) => dispatch(toggleFavouriteJob(jobId))}
+          />
+        </View>
+        :
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 }}>
+          <Typography
+            variant="semiBoldTxtsm"
+            color={colors.gray[600]}
+            style={{ textAlign: 'center' }}
+          >
+            You don't have access to view this resource.
+          </Typography>
+        </View>}
 
       <SortingAndFilter
         title="Filters"
@@ -257,7 +272,7 @@ const JobsScreen = () => {
         onClose={() => setFilterSheet(false)}
         title="Filter by"
         showHeadline
-        onClearAll={() => dispatch(clearJobFilters())} hight={screenHeight* 0.8}>
+        onClearAll={() => dispatch(clearJobFilters())} hight={screenHeight * 0.8}>
         <FilterSheetContent
           onCancel={() => setFilterSheet(false)}
           onApply={handleApplyFilters}

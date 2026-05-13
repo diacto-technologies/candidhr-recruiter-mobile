@@ -12,7 +12,7 @@ export const useStyles = () => {
           borderWidth: 0.5,
           borderColor: colors.gray[200],
           padding: 16,
-          gap: 20,
+          gap:16,
           ...shadowStyles.shadow_xs
         },
       
@@ -136,8 +136,10 @@ export const useStyles = () => {
 
         /** Single column on narrow screens — avoids squeezed side-by-side columns. */
         statMetricSingleCol: {
+          flexDirection:'row',
+          flexWrap:'wrap',
           width: "100%",
-          gap: 14,
+          gap:6,
         },
 
         violationRow: {
