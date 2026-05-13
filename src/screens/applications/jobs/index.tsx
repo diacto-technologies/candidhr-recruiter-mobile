@@ -82,6 +82,7 @@ const JobsScreen = () => {
     dispatch(getUnpublishedJobsRequestAction(jobFilters));
   }, [token, isConnected, jobFilters]);
 
+  /** Single source for page-1 job list (tab, filters, favourites). Tab handler only updates `activeTab` to avoid double `getJobs` with a debounced effect. */
   useEffect(() => {
     if (!isConnected) return;
     const timer = setTimeout(() => {
@@ -117,7 +118,7 @@ const JobsScreen = () => {
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [jobFilters, isConnected, pagination.limit, activeTab]);
+  }, [jobFilters, isConnected, pagination.limit, activeTab, favouriteJobIds, dispatch]);
 
   const handleApplyFilters = () => {
     if (!isConnected) return;
@@ -146,37 +147,6 @@ const JobsScreen = () => {
   const handleChangeTab = (label: string) => {
     const tab = label as "Published" | "Draft" | "Favourites";
     dispatch(setActiveTab(tab));
-
-    if (!isConnected) return;
-
-    if (tab === "Favourites") {
-      if (!favouriteJobIds.length) {
-        dispatch(clearFavouriteJobs());
-        return;
-      }
-
-      dispatch(
-        getJobsRequestAction({
-          page: 1,
-          limit: pagination.limit,
-          append: false,
-          favourites: true,
-          idIn: favouriteJobIds.join(","),
-          ...jobFilters,
-        })
-      );
-      return;
-    }
-
-    dispatch(
-      getJobsRequestAction({
-        page: 1,
-        limit: pagination.limit,
-        append: false,
-        published: tab === "Published",
-        ...jobFilters,
-      })
-    );
   };
 
   const handleLoadMore = () => {
