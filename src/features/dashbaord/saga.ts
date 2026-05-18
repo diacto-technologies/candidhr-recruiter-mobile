@@ -11,6 +11,7 @@ import {
   getFeatureConsumptionFailure,
   getWeeklyGraphSuccess,
   getWeeklyGraphFailure,
+  getStageGraphOverviewRequest,
   getStageGraphOverviewSuccess,
   getStageGraphOverviewFailure,
 } from "./slice";
@@ -65,11 +66,12 @@ function* weeklyGraphWorker(): Generator<any, void, any> {
   }
 }
 
-function* stageGraphOverviewWorker(action: PayloadAction<{ jobId?: string }>):SagaIterator {
+function* stageGraphOverviewWorker(action: PayloadAction<{ jobId?: string }>): SagaIterator {
   try {
+    yield put(getStageGraphOverviewRequest());
     const jobId = action.payload?.jobId;
-    const response = yield call(dashboardApi.getApplicantsStageGraphOverview,jobId);
-    console.log(response,"getStageGraphOverviewSuccess")
+    const response = yield call(dashboardApi.getApplicantsStageGraphOverview, jobId);
+    console.log(response, "getStageGraphOverviewSuccess");
     yield put(getStageGraphOverviewSuccess(response));
   } catch (error: any) {
     yield put(getStageGraphOverviewFailure(error.message));

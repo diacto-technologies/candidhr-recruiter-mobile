@@ -10,9 +10,13 @@ export const useStyles = () => {
     const insets = useRNSafeAreaInsets();
 
     return StyleSheet.create({
+        KeyboardAvoidingView:{
+            flex:1,
+        },
         container: {
             flex: 1,
             backgroundColor: colors.base.white,
+            paddingBottom:insets.insetsBottom
         },
         content: {
             flex: 1,
@@ -87,7 +91,7 @@ export const useStyles = () => {
             borderColor: colors.brand[200],
             borderRadius: 999,
             paddingHorizontal: 10,
-            paddingVertical: 2,
+            //paddingVertical: 2,
             backgroundColor: colors.brand[50],
         },
         commentContainer: {
@@ -96,7 +100,7 @@ export const useStyles = () => {
             borderTopWidth: 1,
             borderColor: colors.gray[200],
             paddingTop:15,
-            paddingVertical: insets.insetsBottom-10,
+            //paddingVertical: insets.insetsBottom-10,
             paddingHorizontal:16,
         },
         buttonRow: {

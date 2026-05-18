@@ -56,15 +56,19 @@ const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   const handleClear = () => {
-    onChangeText('');
-    onClear?.();
     setOpen(false);
+    /** Parent `onClear` is responsible for clearing value + refetch (e.g. dashboard job filter). */
+    if (onClear) {
+      onClear();
+    } else {
+      onChangeText('');
+    }
   };
 
   return (
     <View style={styles.wrapper}>
       {/* ✅ Input */}
-      <View style={styles.container}>
+      <View style={[styles.container]}>
         <SvgXml xml={searchIcon} style={styles.icon} />
 
         {/* Fake placeholder */}
@@ -101,6 +105,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
             data={filteredData}
             keyExtractor={(item) => item.id}
             keyboardShouldPersistTaps="handled"
+            nestedScrollEnabled={true}
+            showsVerticalScrollIndicator={true}
             renderItem={({ item }) => (
               <Pressable style={styles.item} onPress={() => handleSelect(item)}>
                 <Text style={styles.itemText}>{item.title}</Text>
@@ -175,11 +181,10 @@ const styles = StyleSheet.create({
   },
 
   dropdownBox: {
-    position: 'absolute',     // ✅ make it float
-    top: 50,                  // ✅ below input
+    position: 'absolute',
+    top: 50,
     left: 0,
     right: 0,
-
     backgroundColor: colors.base.white,
     borderWidth: 1,
     borderColor: colors.gray[300],

@@ -11,7 +11,7 @@ import type { ChangeStatusModalProps } from '../changeStatusModal';
 
 export interface StatusDropdownProps {
   label: string;
-  options: Array<{ id: string; name: string; [key: string]: any }>;
+  options: Array<{ id: string; name: string;[key: string]: any }>;
   labelKey?: string;
   valueKey?: string;
   setValue?: string | null;
@@ -114,9 +114,9 @@ const StatusDropdown = ({
     ? selectedItem.name
     : value
       ? STATUS_LABEL_MAP[value] ||
-        String(value)
-          .replace(/_/g, ' ')
-          .replace(/\b\w/g, (c) => c.toUpperCase())
+      String(value)
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase())
       : null;
 
   const dropdownStyle = compact
@@ -171,7 +171,7 @@ const StatusDropdown = ({
                     style={[
                       styles.statusDot,
                       compact && styles.statusDotCompact,
-                      { backgroundColor: getDotColor(displayLabel) }
+                      { backgroundColor: getDotColor(displayLabel), }
                     ]}
                   />
                   <Text
@@ -232,6 +232,7 @@ const StatusDropdown = ({
             selectedTextStyle={styles.selectedTextStyleHidden}
             placeholderStyle={compact ? styles.placeholderStyleHidden : styles.placeholderStyle}
             activeColor={colors.brand[50]}
+            dropdownPosition='bottom'
 
             renderItem={(item, selected) => (
               <View style={[styles.optionItem, selected && styles.selectedOptionItem]}>
@@ -279,7 +280,7 @@ const StatusDropdown = ({
             onBlur={() => setIsFocused(false)}
 
             renderLeftIcon={() => (
-              <View style={{ marginRight: compact ? 6 : 8 }}>
+              <View style={{ marginRight: compact ? 6 : 8, marginLeft: 8 }}>
                 <Typography
                   variant={compact ? 'semiBoldTxtsm' : 'semiBoldTxtmd'}
                   color={colors.gray[900]}
@@ -287,6 +288,17 @@ const StatusDropdown = ({
                   {label}
                 </Typography>
               </View>
+            )}
+            renderRightIcon={() => (
+              <Ionicons
+                name={isFocused ? 'chevron-up' : 'chevron-down'}
+                size={20}
+                color={colors.gray[500]}
+                style={{
+                  marginRight:8,
+                  alignSelf: 'center',
+                }}
+              />
             )}
           />
 

@@ -8,6 +8,7 @@ import { useStyles } from './styles';
 import { buildBarData, getMaxValueFromStageData } from './helpers';
 import Shimmer from '../../atoms/shimmer';
 import type { ApplicationStageChartProps, BarItem, stageDataInterface } from './applicationstagechart';
+import { paddingRight } from '../../../../node_modules 12-03-47-425/html2canvas/dist/types/css/property-descriptors/padding';
 
 const ApplicationStageChart: React.FC<ApplicationStageChartProps> = ({
     stageData,
@@ -20,7 +21,7 @@ const ApplicationStageChart: React.FC<ApplicationStageChartProps> = ({
     const barCount = barData.length;
     const availableWidth = screenWidth - 10;
     const barWidth = 32;
-    const dynamicSpacing = Math.max(20, (availableWidth - barCount * barWidth) / (barCount + 1));
+    const dynamicSpacing = Math.max(25, (availableWidth - barCount * barWidth) / (barCount + 1));
     
     if (loading) {
         return (
@@ -37,7 +38,7 @@ const ApplicationStageChart: React.FC<ApplicationStageChartProps> = ({
       
               {/* Bars + Labels */}
               <View style={styles.barLables}>
-                {[85, 130, 95, 60, 75].map((height, index) => (
+                {[85, 130, 95, 60, 75, 50, 40].map((height, index) => (
                   <View key={index} style={{ alignItems: 'center', gap: 8 }}>
                     <Shimmer width={32} height={height} borderRadius={5} />
                   </View>

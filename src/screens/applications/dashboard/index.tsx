@@ -197,6 +197,7 @@ const Dashboard = () => {
                                         <StatCard
                                             title="Total Applications"
                                             value={String(analyticsData?.total_applicants ?? 0)}
+                                            isCompact={true}
                                             percentage=""
                                             subText=""
                                             tooltipText="Total number of applicants"
@@ -206,6 +207,7 @@ const Dashboard = () => {
                                         <StatCard
                                             title="Total Jobs"
                                             value={String(analyticsData?.total_jobs ?? 0)}
+                                            isCompact
                                             percentage=""
                                             subText=""
                                             onPressInfo={() => console.log("Info clicked")}
@@ -250,6 +252,7 @@ const Dashboard = () => {
                                         <StatCard
                                             title="Job Views"
                                             value={String(analyticsData?.job_views ?? 0)}
+                                            isCompact
                                             percentage=""
                                             subText=""
                                             onPressInfo={() => console.log("Info clicked")}
@@ -261,6 +264,7 @@ const Dashboard = () => {
                                         <StatCard
                                             title="Active Candidates"
                                             value={String(analyticsData?.active_applications ?? 0)}
+                                            isCompact
                                             percentage=""
                                             subText=""
                                             onPressInfo={() => console.log("Info clicked")}
@@ -271,7 +275,7 @@ const Dashboard = () => {
                                     <View style={styles.statItem}>
                                         <StatCard
                                             title="Drop-off Rate"
-                                            value={String(analyticsData?.drop_off_rate ?? "0")}
+                                            value={String(analyticsData?.drop_off_rate?? "0")}
                                             percentage=""
                                             subText=""
                                             tooltipText="Percentage of candidates who started but did not complete the application or assessment process."

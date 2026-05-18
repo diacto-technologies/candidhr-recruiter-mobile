@@ -27,8 +27,10 @@ import { useAppSelector } from '../../../hooks/useAppSelector';
 import { showToastMessage } from '../../../utils/toast';
 import DeviceInfo from 'react-native-device-info';
 import { resetPersonalityScreeningState } from '../../../features/applications/slice';
-import Share from 'react-native-share';
+import ReactNativeBlobUtil from 'react-native-blob-util';
 import RNFS from 'react-native-fs';
+import { generatePDF } from 'react-native-html-to-pdf';
+import Share from 'react-native-share';
 import { WebView } from 'react-native-webview';
 import Assessment from './tabs/assessment';
 import AssessmentV2 from './tabs/assessmentv2';
@@ -359,21 +361,70 @@ export default function ApplicantDetails() {
           .replace(/[^a-z0-9-_ ]/gi, '')
           .replace(/\s+/g, '_') || 'Candidate';
 
-      const fileName = `Application_${safeCandidateName}_${String(application_id).slice(-6)}_${Date.now()}.html`;
-      const filePath = `${RNFS.DocumentDirectoryPath}/${fileName}`;
+      /** Base name only — `generatePDF` appends `.pdf` (and on Android temp files may add a unique segment). */
+      const baseFileName = `Application_${safeCandidateName}_${String(application_id).slice(-6)}_${Date.now()}`;
 
-      await RNFS.writeFile(filePath, html, 'utf8');
-
-      await Share.open({
-        url: `file://${filePath}`,
-        type: 'text/html',
-        filename: fileName,
-        failOnCancel: false,
+      const result = await generatePDF({
+        html,
+        fileName: baseFileName,
+        ...(Platform.OS === 'ios' ? { directory: 'Documents' as const } : {}),
+        width: 595,
+        height: 842,
+        /** Android print path supports this; iOS can mis-handle it on some OS versions — omit there. */
+        ...(Platform.OS === 'android' ? { shouldPrintBackgrounds: true } : {}),
       });
+
+      const rawPath =
+        (result as { filePath?: string }).filePath ??
+        (result as { file_path?: string }).file_path ??
+        '';
+      const pdfPath = rawPath.startsWith('file://') ? rawPath.slice('file://'.length) : rawPath;
+
+      if (!pdfPath) {
+        showToastMessage('PDF generation returned no file path.', 'error');
+        return;
+      }
+
+      if (Platform.OS === 'ios') {
+        const exists = await RNFS.exists(pdfPath);
+        if (!exists) {
+          showToastMessage('PDF was not written. Please try again.', 'error');
+          return;
+        }
+        /** iOS has no public “Downloads” folder like Android; `saveToFiles` opens the system picker to save into Files / iCloud (same pattern as CSV export in saga). */
+        const fileUrl = pdfPath.startsWith('file://') ? pdfPath : `file://${pdfPath}`;
+        await Share.open({
+          urls: [fileUrl],
+          type: 'application/pdf',
+          saveToFiles: true,
+          failOnCancel: false,
+        });
+        showToastMessage('Saved to the location you chose in Files.', 'success');
+        return;
+      }
+
+      if (Platform.OS === 'android') {
+        const outName = `${baseFileName}.pdf`;
+        await ReactNativeBlobUtil.MediaCollection.copyToMediaStore(
+          {
+            name: outName,
+            parentFolder: 'CandidHR',
+            mimeType: 'application/pdf',
+          },
+          'Download',
+          pdfPath
+        );
+        try {
+          await RNFS.unlink(pdfPath);
+        } catch {
+          /* ignore */
+        }
+        showToastMessage('PDF saved to Downloads (CandidHR)', 'success');
+      }
     } catch (e) {
       const message =
         e && typeof e === 'object' && 'message' in e ? String((e as any).message) : 'Unknown error';
-      console.error('HTML export failed', e);
+      console.error('PDF export failed', e);
       showToastMessage(`Export failed: ${message}`, 'error');
     }
   };
@@ -437,110 +488,110 @@ export default function ApplicantDetails() {
           }}
         />
         {application || loading ? <>
-              <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} bounces={false}>
-                <View style={styles.subContainer}>
-                  <ProfileCart
-                    loading={loading}
-                    onPressPreview={handlePreviewHtml}
-                    onPressExport={handleDownloadHtmlPreview}
-                  />
-                  <View style={styles.tabContainer}>
-                    <SlideAnimatedTab
-                      tabs={tabs}
-                      activeTab={activeTab}
-                      onChangeTab={(label) => setActiveTab(label)}
-                    />
-
-                    <View style={styles.bottomBorder} />
-                  </View>
-                  <View style={{ paddingHorizontal: 16, paddingVertical: 16 }}>
-                    {tabs
-                      .filter(
-                        (tabName) => visitedTabKeys.has(tabName) || tabName === activeTab
-                      )
-                      .map((tabName) => {
-                        const isActive = activeTab === tabName;
-                        return (
-                          <View
-                            key={tabName}
-                            collapsable={false}
-                            style={
-                              isActive
-                                ? { width: '100%' }
-                                : {
-                                  width: '100%',
-                                  height: 0,
-                                  overflow: 'hidden',
-                                  opacity: 0,
-                                  position: 'absolute',
-                                  left: 0,
-                                  right: 0,
-                                  zIndex: -1,
-                                }
-                            }
-                            pointerEvents={isActive ? 'auto' : 'none'}
-                          >
-                            {renderTabPanel(tabName)}
-                          </View>
-                        );
-                      })}
-                  </View>
-                </View>
-              </ScrollView>
-              <View style={styles.floatingButton}>
-                <FloatingActionButton
-                  value={commentIcon}
-                  backgroundColor={colors.brand[600]}
-                  iconColor={colors.base.white}
-                  size={50}
-                  onPress={() => {
-                    navigate('Comments', { application_id, job_id });
-                  }}
+          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} bounces={false}>
+            <View style={styles.subContainer}>
+              <ProfileCart
+                loading={loading}
+                onPressPreview={handlePreviewHtml}
+                onPressExport={handleDownloadHtmlPreview}
+              />
+              <View style={styles.tabContainer}>
+                <SlideAnimatedTab
+                  tabs={tabs}
+                  activeTab={activeTab}
+                  onChangeTab={(label) => setActiveTab(label)}
                 />
-              </View>
-              <View>
-                {can(PERMISSIONS.EXPORT_APPLICATION_PROFILE) &&
-                  <FooterButtons
-                    leftButtonProps={{
-                      children: "View resume",
-                      variant: "contain",
-                      size: 44,
-                      buttonColor: colors.base.white,
-                      textColor: colors.gray[700],
-                      borderColor: colors.gray[300],
-                      borderWidth: 1,
-                      borderRadius: 8,
-                      borderGradientOpacity: 0.25,
-                      shadowColor: colors.gray[700],
-                      onPress: handleViewResume,
-                      startIcon: <SvgXml xml={fileIcon} />,
-                      disabled: !resumeUrl,
-                    }}
 
-                    rightButtonProps={{
-                      children: "call",
-                      variant: "contain",
-                      size: 44,
-                      borderWidth: 1,
-                      buttonColor: colors.brand[600],
-                      textColor: colors.base.white,
-                      borderColor: colors.base.white,
-                      borderRadius: 8,
-                      onPress: () => { handleCall(application?.applicant?.contact ?? "") },
-                      startIcon: <SvgXml xml={telePhoneIcon} />,
-                    }}
-                  />
-                }
+                <View style={styles.bottomBorder} />
               </View>
-            </>
-              :
-              <View style={{ alignSelf: 'center', justifyContent: 'center', flex: 1, paddingBottom: '30%' }}>
-                <SvgXml xml={permissionDeniedIcon} style={{ alignSelf: 'center' }} color={colors.brand[600]} />
-                <Typography variant="semiBoldTxtsm"
-                  color={colors.gray[600]}
-                  style={{ textAlign: 'center' }}>{selectApplicationError}</Typography>
+              <View style={{ paddingHorizontal: 16, paddingVertical: 16 }}>
+                {tabs
+                  .filter(
+                    (tabName) => visitedTabKeys.has(tabName) || tabName === activeTab
+                  )
+                  .map((tabName) => {
+                    const isActive = activeTab === tabName;
+                    return (
+                      <View
+                        key={tabName}
+                        collapsable={false}
+                        style={
+                          isActive
+                            ? { width: '100%' }
+                            : {
+                              width: '100%',
+                              height: 0,
+                              overflow: 'hidden',
+                              opacity: 0,
+                              position: 'absolute',
+                              left: 0,
+                              right: 0,
+                              zIndex: -1,
+                            }
+                        }
+                        pointerEvents={isActive ? 'auto' : 'none'}
+                      >
+                        {renderTabPanel(tabName)}
+                      </View>
+                    );
+                  })}
               </View>
-              }
+            </View>
+          </ScrollView>
+          <View style={styles.floatingButton}>
+            <FloatingActionButton
+              value={commentIcon}
+              backgroundColor={colors.brand[600]}
+              iconColor={colors.base.white}
+              size={50}
+              onPress={() => {
+                navigate('Comments', { application_id, job_id });
+              }}
+            />
+          </View>
+          <View>
+            {can(PERMISSIONS.EXPORT_APPLICATION_PROFILE) &&
+              <FooterButtons
+                leftButtonProps={{
+                  children: "View resume",
+                  variant: "contain",
+                  size: 44,
+                  buttonColor: colors.base.white,
+                  textColor: colors.gray[700],
+                  borderColor: colors.gray[300],
+                  borderWidth: 1,
+                  borderRadius: 8,
+                  borderGradientOpacity: 0.25,
+                  shadowColor: colors.gray[700],
+                  onPress: handleViewResume,
+                  startIcon: <SvgXml xml={fileIcon} />,
+                  disabled: !resumeUrl,
+                }}
+
+                rightButtonProps={{
+                  children: "call",
+                  variant: "contain",
+                  size: 44,
+                  borderWidth: 1,
+                  buttonColor: colors.brand[600],
+                  textColor: colors.base.white,
+                  borderColor: colors.base.white,
+                  borderRadius: 8,
+                  onPress: () => { handleCall(application?.applicant?.contact ?? "") },
+                  startIcon: <SvgXml xml={telePhoneIcon} />,
+                }}
+              />
+            }
+          </View>
+        </>
+          :
+          <View style={{ alignSelf: 'center', justifyContent: 'center', flex: 1, paddingBottom: '30%' }}>
+            <SvgXml xml={permissionDeniedIcon} style={{ alignSelf: 'center' }} color={colors.brand[600]} />
+            <Typography variant="semiBoldTxtsm"
+              color={colors.gray[600]}
+              style={{ textAlign: 'center' }}>{selectApplicationError}</Typography>
+          </View>
+        }
       </CustomSafeAreaView>
 
       <Modal

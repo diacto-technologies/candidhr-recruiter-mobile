@@ -4,6 +4,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Pressable,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { colors } from '../../../theme/colors';
@@ -236,10 +238,10 @@ export default function CommentsScreen() {
     const categorySet = selectedCategories.length > 0 ? new Set(selectedCategories) : null;
     const filtered = categorySet
       ? reasonList.filter((item) => {
-          if (!item.category) return true;
-          const categoryId = item.category.toLowerCase().replace(/\s+/g, '_');
-          return categorySet.has(categoryId);
-        })
+        if (!item.category) return true;
+        const categoryId = item.category.toLowerCase().replace(/\s+/g, '_');
+        return categorySet.has(categoryId);
+      })
       : reasonList;
     return filtered.map((item) => ({
       id: item.id,
@@ -316,274 +318,281 @@ export default function CommentsScreen() {
 
   return (
     <CustomSafeAreaView>
-      <View style={styles.container}>
-        <Header title="Comments" backNavigation onBack={goBack} />
+      <KeyboardAvoidingView
+        style={{ flex: 1, overflow: 'hidden' }}
+        enabled={Platform.OS === 'ios'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
+      >
+        <View style={styles.container}>
+          <Header title="Comments" backNavigation onBack={goBack} />
 
-        <View style={styles.content}>
-          <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
-            {loading ? renderCommentsShimmer() : null}
-            {!loading && showError && (
-              <Typography variant="regularTxtsm" color={colors.gray[600]} style={styles.errorText}>
-                {error}
-              </Typography>
-            )}
-            {!loading && !showError && comments.map(item => (
-              <View key={item.id} style={styles.card}>
-                <View style={styles.headerRow}>
-                  <View style={styles.userRow}>
-                    <CustomAvatar
-                      imageUrl={item?.profile_pic ?? undefined}
-                      name={item?.name}
-                      size={40}
-                      borderWidth={1}
-                      borderColor="rgba(0,0,0,0.08)"
-                    />
-                    <View>
-                      <View style={styles.nameRow}>
-                        <Typography variant="semiBoldTxtmd">
-                          {item.name}
+          <View style={styles.content}>
+            <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
+              {loading ? renderCommentsShimmer() : null}
+              {!loading && showError && (
+                <Typography variant="regularTxtsm" color={colors.gray[600]} style={styles.errorText}>
+                  {error}
+                </Typography>
+              )}
+              {!loading && !showError && comments.map(item => (
+                <View key={item.id} style={styles.card}>
+                  <View style={styles.headerRow}>
+                    <View style={styles.userRow}>
+                      <CustomAvatar
+                        imageUrl={item?.profile_pic ?? undefined}
+                        name={item?.name}
+                        size={40}
+                        borderWidth={1}
+                        borderColor="rgba(0,0,0,0.08)"
+                      />
+                      <View>
+                        <View style={styles.nameRow}>
+                          <Typography variant="semiBoldTxtmd">
+                            {item.name}
+                          </Typography>
+                          <View style={styles.tag}>
+                            <Typography
+                              variant="semiBoldTxtxs"
+                              color={colors.brand[800]}
+                              numberOfLines={1}
+                            >
+                              {item.tag}
+                            </Typography>
+                          </View>
+                        </View>
+                        <Typography
+                          variant="regularTxtsm"
+                          color={colors.gray[600]}
+                        >
+                          Email: {item.email}
                         </Typography>
-                        <View style={styles.tag}>
-                          <Typography
-                            variant="semiBoldTxtxs"
-                            color={colors.brand[800]}
-                            numberOfLines={1}
-                          >
-                            {item.tag}
+                        <Typography
+                          variant="regularTxtsm"
+                          color={colors.gray[600]}
+                        >
+                          Date: {item.date}
+                        </Typography>
+                      </View>
+                    </View>
+                    <View style={styles.rightRow}>
+                      <View
+                        ref={(el) => {
+                          menuTriggerRefs.current[item.id] = el;
+                        }}
+                        collapsable={false}
+                      >
+                        <TouchableOpacity
+                          style={styles.menuDot}
+                          onPress={() => setActiveCommentId(item.id)}
+                        >
+                          <SvgXml xml={horizontalThreedotIcon} />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </View>
+
+                  {item.kind === 'reason' ? (
+                    <View style={styles.reasonPillsWrap}>
+                      {(item.reasonNotes?.length ? item.reasonNotes : [item.text]).map((note, idx) => (
+                        <View key={`${item.id}-reason-${idx}`} style={styles.reasonPill}>
+                          <Typography variant="regularTxtsm" color={colors.gray[700]}>
+                            {note}
                           </Typography>
                         </View>
-                      </View>
-                      <Typography
-                        variant="regularTxtsm"
-                        color={colors.gray[600]}
-                      >
-                        Email: {item.email}
-                      </Typography>
-                      <Typography
-                        variant="regularTxtsm"
-                        color={colors.gray[600]}
-                      >
-                        Date: {item.date}
-                      </Typography>
+                      ))}
                     </View>
-                  </View>
-                  <View style={styles.rightRow}>
-                    <View
-                      ref={(el) => {
-                        menuTriggerRefs.current[item.id] = el;
-                      }}
-                      collapsable={false}
-                    >
-                      <TouchableOpacity
-                        style={styles.menuDot}
-                        onPress={() => setActiveCommentId(item.id)}
-                      >
-                       <SvgXml xml={horizontalThreedotIcon} />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </View>
-
-                {item.kind === 'reason' ? (
-                  <View style={styles.reasonPillsWrap}>
-                    {(item.reasonNotes?.length ? item.reasonNotes : [item.text]).map((note, idx) => (
-                      <View key={`${item.id}-reason-${idx}`} style={styles.reasonPill}>
-                        <Typography variant="regularTxtsm" color={colors.gray[700]}>
-                          {note}
-                        </Typography>
-                      </View>
-                    ))}
-                  </View>
-                ) : (
-                  <Typography variant="regularTxtsm" color={colors.gray[700]} style={styles.commentText}>
-                    {item.text}
-                  </Typography>
-                )}
-
-                {item.kind === 'reason' && editingReasonId === item.id ? (
-                  <View style={styles.reasonInlineEditor}>
-                    <Typography variant="semiBoldTxtmd" color={colors.gray[800]}>
-                      Categories
+                  ) : (
+                    <Typography variant="regularTxtsm" color={colors.gray[700]} style={styles.commentText}>
+                      {item.text}
                     </Typography>
-                    {addReason ? (
-                      <View style={{ gap: 12 }}>
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
-                          {reasonCategories.map((cat) => {
-                            const selected = selectedCategories.includes(cat.id);
+                  )}
 
-                            return (
-                              <Pressable
-                                key={cat.id}
-                                onPress={() => {
-                                  const nextSelectedCategories = selected
-                                    ? selectedCategories.filter((id) => id !== cat.id)
-                                    : [...selectedCategories, cat.id];
+                  {item.kind === 'reason' && editingReasonId === item.id ? (
+                    <View style={styles.reasonInlineEditor}>
+                      <Typography variant="semiBoldTxtmd" color={colors.gray[800]}>
+                        Categories
+                      </Typography>
+                      {addReason ? (
+                        <View style={{ gap: 12 }}>
+                          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+                            {reasonCategories.map((cat) => {
+                              const selected = selectedCategories.includes(cat.id);
 
-                                  setSelectedCategories(nextSelectedCategories);
-                                  setSelectedCategoryId(nextSelectedCategories[0] ?? null);
-                                }}
-                                style={[styles.categoryPill, selected && styles.categoryPillSelected]}
-                              >
-                                <Typography
-                                  variant="mediumTxtsm"
-                                  color={selected ? colors.brand[700] : colors.gray[700]}
+                              return (
+                                <Pressable
+                                  key={cat.id}
+                                  onPress={() => {
+                                    const nextSelectedCategories = selected
+                                      ? selectedCategories.filter((id) => id !== cat.id)
+                                      : [...selectedCategories, cat.id];
+
+                                    setSelectedCategories(nextSelectedCategories);
+                                    setSelectedCategoryId(nextSelectedCategories[0] ?? null);
+                                  }}
+                                  style={[styles.categoryPill, selected && styles.categoryPillSelected]}
                                 >
-                                  {cat.name}
-                                </Typography>
-                              </Pressable>
-                            );
-                          })}
+                                  <Typography
+                                    variant="mediumTxtsm"
+                                    color={selected ? colors.brand[700] : colors.gray[700]}
+                                  >
+                                    {cat.name}
+                                  </Typography>
+                                </Pressable>
+                              );
+                            })}
+                          </View>
+
+                          <CommonDropdown
+                            placeholder="Select a reason"
+                            options={reasonDropdownOptions}
+                            value={selectedReasonIds}
+                            onChange={(nextValue) => setSelectedReasonIds(normalizeReasonIds(nextValue))}
+                            labelKey="name"
+                            valueKey="id"
+                            showIndexAndTotal={false}
+                            mode="default"
+                            dropdownPosition="bottom"
+                            disabled={reasonListLoading}
+                            error={reasonListError ?? undefined}
+                            multiSelect
+                          />
                         </View>
+                      ) : null}
 
-                        <CommonDropdown
-                          placeholder="Select a reason"
-                          options={reasonDropdownOptions}
-                          value={selectedReasonIds}
-                          onChange={(nextValue) => setSelectedReasonIds(normalizeReasonIds(nextValue))}
-                          labelKey="name"
-                          valueKey="id"
-                          showIndexAndTotal={false}
-                          mode="default"
-                          dropdownPosition="bottom"
-                          disabled={reasonListLoading}
-                          error={reasonListError ?? undefined}
-                          multiSelect
-                        />
+                      <View style={styles.reasonEditActions}>
+                        <TouchableOpacity style={styles.reasonEditCancel} onPress={closeReasonEditor}>
+                          <Typography variant="semiBoldTxtsm" color={colors.gray[700]}>
+                            Cancel
+                          </Typography>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[
+                            styles.reasonEditSave,
+                            (addReasonSaving || selectedReasonIds.length === 0) && styles.reasonEditSaveDisabled,
+                          ]}
+                          onPress={() => {
+                            const ct =
+                              (item.kind === 'reason' && item.tag) || 'Application';
+                            saveReasonEdit(ct);
+                          }}
+                          disabled={addReasonSaving || selectedReasonIds.length === 0}
+                        >
+                          <Typography variant="semiBoldTxtsm" color={colors.base.white}>
+                            {addReasonSaving ? 'Saving…' : 'Save'}
+                          </Typography>
+                        </TouchableOpacity>
                       </View>
-                    ) : null}
-
-                    <View style={styles.reasonEditActions}>
-                      <TouchableOpacity style={styles.reasonEditCancel} onPress={closeReasonEditor}>
-                        <Typography variant="semiBoldTxtsm" color={colors.gray[700]}>
-                          Cancel
-                        </Typography>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[
-                          styles.reasonEditSave,
-                          (addReasonSaving || selectedReasonIds.length === 0) && styles.reasonEditSaveDisabled,
-                        ]}
-                        onPress={() => {
-                          const ct =
-                            (item.kind === 'reason' && item.tag) || 'Application';
-                          saveReasonEdit(ct);
-                        }}
-                        disabled={addReasonSaving || selectedReasonIds.length === 0}
-                      >
-                        <Typography variant="semiBoldTxtsm" color={colors.base.white}>
-                          {addReasonSaving ? 'Saving…' : 'Save'}
-                        </Typography>
-                      </TouchableOpacity>
                     </View>
-                  </View>
-                ) : null}
-              </View>
-            ))}
-          </ScrollView>
+                  ) : null}
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+
+          <Typography variant="regularTxtxs" color={colors.gray[800]} style={styles.hintText}>
+            Share your thoughts about this profile with your team.
+          </Typography>
+          <View style={styles.commentContainer}>
+            <View style={{ flex: 1 }}>
+              <TextField
+                placeholder="Write your comment here..."
+                size="Medium"
+                value={commentText}
+                onChangeText={setCommentText}
+              />
+            </View>
+            <View style={styles.buttonRow}>
+              <FloatingActionButton
+                value={sendButton}
+                backgroundColor={colors.brand[600]}
+                iconColor={colors.base.white}
+                size={40}
+                onPress={handleSend}
+                disabled={createLoading || !commentText.trim()}
+              />
+            </View>
+          </View>
         </View>
 
-        <Typography variant="regularTxtxs" color={colors.gray[800]} style={styles.hintText}>
-          Share your thoughts about this profile with your team.
-        </Typography>
-        <View style={styles.commentContainer}>
-          <View style={{ flex: 1 }}>
-            <TextField
-              placeholder="Write your comment here..."
-              size="Medium"
-              value={commentText}
-              onChangeText={setCommentText}
-            />
-          </View>
-          <View style={styles.buttonRow}>
-            <FloatingActionButton
-              value={sendButton}
-              backgroundColor={colors.brand[600]}
-              iconColor={colors.base.white}
-              size={40}
-              onPress={handleSend}
-              disabled={createLoading || !commentText.trim()}
-            />
-          </View>
-        </View>
-      </View>
-
-      <DropdownMenu
-        visible={!!activeCommentId}
-        onClose={() => setActiveCommentId(null)}
-        iconWidth={16}
-        iconHight={16}
-        position={
-          dropdownLayout
-            ? {
-              left: dropdownLayout.x + dropdownLayout.width - 140,
-              top: dropdownLayout.y + dropdownLayout.height - 5,
-            }
-            : { left: 0, top: 0 }
-        }
-        items={
-          activeComment
-            ? [
-              {
-                label: 'Edit',
-                icon: editAvatarIcon,
-                onPress: () => {
-                  if (activeComment.kind === 'comment') {
-                    // Edit uses the existing bottom input field.
-                    const initial = (activeComment.text ?? '').trim();
-                    setEditingCommentId(activeComment.id);
-                    setEditingOriginalText(initial);
-                    setCommentText(initial);
-                    return;
-                  }
-
-                  const reasonItem = applicationReasonsList.find((x: any) => x?.id === activeComment.id) as any;
-                  const reasonIds =
-                    Array.isArray(reasonItem?.reason) ? reasonItem.reason.map((r: any) => r?.id).filter(Boolean) : [];
-                  setEditingReasonId(activeComment.id);
-                  setEditingReasonObjectId(reasonItem?.object_id ?? reasonItem?.id ?? null);
-                  setSelectedReasonIds(reasonIds);
-                },
-              },
-              {
-                label: 'Delete',
-                icon: deleteIcon,
-                onPress: () => {
-                  setDeleteTargetId(activeComment.id);
-                  setDeleteTargetText(activeComment.text ?? '');
-                  setDeleteTargetKind(activeComment.kind);
-                  setDeleteConfirmOpen(true);
-                },
-              },
-            ]
-            : []
-        }
-      />
-
-      <ConfirmModal
-        visible={deleteConfirmOpen}
-        title="Confirm"
-        message={`Are you sure you want to delete this ${deleteTargetKind}?\n\n${deleteTargetText || ''}`}
-        confirmText="Delete"
-        cancelText="Cancel"
-        onConfirm={() => {
-          if (!deleteTargetId) return;
-          if (deleteTargetKind === 'comment') {
-            dispatch(deleteCommentRequestAction({ id: deleteTargetId }));
-          } else {
-            dispatch(
-              updateApplicationReasonRequestAction({
-                id: deleteTargetId,
-                message: 'Deleted',
-              })
-            );
+        <DropdownMenu
+          visible={!!activeCommentId}
+          onClose={() => setActiveCommentId(null)}
+          iconWidth={16}
+          iconHight={16}
+          position={
+            dropdownLayout
+              ? {
+                left: dropdownLayout.x + dropdownLayout.width - 140,
+                top: dropdownLayout.y + dropdownLayout.height - 5,
+              }
+              : { left: 0, top: 0 }
           }
-          closeDeleteConfirm();
-          setActiveCommentId(null);
-        }}
-        onCancel={closeDeleteConfirm}
-        onClose={closeDeleteConfirm}
-        dismissOnBackdropPress
-      />
+          items={
+            activeComment
+              ? [
+                {
+                  label: 'Edit',
+                  icon: editAvatarIcon,
+                  onPress: () => {
+                    if (activeComment.kind === 'comment') {
+                      // Edit uses the existing bottom input field.
+                      const initial = (activeComment.text ?? '').trim();
+                      setEditingCommentId(activeComment.id);
+                      setEditingOriginalText(initial);
+                      setCommentText(initial);
+                      return;
+                    }
+
+                    const reasonItem = applicationReasonsList.find((x: any) => x?.id === activeComment.id) as any;
+                    const reasonIds =
+                      Array.isArray(reasonItem?.reason) ? reasonItem.reason.map((r: any) => r?.id).filter(Boolean) : [];
+                    setEditingReasonId(activeComment.id);
+                    setEditingReasonObjectId(reasonItem?.object_id ?? reasonItem?.id ?? null);
+                    setSelectedReasonIds(reasonIds);
+                  },
+                },
+                {
+                  label: 'Delete',
+                  icon: deleteIcon,
+                  onPress: () => {
+                    setDeleteTargetId(activeComment.id);
+                    setDeleteTargetText(activeComment.text ?? '');
+                    setDeleteTargetKind(activeComment.kind);
+                    setDeleteConfirmOpen(true);
+                  },
+                },
+              ]
+              : []
+          }
+        />
+
+        <ConfirmModal
+          visible={deleteConfirmOpen}
+          title="Confirm"
+          message={`Are you sure you want to delete this ${deleteTargetKind}?\n\n${deleteTargetText || ''}`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          onConfirm={() => {
+            if (!deleteTargetId) return;
+            if (deleteTargetKind === 'comment') {
+              dispatch(deleteCommentRequestAction({ id: deleteTargetId }));
+            } else {
+              dispatch(
+                updateApplicationReasonRequestAction({
+                  id: deleteTargetId,
+                  message: 'Deleted',
+                })
+              );
+            }
+            closeDeleteConfirm();
+            setActiveCommentId(null);
+          }}
+          onCancel={closeDeleteConfirm}
+          onClose={closeDeleteConfirm}
+          dismissOnBackdropPress
+        />
+      </KeyboardAvoidingView>
     </CustomSafeAreaView>
   );
 }

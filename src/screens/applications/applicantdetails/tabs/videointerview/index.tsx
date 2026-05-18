@@ -24,6 +24,8 @@ import Button from '../../../../../components/atoms/button';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { getApprovalStageStatusOptions } from '../stageStatusOptions';
 import Shimmer from '../../../../../components/atoms/shimmer';
+import { paddingRight } from '../../../../../../node_modules 12-03-47-425/html2canvas/dist/types/css/property-descriptors/padding';
+import { marginRight } from '../../../../../../node_modules 12-03-47-425/html2canvas/dist/types/css/property-descriptors/margin';
 
 const normalizeContentType = (v: unknown) =>
   String(v ?? '')
@@ -339,6 +341,7 @@ export default function VideoInterview({
           labelKey="name"
           valueKey="id"
           setValue={selectedStageStatus ?? currentStageStatus}
+          // customContainerStyle={{paddingHorizontal:10}}
           onSelect={(item) => setSelectedStageStatus(item?.id)}
           openModalOnSelect
           changeStatusModalProps={{

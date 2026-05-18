@@ -90,7 +90,6 @@ const Dropdown = ({
             searchPlaceholder={searchPlaceholder}
             searchField={searchField}
             inputSearchStyle={styles.searchInput}
-
             renderItem={(item, selected) => (
               <View style={[styles.optionItem, selected && styles.selectedOptionItem]}>
                 <View style={styles.optionTextContainer}>
@@ -132,17 +131,30 @@ const Dropdown = ({
 
             flatListProps={{ nestedScrollEnabled: true }}
 
+
+
             renderLeftIcon={() => (
-              <View style={{ marginRight: 8 }}>
+              <View style={{ paddingLeft:8}}>
                 <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
                   {label}{' '}
                 </Typography>
               </View>
             )}
+            renderRightIcon={() => (
+              <Ionicons
+                name={isFocused ? 'chevron-up' : 'chevron-down'}
+                size={20}
+                color={colors.gray[500]}
+                style={{
+                  marginRight:8,
+                  alignSelf: 'center',
+                }}
+              />
+            )}
           />
           {selectedItem && (
             <View style={styles.customSelectedDisplay}>
-              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', marginRight: 5 }}>
+              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', marginLeft:4 }}>
                 <Typography style={styles.selectedTextStyle} numberOfLines={1} ellipsizeMode='tail'>
                   {" "} {selectedItem.name}
                 </Typography>

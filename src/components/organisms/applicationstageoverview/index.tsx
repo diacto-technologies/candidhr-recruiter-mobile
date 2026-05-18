@@ -142,7 +142,8 @@ const ApplicationStageOverview: React.FC<ApplicationStageOverviewProps> = ({
     );
   };
 
-  if (loading) {
+  /** Skeleton while fetching or before first payload (Redux starts with `overview: null`). */
+  if (loading || overview == null) {
     return <ApplicationStageOverviewShimmer />;
   }
 

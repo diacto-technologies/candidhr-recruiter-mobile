@@ -7,6 +7,7 @@ import { Shimmer } from '../../atoms';
 import { selectAnalyticsLoading } from '../../../features/dashbaord';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useStyles } from './styles';
+import { formatCompactNumber } from '../../../utils/formatCompactNumber';
 
 import {
   useSharedValue,
@@ -16,24 +17,50 @@ import {
   Easing,
 } from 'react-native-reanimated';
 
+/**
+ * Decide whether to animate value or not
+ */
 function shouldAnimateNumericValue(value: string): boolean {
   const s = String(value ?? '').trim();
   if (s === '' || s === '—') return false;
   if (s.includes('%')) return false;
-  const n = Number(s);
+
+  const normalized = s.replace(/,/g, '');
+  const n = Number(normalized);
+
   return Number.isFinite(n);
 }
 
-/** Hooks only run when this component is mounted (numeric values only). */
-const AnimatedNumericStat = ({ value }: { value: string }) => {
+/**
+ * Animated Numeric Component (supports decimals ✅)
+ */
+const AnimatedNumericStat = ({
+  value,
+  isCompact = false,
+}: {
+  value: string;
+  isCompact?: boolean;
+}) => {
   const animatedValue = useSharedValue(0);
-  const [displayValue, setDisplayValue] = useState(0);
+  const [displayValue, setDisplayValue] = useState('0');
   const analyticsLoading = useAppSelector(selectAnalyticsLoading);
+
+  // detect decimal places from original value
+  const getDecimalPlaces = (val: string) => {
+    const normalized = val.replace(/,/g, '');
+    if (!normalized.includes('.')) return 0;
+    return normalized.split('.')[1].length;
+  };
+
+  const decimalPlaces = getDecimalPlaces(value);
 
   useEffect(() => {
     if (!analyticsLoading) {
       animatedValue.value = 0;
-      const n = Number(value);
+
+      const normalized = value.replace(/,/g, '');
+      const n = Number(normalized);
+
       animatedValue.value = withTiming(Number.isFinite(n) ? n : 0, {
         duration: 1000,
         easing: Easing.out(Easing.exp),
@@ -41,8 +68,22 @@ const AnimatedNumericStat = ({ value }: { value: string }) => {
     }
   }, [value, analyticsLoading, animatedValue]);
 
+  const updateDisplayValue = (val: number) => {
+    let formatted = '';
+
+    if (isCompact) {
+      formatted = formatCompactNumber(val);
+    } else if (decimalPlaces > 0) {
+      formatted = val.toFixed(decimalPlaces);
+    } else {
+      formatted = Math.floor(val).toString();
+    }
+
+    setDisplayValue(formatted);
+  };
+
   useDerivedValue(() => {
-    runOnJS(setDisplayValue)(Math.floor(animatedValue.value));
+    runOnJS(updateDisplayValue)(animatedValue.value);
   });
 
   return (
@@ -52,6 +93,16 @@ const AnimatedNumericStat = ({ value }: { value: string }) => {
   );
 };
 
+/**
+ * Main Stat Card Component
+ */
+function formatStatDisplayValue(value: string, isCompact: boolean): string {
+  if (!isCompact) return value;
+  const n = Number(String(value).replace(/,/g, ''));
+  if (!Number.isFinite(n)) return value;
+  return formatCompactNumber(n);
+}
+
 const StatCard = ({
   title,
   value,
@@ -59,6 +110,7 @@ const StatCard = ({
   subText,
   onPressInfo: _onPressInfo,
   tooltipText: _tooltipText,
+  isCompact = false,
 }: StatCardProps) => {
   const styles = useStyles();
   const analyticsLoading = useAppSelector(selectAnalyticsLoading);
@@ -76,10 +128,10 @@ const StatCard = ({
             }}
           />
         ) : animateNumeric ? (
-          <AnimatedNumericStat value={value} />
+          <AnimatedNumericStat value={value} isCompact={isCompact} />
         ) : (
           <Typography variant="semiBoldDsm">
-            {value}
+            {formatStatDisplayValue(value, isCompact)}
           </Typography>
         )}
 

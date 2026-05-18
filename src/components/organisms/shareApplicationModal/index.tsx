@@ -137,126 +137,127 @@ const ShareApplicationModal = ({
   return (
     <Modal visible={visible} transparent animationType="fade">
       <KeyboardAvoidingView
-        style={styles.backdrop}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
       >
-        <Pressable style={StyleSheet.absoluteFillObject} onPress={handleClose} />
-        <Card style={styles.card}>
-          <View style={styles.submodalCard}>
-            <View style={styles.header}>
-              <View style={styles.headerLeft}>
-                <View>
-                  <Typography variant="semiBoldTxtlg" color={colors.gray[900]}>
-                    Share Application
-                  </Typography>
-                </View>
-              </View>
-              <Pressable onPress={handleClose} hitSlop={12}>
-                <SvgXml xml={closeIcon} fill={colors.gray[400]} />
-              </Pressable>
-            </View>
-
-            <ScrollView
-              style={styles.scroll}
-              contentContainerStyle={styles.scrollContent}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-            >
-              <View style={styles.section}>
-                <Typography variant="semiBoldTxtsm">
-                  Share application with Team Members
-                </Typography>
-                <CommonDropdown
-                  placeholder="Search or select team members"
-                  options={teamMemberOptions}
-                  value={sharedMemberIds}
-                  onChange={(nextValue) => {
-                    const nextIds = Array.isArray(nextValue) ? nextValue : [];
-                    setSharedMemberIds(nextIds);
-
-                    // Map selected ids back to full user objects from usersList
-                    if (applicationId && Array.isArray(usersList)) {
-                      const selectedUsers = usersList.filter((u) =>
-                        nextIds.includes(u.id)
-                      );
-                      dispatch(
-                        updateApplicationShareRequestAction({
-                          applicationId,
-                          users: selectedUsers,
-                        })
-                      );
-                    }
-                  }}
-                  onOpen={handleDropdownOpen}
-                  onLoadMore={handleLoadMore}
-                  labelKey="name"
-                  valueKey="id"
-                  usernameKey="email"
-                  showIndexAndTotal={false}
-                  mode="default"
-                  dropdownPosition="bottom"
-                  multiSelect
-                // searchable
-                // searchPlaceholder="Search by name or email"
-                // searchField="name"
-                />
-              </View>
-
-              <View style={styles.section}>
-                <Typography variant="semiBoldTxtsm">
-                  Shared Members
-                </Typography>
-                <View style={styles.sharedList}>
-                  {sharedMembers.length === 0 ? (
-                    <Typography variant="regularTxtsm" color={colors.gray[500]}>
-                      No members shared yet. Add team members above.
+        <View
+          style={styles.backdrop}
+        >
+          <Pressable style={StyleSheet.absoluteFillObject} onPress={handleClose} />
+          <Card style={styles.card}>
+            <View style={styles.submodalCard}>
+              <View style={styles.header}>
+                <View style={styles.headerLeft}>
+                  <View>
+                    <Typography variant="semiBoldTxtlg" color={colors.gray[900]}>
+                      Share Application
                     </Typography>
-                  ) : (
-                    sharedMembers.map((member) => (
-                      <View key={member.id} style={styles.sharedRow}>
-                        <View style={styles.avatarWrap}>
-                          {member.profile_pic ? (
-                            <Image
-                              source={{ uri: member.profile_pic }}
-                              style={styles.avatar}
-                              resizeMode="cover"
-                            />
-                          ) : (
-                            <View style={styles.avatarPlaceholder}>
-                              <Ionicons name="person" size={20} color={colors.gray[500]} />
-                            </View>
-                          )}
-                        </View>
-                        <View style={styles.sharedInfo}>
-                          <Typography variant="semiBoldTxtsm" color={colors.gray[900]} numberOfLines={1}>
-                            {member.name}
-                          </Typography>
-                          <Typography variant="regularTxtxs" color={colors.gray[500]} numberOfLines={1}>
-                            {member.email}
-                          </Typography>
-                        </View>
-                        <View style={styles.rolePill}>
-                          <Typography variant="mediumTxtxs" color={colors.brand[700]}>
-                            {member.role}
-                          </Typography>
-                        </View>
-                        <Pressable
-                          onPress={() => handleRemoveSharedMember(member.id)}
-                          hitSlop={8}
-                          style={styles.deleteWrap}
-                        >
-                          <SvgXml xml={trashIcon} />
-                        </Pressable>
-                      </View>
-                    ))
-                  )}
+                  </View>
                 </View>
+                <Pressable onPress={handleClose} hitSlop={12}>
+                  <SvgXml xml={closeIcon} fill={colors.gray[400]} />
+                </Pressable>
               </View>
-            </ScrollView>
-            <View style={{ marginHorizontal: 20, marginVertical: 10 }}>
-              <Button onPress={handleClose}>close</Button>
-            </View>
-            {/* <FooterButtons
+              <ScrollView
+                style={styles.scroll}
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="always"
+                showsVerticalScrollIndicator={false}
+              >
+                <View style={styles.section}>
+                  <Typography variant="semiBoldTxtsm">
+                    Share application with Team Members
+                  </Typography>
+                  <CommonDropdown
+                    placeholder="Search or select team members"
+                    options={teamMemberOptions}
+                    value={sharedMemberIds}
+                    onChange={(nextValue) => {
+                      const nextIds = Array.isArray(nextValue) ? nextValue : [];
+                      setSharedMemberIds(nextIds);
+
+                      // Map selected ids back to full user objects from usersList
+                      if (applicationId && Array.isArray(usersList)) {
+                        const selectedUsers = usersList.filter((u) =>
+                          nextIds.includes(u.id)
+                        );
+                        dispatch(
+                          updateApplicationShareRequestAction({
+                            applicationId,
+                            users: selectedUsers,
+                          })
+                        );
+                      }
+                    }}
+                    onOpen={handleDropdownOpen}
+                    onLoadMore={handleLoadMore}
+                    labelKey="name"
+                    valueKey="id"
+                    usernameKey="email"
+                    showIndexAndTotal={false}
+                    mode="default"
+                    dropdownPosition="bottom"
+                    multiSelect
+                    searchable={true}
+                  // searchPlaceholder="Search by name or email"
+                  // searchField="name"
+                  />
+                </View>
+                <View style={styles.section}>
+                  <Typography variant="semiBoldTxtsm">
+                    Shared Members
+                  </Typography>
+                  <View style={styles.sharedList}>
+                    {sharedMembers.length === 0 ? (
+                      <Typography variant="regularTxtsm" color={colors.gray[500]}>
+                        No members shared yet. Add team members above.
+                      </Typography>
+                    ) : (
+                      sharedMembers.map((member) => (
+                        <View key={member.id} style={styles.sharedRow}>
+                          <View style={styles.avatarWrap}>
+                            {member.profile_pic ? (
+                              <Image
+                                source={{ uri: member.profile_pic }}
+                                style={styles.avatar}
+                                resizeMode="cover"
+                              />
+                            ) : (
+                              <View style={styles.avatarPlaceholder}>
+                                <Ionicons name="person" size={20} color={colors.gray[500]} />
+                              </View>
+                            )}
+                          </View>
+                          <View style={styles.sharedInfo}>
+                            <Typography variant="semiBoldTxtsm" color={colors.gray[900]} numberOfLines={1}>
+                              {member.name}
+                            </Typography>
+                            <Typography variant="regularTxtxs" color={colors.gray[500]} numberOfLines={1}>
+                              {member.email}
+                            </Typography>
+                          </View>
+                          <View style={styles.rolePill}>
+                            <Typography variant="mediumTxtxs" color={colors.brand[700]}>
+                              {member.role}
+                            </Typography>
+                          </View>
+                          <Pressable
+                            onPress={() => handleRemoveSharedMember(member.id)}
+                            hitSlop={8}
+                            style={styles.deleteWrap}
+                          >
+                            <SvgXml xml={trashIcon} />
+                          </Pressable>
+                        </View>
+                      ))
+                    )}
+                  </View>
+                </View>
+              </ScrollView>
+              <View style={{ marginHorizontal: 20, marginVertical: 10 }}>
+                <Button onPress={handleClose}>close</Button>
+              </View>
+              {/* <FooterButtons
               leftButtonProps={{
                 children: ' ',
                 variant: 'outline',
@@ -278,14 +279,18 @@ const ShareApplicationModal = ({
                 onPress: handleClose,
               }}
             /> */}
-          </View>
-        </Card>
+            </View>
+          </Card>
+        </View>
       </KeyboardAvoidingView>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
+  keyboardAvoidingView: {
+    flex: 1,
+  },
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(10, 13, 18, 0.45)',
@@ -294,9 +299,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   card: {
-    width: '100%',
-    maxWidth: 400,
-    maxHeight: '90%',
+    // width: '100%',
+    //maxWidth: 400,
+    //maxHeight: '80%',
     backgroundColor: colors.base.white,
     borderRadius: 20,
     borderWidth: 1,
@@ -327,7 +332,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.brand[100],
   },
-  scroll: { maxHeight: 400 },
+  scroll: {},
   scrollContent: { padding: 20, paddingBottom: 12 },
   section: {
     gap: 12,

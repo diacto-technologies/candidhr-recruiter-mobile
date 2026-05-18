@@ -183,7 +183,7 @@ const Header = ({
               style={{
                 flex: 1,
                 marginRight: 12,
-                zIndex: 999,
+                zIndex: 9999,
                 opacity: searchOpacity,
                 transform: [{ translateX }],
               }}

@@ -15,8 +15,8 @@ export const styles = StyleSheet.create({
         borderRadius: 8,
         borderWidth: 0.5,
         borderColor: colors.gray[300],
-        paddingLeft: 12,
-        paddingRight: 6,
+        // paddingLeft: 12,
+        // paddingRight: 6,
         paddingVertical: 0,
         ...shadowStyles.shadow_xs
     },
@@ -64,7 +64,7 @@ export const styles = StyleSheet.create({
     },
 
     containerCompact: {
-        paddingLeft: 10,
+        // paddingLeft: 10,
         paddingRight: 8,
         minHeight: 40,
     },
@@ -225,7 +225,7 @@ export const styles = StyleSheet.create({
     },
 
     selectedOptionItem: {
-        backgroundColor: colors.brand[50],
+        // backgroundColor: colors.brand[50],
     },
 
     optionTextContainer: {
@@ -258,7 +258,8 @@ export const styles = StyleSheet.create({
     statusBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
+        gap:4,
+        marginLeft:6
     },
 
     statusDot: {
@@ -318,6 +319,7 @@ export const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: colors.brand[200],
         flexShrink: 0,
+        marginRight:2,
     },
 
     selectedTotalText: {

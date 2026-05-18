@@ -97,6 +97,7 @@ const analyticsSlice = createSlice({
 
     getStageGraphOverviewFailure: (state, action: PayloadAction<string>) => {
       state.stageGraphOverviewLoading = false;
+      state.stageGraphOverview = { results: [] };
       state.error = action.payload;
     },
 
