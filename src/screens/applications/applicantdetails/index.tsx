@@ -66,7 +66,6 @@ export default function ApplicantDetails() {
   const styles = useStyles();
   const initialTabLabel = !tab ? 'Profile Info' : tab;
   const [activeTab, setActiveTab] = useState(initialTabLabel);
-  const [visitedTabKeys, setVisitedTabKeys] = useState(() => new Set<string>([initialTabLabel]));
   const [resumeModalVisible, setResumeModalVisible] = useState(false);
   const [htmlPreviewVisible, setHtmlPreviewVisible] = useState(false);
   const [htmlPreview, setHtmlPreview] = useState<string>('');
@@ -152,12 +151,7 @@ export default function ApplicantDetails() {
     setVideoInterviewSessionContentId(null);
     setAssessmentV2SessionContentId(null);
     setAssessmentV2SelectedAssignmentId(null);
-    setVisitedTabKeys(new Set([activeTab]));
   }, [application_id]);
-
-  useEffect(() => {
-    setVisitedTabKeys((prev) => new Set(prev).add(activeTab));
-  }, [activeTab]);
 
   useEffect(() => {
     dispatch(resetPersonalityScreeningState());
@@ -224,32 +218,30 @@ export default function ApplicantDetails() {
       case 'Profile Info':
         return <ProfileInfo />;
       case 'Resume Screening':
-        return can(PERMISSIONS.VIEW_RESUME_SCREENING_STAGE) && (
-          <ResumeScreening />
-        )
+        return <ResumeScreening />;
       case 'Assessments':
-        return can(PERMISSIONS.VIEW_ASSESSMENT_STAGE) && (
+        return (
           <Assessment
             sessionContentId={assessmentSessionContentId}
             onSessionContentIdChange={setAssessmentSessionContentId}
           />
         );
       case 'Assessment V2':
-        return can(PERMISSIONS.VIEW_ASSESSMENT_STAGE) && (
+        return (
           <AssessmentV2
             sessionContentId={assessmentV2SessionContentId}
             onSessionContentIdChange={setAssessmentV2SessionContentId}
             selectedAssignmentId={assessmentV2SelectedAssignmentId}
             onSelectedAssignmentIdChange={setAssessmentV2SelectedAssignmentId}
           />
-        )
+        );
       case 'Automated Video Interview':
-        return can(PERMISSIONS.VIEW_AUTOMATED_VIDEO_INTERVIEW_STAGE) && (
+        return (
           <VideoInterview
             sessionContentId={videoInterviewSessionContentId}
             onSessionContentIdChange={setVideoInterviewSessionContentId}
           />
-        )
+        );
       default:
         return <View />;
     }
@@ -488,7 +480,13 @@ export default function ApplicantDetails() {
           }}
         />
         {application || loading ? <>
-          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} bounces={false}>
+          <ScrollView
+            style={{ flex: 1 }}
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+            nestedScrollEnabled
+            removeClippedSubviews={false}
+          >
             <View style={styles.subContainer}>
               <ProfileCart
                 loading={loading}
@@ -505,36 +503,9 @@ export default function ApplicantDetails() {
                 <View style={styles.bottomBorder} />
               </View>
               <View style={{ paddingHorizontal: 16, paddingVertical: 16 }}>
-                {tabs
-                  .filter(
-                    (tabName) => visitedTabKeys.has(tabName) || tabName === activeTab
-                  )
-                  .map((tabName) => {
-                    const isActive = activeTab === tabName;
-                    return (
-                      <View
-                        key={tabName}
-                        collapsable={false}
-                        style={
-                          isActive
-                            ? { width: '100%' }
-                            : {
-                              width: '100%',
-                              height: 0,
-                              overflow: 'hidden',
-                              opacity: 0,
-                              position: 'absolute',
-                              left: 0,
-                              right: 0,
-                              zIndex: -1,
-                            }
-                        }
-                        pointerEvents={isActive ? 'auto' : 'none'}
-                      >
-                        {renderTabPanel(tabName)}
-                      </View>
-                    );
-                  })}
+                <View key={activeTab} collapsable={false} style={{ width: '100%' }}>
+                  {renderTabPanel(activeTab)}
+                </View>
               </View>
             </View>
           </ScrollView>

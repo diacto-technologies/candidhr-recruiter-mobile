@@ -1,5 +1,6 @@
 import { apiClient } from "../../api/client";
 import { API_ENDPOINTS } from "../../api/endpoints";
+import { config } from "../../config";
 import { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse } from "./types";
 
 export const authApi = {
@@ -19,9 +20,16 @@ export const authApi = {
   },
 
   refreshToken: async (refresh: string) => {
-    return apiClient.post(API_ENDPOINTS.AUTH.REFRESH, {
-      refresh
-    })
+    const res = await fetch(`${config.api.baseURL}${API_ENDPOINTS.AUTH.REFRESH}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.detail || err?.message || 'Token refresh failed');
+    }
+    return res.json();
   },
 
   getMe: async (): Promise<{ user: any }> => {

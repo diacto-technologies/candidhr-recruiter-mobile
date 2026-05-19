@@ -59,7 +59,12 @@ export const getRefreshToken = async (): Promise<string | null> => {
  */
 export const removeTokens = async (): Promise<void> => {
   try {
-    await AsyncStorage.multiRemove([TOKEN_KEY, REFRESH_TOKEN_KEY]);
+    await AsyncStorage.multiRemove([
+      TOKEN_KEY,
+      REFRESH_TOKEN_KEY,
+      'accessToken',
+      'refreshToken',
+    ]);
   } catch (error) {
     console.error('Error removing tokens:', error);
     throw error;

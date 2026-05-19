@@ -1,7 +1,13 @@
 // API client configuration
 import { config } from '../config';
 import { store } from '../store';
-import { organizationalOrigin, selectRefreshToken, selectToken, tenant } from '../features/auth/selectors';
+import {
+  organizationalOrigin,
+  selectIsAuthenticated,
+  selectRefreshToken,
+  selectToken,
+  tenant,
+} from '../features/auth/selectors';
 import { logoutSuccess, refreshTokenSuccess } from '../features/auth/slice';
 import { showToastMessage } from '../utils/toast';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -22,6 +28,26 @@ const getAuthRefreshToken = (): string | null => {
   const state = store.getState();
   return selectRefreshToken(state);
 };
+
+const AUTH_ENDPOINTS_NO_REFRESH = [
+  API_ENDPOINTS.AUTH.LOGIN,
+  API_ENDPOINTS.AUTH.REFRESH,
+  API_ENDPOINTS.AUTH.REGISTER,
+  API_ENDPOINTS.AUTH.FORGOT_PASSWORD,
+];
+
+function isPublicAuthEndpoint(endpoint?: string): boolean {
+  if (!endpoint) return false;
+  return AUTH_ENDPOINTS_NO_REFRESH.some(
+    (path) => endpoint === path || endpoint.includes(path)
+  );
+}
+
+async function hasStoredRefreshToken(): Promise<boolean> {
+  if (getAuthRefreshToken()) return true;
+  const stored = await AsyncStorage.getItem('refreshToken');
+  return Boolean(stored);
+}
 
 // Helper function to get organization ID from store
 const getOrganizationId = (): string | null => {
@@ -133,6 +159,11 @@ async function doRefresh(refresh: string): Promise<boolean> {
   }
 
   return false;
+}
+
+/** Proactive + reactive token refresh entry point (used by useTokenRefresh and 401 handler). */
+export async function refreshAuthTokens(): Promise<boolean> {
+  return refreshFromStorage();
 }
 
 async function refreshFromStorage(): Promise<boolean> {
@@ -285,9 +316,24 @@ async function executeWithRefresh(
       return response;
     }
 
-    // 🔁 Try refresh ONCE on 401
+    // 🔁 Try refresh ONCE on 401 — only for an active session with a refresh token
     if (response.status === 401 && !didRetry) {
       didRetry = true;
+
+      const isAuthenticated = selectIsAuthenticated(store.getState());
+
+      if (!isAuthenticated || isPublicAuthEndpoint(endpoint)) {
+        await handleApiError(response, endpoint);
+      }
+
+      const hadRefreshToken = await hasStoredRefreshToken();
+      if (!hadRefreshToken) {
+        if (__DEV__) {
+          console.log('401 with no refresh token — skip refresh/logout');
+        }
+        await handleApiError(response, endpoint);
+      }
+
       if (__DEV__) {
         console.log('Attempting token refresh');
       }
@@ -298,9 +344,10 @@ async function executeWithRefresh(
         continue; // retry original request
       }
 
-      // ❌ Refresh failed → force logout and throw error
-      // Note: logoutSuccess() will trigger saga to clear AsyncStorage
-      store.dispatch(logoutSuccess());
+      // Had a session but refresh failed → clear auth
+      if (selectIsAuthenticated(store.getState())) {
+        store.dispatch(logoutSuccess());
+      }
       throw new Error('Session expired. Please login again.');
     }
 

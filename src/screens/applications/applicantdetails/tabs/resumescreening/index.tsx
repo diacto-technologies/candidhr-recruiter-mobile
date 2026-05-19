@@ -419,7 +419,7 @@ export default function ResumeScreening() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, gap: 16 },
+  container: { gap: 16 },
   shortListedCard: {
     backgroundColor: colors.common.white,
     borderRadius: 8,

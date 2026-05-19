@@ -17,7 +17,7 @@ import {
   setError,
 } from "./slice";
 import { authApi } from "./api";
-import { selectRefreshToken } from "./selectors";
+import { selectIsAuthenticated, selectRefreshToken } from "./selectors";
 import { LoginRequest, LoginResponse, RegisterRequest } from "./types";
 import { getProfileRequest } from "../profile/slice";
 import { forgotPasswordFailureAction, forgotPasswordSuccessAction, refreshTokenRequestAction, resetPasswordFailureAction, resetPasswordSuccessAction } from "./actions";
@@ -41,10 +41,10 @@ function* loginWorker(action: { type: string; payload: LoginRequest }): Generato
       refreshToken: response.refresh,
       tenant: response.tenant,
     };
-    yield put(loginSuccess(mapped));
-    // Persist tokens so refresh works after app close/reopen (same keys as API client)
+    // Persist tokens before Redux update so in-flight API calls can read them immediately
     yield call([AsyncStorage, 'setItem'], 'accessToken', mapped.token);
     yield call([AsyncStorage, 'setItem'], 'refreshToken', mapped.refreshToken);
+    yield put(loginSuccess(mapped));
     yield put(getProfileRequest(response.user_id));
   } catch (error: any) {
     // Log detailed error for debugging
@@ -79,7 +79,12 @@ function* registerWorker(action: { type: string; payload: RegisterRequest }): Ge
 }
 
 function* clearTokensOnLogoutWorker(): Generator<any, void, any> {
-  yield call(AsyncStorage.multiRemove, ['accessToken', 'refreshToken']);
+  yield call(AsyncStorage.multiRemove, [
+    'accessToken',
+    'refreshToken',
+    '@auth_token',
+    '@auth_refresh_token',
+  ]);
 }
 
 function* logoutWorker(): Generator<any, void, any> {
@@ -108,19 +113,25 @@ function* refreshTokenWorker(): Generator<any, void, any> {
     if (__DEV__) {
       console.log("[Auth] Refresh token API success", { access: !!response?.access });
     }
+    const newAccess = response.access;
+    const newRefresh = response.refresh ?? refreshToken;
     yield put(
       refreshTokenSuccess({
-        token: response.access,
-        refreshToken: response.refresh ?? refreshToken,
+        token: newAccess,
+        refreshToken: newRefresh,
       })
     );
+    yield call([AsyncStorage, 'setItem'], 'accessToken', newAccess);
+    yield call([AsyncStorage, 'setItem'], 'refreshToken', newRefresh);
   } catch (error: any) {
     if (__DEV__) {
       console.log("[Auth] Refresh token API failed", error?.message);
     }
     yield put(refreshTokenFailure(error.message || "Token refresh failed"));
-    // If refresh fails, logout user
-    yield put(logoutSuccess());
+    const isAuthenticated: boolean = yield select(selectIsAuthenticated);
+    if (isAuthenticated) {
+      yield put(logoutSuccess());
+    }
   }
 }
 

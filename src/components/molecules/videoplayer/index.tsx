@@ -79,7 +79,7 @@ export default function VideoPlayerBox({
     if (externalFullscreen === undefined) {
       setInternalFullscreen(false);
     }
-    Orientation.unlockAllOrientations();
+    Orientation.lockToPortrait();
   };
 
   const toggleFullscreen = () => {
@@ -88,7 +88,7 @@ export default function VideoPlayerBox({
 
   useEffect(() => {
     return () => {
-      Orientation.unlockAllOrientations();
+      Orientation.lockToPortrait();
     };
   }, []);
 
@@ -129,7 +129,7 @@ export default function VideoPlayerBox({
             muted={isMuted}
             resizeMode={resizeMode}
             fullscreen={false}
-            fullscreenAutorotate={true}
+            fullscreenAutorotate={false}
             fullscreenOrientation="landscape"
             onLoad={onLoad}
             onProgress={handleProgress}

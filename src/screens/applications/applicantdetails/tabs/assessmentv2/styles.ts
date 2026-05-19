@@ -5,7 +5,6 @@ import { shadowStyles } from '../../../../../theme/shadowcolor';
 export const useStyles = () => {
     return StyleSheet.create({
         container: {
-            flex: 1,
             gap: 16,
         },
 

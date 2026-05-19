@@ -1,5 +1,6 @@
 import { View, Text, Linking } from 'react-native'
 import React, { FC, useEffect } from 'react'
+import { useTokenRefresh } from '../hooks/useTokenRefresh'
 import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { navigationRef } from '../utils/navigationUtils'
@@ -32,6 +33,7 @@ import CandidateAssignmentsDeatilsTable from '../screens/applications/services/a
 
 const Stack = createNativeStackNavigator()
 const Navigation: FC = () => {
+  useTokenRefresh();
   const theme = useTheme();
   const isDarkMode = theme === 'dark';
 
