@@ -1,4 +1,4 @@
-import React, { Fragment, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { Fragment, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Pressable,
@@ -31,6 +31,8 @@ import { editAvatarIcon } from '../../../../assets/svg/editavatar';
 import { SetProfilePhotoModal } from './SetProfilePhotoModal';
 import { useStyles } from './styles';
 
+type PendingPickerAction = 'gallery' | 'camera';
+
 const AccountInfo = () => {
   const dispatch = useAppDispatch();
   const profile = useAppSelector(selectProfile);
@@ -51,6 +53,8 @@ const AccountInfo = () => {
   // Local loading state for image upload
   const [isUploading, setIsUploading] = useState(false);
   const [showSetProfileModal, setShowSetProfileModal] = useState(false);
+  const pendingPickerRef = useRef<PendingPickerAction | null>(null);
+  const pickerBusyRef = useRef(false);
 
   // Initialize form with profile data
   useEffect(() => {
@@ -169,57 +173,108 @@ const AccountInfo = () => {
 ]);
 
   const PROFILE_IMAGE_SIZE = 500;
-  const getCropOptions = () => ({
-    width: PROFILE_IMAGE_SIZE,
-    height: PROFILE_IMAGE_SIZE,
-    cropping: true,
-    cropperCircleOverlay: true,
-    aspectRatio: [1, 1] as [number, number],
-    includeBase64: false,
-  });
 
-  const openGalleryWithCrop = useCallback(async () => {
-    try {
-      const result = await ImageCropPicker.openPicker({
-        ...getCropOptions(),
-        mediaType: 'photo',
-      });
-      setSelectedImage({
-        uri: result.path,
-        fileName: result.path.split('/').pop() || `profile_${Date.now()}.jpg`,
-        type: result.mime || 'image/jpeg',
-      } as Asset);
-    } catch (error: any) {
-      if (error?.code !== 'E_PICKER_CANCELLED') {
-        showToastMessage(error?.message || 'Failed to pick image', 'error');
-      }
-    }
+  const getCropOptions = useCallback(
+    () => ({
+      width: PROFILE_IMAGE_SIZE,
+      height: PROFILE_IMAGE_SIZE,
+      cropping: true,
+      cropperCircleOverlay: true,
+      aspectRatio: [1, 1] as [number, number],
+      includeBase64: false,
+    }),
+    []
+  );
+
+  const closeSetProfileModal = useCallback(() => {
+    pendingPickerRef.current = null;
+    setShowSetProfileModal(false);
   }, []);
 
-  const openCameraWithCrop = useCallback(async () => {
-    try {
-      const result = await ImageCropPicker.openCamera({
-        ...getCropOptions(),
-        mediaType: 'photo',
-      });
-      setSelectedImage({
-        uri: result.path,
-        fileName: result.path.split('/').pop() || `profile_${Date.now()}.jpg`,
-        type: result.mime || 'image/jpeg',
-      } as Asset);
-    } catch (error: any) {
-      if (error?.code !== 'E_PICKER_CANCELLED') {
-        showToastMessage(error?.message || 'Failed to capture image', 'error');
-      }
-    }
+  const applyPickerResult = useCallback((result: { path: string; mime?: string }) => {
+    setSelectedImage({
+      uri: result.path,
+      fileName: result.path.split('/').pop() || `profile_${Date.now()}.jpg`,
+      type: result.mime || 'image/jpeg',
+    } as Asset);
   }, []);
+
+  const runPendingPicker = useCallback(async () => {
+    const action = pendingPickerRef.current;
+    pendingPickerRef.current = null;
+
+    if (!action || pickerBusyRef.current) {
+      return;
+    }
+
+    pickerBusyRef.current = true;
+    try {
+      if (action === 'gallery') {
+        const result = await ImageCropPicker.openPicker({
+          ...getCropOptions(),
+          mediaType: 'photo',
+        });
+        applyPickerResult(result);
+      } else {
+        const result = await ImageCropPicker.openCamera({
+          ...getCropOptions(),
+          mediaType: 'photo',
+        });
+        applyPickerResult(result);
+      }
+    } catch (error: any) {
+      if (error?.code === 'E_PICKER_CANCELLED') {
+        await ImageCropPicker.clean().catch(() => undefined);
+      } else {
+        showToastMessage(
+          error?.message ||
+            (action === 'gallery' ? 'Failed to pick image' : 'Failed to capture image'),
+          'error'
+        );
+      }
+    } finally {
+      await ImageCropPicker.clean().catch(() => undefined);
+      pickerBusyRef.current = false;
+    }
+  }, [applyPickerResult, getCropOptions]);
+
+  /** iOS: Modal `onDismiss` — picker opens only after modal is fully gone. */
+  const handleProfilePhotoModalDismissed = useCallback(() => {
+    void runPendingPicker();
+  }, [runPendingPicker]);
+
+  /** Android: no `onDismiss`; run after visible becomes false. */
+  useEffect(() => {
+    if (Platform.OS === 'ios' || showSetProfileModal) {
+      return;
+    }
+    if (!pendingPickerRef.current) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      void runPendingPicker();
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [showSetProfileModal, runPendingPicker]);
+
+  const queuePickerAfterModalClose = useCallback((action: PendingPickerAction) => {
+    if (pickerBusyRef.current) {
+      return;
+    }
+    pendingPickerRef.current = action;
+    setShowSetProfileModal(false);
+  }, []);
+
+  const openGalleryWithCrop = useCallback(() => {
+    queuePickerAfterModalClose('gallery');
+  }, [queuePickerAfterModalClose]);
+
+  const openCameraWithCrop = useCallback(() => {
+    queuePickerAfterModalClose('camera');
+  }, [queuePickerAfterModalClose]);
 
   const handleEditAvatar = useCallback(() => {
     setShowSetProfileModal(true);
-  }, []);
-
-  const closeSetProfileModal = useCallback(() => {
-    setShowSetProfileModal(false);
   }, []);
 
   return (
@@ -227,6 +282,7 @@ const AccountInfo = () => {
       <SetProfilePhotoModal
         visible={showSetProfileModal}
         onClose={closeSetProfileModal}
+        onDismiss={handleProfilePhotoModalDismissed}
         onSelectGallery={openGalleryWithCrop}
         onSelectCamera={openCameraWithCrop}
       />
@@ -239,7 +295,7 @@ const AccountInfo = () => {
           <ScrollView
             style={styles.container}
             showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
+            keyboardShouldPersistTaps="always"
             bounces={false}
           >
             {/* Avatar Section */}

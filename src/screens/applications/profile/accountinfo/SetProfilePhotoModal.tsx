@@ -16,6 +16,8 @@ import { SvgXml } from 'react-native-svg';
 export interface SetProfilePhotoModalProps {
   visible: boolean;
   onClose: () => void;
+  /** iOS: fired after modal dismiss animation completes — open native picker here. */
+  onDismiss?: () => void;
   onSelectGallery: () => void;
   onSelectCamera: () => void;
 }
@@ -23,6 +25,7 @@ export interface SetProfilePhotoModalProps {
 export const SetProfilePhotoModal: React.FC<SetProfilePhotoModalProps> = ({
   visible,
   onClose,
+  onDismiss,
   onSelectGallery,
   onSelectCamera,
 }) => {
@@ -33,21 +36,22 @@ export const SetProfilePhotoModal: React.FC<SetProfilePhotoModalProps> = ({
   }, [onClose]);
 
   const handleGallery = useCallback(() => {
-    onClose();
+    // Parent closes modal and opens picker after dismiss (avoids iOS touch freeze).
     onSelectGallery();
-  }, [onClose, onSelectGallery]);
+  }, [onSelectGallery]);
 
   const handleCamera = useCallback(() => {
-    onClose();
     onSelectCamera();
-  }, [onClose, onSelectCamera]);
+  }, [onSelectCamera]);
 
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType="fade"
+      presentationStyle="overFullScreen"
       onRequestClose={handleClose}
+      onDismiss={onDismiss}
     >
       <KeyboardAvoidingView
         style={styles.modalBackdrop}
