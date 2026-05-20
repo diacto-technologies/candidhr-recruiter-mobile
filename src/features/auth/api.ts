@@ -20,16 +20,9 @@ export const authApi = {
   },
 
   refreshToken: async (refresh: string) => {
-    const res = await fetch(`${config.api.baseURL}${API_ENDPOINTS.AUTH.REFRESH}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err?.detail || err?.message || 'Token refresh failed');
-    }
-    return res.json();
+    return apiClient.post(API_ENDPOINTS.AUTH.REFRESH, {
+      refresh
+    })
   },
 
   getMe: async (): Promise<{ user: any }> => {
