@@ -29,7 +29,7 @@ const ApplicationOverviewDetails = () => {
   const shadowOpacity = useRef(new Animated.Value(0)).current;
   
   // Monitor network connectivity
-  // useNetworkConnectivity();
+  useNetworkConnectivity();
   // show/hide shadow based on scrollX
   scrollX.addListener(({ value }) => {
     Animated.timing(shadowOpacity, {

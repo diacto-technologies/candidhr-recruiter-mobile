@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
 import Typography from "../../atoms/typography";
@@ -103,25 +103,21 @@ const AssignmentDropdown: React.FC<Props> = ({
             </TouchableOpacity>
 
             {open && (
-                <View style={[dropdownStyles.optionsContainer, localStyles.optionsContainer]}>
-                    <FlatList
-                        data={data}
-                        keyExtractor={(item) => item.id}
-                        nestedScrollEnabled={true}
-                        renderItem={({ item, index }) => {
+            <View style={[dropdownStyles.optionsContainer, localStyles.optionsContainer]}>
+                    <ScrollView nestedScrollEnabled={true} showsVerticalScrollIndicator={false}>
+                        {data.map((item, index) => {
                             const isSelected = item.id === selectedId;
 
                             return (
                                 <TouchableOpacity
+                                    key={item.id}
                                     onPress={() => {
                                         onSelect(item);
                                         setOpen(false);
                                     }}
                                     activeOpacity={0.85}
                                     style={[
-                                        // dropdownStyles.optionItem,
                                         isSelected && dropdownStyles.selectedOptionItem,
-                                        // localStyles.optionItem,
                                     ]}
                                 >
                                     <View
@@ -162,8 +158,8 @@ const AssignmentDropdown: React.FC<Props> = ({
                                     </Typography>
                                 </TouchableOpacity>
                             );
-                        }}
-                    />
+                        })}
+                    </ScrollView>
                 </View>
             )}
         </View>

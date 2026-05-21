@@ -30,7 +30,7 @@ const AI_RECOMMENDATION_SORT = "-resume_score";
 const ApplicantsTab = () => {
   const styles = useStyles();
   const [aiEnabled, setAiEnabled] = useState(false);
-  
+
   const dispatch = useAppDispatch();
   const applications = useAppSelector(selectApplications);
   const loading = useAppSelector(selectApplicationsLoading);

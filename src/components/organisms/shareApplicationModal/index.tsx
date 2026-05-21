@@ -6,6 +6,7 @@ import {
   ScrollView,
   Image,
   KeyboardAvoidingView,
+  Keyboard,
   Platform,
   StyleSheet,
 } from 'react-native';
@@ -67,6 +68,10 @@ const ShareApplicationModal = ({
 }: ShareApplicationModalProps) => {
   const [sharedMemberIds, setSharedMemberIds] = useState<string[]>([]);
   const [hasRequestedUsers, setHasRequestedUsers] = useState(false);
+  // Android only: track keyboard open to flip dropdownPosition to 'top'
+  // so suggestions don't render at keyboard level (KAV doesn't work in
+  // transparent Modals on Android).
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   const dispatch = useDispatch();
   const usersList = useAppSelector(selectUsersListItems);
@@ -91,8 +96,16 @@ const ShareApplicationModal = ({
     if (!visible) {
       setSharedMemberIds([]);
       setHasRequestedUsers(false);
+      setKeyboardOpen(false);
     }
   }, [visible, initialSharedMemberIds]);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardOpen(true));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardOpen(false));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   const handleDropdownOpen = () => {
     if (!hasRequestedUsers && (usersList?.length ?? 0) === 0) {
@@ -137,7 +150,7 @@ const ShareApplicationModal = ({
   return (
     <Modal visible={visible} transparent animationType="fade">
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardAvoidingView}
       >
         <View
@@ -196,11 +209,12 @@ const ShareApplicationModal = ({
                     usernameKey="email"
                     showIndexAndTotal={false}
                     mode="default"
-                    dropdownPosition="bottom"
+                    dropdownPosition={Platform.OS === 'android' && keyboardOpen ? 'top' : 'bottom'}
                     multiSelect
                     searchable={true}
                   // searchPlaceholder="Search by name or email"
                   // searchField="name"
+                  containerStyle={{position:'absolute'}}
                   />
                 </View>
                 <View style={styles.section}>
@@ -299,9 +313,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   card: {
-    // width: '100%',
-    //maxWidth: 400,
-    //maxHeight: '80%',
+    width: '100%',
+    maxHeight: '85%',
     backgroundColor: colors.base.white,
     borderRadius: 20,
     borderWidth: 1,

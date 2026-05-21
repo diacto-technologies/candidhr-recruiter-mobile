@@ -155,7 +155,7 @@ const FilterSheetContent: React.FC<Props> = ({
   const visibleTabs = filtersConfig.filter((item: string) => !hiddenTabs.includes(item));
 
   useEffect(() => {
-    slideAnim.setValue(50);
+    slideAnim.setValue(-20);
 
     Animated.timing(slideAnim, {
       toValue: 0,
@@ -274,10 +274,14 @@ const FilterSheetContent: React.FC<Props> = ({
             })}
           </ScrollView>
 
-          {/* RIGHT CONTENT */}
-          <View style={{ flex: 1, flexShrink: 1 }}>
-            <Animated.View style={{ flex: 1, transform: [{ translateX: slideAnim }] }}>
-              <ScrollView contentContainerStyle={{ flexGrow: 0 }}>
+          {/* RIGHT CONTENT — minWidth:0 prevents Android flex overflow / clipped sort rows */}
+          <View style={styles.rightPanel}>
+            <Animated.View style={[styles.rightPanelInner, { transform: [{ translateX: slideAnim }] }]}>
+              <ScrollView
+                style={styles.rightPanelScroll}
+                contentContainerStyle={styles.rightPanelScrollContent}
+                showsVerticalScrollIndicator={false}
+              >
 
                 {mode === 'applicant' && (
                   <>
@@ -334,7 +338,12 @@ const FilterSheetContent: React.FC<Props> = ({
                                   style={[styles.radioRow, isSelected && styles.radioRowSelected]}
                                   activeOpacity={0.7}
                                 >
-                                  <Typography variant="P1M" color={colors.gray[800]}>
+                                  <Typography
+                                    variant="P1M"
+                                    color={colors.gray[800]}
+                                    style={styles.radioRowLabel}
+                                    numberOfLines={2}
+                                  >
                                     {option.label}
                                   </Typography>
                                   <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
@@ -468,7 +477,12 @@ const FilterSheetContent: React.FC<Props> = ({
                                   style={[styles.radioRow, isSelected && styles.radioRowSelected]}
                                   activeOpacity={0.7}
                                 >
-                                  <Typography variant="P1M" color={colors.gray[800]}>
+                                  <Typography
+                                    variant="P1M"
+                                    color={colors.gray[800]}
+                                    style={styles.radioRowLabel}
+                                    numberOfLines={2}
+                                  >
                                     {option.label}
                                   </Typography>
                                   <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
@@ -547,7 +561,12 @@ const FilterSheetContent: React.FC<Props> = ({
                                   style={[styles.radioRow, isSelected && styles.radioRowSelected]}
                                   activeOpacity={0.7}
                                 >
-                                  <Typography variant="P1M" color={colors.gray[800]}>
+                                  <Typography
+                                    variant="P1M"
+                                    color={colors.gray[800]}
+                                    style={styles.radioRowLabel}
+                                    numberOfLines={2}
+                                  >
                                     {option.label}
                                   </Typography>
                                   <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
@@ -649,7 +668,12 @@ const FilterSheetContent: React.FC<Props> = ({
                                   style={[styles.radioRow, isSelected && styles.radioRowSelected]}
                                   activeOpacity={0.7}
                                 >
-                                  <Typography variant="P1M" color={colors.gray[800]}>
+                                  <Typography
+                                    variant="P1M"
+                                    color={colors.gray[800]}
+                                    style={styles.radioRowLabel}
+                                    numberOfLines={2}
+                                  >
                                     {option.label}
                                   </Typography>
                                   <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
@@ -783,10 +807,31 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     flexShrink: 1,
+    minWidth: 0,
+    overflow: 'hidden',
+  },
+  rightPanel: {
+    flex: 1,
+    flexShrink: 1,
+    minWidth: 0,
+    overflow: 'hidden',
+  },
+  rightPanelInner: {
+    flex: 1,
+    minWidth: 0,
+  },
+  rightPanelScroll: {
+    flex: 1,
+    minWidth: 0,
+  },
+  rightPanelScrollContent: {
+    flexGrow: 0,
+    paddingBottom: 8,
   },
   leftTabsContainer: {
     width: 124,
     flexGrow: 0,
+    flexShrink: 0,
     backgroundColor: colors.gray[50],
     gap: 10,
     borderTopRightRadius: 20,
@@ -827,13 +872,16 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 16,
   },
   sortByBlock: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingBottom: 16,
+    width: '100%',
+    maxWidth: '100%',
+    minWidth: 0,
+    overflow: 'hidden',
   },
   sortByHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingVertical: 14,
     paddingHorizontal: 12,
     borderRadius: 8,
@@ -860,6 +908,9 @@ const styles = StyleSheet.create({
   sortByExpanded: {
     marginTop: 16,
     gap: 4,
+    width: '100%',
+    maxWidth: '100%',
+    minWidth: 0,
   },
   sortBySectionTitle: {
     marginTop: 12,
@@ -868,14 +919,21 @@ const styles = StyleSheet.create({
   radioRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: colors.gray[200],
     backgroundColor: colors.common.white,
     marginBottom: 4,
+    width: '100%',
+    maxWidth: '100%',
+  },
+  radioRowLabel: {
+    flex: 1,
+    flexShrink: 1,
+    minWidth: 0,
+    marginRight: 10,
   },
   radioRowSelected: {
     borderColor: colors.brand[400],
@@ -889,6 +947,7 @@ const styles = StyleSheet.create({
     borderColor: colors.gray[300],
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   radioOuterSelected: {
     borderColor: colors.brand[500],

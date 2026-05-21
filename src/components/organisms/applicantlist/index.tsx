@@ -229,6 +229,13 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
           </Typography>
         </Typography>
 
+          <Typography variant="regularTxtsm" color={colors.gray[600]}>
+          Resume Score :{' '}
+          <Typography variant="mediumTxtsm" color={colors.gray[700]}>
+            {item?.resume_score?.score ?? "_"}
+          </Typography>
+        </Typography>
+
         <Divider />
 
         {/* Stage + Status */}

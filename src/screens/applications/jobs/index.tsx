@@ -82,12 +82,25 @@ const JobsScreen = () => {
     dispatch(getUnpublishedJobsRequestAction(jobFilters));
   }, [token, isConnected, jobFilters]);
 
+  /** Keep a ref so the debounced effect can read the latest IDs without re-firing on every toggle. */
+  const favouriteJobIdsRef = useRef(favouriteJobIds);
+  useEffect(() => {
+    favouriteJobIdsRef.current = favouriteJobIds;
+  }, [favouriteJobIds]);
+
   /** Single source for page-1 job list (tab, filters, favourites). Tab handler only updates `activeTab` to avoid double `getJobs` with a debounced effect. */
   useEffect(() => {
     if (!isConnected) return;
     const timer = setTimeout(() => {
       if (activeTab === "Favourites") {
-        if (!favouriteJobIds.length) {
+        const ids = favouriteJobIdsRef.current;
+        if (!ids.length) {
+          dispatch(clearFavouriteJobs());
+          return;
+        }
+        const idIn = ids.join(",");
+        // Safety: never call the API without idIn — otherwise the backend returns ALL jobs.
+        if (!idIn) {
           dispatch(clearFavouriteJobs());
           return;
         }
@@ -97,7 +110,7 @@ const JobsScreen = () => {
             limit: pagination.limit,
             append: false,
             favourites: true,
-            idIn: favouriteJobIds.join(","),
+            idIn,
             ...jobFilters,
           })
         );
@@ -118,7 +131,7 @@ const JobsScreen = () => {
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [jobFilters, isConnected, pagination.limit, activeTab, favouriteJobIds, dispatch]);
+  }, [jobFilters, isConnected, pagination.limit, activeTab, dispatch]);
 
   const handleApplyFilters = () => {
     if (!isConnected) return;
@@ -130,7 +143,7 @@ const JobsScreen = () => {
         ...(activeTab === "Favourites"
           ? {
             favourites: true,
-            idIn: favouriteJobIds.join(","),
+            idIn: favouriteJobIdsRef.current.join(","),
           }
           : { published: activeTab === "Published" }),
         append: false,
@@ -160,7 +173,7 @@ const JobsScreen = () => {
         ...(activeTab === "Favourites"
           ? {
             favourites: true,
-            idIn: favouriteJobIds.join(","),
+            idIn: favouriteJobIdsRef.current.join(","),
           }
           : { published: activeTab === "Published" }),
         ...jobFilters,

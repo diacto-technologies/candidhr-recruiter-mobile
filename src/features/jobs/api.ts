@@ -4,6 +4,12 @@ import { CreateJobRequest, UpdateJobRequest, Job, GetJobsParams, JobsListApiResp
 
 export const jobsApi = {
   getJobs: async (params?: GetJobsParams): Promise<JobsListApiResponse> => {
+    // Safety: if caller explicitly sets idIn (favourites mode) but the value is empty,
+    // return an empty result instead of fetching ALL jobs from the backend.
+    if ('idIn' in (params ?? {}) && !params?.idIn) {
+      return { count: 0, next: null, previous: null, results: [] };
+    }
+
     const queryParams = new URLSearchParams();
   
     queryParams.append("page", (params?.page || 1).toString());

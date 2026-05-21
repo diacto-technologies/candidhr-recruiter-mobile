@@ -8,6 +8,7 @@ import { styles } from './styles';
 import { colors } from '../../../theme/colors';
 import ChangeStatusModal from '../changeStatusModal';
 import type { ChangeStatusModalProps } from '../changeStatusModal';
+import { getStatusColor } from '../applicantlist/helper';
 
 export interface StatusDropdownProps {
   label: string;
@@ -171,7 +172,7 @@ const StatusDropdown = ({
                     style={[
                       styles.statusDot,
                       compact && styles.statusDotCompact,
-                      { backgroundColor: getDotColor(displayLabel), }
+                      { backgroundColor: getStatusColor(displayLabel), }
                     ]}
                   />
                   <Text
@@ -242,11 +243,11 @@ const StatusDropdown = ({
                     <View
                       style={[
                         styles.statusDot,
-                        { backgroundColor: getDotColor(item.name) }
+                        { backgroundColor: getStatusColor(item.name) }
                       ]}
                     />
 
-                    <Typography variant="mediumTxtmd" color={colors.gray[900]}>
+                    <Typography variant="mediumTxtmd" color={colors.gray[900]} ellipsizeMode='tail' numberOfLines={2}>
                       {item.name}
                     </Typography>
 
@@ -280,9 +281,9 @@ const StatusDropdown = ({
             onBlur={() => setIsFocused(false)}
 
             renderLeftIcon={() => (
-              <View style={{ marginRight: compact ? 6 : 8, marginLeft: 8 }}>
+              <View style={{ marginRight: 8, marginLeft: 4 }}>
                 <Typography
-                  variant={compact ? 'semiBoldTxtsm' : 'semiBoldTxtmd'}
+                  variant={'semiBoldTxtsm'}
                   color={colors.gray[900]}
                 >
                   {label}
@@ -312,7 +313,7 @@ const StatusDropdown = ({
                   style={[
                     styles.statusDot,
                     compact && styles.statusDotCompact,
-                    { backgroundColor: getDotColor(displayLabel) }
+                    { backgroundColor: getStatusColor(displayLabel) }
                   ]}
                 />
 

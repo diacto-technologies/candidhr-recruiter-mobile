@@ -26,7 +26,7 @@ export const useStyles = () => {
             position: 'absolute',
             flexDirection: 'row',
             alignItems: 'center',
-            top: -22,
+            top: -10,
             marginLeft: 40,
         },
         tooltipArrow: {
