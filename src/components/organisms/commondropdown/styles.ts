@@ -35,7 +35,7 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     marginTop: 4,
     backgroundColor: colors.common.white,
-    maxHeight: 200,
+    maxHeight: 160,
     ...shadowStyles.lg
   },
 

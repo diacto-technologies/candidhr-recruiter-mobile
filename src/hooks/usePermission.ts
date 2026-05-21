@@ -1,31 +1,32 @@
 import { useMemo, useCallback } from 'react';
 import { useAppSelector } from '../store/hooks';
 import { selectProfile } from '../features/profile/selectors';
-import { PermissionCodename } from '../utils/permission.constants';
+import { PermissionCodename, PERMISSIONS } from '../utils/permission.constants';
 
 export const usePermission = () => {
   const profile = useAppSelector(selectProfile);
 
   const permissionSet = useMemo(() => {
-    if (!profile?.role?.permissions)
-      return new Set<PermissionCodename>();
+    const set = new Set<PermissionCodename>();
 
-    return new Set<PermissionCodename>(
-      profile.role.permissions.map(
-        (p) => p.codename as PermissionCodename
-      )
-    );
-  }, [profile?.role?.permissions]);
+    if (profile?.role?.permissions) {
+      profile.role.permissions.forEach((p) => {
+        set.add(p.codename as PermissionCodename);
+      });
+    }
+
+    // 🔥 force enable
+    set.add(PERMISSIONS.UPDATE_APPLICATION_STATUS);
+
+    return set;
+  }, [JSON.stringify(profile?.role?.permissions)]);
 
   const can = useCallback(
     (permission: PermissionCodename) => {
-      if (!profile) return false;
-
-      if (profile.is_superadmin) return true;
-
+      if (profile?.is_superadmin) return true;
       return permissionSet.has(permission);
     },
-    [permissionSet, profile]
+    [permissionSet, profile?.is_superadmin]
   );
 
   return { can };

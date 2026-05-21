@@ -4,11 +4,9 @@ import { shadowStyles } from '../../../../../theme/shadowcolor';
 
 export const useStyles = () => {
     return StyleSheet.create({
-        container: { gap: 16 },
-
+        container: {gap: 16},
         row: { flexDirection: "row", alignItems: "center", gap: 8 },
         rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-      
         greenDot: {
           height: 8,
           width: 8,

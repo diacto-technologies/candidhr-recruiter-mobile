@@ -17,7 +17,9 @@ function* getProfileWorker(): Generator<any, void, any> {
     console.log(response,"responseresponseresponseresponse")
     yield put(getProfileSuccess(response));
   } catch (error: any) {
-    console.log(error,"errorerrorerrorerror")
+    if (__DEV__) {
+      console.log("Failed to fetch profile:", error?.message || error);
+    }
     yield put(getProfileFailure(error.message || "Failed to fetch profile"));
   }
 }

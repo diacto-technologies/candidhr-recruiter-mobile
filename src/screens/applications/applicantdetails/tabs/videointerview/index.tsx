@@ -520,9 +520,9 @@ export default function VideoInterview({
           justifyContent: 'center',
           alignItems: 'center',
         }}>
-          <Typography variant="regularTxtmd" color={colors.gray[600]}>
+          {/* <Typography variant="regularTxtmd" color={colors.gray[600]}>
             No responses available.
-          </Typography>
+          </Typography> */}
         </View>
       ) : (
         <>

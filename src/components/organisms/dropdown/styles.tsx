@@ -65,7 +65,7 @@ export const styles = StyleSheet.create({
 
     containerCompact: {
         // paddingLeft: 10,
-        paddingRight: 8,
+        //paddingRight: 8,
         minHeight: 40,
     },
 
@@ -233,7 +233,7 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         flex: 1,
         gap: 8,
-        marginRight: 8,
+        marginRight: 4,
         flexWrap: 'wrap',
     },
 
@@ -257,9 +257,9 @@ export const styles = StyleSheet.create({
 
     statusBadge: {
         flexDirection: 'row',
-        alignItems: 'center',
+         alignItems: 'center',
         gap:4,
-        marginLeft:6
+        //marginLeft:6
     },
 
     statusDot: {

@@ -59,7 +59,7 @@ const JobHeader = () => {
     <View style={styles.container}>
       <Typography variant="semiBoldTxtxl">{jobs?.title ?? ""}</Typography>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Typography variant="mediumTxtsm" color={colors.gray[700]}>{jobs?.views_count ?? ""} applicants</Typography>
+        <Typography variant="mediumTxtsm" color={colors.gray[700]}>{jobs?.applicants_count ?? ""} applicants</Typography>
         <View style={styles.dot}></View>
         <Typography variant="regularTxtsm" color={colors.gray[500]}>{formatMonDDYYYY(jobs?.created_at ?? "")}</Typography>
       </View>

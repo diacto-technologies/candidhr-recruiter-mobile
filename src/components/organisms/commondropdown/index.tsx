@@ -110,8 +110,8 @@ const CommonDropdown = ({
               searchField={searchField as any}
               flatListProps={
                 onLoadMore
-                  ? { onEndReached: onLoadMore, onEndReachedThreshold: 0.3 }
-                  : undefined
+                  ? { keyboardShouldPersistTaps: 'always', onEndReached: onLoadMore, onEndReachedThreshold: 0.3 }
+                  : { keyboardShouldPersistTaps: 'always' }
               }
               onFocus={() => {
                 setIsFocused(true);
@@ -191,8 +191,8 @@ const CommonDropdown = ({
               searchField={searchField}
               flatListProps={
                 onLoadMore
-                  ? { onEndReached: onLoadMore, onEndReachedThreshold: 0.3 }
-                  : undefined
+                  ? { keyboardShouldPersistTaps: 'always', onEndReached: onLoadMore, onEndReachedThreshold: 0.3 }
+                  : { keyboardShouldPersistTaps: 'always' }
               }
               onFocus={() => {
                 setIsFocused(true);

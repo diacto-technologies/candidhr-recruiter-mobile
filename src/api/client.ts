@@ -295,7 +295,17 @@ const handleApiError = async (response: Response, endpoint?: string): Promise<ne
     typeof endpoint === "string" &&
     (endpoint.includes("/assessments/v2/") || endpoint.includes("assessments/v2/"));
 
-  if (!isEmptyState404 && !isAssessmentsV2Endpoint) {
+  // Check if endpoint is logout
+  const isLogoutEndpoint =
+    typeof endpoint === "string" &&
+    (endpoint.includes("/auth/logout") || endpoint.includes("auth/logout"));
+
+  // Check if it is a 401 auth error after the user has been logged out (to avoid stale in-flight requests showing toasts)
+  const isAuthenticated = selectIsAuthenticated(store.getState());
+  const isPublicAuth = isPublicAuthEndpoint(endpoint);
+  const isAuthErrorDuringLogout = response.status === 401 && !isAuthenticated && !isPublicAuth;
+
+  if (!isEmptyState404 && !isAssessmentsV2Endpoint && !isLogoutEndpoint && !isAuthErrorDuringLogout) {
     showToastMessage(errorMessage, 'error');
   }
 

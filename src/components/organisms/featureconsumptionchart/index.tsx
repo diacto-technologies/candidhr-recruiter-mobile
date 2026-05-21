@@ -43,8 +43,8 @@ const FeatureConsumptionChart: React.FC<FeatureConsumptionChartProps> = ({
                     {/* Bars shimmer */}
                     <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end', paddingHorizontal: 20 }}>
                         {[85, 130, 95].map((height, index) => (
-                            <View key={index} style={{ alignItems: 'center', gap: 8 }}>
-                                <Shimmer width={32} height={height} borderRadius={5} />
+                            <View key={index} style={{ alignItems: 'center', gap: 8,  paddingHorizontal: 10, }}>
+                                <Shimmer width={barWidth} height={height} borderRadius={5} />
                             </View>
                         ))}
                     </View>
