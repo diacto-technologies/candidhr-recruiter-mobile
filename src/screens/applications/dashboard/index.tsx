@@ -1,5 +1,5 @@
 import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react';
-import { View, ScrollView } from 'react-native';
+import { View, ScrollView, FlatList, Pressable, Text, StyleSheet, Platform } from 'react-native';
 import { Header, StatCard, ApplicationStageChart, FeatureConsumptionChart, ApplicationStageOverview, Typography } from '../../../components';
 import { useStyles } from './styles';
 import { useAppSelector } from '../../../hooks/useAppSelector';
@@ -189,8 +189,42 @@ const Dashboard = () => {
                             onJobSelect={handleSelectJob}
                             onSearchClear={handleSearchClear}
                             selectedJob={selectedJob}
+                            externalDropdown={true}
                         />
-                        <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false} bounces={false}>
+                        {/* ✅ External dropdown — rendered as a sibling so it's within the parent's touch bounds on Android */}
+                        {openSearch && jobNameList && jobNameList.length > 0 && (
+                            <View style={externalDropdownStyles.dropdownContainer}>
+                                <FlatList
+                                    data={jobNameList}
+                                    keyExtractor={(item) => item.id}
+                                    keyboardShouldPersistTaps="handled"
+                                    nestedScrollEnabled
+                                    showsVerticalScrollIndicator
+                                    renderItem={({ item }) => (
+                                        <Pressable
+                                            style={externalDropdownStyles.item}
+                                            onPress={() => handleSelectJob(item)}
+                                        >
+                                            <Text style={externalDropdownStyles.itemText}>
+                                                {item.title}
+                                            </Text>
+                                        </Pressable>
+                                    )}
+                                    onEndReached={handleLoadMore}
+                                    onEndReachedThreshold={0.6}
+                                    ListFooterComponent={() =>
+                                        jobNameListLoading ? (
+                                            <View style={{ padding: 12 }}>
+                                                <Text style={{ textAlign: 'center', color: '#6B7280' }}>
+                                                    Loading...
+                                                </Text>
+                                            </View>
+                                        ) : null
+                                    }
+                                />
+                            </View>
+                        )}
+                        <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false} bounces={false} scrollEnabled={!openSearch}>
                             <View style={styles.listContainer}>
                                 <View style={styles.statGrid}>
                                     <View style={styles.statItem}>
@@ -318,3 +352,31 @@ const Dashboard = () => {
 
 export default Dashboard;
 
+const externalDropdownStyles = StyleSheet.create({
+    dropdownContainer: {
+        position: 'absolute',
+        top: 78,
+        left: 16,
+        right: 16,
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#D1D5DB',
+        borderRadius: 10,
+        maxHeight: 260,
+        overflow: 'hidden',
+        zIndex: 9999,
+        elevation: 9999,
+        shadowColor: '#0A0D12',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+    },
+    item: {
+        paddingVertical: 14,
+        paddingHorizontal: 12,
+    },
+    itemText: {
+        fontSize: 16,
+        color: '#111827',
+    },
+});

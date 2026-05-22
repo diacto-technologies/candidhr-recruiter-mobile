@@ -30,6 +30,8 @@ interface SearchBarProps extends TextInputProps {
   onEndReached?: () => void;
   loading?: boolean;
   onClear?: () => void;
+  /** When true, the dropdown list is NOT rendered internally (parent renders it externally). */
+  externalDropdown?: boolean;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({
@@ -42,6 +44,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   onEndReached,
   loading = false,
   onClear,
+  externalDropdown = false,
   ...rest
 }) => {
   const [open, setOpen] = useState(false);
@@ -98,8 +101,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
         )}
       </View>
 
-      {/* ✅ Dropdown list */}
-      {dropdown && open && (
+      {/* ✅ Dropdown list (only when NOT rendered externally) */}
+      {dropdown && open && !externalDropdown && (
         <View style={styles.dropdownBox}>
           <FlatList
             data={filteredData}
