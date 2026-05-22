@@ -28,6 +28,8 @@ export interface IHeader {
   onJobSelect?: (job: any) => void;
   onSearchClear?: () => void;
   selectedJob?: any;
+  /** When true, the search dropdown is rendered externally by the parent (not inside the Header/SearchBar). */
+  externalDropdown?: boolean;
   simpleSearch?: boolean;
   onSimpleSearch?: (text: string) => void;
   onSimpleClear?: () => void;

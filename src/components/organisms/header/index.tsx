@@ -36,6 +36,7 @@ const Header = ({
   onJobSelect,
   onSearchClear,
   selectedJob,
+  externalDropdown = false,
   simpleSearch = false,
   onSimpleSearch,
   onSimpleClear,
@@ -116,6 +117,7 @@ const Header = ({
                     onEndReached={simpleSearch ? undefined : onLoadMore}
                     loading={simpleSearch ? false : jobNameListLoading}
                     onClear={simpleSearch ? onSimpleClear : onSearchClear}
+                    externalDropdown={externalDropdown}
                   />
                 </Animated.View>
               ) : (
@@ -198,6 +200,7 @@ const Header = ({
                 onEndReached={simpleSearch ? undefined : onLoadMore}
                 loading={simpleSearch ? false : jobNameListLoading}
                 onClear={simpleSearch ? onSimpleClear : onSearchClear}
+                externalDropdown={externalDropdown}
               />
             </Animated.View>
           ) : (

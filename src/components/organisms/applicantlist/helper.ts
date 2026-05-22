@@ -76,6 +76,8 @@ export const getStatusColor = (status?: string) => {
     case "Final Interview":
       return colors.blue[700]
 
+     case "Approval Pending":
+      return colors.warning[500]
     default:
       return "";
   }
