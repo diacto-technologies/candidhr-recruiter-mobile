@@ -27,55 +27,55 @@ export const applicationsApi = {
   //   //console.log(res,"resresresres")
   //   return res?.data ?? res;
   // },
-getApplications: async (
-  params?: GetApplicationsParams
-): Promise<ApplicationsListResponse> => {
-  const query = new URLSearchParams();
+  getApplications: async (
+    params?: GetApplicationsParams
+  ): Promise<ApplicationsListResponse> => {
+    const query = new URLSearchParams();
 
-  if (params?.page) query.append("page", String(params.page));
-  if (params?.limit) query.append("limit", String(params.limit));
+    if (params?.page) query.append("page", String(params.page));
+    if (params?.limit) query.append("limit", String(params.limit));
 
-  // SEARCH
-  if (params?.applicantName)
-    query.append("applicant_name__icontains", params.applicantName);
+    // SEARCH
+    if (params?.applicantName)
+      query.append("applicant_name__icontains", params.applicantName);
 
-  if (params?.email)
-    query.append("candidate_email__icontains", params.email);
+    if (params?.email)
+      query.append("candidate_email__icontains", params.email);
 
-  if (params?.contact)
-    query.append("candidate__contact__icontains", params.contact);
+    if (params?.contact)
+      query.append("candidate__contact__icontains", params.contact);
 
-  if (params?.jobTitle)
-    query.append("job__title__icontains", params.jobTitle);
+    if (params?.jobTitle)
+      query.append("job__title__icontains", params.jobTitle);
 
-  if (params?.jobId)
-    query.append("job__id", params.jobId);
+    if (params?.jobId)
+      query.append("job__id", params.jobId);
 
-  // ✅ NEW FILTERS
-  if (params?.latestStageStatus)
-    query.append("latest_stage_status", params.latestStageStatus);
+    // ✅ NEW FILTERS
+    if (params?.latestStageStatus)
+      query.append("latest_stage_status", params.latestStageStatus);
 
-  if (params?.source)
-    query.append("source__icontains", params.source);
+    if (params?.source)
+      query.append("source__icontains", params.source);
 
-  if (params?.status)
-    query.append("status__icontains", params.status);
+    if (params?.status)
+      query.append("status__icontains", params.status);
 
-  if (params?.latestStageName)
-    query.append("latest_stage_name", params.latestStageName);
+    if (params?.latestStageName)
+      query.append("latest_stage_name", params.latestStageName);
 
-  // SORTING
-  if (params?.sort)
-    query.append("o", params.sort);
+    // SORTING
+    if (params?.sort)
+      query.append("o", params.sort);
 
-  const qs = query.toString();
-  const url = qs
-    ? `${API_ENDPOINTS.APPLICATIONS.LIST}?${qs}`
-    : API_ENDPOINTS.APPLICATIONS.LIST;
+    const qs = query.toString();
+    const url = qs
+      ? `${API_ENDPOINTS.APPLICATIONS.LIST}?${qs}`
+      : API_ENDPOINTS.APPLICATIONS.LIST;
 
-  const res = await apiClient.get(url);
-  return res?.data ?? res;
-},
+    const res = await apiClient.get(url);
+    return res?.data ?? res;
+  },
 
   exportApplicationsCsv: async (
     params?: GetApplicationsParams
@@ -390,11 +390,11 @@ getApplications: async (
    */
   sendEmail: async (payload: {
     application_id: string;
-    status: string;
-    stage_status: string;
-    sent: number;
-    to: string;
-    detail: string;
+    include_job_link: boolean;
+    //stage_status: string;
+    // sent: number;
+    // to: string;
+    // detail: string;
     subject?: string;
     message?: string;
   }): Promise<unknown> => {

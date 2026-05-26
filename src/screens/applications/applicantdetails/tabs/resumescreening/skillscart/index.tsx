@@ -183,9 +183,14 @@ const SkillScore = ({ title, overall, status, data, isloading }: Props) => {
                 color={item.matched ? colors.gray[900] : colors.gray[600]}
                 numberOfLines={2}
               >
-                {item.title}
+                {item.title} 
+                {item.proficiencyEvidence && (
+                  <InfoTooltip text={item.proficiencyEvidence}>
+                    <SvgXml xml={infoIcon} height={15} width={15} style={{marginLeft:10}}/>
+                  </InfoTooltip>
+                )}
               </Typography>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              {/* <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                 <Typography variant="regularTxtxs" color={colors.gray[600]}>
                   {item.proficiencyLevel
                     ? item.proficiencyLevel.charAt(0).toUpperCase() +
@@ -198,7 +203,7 @@ const SkillScore = ({ title, overall, status, data, isloading }: Props) => {
                     <SvgXml xml={infoIcon} height={15} width={15}/>
                   </InfoTooltip>
                 )}
-              </View>
+              </View> */}
             </View>
 
             <Typography variant="semiBoldTxtmd" color={colors.gray[700]}>

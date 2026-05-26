@@ -8,8 +8,8 @@ export const applicantFiltersOption = [
     'Stage',
     'Approved',
     // 'Contact',
-    'Applied',
-    'Last Update',
+    // 'Applied',
+    // 'Last Update',
 ]
 
 export const jobFiltersOption = [

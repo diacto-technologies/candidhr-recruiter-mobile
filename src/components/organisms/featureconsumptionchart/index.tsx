@@ -8,6 +8,7 @@ import { screenWidth } from '../../../utils/devicelayout';
 import { buildBarData } from './helpers';
 import Shimmer from '../../atoms/shimmer';
 import { BarItem, FeatureConsumptionChartProps, featureData as FeatureData } from './featureconsumptionchart';
+import { isTablet } from 'react-native-device-info';
 
 const FeatureConsumptionChart: React.FC<FeatureConsumptionChartProps> = ({
     featureData,
@@ -18,13 +19,10 @@ const FeatureConsumptionChart: React.FC<FeatureConsumptionChartProps> = ({
 
    const barData = buildBarData(featureData, selectedIndex);
     const barCount = barData.length;
-    const barWidth = 101;
+    const barWidth = isTablet()? 280:200;
     const availableWidth = screenWidth - 10;
 
-    const dynamicSpacing = Math.max(
-        20,
-        (availableWidth - barCount * barWidth) / (barCount + 1)
-    );
+    const dynamicSpacing = Math.max(20,(availableWidth - barCount * barWidth) / (barCount + 1));
 
     const maxValue = Math.max(...barData.map(b => b.value), 0) + 20;
     if (loading) {

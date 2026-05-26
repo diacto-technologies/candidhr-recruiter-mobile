@@ -16,7 +16,7 @@ export const useStyles = () => {
         container: {
             flex: 1,
             backgroundColor: colors.base.white,
-            paddingBottom:insets.insetsBottom
+            paddingBottom:insets.insetsBottom+10
         },
         content: {
             flex: 1,

@@ -108,7 +108,7 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
     { id: "shortlisted", name: "Shortlisted" },
     { id: "rejected", name: "Rejected" },
     { id: "on_hold", name: "On Hold" },
-    { id: "interview_scheduled", name: "Interview Scheduled" },
+    { id: "interview_scheduled", name: "InterviewScheduled" },
     { id: "final_interview", name: "Final Interview" },
     { id: "hired", name: "Hired" },
     { id: "offer_extended", name: "Offer Extended" },
@@ -326,12 +326,15 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
           applicantName={item.name ?? ''}
           currentStatus={item.status ?? null}
           newStatusOptions={STATUS_OPTIONS}
-          onUpdateStatus={(selectedStatusId) => {
+          onUpdateStatus={(selectedStatusId, options) => {
             if (!item?.id) return;
             dispatch(
               updateApplicationStatusRequestAction({
                 id: item.id,
                 status: selectedStatusId,
+                emailCandidate: options?.emailCandidate,
+                subject: options?.subject,
+                message: options?.message,
               })
             );
           }}

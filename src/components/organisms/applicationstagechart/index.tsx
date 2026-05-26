@@ -8,7 +8,8 @@ import { useStyles } from './styles';
 import { buildBarData, getMaxValueFromStageData } from './helpers';
 import Shimmer from '../../atoms/shimmer';
 import type { ApplicationStageChartProps, BarItem, stageDataInterface } from './applicationstagechart';
-import { paddingRight } from '../../../../node_modules 12-03-47-425/html2canvas/dist/types/css/property-descriptors/padding';
+import { isTablet } from 'react-native-device-info';
+
 
 const ApplicationStageChart: React.FC<ApplicationStageChartProps> = ({
   stageData,
@@ -20,8 +21,11 @@ const ApplicationStageChart: React.FC<ApplicationStageChartProps> = ({
   const maxValueFromAPI = getMaxValueFromStageData(stageData);
   const barCount = barData.length;
   const availableWidth = screenWidth - 10;
-  const barWidth = 32;
-  const dynamicSpacing = Math.max(25, (availableWidth - barCount * barWidth) / (barCount + 1));
+  const barWidth = isTablet()? 50:32;
+   const dynamicSpacing = Math.max(
+        20,
+        (availableWidth - barCount * barWidth) / (barCount + 1)
+    );
 
   if (loading) {
     return (
@@ -57,7 +61,7 @@ const ApplicationStageChart: React.FC<ApplicationStageChartProps> = ({
           <BarChart
             data={barData}
             barWidth={barWidth}
-            initialSpacing={dynamicSpacing / 2}
+            initialSpacing={dynamicSpacing / 24}
             spacing={dynamicSpacing}
             showGradient
             yAxisThickness={0}

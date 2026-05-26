@@ -20,7 +20,6 @@ import {
 import { PROFILE_ACTION_TYPES } from '../../../features/profile/constants';
 import { removeTokens } from '../../../utils/tokenUtils';
 import { logoutSuccess } from '../../../features/auth/slice';
-import { persistor } from '../../../store';
 import Divider from '../../../components/atoms/divider';
 import { useStyles } from './styles';
 import { setLanguage } from '../../../features/language/slice';
@@ -32,7 +31,6 @@ import DisplayPreferenceSelector from '../../../components/organisms/displaypref
 import { ThemeMode } from '../../../features/theme/types';
 import { getProfileMenuSections } from './profileMenu.config';
 import { MenuItem, MenuSection } from './profile';
-import { RESET_APP_STATE } from '../../../store/rootReducer';
 import { selectSavedEmail, selectSavedPassword, selectSavedRemember } from '../../../features/auth/selectors';
 
 const Profile = () => {
@@ -46,9 +44,6 @@ const Profile = () => {
   const loading = useAppSelector(selectProfileLoading);
   const currentLanguage = useAppSelector(selectCurrentLanguage);
   const currentThemeMode = useAppSelector(selectThemeMode);
-  const savedEmail = useAppSelector(selectSavedEmail);
-  const savedPassword = useAppSelector(selectSavedPassword);
-  const savedRemember = useAppSelector(selectSavedRemember);
 
   useEffect(() => {
     dispatch({ type: PROFILE_ACTION_TYPES.GET_PROFILE_REQUEST });
@@ -56,26 +51,8 @@ const Profile = () => {
 
   const handleLogout = async () => {
     try {
-      // preserve login fields (email/password/remember) across store reset & persist purge
-      const preservedCreds = {
-        email: savedEmail,
-        password: savedPassword,
-        remember: savedRemember,
-      };
-
       await removeTokens();
       dispatch(logoutSuccess());
-
-      // reset all redux slices (keeps login fields in auth)
-      dispatch({ type: RESET_APP_STATE });
-
-      // wipe persisted storage, then rehydrate login fields
-      await persistor.purge();
-      if (preservedCreds.remember && (preservedCreds.email || preservedCreds.password)) {
-        // auth slice already has `saveCredentials` action, but importing it here would add more coupling.
-        // Directly dispatching RESET_APP_STATE preserved fields is enough for in-memory; this ensures persistence is restored too.
-        dispatch({ type: "auth/saveCredentials", payload: { email: preservedCreds.email, password: preservedCreds.password } });
-      }
     } catch (_) {
       // Ignore errors during cleanup
     }

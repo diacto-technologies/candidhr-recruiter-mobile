@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { View, FlatList, StyleSheet, TouchableOpacity } from "react-native";
+import { useFocusEffect } from '@react-navigation/native';
 import { colors } from "../../../../../theme/colors";
 import { useAppDispatch } from "../../../../../hooks/useAppDispatch";
 import { useAppSelector } from "../../../../../hooks/useAppSelector";
@@ -23,6 +24,7 @@ import { Typography } from "../../../../../components";
 import BackgroundPattern from "../../../../../components/atoms/backgroundpattern";
 import CustomSwitch from "../../../../../components/atoms/switchbutton";
 import { useStyles } from "./styles";
+import DeviceInfo from "react-native-device-info";
 
 const SKELETON_ROWS = 6;
 const AI_RECOMMENDATION_SORT = "-resume_score";
@@ -30,6 +32,7 @@ const AI_RECOMMENDATION_SORT = "-resume_score";
 const ApplicantsTab = () => {
   const styles = useStyles();
   const [aiEnabled, setAiEnabled] = useState(false);
+  const isTablet = DeviceInfo.isTablet();
 
   const dispatch = useAppDispatch();
   const applications = useAppSelector(selectApplications);
@@ -41,44 +44,47 @@ const ApplicantsTab = () => {
   const jobId = useAppSelector((state) => state.jobs.selectedJob?.id);
 
   const onEndReachedCalledRef = useRef(false);
-  useEffect(() => {
-    if (!jobId) return;
+  useFocusEffect(
+    useCallback(() => {
+      if (!jobId) return;
 
-    const sortValue = aiEnabled
-      ? AI_RECOMMENDATION_SORT
-      : (filters.sort || "-last_updated");
+      const sortValue = aiEnabled
+        ? AI_RECOMMENDATION_SORT
+        : (filters.sort || "-last_updated");
 
-    dispatch(
-      getApplicationsRequestAction({
-        reset: true,
-        page: 1,
-        limit: pagination.limit,
-        applicantName: filters.name.trim() || undefined,
-        jobId,
-        email: filters.email || "",
-        jobTitle: filters.appliedFor || "",
-        contact: filters.contact || "",
-        latestStageStatus: filters.latestStageStatus || undefined,
-        source: filters.source || undefined,
-        status: filters.status || undefined,
-        latestStageName: filters.latestStageName || undefined,
-        sort: sortValue,
-      })
-    );
-  }, [
-    filters.name,
-    filters.email,
-    filters.appliedFor,
-    filters.contact,
-    filters.sort,
-    filters.latestStageStatus,
-    filters.source,
-    filters.status,
-    filters.latestStageName,
-    aiEnabled,
-    jobId,
-    pagination.limit,
-  ]);
+      dispatch(
+        getApplicationsRequestAction({
+          reset: true,
+          page: 1,
+          limit: pagination.limit,
+          applicantName: filters.name.trim() || undefined,
+          jobId,
+          email: filters.email || "",
+          jobTitle: filters.appliedFor || "",
+          contact: filters.contact || "",
+          latestStageStatus: filters.latestStageStatus || undefined,
+          source: filters.source || undefined,
+          status: filters.status || undefined,
+          latestStageName: filters.latestStageName || undefined,
+          sort: sortValue,
+        })
+      );
+    }, [
+      filters.name,
+      filters.email,
+      filters.appliedFor,
+      filters.contact,
+      filters.sort,
+      filters.latestStageStatus,
+      filters.source,
+      filters.status,
+      filters.latestStageName,
+      aiEnabled,
+      jobId,
+      pagination.limit,
+      dispatch,
+    ])
+  );
 
   const handleLoadMore = useCallback(() => {
     if (loading || !hasMore) return;
@@ -157,9 +163,9 @@ const ApplicantsTab = () => {
             style={styles.switchContainer}
             onPress={() => {
               if (!jobId) return;
-              const sortValue = aiEnabled
-                ? AI_RECOMMENDATION_SORT
-                : (filters.sort || "-last_updated");
+              // The export API throws a 500 error if sorted by -resume_score.
+              // We fallback to standard sort for exports to prevent crashes.
+              const exportSortValue = filters.sort || "-last_updated";
 
               dispatch(
                 exportApplicationsRequestAction({
@@ -175,7 +181,7 @@ const ApplicantsTab = () => {
                     source: filters.source || undefined,
                     status: filters.status || undefined,
                     latestStageName: filters.latestStageName || undefined,
-                    sort: sortValue,
+                    sort: exportSortValue,
                   },
                 })
               );
@@ -223,6 +229,9 @@ const ApplicantsTab = () => {
             <ApplicantList item={item} />
           )
         }
+        numColumns={isTablet ? 2 : 1}
+        key={isTablet ? "tablet-2" : "mobile-1"}
+        columnWrapperStyle={isTablet ? { justifyContent: "space-between" } : undefined}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: 16,

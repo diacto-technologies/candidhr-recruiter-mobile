@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import { colors } from '../../../theme/colors';
 import { Fonts } from '../../../theme/fonts';
 import { shadowStyles } from '../../../theme/shadowcolor';
@@ -33,7 +33,7 @@ export const styles = StyleSheet.create({
     borderRadius: 8,
     borderColor: colors.gray[200],
     borderWidth: 1,
-    marginTop: 4,
+    marginTop: Platform.OS === 'android' ? '-10%' : 4,
     backgroundColor: colors.common.white,
     maxHeight: 160,
     ...shadowStyles.lg
@@ -110,9 +110,9 @@ export const styles = StyleSheet.create({
   },
 
   optionItem: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    justifyContent: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: 10,
     paddingHorizontal: 16,
   },
@@ -129,11 +129,10 @@ export const styles = StyleSheet.create({
   },
 
   rightContainer: {
-    marginTop: 2,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
+    justifyContent: 'flex-end',
+    flexShrink: 1,
   },
 
   checkIcon: {
