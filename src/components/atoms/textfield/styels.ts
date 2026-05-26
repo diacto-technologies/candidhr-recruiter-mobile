@@ -59,6 +59,7 @@ export const useStyles = (props: any, isFocus: boolean, size: any) => {
       fontSize: 16,
       fontWeight: '400',
       fontStyle: 'normal',
+      color:colors.gray[900]
     },
     inputWithoutValue: {
       fontFamily: Fonts.InterRegular,

@@ -61,7 +61,7 @@ const JobsScreen = () => {
   const profileLoading = useAppSelector(selectProfileLoading);
   const profileError = useAppSelector(selectProfileError);
   const accessLoading =
-  profileLoading || (profile === null && profileError === null);
+    profileLoading || (profile === null && profileError === null);
 
   useFocusEffect(
     useCallback(() => {
@@ -69,7 +69,11 @@ const JobsScreen = () => {
         name: "",
         email: "",
         appliedFor: "",
-        contact: ""
+        contact: "",
+        latestStageStatus: "",
+        source: "",
+        status: "",
+        latestStageName: "",
       }));
     }, [dispatch])
   );
@@ -82,13 +86,11 @@ const JobsScreen = () => {
     dispatch(getUnpublishedJobsRequestAction(jobFilters));
   }, [token, isConnected, jobFilters]);
 
-  /** Keep a ref so the debounced effect can read the latest IDs without re-firing on every toggle. */
   const favouriteJobIdsRef = useRef(favouriteJobIds);
   useEffect(() => {
     favouriteJobIdsRef.current = favouriteJobIds;
   }, [favouriteJobIds]);
 
-  /** Single source for page-1 job list (tab, filters, favourites). Tab handler only updates `activeTab` to avoid double `getJobs` with a debounced effect. */
   useEffect(() => {
     if (!isConnected) return;
     const timer = setTimeout(() => {
@@ -99,7 +101,6 @@ const JobsScreen = () => {
           return;
         }
         const idIn = ids.join(",");
-        // Safety: never call the API without idIn — otherwise the backend returns ALL jobs.
         if (!idIn) {
           dispatch(clearFavouriteJobs());
           return;

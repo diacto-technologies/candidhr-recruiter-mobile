@@ -90,7 +90,7 @@ export const selectResetPasswordError = createSelector(
 );
 export const forgetPassowrdError = createSelector(
   [selectAuthState],
-  (auth) => auth.forgotPasswordMessage
+  (auth) => auth.error
 );
 
 

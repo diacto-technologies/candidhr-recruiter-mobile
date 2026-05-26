@@ -15,6 +15,8 @@ import {
   setUser,
   setLoading,
   setError,
+  forgotPasswordFailure,
+  forgotPasswordSuccess,
 } from "./slice";
 import { authApi } from "./api";
 import { selectIsAuthenticated, selectRefreshToken } from "./selectors";
@@ -25,6 +27,8 @@ import { navigate } from "../../utils/navigationUtils";
 import { ToastAndroid } from "react-native";
 import { showToastMessage } from "../../utils/toast";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { RESET_APP_STATE } from "../../store/rootReducer";
+import { persistor } from "../../store";
 
 // Worker sagas
 function* loginWorker(action: { type: string; payload: LoginRequest }): Generator<any, void, any> {
@@ -79,12 +83,31 @@ function* registerWorker(action: { type: string; payload: RegisterRequest }): Ge
 }
 
 function* clearTokensOnLogoutWorker(): Generator<any, void, any> {
+  // Preserve credentials if they exist
+  const state: any = yield select();
+  const authState = state.auth;
+  const preservedCreds = {
+    email: authState.email,
+    password: authState.password,
+    remember: authState.remember,
+  };
+
   yield call(AsyncStorage.multiRemove, [
     'accessToken',
     'refreshToken',
     '@auth_token',
     '@auth_refresh_token',
   ]);
+
+  yield put({ type: RESET_APP_STATE });
+  yield call([persistor, persistor.purge]);
+
+  if (preservedCreds.remember && (preservedCreds.email || preservedCreds.password)) {
+    yield put({
+      type: "auth/saveCredentials",
+      payload: { email: preservedCreds.email, password: preservedCreds.password }
+    });
+  }
 }
 
 function* logoutWorker(): Generator<any, void, any> {
@@ -152,10 +175,10 @@ function* addUserWorker(): Generator<any, void, any> {
 function* forgotPasswordWorker(action: any): Generator<any, void, any> {
   try {
     const response = yield call(authApi.sendResetPasswordEmail, action.payload);
-    yield put(forgotPasswordSuccessAction(response.message));
+    yield put(forgotPasswordSuccess(response.message));
     showToastMessage(response.message, 'success');
   } catch (error: any) {
-    yield put(forgotPasswordFailureAction(error.Error));
+    yield put(forgotPasswordFailure(error.message || 'Something went wrong'));
   }
 }
 

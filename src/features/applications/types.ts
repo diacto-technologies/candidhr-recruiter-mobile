@@ -129,6 +129,9 @@ export interface CreateApplicationRequest {
 export interface UpdateApplicationStatusRequest {
   id: string;
   status: string; // e.g. on_hold, shortlisted, rejected, hired, etc.
+  emailCandidate?: boolean;
+  subject?: string;
+  message?: string;
 }
 
 /** Payload for PATCH /applications/v1/stages/{stageId}/{status}/ */
@@ -1531,4 +1534,10 @@ export interface Meta {
   candidate_timezone: string;
   form_completion_time_seconds: number;
   edit_count: number;
+}
+export interface SendEmailPayload {
+  application_id: string;
+  include_job_link: boolean;
+  subject: string;
+  message: string;
 }

@@ -58,6 +58,7 @@ import { CommonDropdown } from '../../../components/organisms';
 import type { ReasonListItem } from '../../../features/applications/types';
 import { useStyles } from "./styles";
 import Shimmer from '../../../components/atoms/shimmer';
+import { RFValue, RFPercentage } from 'react-native-responsive-fontsize';
 
 /** Application reasons item (has reason[].note) */
 interface ApplicationReasonItem {
@@ -319,10 +320,10 @@ export default function CommentsScreen() {
   return (
     <CustomSafeAreaView>
       <KeyboardAvoidingView
-        style={{ flex: 1, overflow: 'hidden' }}
-        enabled={Platform.OS === 'ios'}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
+        style={{ flex: 1, overflow: 'hidden',}}
+        enabled={true}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? RFValue(20) : RFValue(20)}
       >
         <View style={styles.container}>
           <Header title="Comments" backNavigation onBack={goBack} />

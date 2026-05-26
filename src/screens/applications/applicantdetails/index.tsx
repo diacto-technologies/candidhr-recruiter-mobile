@@ -40,9 +40,8 @@ import VideoInterview from './tabs/videointerview';
 import { formatMonDDYYYY } from '../../../utils/dateformatter';
 import { buildApplicationPdfHtml } from './tabs/profileinfo/applicationdetails/buildApplicationPdfHtml';
 import { commentIcon } from '../../../assets/svg/comments';
-import navigation from '../../../navigation';
 import { usePermission } from '../../../hooks/usePermission';
-import { PERMISSIONS, type PermissionCodename } from '../../../utils/permission.constants';
+import { PERMISSIONS } from '../../../utils/permission.constants';
 import { permissionDeniedIcon } from '../../../assets/svg/permissionDenied';
 
 /** Backend sometimes returns `ai_summary_json` as a stringified JSON object. */
@@ -75,7 +74,6 @@ export default function ApplicantDetails() {
   const { can } = usePermission();
   const selectedApplication = useAppSelector(selectSelectedApplication);
   const selectApplicationError = useAppSelector(selectSelectedApplicationError)
-  const selectApplicationStage = useAppSelector(selectApplicationStages)
   const STATUS_OPTIONS = [
     { id: "shortlisted", name: "Shortlisted" },
     { id: "rejected", name: "Rejected" },
@@ -97,25 +95,7 @@ export default function ApplicantDetails() {
   const application = useAppSelector(selectSelectedApplication);
   const loading = useAppSelector(selectApplicationsDetailLoading);
   const assessmentLogs = useAppSelector(selectAssessmentLogs);
-  const personalityScreeningList = useAppSelector(selectPersonalityScreeningList);
   const resumeScreeningReport = useAppSelector(selectResumeScreeningReport);
-
-  const hasAssessments = Boolean(assessmentLogs && assessmentLogs.length > 0);
-  const hasVideoInterview = Boolean(
-    personalityScreeningList && personalityScreeningList.length > 0
-  );
-  const hasResumeScreening = Boolean(
-    application?.resume &&
-    (
-      application.resume.resume_score ||
-      application.resume.resume_json ||
-      application.resume.ai_summary_json ||
-      application?.resume?.work_experience ||
-      application?.resume?.projects ||
-      application?.resume?.education ||
-      application?.resume?.certifications
-    )
-  );
   const stages = useAppSelector(selectApplicationStages);
   const tabs = useMemo(() => {
     const baseTabs = ['Profile Info'];
@@ -449,7 +429,6 @@ export default function ApplicantDetails() {
     }
   };
 
-
   return (
     <Fragment>
       <CustomSafeAreaView>
@@ -470,9 +449,15 @@ export default function ApplicantDetails() {
             applicantName: candidateName,
             currentStatus: application?.status?.value ?? null,
             newStatusOptions: STATUS_OPTIONS,
-            onUpdateStatus: (selectedStatusId) => {
+            onUpdateStatus: (selectedStatusId, options) => {
               // selectedStatusId is the STATUS_OPTIONS id (e.g. "on_hold") — sent as ?status=on_hold
-              dispatch(updateApplicationStatusRequestAction({ id: application_id, status: selectedStatusId }));
+              dispatch(updateApplicationStatusRequestAction({ 
+                id: application_id, 
+                status: selectedStatusId,
+                emailCandidate: options?.emailCandidate,
+                subject: options?.subject,
+                message: options?.message, 
+              }));
               dispatch(getApplicationDetailRequestAction(application_id));
             },
             hideAddReason: true,

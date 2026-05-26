@@ -320,7 +320,7 @@ function* getApplicationDetailWorker(action: { type: string; payload: string }):
     console.log(response, "getApplicationDetailWorkergetApplicationDetailWorker")
     yield put(getApplicationDetailSuccess(response));
   } catch (error: any) {
-    console.log(error.message,"error.message");
+    console.log(error.message, "error.message");
     yield put(getApplicationDetailFailure(error.message || "Failed to fetch application details"));
   }
 }
@@ -335,14 +335,33 @@ function* createApplicationWorker(action: { type: string; payload: any }): Gener
   }
 }
 
-function* updateApplicationStatusWorker(action: { type: string; payload: { id: string; status: string } }): Generator<any, void, any> {
+function* updateApplicationStatusWorker(action: { type: string; payload: import("./types").UpdateApplicationStatusRequest }): Generator<any, void, any> {
+  const { id, status, emailCandidate, subject, message } = action.payload;
   try {
     yield put(updateApplicationStatusRequest(action.payload));
-    const response = yield call(applicationsApi.updateApplicationStatus, action.payload);
-    const detailResponse = yield call(applicationsApi.getApplicationDetail, action.payload.id);
+    const response = yield call(applicationsApi.updateApplicationStatus, { id, status });
+    const detailResponse = yield call(applicationsApi.getApplicationDetail, id);
     const application = detailResponse?.application ?? detailResponse;
     yield put(updateApplicationStatusSuccess(application));
     showToastMessage(response?.message ?? "Application status updated successfully", "success");
+
+    // POST /applications/send-email/
+    if (emailCandidate && subject?.trim() && message?.trim()) {
+      try {
+        const emailPayload = {
+          application_id: id,
+          include_job_link: false,
+          subject: subject.trim(),
+          message: message.trim(),
+        };
+        console.log("📤 EMAIL PAYLOAD:", emailPayload);
+        const emailRes = yield call(applicationsApi.sendEmail, emailPayload);
+        console.log("✅ EMAIL SUCCESS RESPONSE:", emailRes);
+      } catch (sendEmailErr: any) {
+        console.log("🚨 EMAIL ERROR FULL:", sendEmailErr);
+      }
+    }
+
   } catch (error: any) {
     yield put(updateApplicationStatusFailure(error.message || "Failed to update application status"));
   }
@@ -409,7 +428,7 @@ function* getResumeScreeningReportWorker(
     if (__DEV__) {
       console.log("[getResumeScreeningReport] response", res);
     }
-    console.log(res,"resres")
+    console.log(res, "resres")
     yield put(getResumeScreeningReportSuccess(res));
   } catch (err: any) {
     yield put(
@@ -574,7 +593,7 @@ function* getAssessmentOptionsReportWorker(
       application_id,
       page
     );
-    console.log(res,"getAssessmentOptionsReportWorkergetAssessmentOptionsReportWorker")
+    console.log(res, "getAssessmentOptionsReportWorkergetAssessmentOptionsReportWorker")
     yield put(
       getAssessmentOptionsReportSuccess({
         application_id,
@@ -745,9 +764,9 @@ function* getPersonalityScreeningResponsesWorker(
     const payload = Array.isArray(res)
       ? { responses: res, ai_summary: null }
       : {
-          responses: Array.isArray(res?.responses) ? res.responses : [],
-          ai_summary: res?.ai_summary ?? null,
-        };
+        responses: Array.isArray(res?.responses) ? res.responses : [],
+        ai_summary: res?.ai_summary ?? null,
+      };
 
     yield put(getPersonalityScreeningResponsesSuccess(payload));
   } catch (err: any) {
@@ -981,26 +1000,54 @@ function* updateStageStatusWorker(
 
     // POST /applications/send-email/ – send status update email to candidate (only when user opted in)
     try {
-      const selectedApplication: { candidate?: { email?: string }; status?: string } | null =
-        yield select(selectSelectedApplication);
+      const selectedApplication: {
+        candidate?: { email?: string };
+        status?: string;
+      } | null = yield select(selectSelectedApplication);
+
       const toEmail = selectedApplication?.candidate?.email;
+
       const shouldEmail = Boolean(emailCandidate);
-      const hasRequiredFields = Boolean(subject?.trim()) && Boolean(message?.trim());
-      if (shouldEmail && applicationId && toEmail && hasRequiredFields) {
-        yield call(applicationsApi.sendEmail, {
+      const hasRequiredFields =
+        Boolean(subject?.trim()) && Boolean(message?.trim());
+
+      // ✅ STEP 1: Check condition values
+      console.log("📩 EMAIL DEBUG:", {
+        shouldEmail,
+        applicationId,
+        toEmail,
+        subject,
+        message,
+      });
+
+      if (shouldEmail && applicationId && hasRequiredFields) {
+        const emailPayload = {
           application_id: applicationId,
-          status: selectedApplication?.status ?? "shortlisted",
-          stage_status: status,
-          sent: 1,
-          to: toEmail,
-          detail: "Email sent.",
+          include_job_link: false,
           subject: subject?.trim(),
           message: message?.trim(),
-        });
+        };
+
+        // ✅ STEP 2: Log payload
+        console.log("📤 EMAIL PAYLOAD:", emailPayload);
+
+        const response = yield call(
+          applicationsApi.sendEmail,
+          emailPayload
+        );
+
+        // ✅ STEP 3: Log success response
+        console.log("✅ EMAIL SUCCESS RESPONSE:", response);
+      } else {
+        // ❌ STEP 4: If not entering
+        console.log("❌ EMAIL BLOCK NOT ENTERED");
       }
     } catch (sendEmailErr: any) {
-      // Non-blocking: status update already succeeded
-      console.warn("[sendEmail] failed:", sendEmailErr?.message ?? sendEmailErr);
+      // 🚨 STEP 5: Full error debugging
+      console.log("🚨 EMAIL ERROR FULL:", sendEmailErr);
+      console.log("🚨 EMAIL ERROR MESSAGE:", sendEmailErr?.message);
+      console.log("🚨 EMAIL ERROR RESPONSE:", sendEmailErr?.response);
+      console.log("🚨 EMAIL ERROR DATA:", sendEmailErr?.response?.data);
     }
 
     if (applicationId) {

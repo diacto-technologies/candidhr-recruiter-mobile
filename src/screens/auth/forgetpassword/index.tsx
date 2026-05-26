@@ -126,7 +126,7 @@ const ForgetPasswordScreen = () => {
           Reset password
         </Button>
         <Typography variant="regularTxtsm" color={colors.error[600]}>
-          {error}{ }
+          {error}
         </Typography>
         {/* {errorMessage && (
           <View style={{ marginTop: 16, backgroundColor: colors?.gray[100], alignItems: 'center', paddingVertical: 10, marginHorizontal: 10, borderRadius: 8 }}>

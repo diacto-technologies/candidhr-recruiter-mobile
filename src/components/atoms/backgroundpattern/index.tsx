@@ -14,7 +14,7 @@ const BackgroundPattern: React.FC<Props> = ({ children, bgStyle,
       <ImageBackground
         source={require('../../../assets/images/background.png')}
         style={[styles.bg, bgStyle]}
-        resizeMode="contain"
+        resizeMode="none"
       />
 
       {/* Screen Content */}

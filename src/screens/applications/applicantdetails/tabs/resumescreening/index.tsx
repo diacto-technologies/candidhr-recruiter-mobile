@@ -95,23 +95,21 @@ export default function ResumeScreening() {
       ?.map((item) => ({
         title: item?.name ?? "_",
 
-        value:
-          item?.tier === "high"
-            ? "Matched"
-            : item?.tier === "medium"
-              ? "Relevant"
-              : "_",
+        // value:
+        //   item?.tier === "high"
+        //     ? "Matched"
+        //     :"",
 
         matched: item?.tier === "high",
 
         tier: item?.tier, // 👈 important for sorting
 
-        proficiencyLevel:
-          item?.tier === "high"
-            ? "High"
-            : item?.tier === "medium"
-              ? "Medium"
-              : "Low",
+        // proficiencyLevel:
+        //   item?.tier === "high"
+        //     ? "High"
+        //     : item?.tier === "medium"
+        //       ? "Medium"
+        //       : "Low",
 
         proficiencyEvidence: item?.reason ?? "",
       }))
