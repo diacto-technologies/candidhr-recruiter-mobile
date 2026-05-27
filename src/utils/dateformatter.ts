@@ -76,3 +76,12 @@ export const formatMonDDYYYY = (
 
   return format.replace(/MMM|DD|YYYY/g, token => tokens[token]);
 };
+
+export const formatTime = (seconds?: number) => {
+  const s = Number(seconds ?? 0);
+  if (!Number.isFinite(s) || s <= 0) return "0s";
+  const mins = Math.floor(s / 60);
+  const rem = Math.floor(s % 60);
+  if (mins <= 0) return `${rem}s`;
+  return `${mins}m ${rem}s`;
+};

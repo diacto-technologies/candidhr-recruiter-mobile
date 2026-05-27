@@ -4,8 +4,6 @@ import Typography from '../../atoms/typography';
 import { colors } from '../../../theme/colors';
 import { StatCardProps } from './statcard';
 import { Shimmer } from '../../atoms';
-import { selectAnalyticsLoading } from '../../../features/dashbaord';
-import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useStyles } from './styles';
 import { formatCompactNumber } from '../../../utils/formatCompactNumber';
 
@@ -43,7 +41,6 @@ const AnimatedNumericStat = ({
 }) => {
   const animatedValue = useSharedValue(0);
   const [displayValue, setDisplayValue] = useState('0');
-  const analyticsLoading = useAppSelector(selectAnalyticsLoading);
 
   // detect decimal places from original value
   const getDecimalPlaces = (val: string) => {
@@ -55,18 +52,16 @@ const AnimatedNumericStat = ({
   const decimalPlaces = getDecimalPlaces(value);
 
   useEffect(() => {
-    if (!analyticsLoading) {
-      animatedValue.value = 0;
+    animatedValue.value = 0;
 
-      const normalized = value.replace(/,/g, '');
-      const n = Number(normalized);
+    const normalized = value.replace(/,/g, '');
+    const n = Number(normalized);
 
-      animatedValue.value = withTiming(Number.isFinite(n) ? n : 0, {
-        duration: 1000,
-        easing: Easing.out(Easing.exp),
-      });
-    }
-  }, [value, analyticsLoading, animatedValue]);
+    animatedValue.value = withTiming(Number.isFinite(n) ? n : 0, {
+      duration: 1000,
+      easing: Easing.out(Easing.exp),
+    });
+  }, [value, animatedValue]);
 
   const updateDisplayValue = (val: number) => {
     let formatted = '';
@@ -83,6 +78,9 @@ const AnimatedNumericStat = ({
   };
 
   useDerivedValue(() => {
+    // Note: Calling runOnJS triggers a React state update during animation. 
+    // For high performance, consider moving this formatting to a worklet 
+    // and using Animated.TextInput with useAnimatedProps.
     runOnJS(updateDisplayValue)(animatedValue.value);
   });
 
@@ -106,20 +104,17 @@ function formatStatDisplayValue(value: string, isCompact: boolean): string {
 const StatCard = ({
   title,
   value,
-  percentage: _percentage,
   subText,
-  onPressInfo: _onPressInfo,
-  tooltipText: _tooltipText,
   isCompact = false,
+  loading = false,
 }: StatCardProps) => {
   const styles = useStyles();
-  const analyticsLoading = useAppSelector(selectAnalyticsLoading);
   const animateNumeric = shouldAnimateNumericValue(value);
 
   return (
     <View style={styles.card}>
       <View style={{ gap: 4 }}>
-        {analyticsLoading ? (
+        {loading ? (
           <Shimmer
             style={{
               width: 80,
@@ -145,9 +140,11 @@ const StatCard = ({
             {title}
           </Typography>
 
-          <Typography variant="regularTxtxs" color={colors.gray['600']}>
-            {subText}
-          </Typography>
+          {!!subText && (
+            <Typography variant="regularTxtxs" color={colors.gray['600']}>
+              {subText}
+            </Typography>
+          )}
         </View>
       </View>
     </View>

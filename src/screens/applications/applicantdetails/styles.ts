@@ -71,6 +71,12 @@ export const useStyles = () => {
           right: 24,
           bottom: inset.insetsBottom + 88,
         },
-        callContainer:{paddingVertical:inset.insetsBottom-10,paddingHorizontal:16}
+        callContainer:{paddingVertical:inset.insetsBottom-10,paddingHorizontal:16},
+        scrollViewContainer: { flex: 1 },
+        tabContentContainer: { paddingHorizontal: 16, paddingVertical: 16 },
+        tabContentWrapper: { width: '100%' },
+        errorContainer: { alignSelf: 'center', justifyContent: 'center', flex: 1, paddingBottom: '30%' },
+        errorIcon: { alignSelf: 'center' },
+        errorText: { textAlign: 'center' }
     });
 };

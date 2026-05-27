@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   ScrollView,
@@ -30,6 +30,17 @@ import { SvgXml } from "react-native-svg";
 import { arrowDown } from "../../../../../../assets/svg/arrowdown";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import ProgressBar from "react-native-paper";
+import {
+  formatDifficulty,
+  isAcceptedStatus,
+  toTitleCase,
+  formatSectionConsideredOf,
+  formatSectionPercent,
+  formatQuestionTypeLabel,
+  parseChoiceIds,
+  toLabelFromKey,
+  normalizeAiEvaluation,
+} from "./assessmentdetails.helper";
 
 type AssessmentCard = {
   id: string;
@@ -43,138 +54,7 @@ interface Props {
   style?: ViewStyle;
 }
 
-const formatDifficulty = (difficulty?: string) => {
-  if (!difficulty) return "Easy";
-  return (difficulty.charAt(0).toUpperCase() + difficulty.slice(1)) as
-    | "Easy"
-    | "Medium"
-    | "Hard";
-};
 
-const isAcceptedStatus = (status: any) => {
-  const id = status?.id ?? status?.status_id;
-  const desc = status?.description ?? "";
-  return id === 3 || String(desc).toLowerCase() === "accepted";
-};
-
-const toTitleCase = (value?: string) =>
-  String(value ?? "")
-    .split(/[\s_-]+/g)
-    .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-
-/** Web section row: "Considered: 5 of 5" — uses questions_considered only (no answered fallback). */
-const formatSectionConsideredOf = (section: any) => {
-  const den = section?.total_questions ?? section?.select_random ?? 0;
-  const raw = section?.questions_considered;
-  if (raw !== undefined && raw !== null && Number.isFinite(Number(raw))) {
-    return `${Number(raw)} of ${den}`;
-  }
-  return den > 0 ? `— of ${den}` : "—";
-};
-
-const formatSectionPercent = (p: number) => {
-  const n = Number(p);
-  if (!Number.isFinite(n)) return "0%";
-  if (Math.abs(n - Math.round(n)) < 1e-6) return `${Math.round(n)}%`;
-  return `${n.toFixed(2)}%`;
-};
-
-const formatQuestionTypeLabel = (value?: string) => {
-  const v = String(value ?? "").toLowerCase();
-  if (!v) return "Text";
-  if (v.includes("coding")) return "Coding";
-  if (v.includes("single_choice")) return "MCQ";
-  if (v.includes("multiple_choice")) return "Multiple";
-  if (v.includes("mcq")) return "MCQ";
-  if (v.includes("multiple")) return "Multiple";
-  return toTitleCase(value);
-};
-
-const parseChoiceIds = (value: any): number[] => {
-  if (value == null) return [];
-  if (Array.isArray(value)) {
-    return value
-      .map((v) => Number(v))
-      .filter((n) => Number.isFinite(n));
-  }
-
-  const str = String(value).trim();
-  if (!str) return [];
-
-  try {
-    const parsed = JSON.parse(str);
-    if (Array.isArray(parsed)) {
-      return parsed
-        .map((v) => Number(v))
-        .filter((n) => Number.isFinite(n));
-    }
-  } catch {
-    // ignore
-  }
-
-  return str
-    .split(/\r?\n|,|\|/g)
-    .map((p) => Number(String(p).trim().replace(/^"+|"+$/g, "")))
-    .filter((n) => Number.isFinite(n));
-};
-
-const toLabelFromKey = (value?: string) => {
-  const v = String(value ?? "").trim();
-  if (!v) return "";
-  return v
-    .replace(/_/g, " ")
-    .split(/\s+/g)
-    .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-};
-
-const normalizeAiEvaluation = (ai: any, questionPoints?: number) => {
-  if (!ai || typeof ai !== "object") return null;
-
-  const flags: string[] = Array.isArray(ai?.ai_flags)
-    ? ai.ai_flags.map((item: any) => String(item).toLowerCase())
-    : [];
-
-  const breakdownFromArray = Array.isArray(ai?.ai_breakdown)
-    ? ai.ai_breakdown.map((item: any) => ({
-      key: String(item?.key ?? item?.label ?? "").trim(),
-      label: String(item?.label ?? toLabelFromKey(item?.key) ?? "Metric").trim(),
-      note: String(item?.note ?? "").trim(),
-      score: Number(item?.score ?? 0),
-    }))
-    : [];
-
-  const breakdownFromObject =
-    !breakdownFromArray.length && ai?.ai_subscores && typeof ai.ai_subscores === "object"
-      ? Object.entries(ai.ai_subscores).map(([k, v]: [string, any]) => ({
-        key: k,
-        label: toLabelFromKey(k) || "Metric",
-        note: "",
-        score: Number(v ?? 0),
-      }))
-      : [];
-
-  const breakdown = breakdownFromArray.length ? breakdownFromArray : breakdownFromObject;
-
-  const improvements = Array.isArray(ai?.ai_improvements)
-    ? ai.ai_improvements.map((item: any) => String(item).trim()).filter(Boolean)
-    : [];
-
-  return {
-    status: String(ai?.ai_status ?? "").trim() || "Scored",
-    score: Number(ai?.ai_score ?? ai?.ai_overall_score ?? 0),
-    maxScore: Number(questionPoints ?? 5) || 5,
-    note: String(ai?.ai_note ?? ai?.ai_summary ?? ai?.ai_feedback ?? "").trim(),
-    relevance: String(ai?.ai_relevance ?? "").trim(),
-    language: String(ai?.ai_language ?? "").trim(),
-    isOffTopic: flags.includes("off_topic"),
-    breakdown,
-    improvements,
-  };
-};
 
 const AssessmentsDetailsV2 = ({ style }: Props) => {
   const styles = useStyles();
@@ -187,42 +67,127 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
   const [snapshotModalVisible, setSnapshotModalVisible] = useState(false);
   const [selectedSnapshot, setSelectedSnapshot] = useState<string | null>(null);
   const assessmentReport = useAppSelector(selectAssessmentReport);
-  const performanceReport = useAppSelector(selectPerformanceReport) as any;
+  const performanceReport = useAppSelector(selectPerformanceReport);
   const loadingPerformanceReport = useAppSelector(selectPerformanceReportLoading);
   const assessmentLogId = assessmentReport?.id;
-  const questions: any[] = performanceReport?.question_analysis?.questions ?? [];
+  const questions = performanceReport?.question_analysis?.questions ?? [];
   const hasQuestions = questions.some((q) => q?.question_type !== "coding");
   const hasCoding = questions.some((q) => q?.question_type === "coding");
-  const overall = performanceReport?.overall_performance;
-  const assessmentInfo = performanceReport?.assessment_info;
-  const sectionsList = performanceReport?.section_performance?.sections ?? [];
-  const section0 = sectionsList[0];
-  const skipped =
-    overall?.unanswered ??
-    performanceReport?.question_analysis?.total_questions_skipped ??
-    0;
+  const {
+    overall,
+    assessmentInfo,
+    sectionsList,
+    section0,
+    skipped,
+    overallTotalQuestions,
+    aggregateConsideredKpi,
+  } = useMemo(() => {
+    const overall = performanceReport?.overall_performance;
+    const assessmentInfo = performanceReport?.assessment_info;
+    const sectionsList = performanceReport?.section_performance?.sections ?? [];
+    const section0 = sectionsList[0];
+    const skipped =
+      overall?.unanswered ??
+      (performanceReport?.question_analysis as any)?.total_questions_skipped ??
+      0;
 
-  /** Web dashboard KPI row: MARKS / ANSWERED / CONSIDERED / GRADE (overall, all sections). */
-  const overallTotalQuestions = overall?.total_questions ?? 0;
-  const sumQuestionsConsideredSections = sectionsList.reduce((acc: number, s: any) => {
-    const v = s?.questions_considered;
-    if (v !== undefined && v !== null && Number.isFinite(Number(v))) return acc + Number(v);
-    return acc;
-  }, 0);
-  const hasConsideredFromSections = sectionsList.some(
-    (s: any) => s?.questions_considered !== undefined && s?.questions_considered !== null
-  );
-  const overallConsideredApi = (overall as any)?.questions_considered;
-  const aggregateConsideredKpi =
-    overallConsideredApi !== undefined &&
-      overallConsideredApi !== null &&
-      Number.isFinite(Number(overallConsideredApi))
-      ? `${Number(overallConsideredApi)} / ${overallTotalQuestions}`
-      : hasConsideredFromSections && overallTotalQuestions > 0
-        ? `${sumQuestionsConsideredSections} / ${overallTotalQuestions}`
-        : overallTotalQuestions > 0
-          ? `— / ${overallTotalQuestions}`
-          : "—";
+    const overallTotalQuestions = overall?.total_questions ?? 0;
+    const sumQuestionsConsideredSections = sectionsList.reduce((acc: number, s: any) => {
+      const v = s?.questions_considered;
+      if (v !== undefined && v !== null && Number.isFinite(Number(v))) return acc + Number(v);
+      return acc;
+    }, 0);
+    
+    const hasConsideredFromSections = sectionsList.some(
+      (s: any) => s?.questions_considered !== undefined && s?.questions_considered !== null
+    );
+    
+    const overallConsideredApi = overall?.questions_considered;
+    const aggregateConsideredKpi =
+      overallConsideredApi !== undefined &&
+        overallConsideredApi !== null &&
+        Number.isFinite(Number(overallConsideredApi))
+        ? `${Number(overallConsideredApi)} / ${overallTotalQuestions}`
+        : hasConsideredFromSections && overallTotalQuestions > 0
+          ? `${sumQuestionsConsideredSections} / ${overallTotalQuestions}`
+          : overallTotalQuestions > 0
+            ? `— / ${overallTotalQuestions}`
+            : "—";
+
+    return {
+      overall,
+      assessmentInfo,
+      sectionsList,
+      section0,
+      skipped,
+      overallTotalQuestions,
+      aggregateConsideredKpi,
+    };
+  }, [performanceReport]);
+
+  const parsedQuestions = useMemo(() => {
+    return questions
+      .filter((q) => q?.question_type !== "coding")
+      .map((q: any, index: number) => {
+        const id = q?.question_id ?? String(index + 1);
+        const isCorrect = Boolean(q?.is_correct);
+        const difficulty = formatDifficulty(q?.difficulty);
+        const time = `${q?.time_spent ?? 0} Sec.`;
+        const status = q?.status ?? (isCorrect ? "Correct" : "Incorrect");
+
+        const bg = isCorrect ? colors.success[50] : colors.error[50];
+        const border = isCorrect ? colors.success[200] : colors.error[200];
+        const text = isCorrect ? colors.success[700] : colors.error[700];
+
+        const providedChoiceIds = parseChoiceIds(q?.answer_provided);
+        const correctChoiceIds = parseChoiceIds(q?.correct_answer);
+
+        const choices: Array<{
+          choice_id: number;
+          choice_text: string;
+          is_correct?: boolean;
+        }> = Array.isArray(q?.choices) ? q.choices : [];
+
+        const correctSet = new Set<number>(
+          choices.length
+            ? choices
+              .filter(
+                (c) =>
+                  Boolean(c?.is_correct) ||
+                  correctChoiceIds.includes(Number(c?.choice_id))
+              )
+              .map((c) => Number(c?.choice_id))
+              .filter((n) => Number.isFinite(n))
+            : correctChoiceIds
+        );
+
+        const providedSet = new Set<number>(
+          providedChoiceIds.map((n) => Number(n)).filter((n) => Number.isFinite(n))
+        );
+
+        const ai = normalizeAiEvaluation(q?.ai_evaluation, q?.points);
+        const aiId = String(q?.question_id ?? index);
+
+        return {
+          id,
+          q,
+          index,
+          isCorrect,
+          difficulty,
+          time,
+          status,
+          bg,
+          border,
+          text,
+          choices,
+          correctSet,
+          providedSet,
+          ai,
+          aiId,
+          correctChoiceIds,
+        };
+      });
+  }, [questions]);
 
   // While performance report is loading, show shimmer instead of empty state.
   // When loading is done, and the result is still absent, show empty state.
@@ -754,23 +719,11 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
       {/* ---------- Non-coding questions ---------- */}
       {hasQuestions && (
         <ScrollView nestedScrollEnabled>
-          {questions
-            .filter((q) => q?.question_type !== "coding")
-            .map((q: any, index: number) => {
-              const id = q?.question_id ?? String(index + 1);
-              const isCorrect = Boolean(q?.is_correct);
-              const difficulty = formatDifficulty(q?.difficulty);
-              const time = `${q?.time_spent ?? 0} Sec.`;
-              const status = q?.status ?? (isCorrect ? "Correct" : "Incorrect");
-
-              const bg = isCorrect ? colors.success[50] : colors.error[50];
-              const border = isCorrect ? colors.success[200] : colors.error[200];
-              const text = isCorrect ? colors.success[700] : colors.error[700];
-
-              return (
-                <View key={id} style={styles.qCard}>
-                  <View style={styles.qCardTop}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+          {parsedQuestions.map(({ id, q, index, isCorrect, difficulty, time, choices, correctSet, providedSet, ai, aiId, correctChoiceIds }) => {
+            return (
+              <View key={id} style={styles.qCard}>
+                <View style={styles.qCardTop}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                       <Typography variant="regularTxtsm" color={colors.gray[600]}>
                         {time}
                       </Typography>
@@ -829,38 +782,10 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
                       {index + 1}. {q?.question_text ?? "_"}
                     </Typography>
 
-                    {(() => {
-                      const providedChoiceIds = parseChoiceIds(q?.answer_provided);
-                      const correctChoiceIds = parseChoiceIds(q?.correct_answer);
-
-                      const choices: Array<{
-                        choice_id: number;
-                        choice_text: string;
-                        is_correct?: boolean;
-                      }> = Array.isArray(q?.choices) ? q.choices : [];
-
-                      const correctSet = new Set<number>(
-                        choices.length
-                          ? choices
-                            .filter(
-                              (c) =>
-                                Boolean(c?.is_correct) ||
-                                correctChoiceIds.includes(Number(c?.choice_id))
-                            )
-                            .map((c) => Number(c?.choice_id))
-                            .filter((n) => Number.isFinite(n))
-                          : correctChoiceIds
-                      );
-
-                      const providedSet = new Set<number>(
-                        providedChoiceIds.map((n) => Number(n)).filter((n) => Number.isFinite(n))
-                      );
-
-                      return (
-                        <View style={{ gap: 12 }}>
-                          {/* Options row (show ALL unselected too) */}
-                          {choices.length > 0 ? (
-                            <View style={styles.optionRow}>
+                    <View style={{ gap: 12 }}>
+                      {/* Options row (show ALL unselected too) */}
+                      {choices.length > 0 ? (
+                        <View style={styles.optionRow}>
                               {choices.map((c) => {
                                 const idNum = Number(c?.choice_id);
                                 const label = String(c?.choice_text ?? "").trim() || "_";
@@ -1066,9 +991,6 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
                                     <Typography variant="semiBoldTxtxl" color={colors.brand[600]}>
                                       {!isExpanded ? 'Hide AI Analysis' : 'View AI Analysis'}
                                     </Typography>
-                                    {/* <Typography variant="semiBoldTxtxl" color={colors.brand[600]}>
-                                      {Number(ai.score).toFixed(2)}
-                                    </Typography> */}
                                   </View>
 
                                   <View style={{ paddingTop: 2 }}>
@@ -1100,7 +1022,6 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
                                     >
                                       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
 
-                                        {/* Left: AI Evaluation title + status + note */}
                                         <View style={{ flex: 1 }}>
                                           <Typography variant="semiBoldTxtlg" color={colors.gray[800]}>
                                             AI Evaluation
@@ -1110,7 +1031,6 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
                                           </Typography>
                                         </View>
 
-                                        {/* Right: Score — pushed to the far right end */}
                                         <View style={{ alignItems: "flex-end" }}>
                                           <Typography variant="semiBoldTxtxl" color={colors.brand[600]}>
                                             {`${ai.score}/${ai.maxScore}`}

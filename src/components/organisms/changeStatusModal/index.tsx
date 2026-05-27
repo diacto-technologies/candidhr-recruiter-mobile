@@ -31,6 +31,7 @@ import {
   selectUpdateStageStatusLoading,
 } from '../../../features/applications/selectors';
 import { useAppSelector } from '../../../hooks/useAppSelector';
+import { capitalizeFirstLetter } from '../../../utils/stringUtils';
 
 const STATUS_LABELS: Record<string, string> = {
   approved: 'Approved',
@@ -52,13 +53,11 @@ export interface ChangeStatusModalProps {
   visible: boolean;
   onClose: () => void;
   applicantName?: string;
-  /** Optional context id to display (e.g. stage id) */
   entityId?: string | null;
   currentStatus: string | null | undefined;
   newStatusOptions: Array<{ id: string; name: string }>;
   onUpdateStatus: (newStatusId: string, options?: { addReason?: boolean; categoryId?: string; reasonId?: string; emailCandidate?: boolean; subject?: string; message?: string }) => void;
   initialNewStatusId?: string | null;
-  /** When provided with applicationId, Update status triggers PATCH /applications/v1/stages/{stageId}/{status}/ */
   stageId?: string | null;
   /** Required with stageId for API flow; used to refetch application and stages on success */
   applicationId?: string | null;
@@ -264,7 +263,7 @@ const ChangeStatusModal = ({
                 </Typography>
                 {/* <View style={styles.row}> */}
                 <TextField
-                  value={currentLabel ?? ''}
+                  value={capitalizeFirstLetter(currentLabel) ?? ''}
                   // onChangeText={setSelectedReasonId}
                   placeholder="Current"
                   editable={false}

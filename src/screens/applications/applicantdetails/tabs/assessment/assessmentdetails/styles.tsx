@@ -165,5 +165,90 @@ export const useStyles = () => {
           alignItems: "flex-start",
           gap: 10,
         },
+        
+        videoContainer: {
+          borderRadius: 18,
+          overflow: "hidden",
+          backgroundColor: colors.gray[100],
+        },
+
+        metricsRow: {
+          flexDirection: "row",
+          borderBottomWidth: 1,
+          borderBottomColor: colors.gray[200],
+          paddingBottom: 8,
+        },
+
+        metricTile: {
+          flex: 1,
+          gap: 4,
+        },
+
+        dividerLine: {
+          height: '100%',
+          width: 2,
+          backgroundColor: colors.gray[200],
+          marginHorizontal: 14,
+        },
+
+        snapshotHeader: {
+          marginTop: 6,
+          gap: 12,
+        },
+
+        snapshotGrid: {
+          flexDirection: "row",
+          flexWrap: "wrap",
+          justifyContent: "space-between",
+          rowGap: 12,
+        },
+
+        snapshotThumbnail: {
+          width: "23%",
+          aspectRatio: 1,
+          borderRadius: 16,
+          overflow: "hidden",
+          backgroundColor: colors.gray[100],
+        },
+
+        fadedThumbnail: {
+          opacity: 0.25,
+        },
+
+        viewAllBtnContainer: {
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 12,
+          alignItems: "center",
+        },
+
+        viewAllBtn: {
+          paddingHorizontal: 18,
+          paddingVertical: 10,
+          borderRadius: 14,
+          borderWidth: 1,
+          borderColor: colors.gray[200],
+          backgroundColor: colors.common.white,
+        },
+
+        recommendationRow: {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 12,
+        },
+
+        recommendationBadge: {
+          paddingHorizontal: 8,
+          paddingVertical: 4,
+          borderRadius: 999,
+          backgroundColor: colors.warning[50],
+          borderWidth: 1,
+          borderColor: colors.warning[200],
+        },
+
+        recommendationGap: {
+          gap: 8,
+        },
       });
  }

@@ -24,14 +24,28 @@ import Button from '../../../../../components/atoms/button';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { getApprovalStageStatusOptions } from '../stageStatusOptions';
 import Shimmer from '../../../../../components/atoms/shimmer';
-import { paddingRight } from '../../../../../../node_modules 12-03-47-425/html2canvas/dist/types/css/property-descriptors/padding';
-import { marginRight } from '../../../../../../node_modules 12-03-47-425/html2canvas/dist/types/css/property-descriptors/margin';
+import { formatTime as globalFormatTime } from '../../../../../utils/dateformatter';
 
 const normalizeContentType = (v: unknown) =>
   String(v ?? '')
     .toLowerCase()
     .trim()
     .replace(/[\s-]+/g, '_');
+
+const mapStatusTextToId = (statusText: string): string => {
+  const statusMap: { [key: string]: string } = {
+    'Started': 'started',
+    'Assigned': 'assigned',
+    'Under Review': 'under_review',
+    'Completed': 'completed',
+    'On Hold': 'on_hold',
+    'Rejected': 'rejected',
+    'Shortlisted': 'shortlisted',
+    'Scheduled Final Interview': 'final_interview',
+    'Hired': 'hired',
+  };
+  return statusMap[statusText] || '';
+};
 
 type VideoInterviewProps = {
   sessionContentId: string | null;
@@ -136,29 +150,14 @@ export default function VideoInterview({
     }
   }, [stages]);
 
-  const sessionOptions =
-    filteredVideoLogs?.map((item, index) => ({
+  const sessionOptions = useMemo(() => {
+    return filteredVideoLogs?.map((item, index) => ({
       id: item.content_id,
       name: `Automated Video Interview`,
       status_text: item?.session_status ?? "—",
       raw: item,
     })) ?? [];
-
-  // Map status_text to STATUS_OPTIONS id format
-  const mapStatusTextToId = (statusText: string): string => {
-    const statusMap: { [key: string]: string } = {
-      'Started': 'started',
-      'Assigned': 'assigned',
-      'Under Review': 'under_review',
-      'Completed': 'completed',
-      'On Hold': 'on_hold',
-      'Rejected': 'rejected',
-      'Shortlisted': 'shortlisted',
-      'Scheduled Final Interview': 'final_interview',
-      'Hired': 'hired',
-    };
-    return statusMap[statusText] || '';
-  };
+  }, [filteredVideoLogs]);
 
   // Get current status id from selected session
   const currentStatusId = useMemo(() => {
@@ -233,15 +232,7 @@ export default function VideoInterview({
       ? Math.round(summaryData.score * 10)
       : null;
 
-  const convertSeconds = (duration: number) => {
-    const minutes = Math.floor(duration / 60);
-    const seconds = duration % 60;
 
-    if (minutes > 0) {
-      return `${minutes}m ${seconds}s`;
-    }
-    return `${seconds}s`;
-  };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -278,7 +269,7 @@ export default function VideoInterview({
     if (!currentResponse) return [];
 
     // transcription_segments is on the RESPONSE, not inside video_analysis
-    const segments = (currentResponse as any).transcription_segments;
+    const segments = currentResponse.transcription_segments;
 
     if (Array.isArray(segments)) {
       return segments.map((seg: any) => ({
@@ -360,15 +351,12 @@ export default function VideoInterview({
       </View>
       <View style={{ zIndex: 1000 }}>
         <Card style={{ gap: 4, flex: 1, width: '100%' }}>
-          <Typography variant="regularTxtxs" style={{ backgroundColor: colors?.brand['200'], borderTopEndRadius: 12, borderTopStartRadius: 12, padding: 5 }} numberOfLines={2}>
+          <Typography variant="regularTxtxs" style={styles.statusBanner} numberOfLines={2}>
             Stage was {assessmentStatus} by{" "}
-            {stages?.find(s => s.stage_type === "automated_video_interview")?.reviewed_by?.name ??
-              "Workflow"}{" "}
+            {videoStage?.reviewed_by?.name ?? "Workflow"}{" "}
             on{" "}
             {formatMonDDYYYY(
-              stages?.find(s => s.stage_type === "automated_video_interview")?.reviewed_at ??
-              stages?.find(s => s.stage_type === "automated_video_interview")
-                ?.workflow_status_updated_at,
+              videoStage?.reviewed_at ?? videoStage?.workflow_status_updated_at,
               "DD MMM YYYY HH:mm",
               "IST"
             )}
@@ -398,41 +386,29 @@ export default function VideoInterview({
                   <View style={{flex:2}}>
                     {isReviewed ?
                       <Typography variant="regularTxtxs" style={{ flex: 1 }}>
-                        {filteredVideoLogs
-                          ?.find(item => item.content_id === sessionContentId)
-                          ?.action_taken_by?.name ? (
+                        {currentSessionLog?.action_taken_by?.name ? (
                           <>
-                            Reviewed by{" "}
-                            {
-                              filteredVideoLogs.find(item => item.content_id === sessionContentId)
-                                ?.action_taken_by?.name
-                            }{" "}
-                            ·{" "}
+                            Reviewed by {currentSessionLog.action_taken_by.name} ·{" "}
                             {formatMonDDYYYY(
-                              filteredVideoLogs.find(item => item.content_id === sessionContentId)
-                                ?.action_taken_at,
+                              currentSessionLog.action_taken_at,
                               "DD MMM YYYY HH:mm",
                               "IST"
                             )}
                           </>
-                        ) : filteredVideoLogs?.find(item => item.content_id === sessionContentId)
-                          ?.workflow_status_updated_at ? (
+                        ) : currentSessionLog?.workflow_status_updated_at ? (
                           <>
                             Reviewed by Workflow ·{" "}
                             {formatMonDDYYYY(
-                              filteredVideoLogs.find(item => item.content_id === sessionContentId)
-                                ?.workflow_status_updated_at,
+                              currentSessionLog.workflow_status_updated_at,
                               "DD MMM YYYY HH:mm",
                               "IST"
                             )}
                           </>
-                        ) : filteredVideoLogs?.find(item => item.content_id === sessionContentId)
-                          ?.updated_at ? (
+                        ) : currentSessionLog?.updated_at ? (
                           <>
                             ·{" "}
                             {formatMonDDYYYY(
-                              filteredVideoLogs.find(item => item.content_id === sessionContentId)
-                                ?.updated_at,
+                              currentSessionLog.updated_at,
                               "DD MMM YYYY HH:mm",
                               "IST"
                             )}
@@ -504,7 +480,7 @@ export default function VideoInterview({
         ]}
       /> */}
       {showContentShimmer ? (
-        <View style={{ gap: 14, paddingVertical: 18 }}>
+        <View style={styles.shimmerContainer}>
           <Shimmer width="40%" height={20} borderRadius={8} />
           <View style={{ flexDirection: 'row', gap: 12 }}>
             <Shimmer width="45%" height={14} borderRadius={8} />
@@ -665,7 +641,7 @@ export default function VideoInterview({
             <View style={styles.tagRow}>
               <View style={styles.tag}>
                 <Typography variant="regularTxtxs" color={colors.gray[700]}>
-                  Duration: {convertSeconds(selectedResponse?.duration || 0)}
+                  Duration: {globalFormatTime(selectedResponse?.duration || 0)}
                 </Typography>
               </View>
 

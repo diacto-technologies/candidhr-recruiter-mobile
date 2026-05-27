@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useCallback } from "react";
 import { View, FlatList, Pressable, TouchableOpacity } from "react-native";
 import { SvgXml } from "react-native-svg";
 import { Typography } from "../../../atoms";
@@ -53,6 +53,9 @@ interface JobCardRowProps {
     onToggleFavourite?: (jobId: string) => void;
 }
 
+const IS_TABLET = DeviceInfo.isTablet();
+const DUMMY_SHIMMER_DATA = Array.from({ length: 20 }, (_, i) => String(i + 1));
+
 const JobCardRow: React.FC<JobCardRowProps> = ({
     item,
     cardStyles,
@@ -65,22 +68,22 @@ const JobCardRow: React.FC<JobCardRowProps> = ({
     const [dropdownPosition, setDropdownPosition] = useState({ left: 0, top: 0 });
     const [shareModalVisible, setShareModalVisible] = useState(false);
     const menuTriggerRef = useRef<View | null>(null);
+    
     const initialSharedMemberIds = useMemo(
         () => (item.users_shared_with ?? []).map((u) => u.id).filter(Boolean),
         [item.users_shared_with]
     );
 
     const handleOpenMenu = () => {
-        if (menuTriggerRef.current && "measureInWindow" in menuTriggerRef.current) {
-            (menuTriggerRef.current as any).measureInWindow(
-                (x: number, y: number, width: number, height: number) => {
-                    setDropdownPosition({
-                        left: Math.max(8, x + width - 160),
-                        top: y + height - 5,
-                    });
-                    setMenuVisible(true);
-                }
-            );
+        const trigger = menuTriggerRef.current;
+        if (trigger && "measureInWindow" in trigger) {
+            trigger.measureInWindow((x: number, y: number, width: number, height: number) => {
+                setDropdownPosition({
+                    left: Math.max(8, x + width - 160),
+                    top: y + height - 5,
+                });
+                setMenuVisible(true);
+            });
         } else {
             setMenuVisible(true);
         }
@@ -103,12 +106,7 @@ const JobCardRow: React.FC<JobCardRowProps> = ({
                     <Pressable style={{ flex: 1, paddingRight: 8 }} onPress={() => onJobPress(item.id)}>
                         <Typography variant="semiBoldTxtmd">{item.title ?? ""}</Typography>
                     </Pressable>
-                    <View
-                        ref={(el) => {
-                            menuTriggerRef.current = el;
-                        }}
-                        collapsable={false}
-                    >
+                    <View ref={menuTriggerRef} collapsable={false}>
                         <Pressable onPress={handleOpenMenu} hitSlop={8}>
                             <SvgXml xml={horizontalThreedotIcon} height={20} width={20} />
                         </Pressable>
@@ -153,15 +151,15 @@ const JobCardRow: React.FC<JobCardRowProps> = ({
                     </View>
 
                     <View style={cardStyles.rowBetween}>
-                        <View style={{ flexDirection: "row", gap: 12 }}>
-                            <View style={{ flexDirection: "row", gap: 4 }}>
+                        <View style={cardStyles.metricsContainer}>
+                            <View style={cardStyles.metricRow}>
                                 <SvgXml xml={eyeVisibleIcon} width={20} height={20} />
                                 <Typography variant="mediumTxtsm" color={colors.gray[600]}>
                                     {item.views_count ?? ""}
                                 </Typography>
                             </View>
 
-                            <View style={{ flexDirection: "row", gap: 4 }}>
+                            <View style={cardStyles.metricRow}>
                                 <SvgXml xml={userApplicationIcon} width={20} height={20} />
                                 <Typography variant="mediumTxtsm" color={colors.gray[600]}>
                                     {item.applicants_count ?? ""}
@@ -189,9 +187,7 @@ const JobCardRow: React.FC<JobCardRowProps> = ({
                 position={dropdownPosition}
                 iconColor={colors?.gray[400]}
                 width={160}
-                iconStyle={{
-                    marginRight: 12,
-                }}
+                iconStyle={{ marginRight: 12 }}
                 iconHight={20}
                 iconWidth={20}
                 items={[
@@ -232,17 +228,15 @@ const JobCardList: React.FC<JobCardListProps> = ({
     publishedCount,
     unpublishedCount,
     favouritesCount,
-    isConnected: _isConnected,
     onChangeTab,
     onLoadMore,
     onJobPress,
     favouriteJobIds = [],
     onToggleFavourite,
 }) => {
-    const isTablet = DeviceInfo.isTablet();
     const styles = useStyles();
 
-    const renderShimmerCard = () => (
+    const renderShimmerCard = useCallback(() => (
         <View style={styles.card}>
             <Shimmer width="70%" height={18} style={{ marginBottom: 12 }} />
             <Shimmer width="50%" height={14} style={{ marginBottom: 16 }} />
@@ -260,7 +254,17 @@ const JobCardList: React.FC<JobCardListProps> = ({
                 <Shimmer width="30%" height={14} />
             </View>
         </View>
-    );
+    ), [styles]);
+
+    const renderItem = useCallback(({ item }: { item: Job }) => (
+        <JobCardRow
+            item={item}
+            cardStyles={styles}
+            onJobPress={onJobPress}
+            favouriteJobIds={favouriteJobIds}
+            onToggleFavourite={onToggleFavourite}
+        />
+    ), [styles, onJobPress, favouriteJobIds, onToggleFavourite]);
 
     if (isTabLoading || (loading && jobsList.length === 0)) {
         return (
@@ -282,12 +286,12 @@ const JobCardList: React.FC<JobCardListProps> = ({
 
                 <View style={{ paddingHorizontal: 16, paddingVertical: 20 }}>
                     <FlatList
-                        data={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]}
-                        keyExtractor={(item) => String(item)}
-                        renderItem={() => renderShimmerCard()}
-                        numColumns={isTablet ? 2 : 1}
-                        key={isTablet ? "tablet-shimmer-2" : "mobile-shimmer-1"}
-                        columnWrapperStyle={isTablet ? { justifyContent: "space-between" } : undefined}
+                        data={DUMMY_SHIMMER_DATA}
+                        keyExtractor={(item) => item}
+                        renderItem={renderShimmerCard}
+                        numColumns={IS_TABLET ? 2 : 1}
+                        key={IS_TABLET ? "tablet-shimmer-2" : "mobile-shimmer-1"}
+                        columnWrapperStyle={IS_TABLET ? { justifyContent: "space-between" } : undefined}
                         contentContainerStyle={{ gap: 12 }}
                         showsVerticalScrollIndicator={false}
                     />
@@ -295,16 +299,6 @@ const JobCardList: React.FC<JobCardListProps> = ({
             </>
         );
     }
-
-    const renderItem = ({ item }: { item: Job }) => (
-        <JobCardRow
-            item={item}
-            cardStyles={styles}
-            onJobPress={onJobPress}
-            favouriteJobIds={favouriteJobIds}
-            onToggleFavourite={onToggleFavourite}
-        />
-    );
 
     return (
         <>
@@ -338,7 +332,7 @@ const JobCardList: React.FC<JobCardListProps> = ({
                 showsVerticalScrollIndicator={false}
                 onEndReached={onLoadMore}
                 onEndReachedThreshold={0.5}
-                numColumns={isTablet ? 2 : 1}
+                numColumns={IS_TABLET ? 2 : 1}
                 ListEmptyComponent={
                     !loading && !isTabLoading ? (
                         <BackgroundPattern
@@ -348,22 +342,8 @@ const JobCardList: React.FC<JobCardListProps> = ({
                                 top: -90,
                             }}
                         >
-                            <View
-                                style={{
-                                    flex: 1,
-                                    alignSelf: "center",
-                                    alignContent: "center",
-                                    justifyContent: "center",
-                                }}
-                            >
-                                <View
-                                    style={{
-                                        alignItems: "center",
-                                        paddingHorizontal: 16,
-                                        zIndex: 10,
-                                        marginBottom: 10,
-                                    }}
-                                >
+                            <View style={styles.emptyContainer}>
+                                <View style={styles.emptyContent}>
                                     <SvgXml xml={Illustrations} style={{ zIndex: -1 }} />
                                     <Typography variant="semiBoldTxtmd">No results found</Typography>
 

@@ -5,11 +5,10 @@ import SkillScore from './skillscart';
 import AiSummary from './aisummarycart';
 import DetailedResume from './resumedetailcart';
 import { useAppSelector } from '../../../../../hooks/useAppSelector';
-import { selectApplicationsDetailLoading, selectApplicationStages, selectAssessmentLogs, selectMarkSessionReviewedLoading, selectParseResumeLoading, selectResumeScreeningReport, selectSelectedApplication, selectApplicationsLoading, selectResumeScreeningReportLoading } from '../../../../../features/applications/selectors';
-import { formatPercentage, getScoreStatus, getSkillStatus } from '../../../../../screens/applications/applicantdetails/helper';
+import {selectApplicationStages, selectAssessmentLogs, selectMarkSessionReviewedLoading, selectParseResumeLoading, selectResumeScreeningReport, selectSelectedApplication, selectApplicationsLoading, selectResumeScreeningReportLoading } from '../../../../../features/applications/selectors';
+
 import { colors } from '../../../../../theme/colors';
 import Typography from '../../../../../components/atoms/typography';
-import { shadowStyles } from '../../../../../theme/shadowcolor';
 import StatusDropdown from '../../../../../components/organisms/dropdown/statusDropdown';
 import Card from '../../../../../components/atoms/card';
 import { formatMonDDYYYY } from '../../../../../utils/dateformatter';
@@ -19,27 +18,12 @@ import { getResumeScreeningReportRequestAction, markSessionAsReviewedRequestActi
 import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
 import Feather from 'react-native-vector-icons/Feather';
 import { getApprovalStageStatusOptions } from '../stageStatusOptions';
-import { usePermission } from '../../../../../hooks/usePermission';
 import { PERMISSIONS } from '../../../../../utils/permission.constants';
 import Divider from '../../../../../components/atoms/divider';
-interface ResumeSkill {
-  name: string;
-  relevance_score: number | string;
-  matched?: string;
-}
-interface ResumeMatchedSkill {
-  name: string;
-}
-interface SkillScoreItem {
-  title: string;
-  value: string;
-  matched: boolean;
-  proficiencyLevel: string;
-  proficiencyEvidence: string;
-}
+import { useStyles } from './styles';
 
 export default function ResumeScreening() {
-  const { can } = usePermission();
+  const styles = useStyles();
   const dispatch = useAppDispatch();
   const assessmentLogs = useAppSelector(selectAssessmentLogs);
   const stages = useAppSelector(selectApplicationStages);
@@ -83,34 +67,15 @@ export default function ResumeScreening() {
   }, [resumeScreeningContentId, dispatch]);
 
   const isReviewed = resumeSessionLog?.session_status === 'reviewed';
-  const matchedSkills =
-    application?.resume?.skills_matched
-      ?.map((item: any) => item?.matched_candidate_skill_name)
-      ?.filter((val: any) => typeof val === "string" && val.length > 0) ?? [];
 
-  const skills =
-    components
+  const skills = useMemo(() => {
+    return components
       .find(c => c?.key === "skills")
       ?.tiered_items
       ?.map((item) => ({
         title: item?.name ?? "_",
-
-        // value:
-        //   item?.tier === "high"
-        //     ? "Matched"
-        //     :"",
-
         matched: item?.tier === "high",
-
         tier: item?.tier, // 👈 important for sorting
-
-        // proficiencyLevel:
-        //   item?.tier === "high"
-        //     ? "High"
-        //     : item?.tier === "medium"
-        //       ? "Medium"
-        //       : "Low",
-
         proficiencyEvidence: item?.reason ?? "",
       }))
       ?.sort((a, b) => {
@@ -119,20 +84,28 @@ export default function ResumeScreening() {
           medium: 2,
           low: 3,
         };
-
-        return (order[a.tier] ?? 4) - (order[b.tier] ?? 4);
+        return (order[a.tier ?? ""] ?? 4) - (order[b.tier ?? ""] ?? 4);
       }) ?? [];
+  }, [components]);
 
-  const calculateOverallSkillScore = (skills: any[] = []) => {
-    if (!skills.length) return 0;
-
-    const total = skills.reduce(
-      (sum, skill) => sum + Number(skill?.proficiency_score ?? 0),
-      0
-    );
-
-    return Math.round((total / skills.length) * 10); // convert to %
-  };
+  const scoreDetails = useMemo(() => {
+    const SCORE_METRICS = [
+      { key: "skills", title: "Skill" },
+      { key: "experience", title: "Experience" },
+      { key: "projects", title: "Projects" },
+      { key: "education", title: "Education" },
+      { key: "certifications", title: "Certification" },
+    ];
+    return SCORE_METRICS.map(({ key, title }) => {
+      const comp = components.find(c => c?.key === key);
+      return {
+        title,
+        percentage: `${Number(comp?.weight_percent ?? 0)}%`,
+        value: `${comp?.score ?? 0}/${comp?.max_score ?? 0}`,
+        completed: (comp?.raw_score_percent ?? 0) >= 70,
+      };
+    });
+  }, [components]);
 
   const currentStageStatus = resumeStage?.status ?? null;
   const STAGE_STATUS_OPTIONS = useMemo(() => {
@@ -151,34 +124,9 @@ export default function ResumeScreening() {
       ?.replace("_", " ")
       ?.replace(/\b\w/g, c => c.toUpperCase());
 
-  // const calculateSkillScore = (skills: any[] = []) => {
-  //   if (!skills.length) return 0;
-
-  //   const total = skills.reduce(
-  //     (sum, skill) => sum + Number(skill?.relevance_score ?? 0),
-  //     0
-  //   );
-
-  //   // relevance_score is 0–10 → convert to %
-  //   return Math.round((total / skills.length) * 10);
-  // };
   return (
     <Fragment>
       <View style={styles.container}>
-        {/* <View style={styles.shortListedCard}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View
-              style={{
-                height: 8,
-                width: 8,
-                borderRadius: 30,
-                backgroundColor: application?.resume?.approved_at
-                  ? colors.success[500]
-                  : application?.resume?.status_text === "Under Review"
-                    ? colors.warning[500]
-                    : colors.error[500],
-              }}
-            /> */}
         <StatusDropdown
           label="Stages"
           options={STAGE_STATUS_OPTIONS}
@@ -309,79 +257,15 @@ export default function ResumeScreening() {
           </View>
         </Card>
         <ResumeScore
-          overall={formatPercentage(resumeScreeningReport?.attributes?.scorecard_v3?.overall_score ?? "0")}
+          overall={`${resumeScreeningReport?.attributes?.scorecard_v3?.overall_score ?? "0"}/ ${resumeScreeningReport?.attributes?.scorecard?.scale_max ?? "10"}`}
           isloading={loading}
-          status={getScoreStatus(resumeScreeningReport?.attributes?.scorecard_v3?.overall_score ?? "0")}
-          details={[
-            {
-              title: "Skill",
-              percentage: `${Number(
-                components.find(c => c?.key === "skills")?.weight_percent ?? 0
-              )}%`,
-              value: `${components.find(c => c?.key === "skills")?.score ?? 0
-                }/${components.find(c => c?.key === "skills")?.max_score ?? 0
-                }`,
-              completed:
-                (components.find(c => c?.key === "skills")?.raw_score_percent ?? 0) >= 70,
-            },
-
-            {
-              title: "Experience",
-              percentage: `${Number(
-                components.find(c => c?.key === "experience")?.weight_percent ?? 0
-              )}%`,
-              value: `${components.find(c => c?.key === "experience")?.score ?? 0
-                }/${components.find(c => c?.key === "experience")?.max_score ?? 0
-                }`,
-              completed:
-                (components.find(c => c?.key === "experience")?.raw_score_percent ?? 0) >= 70,
-            },
-
-            {
-              title: "Projects",
-              percentage: `${Number(
-                components.find(c => c?.key === "projects")?.weight_percent ?? 0
-              )}%`,
-              value: `${components.find(c => c?.key === "projects")?.score ?? 0
-                }/${components.find(c => c?.key === "projects")?.max_score ?? 0
-                }`,
-              completed:
-                (components.find(c => c?.key === "projects")?.raw_score_percent ?? 0) >= 70,
-            },
-
-            {
-              title: "Education",
-              percentage: `${Number(
-                components.find(c => c?.key === "education")?.weight_percent ?? 0
-              )}%`,
-              value: `${components.find(c => c?.key === "education")?.score ?? 0
-                }/${components.find(c => c?.key === "education")?.max_score ?? 0
-                }`,
-              completed:
-                (components.find(c => c?.key === "education")?.raw_score_percent ?? 0) >= 70,
-            },
-
-            {
-              title: "Certification",
-              percentage: `${Number(
-                components.find(c => c?.key === "certifications")?.weight_percent ?? 0
-              )}%`,
-              value: `${components.find(c => c?.key === "certifications")?.score ?? 0
-                }/${components.find(c => c?.key === "certifications")?.max_score ?? 0
-                }`,
-              completed:
-                (components.find(c => c?.key === "certifications")?.raw_score_percent ?? 0) >= 70,
-            },
-          ]}
+          details={scoreDetails}
         />
 
         <SkillScore
           title="Skills"
           isloading={loading}
           overall={String(Math.round(skillComponent?.raw_score_percent ?? 0))}
-          status={String(
-            getSkillStatus(Math.round(skillComponent?.raw_score_percent ?? 0))
-          )}
           data={skills}
         />
 
@@ -406,38 +290,9 @@ export default function ResumeScreening() {
             resumeScreeningReport?.attributes?.scorecard_v3?.ai_summary
               ?.recruiter_note ?? ""
           }
-          headline={
-            resumeScreeningReport?.attributes?.scorecard_v3?.ai_summary?.headline
-          }
         />
         <DetailedResume />
       </View>
     </Fragment>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { gap: 16 },
-  shortListedCard: {
-    backgroundColor: colors.common.white,
-    borderRadius: 8,
-    borderWidth: 0.5,
-    borderColor: colors.gray[300],
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    gap: 8,
-    // shadowColor: '#0A0D12',
-    // shadowOffset: { width: 0, height: 1 },
-    // shadowOpacity: 0.05,
-    // shadowRadius: 3,
-    // elevation: 1,
-    ...shadowStyles.shadow_xs
-  },
-  reviewRow: {
-    flexDirection: "row",
-    //justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 12,
-  },
-
-});

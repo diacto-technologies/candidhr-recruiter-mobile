@@ -1,20 +1,6 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { View, FlatList, StyleSheet, TouchableOpacity } from "react-native";
-import { useFocusEffect } from '@react-navigation/native';
+import React from "react";
+import { View, FlatList, TouchableOpacity } from "react-native";
 import { colors } from "../../../../../theme/colors";
-import { useAppDispatch } from "../../../../../hooks/useAppDispatch";
-import { useAppSelector } from "../../../../../hooks/useAppSelector";
-
-import {
-  selectApplications,
-  selectApplicationsLoading,
-  selectApplicationsPagination,
-  selectApplicationsHasMore,
-  selectApplicationsFilters,
-} from "../../../../../features/applications/selectors";
-
-import { exportApplicationsRequestAction, getApplicationsRequestAction } from "../../../../../features/applications/actions";
-import { setApplicationsFilters } from "../../../../../features/applications/slice";
 import { Illustrations } from "../../../../../assets/svg/illustrations";
 import { SvgXml } from "react-native-svg";
 import { ApplicantList } from "../../../../../components/organisms";
@@ -25,167 +11,32 @@ import BackgroundPattern from "../../../../../components/atoms/backgroundpattern
 import CustomSwitch from "../../../../../components/atoms/switchbutton";
 import { useStyles } from "./styles";
 import DeviceInfo from "react-native-device-info";
-
-const SKELETON_ROWS = 6;
-const AI_RECOMMENDATION_SORT = "-resume_score";
+import { useApplicantsTabController } from "./hooks/useApplicantsTabController";
 
 const ApplicantsTab = () => {
   const styles = useStyles();
-  const [aiEnabled, setAiEnabled] = useState(false);
   const isTablet = DeviceInfo.isTablet();
-
-  const dispatch = useAppDispatch();
-  const applications = useAppSelector(selectApplications);
-  const loading = useAppSelector(selectApplicationsLoading);
-  const pagination = useAppSelector(selectApplicationsPagination);
-  const hasMore = useAppSelector(selectApplicationsHasMore);
-  const filters = useAppSelector(selectApplicationsFilters);
-
-  const jobId = useAppSelector((state) => state.jobs.selectedJob?.id);
-
-  const onEndReachedCalledRef = useRef(false);
-  useFocusEffect(
-    useCallback(() => {
-      if (!jobId) return;
-
-      const sortValue = aiEnabled
-        ? AI_RECOMMENDATION_SORT
-        : (filters.sort || "-last_updated");
-
-      dispatch(
-        getApplicationsRequestAction({
-          reset: true,
-          page: 1,
-          limit: pagination.limit,
-          applicantName: filters.name.trim() || undefined,
-          jobId,
-          email: filters.email || "",
-          jobTitle: filters.appliedFor || "",
-          contact: filters.contact || "",
-          latestStageStatus: filters.latestStageStatus || undefined,
-          source: filters.source || undefined,
-          status: filters.status || undefined,
-          latestStageName: filters.latestStageName || undefined,
-          sort: sortValue,
-        })
-      );
-    }, [
-      filters.name,
-      filters.email,
-      filters.appliedFor,
-      filters.contact,
-      filters.sort,
-      filters.latestStageStatus,
-      filters.source,
-      filters.status,
-      filters.latestStageName,
-      aiEnabled,
-      jobId,
-      pagination.limit,
-      dispatch,
-    ])
-  );
-
-  const handleLoadMore = useCallback(() => {
-    if (loading || !hasMore) return;
-
-    // Use AI sort if enabled, otherwise use Redux filters.sort
-    const sortValue = aiEnabled
-      ? AI_RECOMMENDATION_SORT
-      : (filters.sort || "-last_updated");
-
-    dispatch(
-      getApplicationsRequestAction({
-        page: pagination.page + 1,
-        limit: pagination.limit,
-        append: true,
-        applicantName: filters.name.trim() || undefined,
-        jobId,
-        email: filters.email || "",
-        jobTitle: filters.appliedFor || "",
-        contact: filters.contact || "",
-        latestStageStatus: filters.latestStageStatus || undefined,
-        source: filters.source || undefined,
-        status: filters.status || undefined,
-        latestStageName: filters.latestStageName || undefined,
-        sort: sortValue,
-      })
-    );
-  }, [
-    loading,
-    hasMore,
-    pagination.page,
-    pagination.limit,
-    filters.name,
-    filters.email,
-    filters.appliedFor,
-    filters.contact,
-    filters.sort,
-    filters.latestStageStatus,
-    filters.source,
-    filters.status,
-    filters.latestStageName,
-    jobId,
-    aiEnabled,
-    dispatch,
-  ]);
-
-  const dataSource = useMemo(() => {
-    if (loading && applications.length === 0) {
-      return Array.from({ length: SKELETON_ROWS }).map((_, i) => ({
-        __skeleton: true,
-        __id: `skeleton-${i}`,
-      }));
-    }
-    return applications;
-  }, [loading, applications]);
+  const ctrl = useApplicantsTabController();
 
   return (
-    <View style={{ flex: 1 }}>
-      {/* 🔍Top Search + Switch */}
-      <View style={{ paddingHorizontal: 16, gap: 4, paddingVertical: 16 }}>
+    <View style={styles.mainContainer}>
+      <View style={styles.searchContainer}>
         <SearchBar
-          value={filters.name}
+          value={ctrl.filters.name}
           placeholder="User search by name"
-          onChangeText={(v) =>
-            dispatch(setApplicationsFilters({ name: v }))
-          }
+          onChangeText={ctrl.handleSearch}
         />
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', }}>
+        <View style={styles.switchRow}>
           <View style={styles.switchContainer}>
-            <CustomSwitch value={aiEnabled} onValueChange={setAiEnabled} />
+            <CustomSwitch value={ctrl.aiEnabled} onValueChange={ctrl.setAiEnabled} />
             <Typography variant="H4" color={colors.mainColors.carbonGray}>
               AI recommendation
             </Typography>
           </View>
           <TouchableOpacity
             style={styles.switchContainer}
-            onPress={() => {
-              if (!jobId) return;
-              // The export API throws a 500 error if sorted by -resume_score.
-              // We fallback to standard sort for exports to prevent crashes.
-              const exportSortValue = filters.sort || "-last_updated";
-
-              dispatch(
-                exportApplicationsRequestAction({
-                  mode: 'download',
-                  params: {
-                    page: 1,
-                    jobId,
-                    applicantName: filters.name.trim() || undefined,
-                    email: filters.email || "",
-                    jobTitle: filters.appliedFor || "",
-                    contact: filters.contact || "",
-                    latestStageStatus: filters.latestStageStatus || undefined,
-                    source: filters.source || undefined,
-                    status: filters.status || undefined,
-                    latestStageName: filters.latestStageName || undefined,
-                    sort: exportSortValue,
-                  },
-                })
-              );
-            }}
+            onPress={ctrl.handleExport}
           >
             <Typography variant="H4" color={colors.brand[600]}>
               + Export
@@ -195,31 +46,11 @@ const ApplicantsTab = () => {
       </View>
 
       <Divider />
-      {/* {!loading && applications.length === 0 && (
-        <View
-          style={{
-            alignItems: "center",
-            marginTop: 60,
-            backgroundColor:colors.base.white
-          }}
-        >
-          <Typography variant="semiBoldTxtmd">
-            No results found
-          </Typography>
-          <Typography
-            variant="regularTxtsm"
-            color={colors.gray[500]}
-            style={{ marginTop: 6, textAlign: "center" }}
-          >
-            Try adjusting your search or filters
-          </Typography>
-        </View>
-      )} */}
 
       {/* 📄List */}
       <FlatList
-        data={dataSource}
-        keyExtractor={(item: any) =>
+        data={ctrl.dataSource}
+        keyExtractor={(item) =>
           item.__skeleton ? item.__id : String(item.id)
         }
         renderItem={({ item }) =>
@@ -233,43 +64,17 @@ const ApplicantsTab = () => {
         key={isTablet ? "tablet-2" : "mobile-1"}
         columnWrapperStyle={isTablet ? { justifyContent: "space-between" } : undefined}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingVertical: 16,
-          gap: 16,
-          flexGrow: 1, //REQUIRED for vertical centering
-          backgroundColor: colors.common.slightlygray,
-        }}
+        contentContainerStyle={styles.flatListContent}
         bounces={false}
-        onEndReached={() => {
-          if (!onEndReachedCalledRef.current) {
-            handleLoadMore();
-            onEndReachedCalledRef.current = true;
-          }
-        }}
-        onMomentumScrollBegin={() => {
-          onEndReachedCalledRef.current = false;
-        }}
+        onEndReached={ctrl.handleEndReached}
+        onMomentumScrollBegin={ctrl.handleMomentumScrollBegin}
         onEndReachedThreshold={0.5}
-
         ListEmptyComponent={
-          !loading ? (
-            <BackgroundPattern bgStyle={{
-              height: '100%',
-              width: '100%',
-              top: -90,
-              //zIndex: 10
-            }}>
-              <View style={{ flex: 1, alignSelf: 'center', alignContent: 'center', justifyContent: "center", }}>
-                <View
-                  style={{
-                    alignItems: 'center',
-                    paddingHorizontal: 16,
-                    zIndex: 10,
-                    marginBottom: 10,
-                  }}
-                >
-                  <SvgXml xml={Illustrations} style={{ zIndex: -1, }} />
+          !ctrl.loading ? (
+            <BackgroundPattern bgStyle={styles.emptyStateBg}>
+              <View style={styles.emptyStateContainer}>
+                <View style={styles.emptyStateTextWrap}>
+                  <SvgXml xml={Illustrations} style={styles.emptyStateSvg} />
                   <Typography variant="semiBoldTxtmd">
                     No results found
                   </Typography>
@@ -277,24 +82,13 @@ const ApplicantsTab = () => {
                   <Typography
                     variant="regularTxtsm"
                     color={colors.gray[500]}
-                    style={{ textAlign: 'center' }}
+                    style={styles.emptyStateSubtext}
                   >
                     Try adjusting your search or filters
                   </Typography>
                 </View>
-                {/* <Button
-                  buttonColor={colors.mainColors.slateBlue}
-                  textColor={colors.common.white}
-                  borderColor={colors.mainColors.borderColor}
-                  borderRadius={8}
-                  borderWidth={1}
-                  size={'Medium'}
-                  onPress={() => { }}
-                >
-                  Add new job
-                </Button> */}
               </View>
-            </BackgroundPattern >
+            </BackgroundPattern>
           ) : null
         }
       />

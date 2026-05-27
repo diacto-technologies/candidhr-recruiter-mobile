@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -10,6 +10,7 @@ import { arrowDown } from "../../../../../../assets/svg/arrowdown";
 import CustomCodeEditor from "../../../../../../components/molecules/codeEditor";
 import { colors } from "../../../../../../theme/colors";
 import Icon from "../../../../../../components/atoms/vectoricon";
+import { formatTime } from "../../../../../../utils/dateformatter";
 
 interface TestCase {
   input: string;
@@ -30,14 +31,7 @@ interface Props {
   canEditCode?: boolean;
 }
 
-const formatTime = (seconds?: number) => {
-  const s = Number(seconds ?? 0);
-  if (!Number.isFinite(s) || s <= 0) return "0s";
-  const mins = Math.floor(s / 60);
-  const rem = Math.floor(s % 60);
-  if (mins <= 0) return `${rem}s`;
-  return `${mins}m ${rem}s`;
-};
+
 
 export default function CodingQuestionCard({
   index,
@@ -53,7 +47,11 @@ export default function CodingQuestionCard({
   const [expanded, setExpanded] = useState(true);
   const [editorCode, setEditorCode] = useState(code);
 
-  const passedCount = testCases.filter(t => t.passed).length;
+  useEffect(() => {
+    setEditorCode(code);
+  }, [code]);
+
+  const passedCount = useMemo(() => testCases.filter(t => t.passed).length, [testCases]);
 
   return (
     <View style={[
@@ -113,9 +111,9 @@ export default function CodingQuestionCard({
       </TouchableOpacity>
 
       {expanded && (
-        <View style={{paddingHorizontal:16}}>
+        <View style={styles.contentContainer}>
           {/* Submitted Code */}
-          <Typography style={styles.subTitle} variant="semiBoldTxtsm" color={colors?.gray[800]}>
+          <Typography style={styles.subTitle} variant="semiBoldTxtsm" color={colors.gray[800]}>
             Submitted code ({language})
           </Typography>
 
@@ -137,7 +135,7 @@ export default function CodingQuestionCard({
 
           {testCases.map((tc, i) => (
             <View
-              key={i}
+              key={tc.input || i}
               style={[
                 styles.testCard,
                 tc.passed ? styles.pass : styles.fail,
@@ -148,7 +146,7 @@ export default function CodingQuestionCard({
                   Test Case #{i + 1}
                 </Typography>
                 <Typography>
-                  {tc.passed ? <Icon size={20} name={"checkmark-circle-outline"} iconFamily={"Ionicons"} color={colors?.success[600]}/> : <Icon size={20} name={"close-circle-outline"} iconFamily={"Ionicons"} color={colors?.error[600]}/>}
+                  {tc.passed ? <Icon size={20} name={"checkmark-circle-outline"} iconFamily={"Ionicons"} color={colors.success[600]}/> : <Icon size={20} name={"close-circle-outline"} iconFamily={"Ionicons"} color={colors.error[600]}/>}
                 </Typography>
               </View>
 
@@ -205,6 +203,9 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingRight: 12,
     gap: 6,
+  },
+  contentContainer: {
+    paddingHorizontal: 16,
   },
   metaRow: {
     flexDirection: "row",

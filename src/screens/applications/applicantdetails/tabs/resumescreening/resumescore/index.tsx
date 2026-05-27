@@ -1,30 +1,15 @@
 import React from "react";
-import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { View} from "react-native";
 import LinearGradient from "react-native-linear-gradient";
-import { SvgXml } from "react-native-svg";
 import Shimmer from "../../../../../../components/atoms/shimmer";
 import Typography from "../../../../../../components/atoms/typography";
-import { formatPercentage, getStatusStyles } from "../../../helper";
 import { colors } from "../../../../../../theme/colors";
-import { checkIcon } from "../../../../../../assets/svg/check";
-import { Wavy_CheckIcon } from "../../../../../../assets/svg/wavy_check";
-import { shadowStyles } from "../../../../../../theme/shadowcolor";
 
-interface ScoreItem {
-  title: string;
-  percentage: string;
-  completed: boolean;
-  value:string;
-}
-
-interface Props {
-  overall: string;
-  status: string;
-  details: ScoreItem[];
-  isloading:boolean
-}
+import { useStyles } from "./styles";
+import { Props } from "./resumescore";
 
 const ResumeScoreShimmer = () => {
+  const styles = useStyles();
   return (
     <View style={styles.card}>
       {/* Header */}
@@ -54,31 +39,16 @@ const ResumeScoreShimmer = () => {
   );
 };
 
-const ResumeScore = ({ overall, status, details,isloading }: Props) => {
+const ResumeScore = ({ overall, details, isloading }: Props) => {
+  const styles = useStyles();
+
   if(isloading){
    return <ResumeScoreShimmer/>
   }
   return (
     <View style={styles.card}>
-      {/* Header */}
       <View style={styles.headerRow}>
         <Typography variant="semiBoldTxtlg">Resume Score</Typography>
-        {/* <View
-          style={[
-            styles.statusPill,
-            {
-              backgroundColor: getStatusStyles(status).backgroundColor,
-              borderColor: getStatusStyles(status).borderColor,
-            },
-          ]}
-        >
-          <Typography
-            variant="mediumTxtxs"
-            color={getStatusStyles(status).textColor}
-          >
-            {status}
-          </Typography>
-        </View> */}
       </View>
       {/* Gradient Score Bar */}
       <View style={styles.gradientWrapper}>
@@ -105,16 +75,9 @@ const ResumeScore = ({ overall, status, details,isloading }: Props) => {
         Detailed score
       </Typography>
 
-      {details.map((item, index) => (
-        <View key={index} style={styles.detailRow}>
+      {details.map((item) => (
+        <View key={item.title} style={styles.detailRow}>
           <View style={styles.rowLeft}>
-            {/* Icon */}
-            {item.completed ? (
-              <SvgXml xml={checkIcon} height={20} width={20} />
-            ) : (
-              <SvgXml xml={Wavy_CheckIcon} height={20} width={20} />
-            )}
-
             <Typography
               variant="mediumTxtsm"
               color={item.completed ? colors.gray[700] : colors.gray[600]}
@@ -132,76 +95,4 @@ const ResumeScore = ({ overall, status, details,isloading }: Props) => {
 
 export default ResumeScore;
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.common.white,
-    borderRadius: 12,
-    borderWidth: 0.5,
-    borderColor: colors.gray[200],
-    padding: 16,
-    gap: 16,
-    // shadowColor: '#0A0D12',
-    // shadowOffset: { width: 0, height: 1 },
-    // shadowOpacity: 0.05,
-    // shadowRadius: 3,
-    // elevation: 1,
-    ...shadowStyles.shadow_xs
-  },
 
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  statusPill: {
-    paddingVertical: 2,
-    paddingHorizontal: 8,
-    gap: 8,
-    borderRadius: 9999,
-    // backgroundColor: colors.success[50],
-    borderWidth: 1,
-    borderColor: colors.success[200],
-  },
-  
-  detailRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  rowLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap:8
-  },
-
-  divider: {
-    height: 1,
-    backgroundColor: colors.gray[200],
-  },
-
-  viewMoreRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-  },
-  gradientWrapper: {
-    flex:1,
-    overflow: "hidden",
-  },
-  
-  gradientBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 8,
-  },
-  gradientTextcontainer:{
-    flexDirection:'row',
-    paddingHorizontal: 16, 
-    paddingVertical:12,
-     alignItems:'center'
-  }
-  
-});

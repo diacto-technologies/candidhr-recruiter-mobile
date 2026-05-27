@@ -6,10 +6,23 @@ import SnapshotModal from "../../../../../../../components/molecules/snapshotmod
 import Card from "../../../../../../../components/atoms/card";
 import { useMemo, useState } from "react";
 import React from "react";
+import type { PerformanceReportResponse } from "../../../../../../../features/applications/types";
+import { useStyles } from "../styles";
+
+type ProctoringData = NonNullable<PerformanceReportResponse["proctoring_summary"]>;
 
 type Props = {
-  proctoring: any;
-  styles: any;
+  proctoring: ProctoringData;
+  styles: ReturnType<typeof useStyles>;
+};
+
+const getViolationCount = (violationsByType: Record<string, number> | undefined, keys: string[]) => {
+  if (!violationsByType) return 0;
+  for (const k of keys) {
+    const v = violationsByType[k as keyof typeof violationsByType];
+    if (v !== undefined && v !== null && Number.isFinite(Number(v))) return Number(v);
+  }
+  return 0;
 };
 
 export default function ProctoringCard({ proctoring, styles }: Props) {
@@ -23,31 +36,23 @@ export default function ProctoringCard({ proctoring, styles }: Props) {
   );
 
   const violationsByType = useMemo(
-    () => proctoring?.violations_by_type ?? {},
+    () => (proctoring?.violations_by_type as Record<string, number> | undefined) ?? {},
     [proctoring]
   );
-
-  const getViolationCount = (keys: string[]) => {
-    for (const k of keys) {
-      const v = (violationsByType as any)?.[k];
-      if (v !== undefined && v !== null && Number.isFinite(Number(v))) return Number(v);
-    }
-    return 0;
-  };
 
   const metrics = useMemo(
     () => [
       {
         label: "Tab switches",
-        value: getViolationCount(["tab_switches", "tab_switch", "tab_switch_count"]),
+        value: getViolationCount(violationsByType, ["tab_switches", "tab_switch", "tab_switch_count"]),
       },
       {
         label: "Mouse leave",
-        value: getViolationCount(["mouse_leave", "mouse_leaves", "mouse_leave_count"]),
+        value: getViolationCount(violationsByType, ["mouse_leave", "mouse_leaves", "mouse_leave_count"]),
       },
       {
         label: "Screen exit",
-        value: getViolationCount(["screen_exit", "screen_exits", "screen_exit_count"]),
+        value: getViolationCount(violationsByType, ["screen_exit", "screen_exits", "screen_exit_count"]),
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -55,6 +60,10 @@ export default function ProctoringCard({ proctoring, styles }: Props) {
   );
 
   const hiddenSnapshotCount = Math.max(0, gazeSnapshots.length - visibleCount);
+  
+  const visibleSnapshots = useMemo(() => {
+    return gazeSnapshots.slice(0, Math.min(visibleCount, gazeSnapshots.length));
+  }, [gazeSnapshots, visibleCount]);
 
   if (!proctoring) return null;
 
@@ -68,26 +77,13 @@ export default function ProctoringCard({ proctoring, styles }: Props) {
         </View>
       </View>
 
-      <View
-        style={{
-          borderRadius: 18,
-          overflow: "hidden",
-          backgroundColor: colors.gray[100],
-        }}
-      >
+      <View style={styles.videoContainer}>
         <VideoPlayerBox source={proctoring?.video_url ?? ""} />
       </View>
-      <View
-        style={{
-          flexDirection: "row",
-          borderBottomWidth: 1,
-          borderBottomColor: colors.gray[200],
-          paddingBottom: 8,
-        }}
-      >
+      <View style={styles.metricsRow}>
         {metrics.map((m, idx) => (
           <React.Fragment key={m.label}>
-            <View style={{ flex: 1, gap: 4 }}>
+            <View style={styles.metricTile}>
               <Typography variant="semiBoldDxs" color={colors.gray[900]}>
                 {String(m.value).padStart(2, "0")}
               </Typography>
@@ -96,14 +92,7 @@ export default function ProctoringCard({ proctoring, styles }: Props) {
               </Typography>
             </View>
             {idx !== metrics.length - 1 && (
-              <View
-                style={{
-                  height:'100%',
-                  width: 2,
-                  backgroundColor: colors.gray[200],
-                  marginHorizontal: 14,
-                }}
-              />
+              <View style={styles.dividerLine} />
             )}
           </React.Fragment>
         ))}
@@ -111,7 +100,7 @@ export default function ProctoringCard({ proctoring, styles }: Props) {
 
       {/* ================= GAZE SNAPSHOTS ================= */}
       {gazeSnapshots.length > 0 && (
-        <View style={{ marginTop: 6, gap: 12 }}>
+        <View style={styles.snapshotHeader}>
           <Typography
             variant="mediumTxtxs"
             color={colors.gray[400]}
@@ -121,15 +110,8 @@ export default function ProctoringCard({ proctoring, styles }: Props) {
           </Typography>
 
           <View style={{ position: "relative" }}>
-            <View
-              style={{
-                flexDirection: "row",
-                flexWrap: "wrap",
-                justifyContent: "space-between",
-                rowGap: 12,
-              }}
-            >
-              {gazeSnapshots.slice(0, Math.min(visibleCount, gazeSnapshots.length)).map((snapshot: any, idx: number) => {
+            <View style={styles.snapshotGrid}>
+              {visibleSnapshots.map((snapshot: any, idx: number) => {
                 const uri = snapshot?.image_url ?? snapshot?.image ?? null;
                 const isFadedPreview = gazeSnapshots.length > 4 && visibleCount <= 6 && idx >= 4;
 
@@ -140,14 +122,10 @@ export default function ProctoringCard({ proctoring, styles }: Props) {
                       setSelectedSnapshot(uri);
                       setSnapshotModalVisible(true);
                     }}
-                    style={{
-                      width: "23%",
-                      aspectRatio: 1,
-                      borderRadius: 16,
-                      overflow: "hidden",
-                      backgroundColor: colors.gray[100],
-                      opacity: isFadedPreview ? 0.25 : 1,
-                    }}
+                    style={[
+                      styles.snapshotThumbnail,
+                      isFadedPreview && styles.fadedThumbnail,
+                    ]}
                   >
                     {!!uri && (
                       <Image
@@ -164,24 +142,9 @@ export default function ProctoringCard({ proctoring, styles }: Props) {
             {visibleCount < gazeSnapshots.length && (
               <TouchableOpacity
                 onPress={() => setVisibleCount(gazeSnapshots.length)}
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  right: 0,
-                  bottom: 12,
-                  alignItems: "center",
-                }}
+                style={styles.viewAllBtnContainer}
               >
-                <View
-                  style={{
-                    paddingHorizontal: 18,
-                    paddingVertical: 10,
-                    borderRadius: 14,
-                    borderWidth: 1,
-                    borderColor: colors.gray[200],
-                    backgroundColor: colors.common.white,
-                  }}
-                >
+                <View style={styles.viewAllBtn}>
                   <Typography variant="semiBoldTxtmd" color={colors.gray[700]}>
                     {hiddenSnapshotCount > 1
                       ? `View all (${hiddenSnapshotCount})`

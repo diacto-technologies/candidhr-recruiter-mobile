@@ -7,38 +7,26 @@ import { sparkles } from "../../../../../../assets/svg/sparkles";
 import { colors } from "../../../../../../theme/colors";
 import { shadowStyles } from "../../../../../../theme/shadowcolor";
 
-/** Scorecard v3 `ai_summary` — overview, strengths, gaps, recruiter note */
-export interface AiSummaryProps {
-  isloading: boolean;
-  overview: string;
-  strengths: string[];
-  gaps: string[];
-  redFlags?: string[];
-  recruiterNote: string;
-  headline?: string;
-}
+import {
+  useStyles,
+  OVERVIEW_BG,
+  OVERVIEW_BORDER,
+  STRENGTHS_BG,
+  STRENGTHS_BORDER,
+  STRENGTHS_BODY,
+  STRENGTHS_LABEL,
+  GAPS_BG,
+  GAPS_BORDER,
+  GAPS_BODY,
+  GAPS_LABEL,
+  RECRUITER_BG,
+  RECRUITER_BORDER,
+} from "./styles";
+import { AiSummaryProps } from "./aisummary";
 
-const OVERVIEW_BG = "#F5F7FF";
-const OVERVIEW_BORDER = "#E0E7FF";
-const OVERVIEW_LABEL = "#5B21B6";
-
-const STRENGTHS_BG = "#F0FDF4";
-const STRENGTHS_BORDER = "#BBF7D0";
-const STRENGTHS_LABEL = "#166534";
-const STRENGTHS_BODY = "#14532D";
-
-const GAPS_BG = "#FFFBEB";
-const GAPS_BORDER = "#FDE68A";
-const GAPS_LABEL = "#B45309";
-const GAPS_BODY = colors.gray[600];
-
-const RECRUITER_BG = "#F9FAFB";
-const RECRUITER_BORDER = colors.gray[200];
-const RECRUITER_LABEL_MUTED = colors.gray[500];
-const RECRUITER_LABEL_BADGE = colors.gray[700];
-const RECRUITER_BADGE_BG = colors.gray[200];
-
-const AiSummaryShimmer = () => (
+const AiSummaryShimmer = () => {
+  const styles = useStyles();
+  return (
   <View style={styles.card}>
     <View style={styles.headerRow}>
       <Shimmer width={20} height={16} borderRadius={4} />
@@ -60,30 +48,33 @@ const AiSummaryShimmer = () => (
         <Shimmer width="100%" height={12} borderRadius={4} />
       </View>
     </View>
-    <View style={[styles.sectionBox, { backgroundColor: RECRUITER_BG }]}>
-      <Shimmer width="45%" height={12} borderRadius={4} />
-      <Shimmer width="100%" height={14} borderRadius={4} />
-    </View>
   </View>
-);
+  );
+};
 
 const AiSummary = ({
   isloading,
   overview,
   strengths,
   gaps,
-  redFlags = [],
+  redFlags,
   recruiterNote,
-  headline,
 }: AiSummaryProps) => {
+  const styles = useStyles();
   const [overviewExpanded, setOverviewExpanded] = useState(false);
 
   const gapLines = useMemo(() => {
     const merged = [...(gaps ?? []), ...(redFlags ?? [])]
-      .map(s => String(s).trim())
+      .map((s) => String(s).trim())
       .filter(Boolean);
     return [...new Set(merged)];
   }, [gaps, redFlags]);
+
+  const strengthLines = useMemo(() => {
+    return (strengths ?? [])
+      .map((s) => String(s).trim())
+      .filter(Boolean);
+  }, [strengths]);
 
   if (isloading) {
     return <AiSummaryShimmer />;
@@ -153,13 +144,10 @@ const AiSummary = ({
           >
             Strengths
           </Typography>
-          {(strengths ?? []).filter(s => String(s).trim()).length ? (
+          {(strengthLines.length > 0) ? (
             <View style={styles.bulletBlock}>
-              {(strengths ?? [])
-                .map(s => String(s).trim())
-                .filter(Boolean)
-                .map((line, i) => (
-                  <View key={i} style={styles.bulletRow}>
+              {strengthLines.map((line) => (
+                  <View key={line} style={styles.bulletRow}>
                     <Typography
                       variant="regularTxtsm"
                       color={STRENGTHS_BODY}
@@ -198,12 +186,11 @@ const AiSummary = ({
           </Typography>
           {gapLines.length ? (
             <View style={styles.bulletBlock}>
-              {gapLines.map((line, i) => (
-                <View key={i} style={styles.bulletRow}>
+              {gapLines.map((line) => (
+                <View key={line} style={styles.bulletRow}>
                   <Typography
                     variant="regularTxtsm"
                     color={GAPS_BODY}
-                  // style={[styles.bodyText, styles.bulletText]}
                   >
                      <Typography
                     variant="regularTxtsm"
@@ -257,89 +244,4 @@ const AiSummary = ({
 
 export default AiSummary;
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.common.white,
-    borderRadius: 12,
-    borderWidth: 0.5,
-    borderColor: colors.gray[200],
-    padding: 16,
-    gap: 12,
-    ...shadowStyles.shadow_xs,
-  },
 
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 4,
-  },
-
-  sectionBox: {
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 16,
-    gap: 10,
-
-  },
-
-  overviewBox: {
-    gap: 8,
-  },
-
-  sectionLabel: {
-    // letterSpacing: 0.6,
-  },
-
-  bodyText: {
-    lineHeight: 22,
-  },
-
-  strengthsGapsRow: {
-    // flexDirection: "row",
-    alignItems: "stretch",
-    gap: 12,
-  },
-
-  halfColumn: {
-    flex: 1,
-    minWidth: 0,
-  },
-
-  bulletBlock: {
-    gap: 6,
-  },
-
-  bulletRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 2,
-    flexWrap: "wrap",
-  },
-
-  bulletGlyph: {
-    //lineHeight: 22,
-    marginTop: 0,
-    width: 14,
-  },
-
-  bulletText: {
-    flex: 1,
-    flexShrink: 1,
-    minWidth: 0,
-  },
-
-  recruiterTitleRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    gap: 6,
-  },
-
-  recruiterBadge: {
-    backgroundColor: RECRUITER_BADGE_BG,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-});

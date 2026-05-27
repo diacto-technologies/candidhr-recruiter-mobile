@@ -5,31 +5,18 @@ import LinearGradient from "react-native-linear-gradient";
 import { SvgXml } from "react-native-svg";
 import Shimmer from "../../../../../../components/atoms/shimmer";
 import Typography from "../../../../../../components/atoms/typography";
-import { getStatusStyles } from "../../../helper";
+import { useStyles } from "./styles";
+import { Props } from "./skillscore";
 import { colors } from "../../../../../../theme/colors";
 import { checkIcon } from "../../../../../../assets/svg/check";
 import { Wavy_CheckIcon } from "../../../../../../assets/svg/wavy_check";
-import { shadowStyles } from "../../../../../../theme/shadowcolor";
 import InfoTooltip from "../../../../../../components/atoms/Infotooltip";
 import { infoIcon } from "../../../../../../assets/svg/infoicon";
 
-interface SkillItem {
-  proficiencyEvidence: string;
-  proficiencyLevel: any;
-  title: string;
-  value: string;
-  matched: boolean;
-}
-
-interface Props {
-  title: string;
-  overall: string;
-  status: string;
-  data: SkillItem[];
-  isloading: boolean
-}
+const TABS = ["All", "Matched", "Unmatched"];
 
 const SkillScoreShimmer = () => {
+  const styles = useStyles();
   return (
     <View style={styles.card}>
       {/* Header */}
@@ -72,19 +59,17 @@ const SkillScoreShimmer = () => {
 };
 
 
-const SkillScore = ({ title, overall, status, data, isloading }: Props) => {
-
+const SkillScore = ({ title, overall, data, isloading }: Props) => {
+  const styles = useStyles();
   const [activeTab, setActiveTab] = useState("All");
   const [expanded, setExpanded] = useState(false);
 
-  const tabs = ["All", "Matched", "Unmatched"];
-
-  const filteredData =
-    activeTab === "All"
-      ? data
-      : data.filter((item) =>
-        activeTab === "Matched" ? item.matched : !item.matched
-      );
+  const filteredData = React.useMemo(() => {
+    if (activeTab === "All") return data;
+    return data.filter((item) =>
+      activeTab === "Matched" ? item.matched : !item.matched
+    );
+  }, [activeTab, data]);
 
   const visibleData = expanded ? filteredData : filteredData.slice(0, 5);
   if (isloading) {
@@ -92,25 +77,8 @@ const SkillScore = ({ title, overall, status, data, isloading }: Props) => {
   }
   return (
     <View style={styles.card}>
-      {/* Header */}
       <View style={styles.headerRow}>
         <Typography variant="semiBoldTxtlg">{title}</Typography>
-        {/* <View
-          style={[
-            styles.statusPill,
-            {
-              backgroundColor: getStatusStyles(status).backgroundColor,
-              borderColor: getStatusStyles(status).borderColor,
-            },
-          ]}
-        >
-          <Typography
-            variant="mediumTxtxs"
-            color={getStatusStyles(status).textColor}
-          >
-            {status}
-          </Typography>
-        </View> */}
       </View>
 
       {/* Gradient score bar */}
@@ -141,7 +109,7 @@ const SkillScore = ({ title, overall, status, data, isloading }: Props) => {
 
       {/* Tabs */}
       <View style={styles.tabsRow}>
-        {tabs.map((tab) => (
+        {TABS.map((tab) => (
           <TouchableOpacity
             key={tab}
             onPress={() => {
@@ -166,8 +134,8 @@ const SkillScore = ({ title, overall, status, data, isloading }: Props) => {
       </View>
 
       {/* Skill List */}
-      {visibleData.map((item, index) => (
-        <View key={index} style={styles.skillRow}>
+      {visibleData.map((item) => (
+        <View key={item.title} style={styles.skillRow}>
           <View style={styles.leftRow}>
             {item.matched ? (
               <SvgXml xml={checkIcon} height={20} width={20} />
@@ -190,20 +158,6 @@ const SkillScore = ({ title, overall, status, data, isloading }: Props) => {
                   </InfoTooltip>
                 )}
               </Typography>
-              {/* <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                <Typography variant="regularTxtxs" color={colors.gray[600]}>
-                  {item.proficiencyLevel
-                    ? item.proficiencyLevel.charAt(0).toUpperCase() +
-                    item.proficiencyLevel.slice(1)
-                    : ""}
-                </Typography>
-
-                {item.proficiencyEvidence && (
-                  <InfoTooltip text={item.proficiencyEvidence}>
-                    <SvgXml xml={infoIcon} height={15} width={15}/>
-                  </InfoTooltip>
-                )}
-              </View> */}
             </View>
 
             <Typography variant="semiBoldTxtmd" color={colors.gray[700]}>
@@ -237,111 +191,4 @@ const SkillScore = ({ title, overall, status, data, isloading }: Props) => {
 
 export default SkillScore;
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.common.white,
-    borderWidth: 0.5,
-    borderColor: colors.gray[200],
-    borderRadius: 12,
-    padding: 16,
-    gap: 16,
-    // shadowColor: '#0A0D12',
-    // shadowOffset: { width: 0, height: 1 },
-    // shadowOpacity: 0.05,
-    // shadowRadius: 3,
-    // elevation: 1,
-    ...shadowStyles.shadow_xs
-  },
 
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  statusPill: {
-    paddingVertical: 2,
-    paddingHorizontal: 8,
-    gap: 8,
-    borderRadius: 9999,
-    backgroundColor: colors.warning[50],
-    borderWidth: 1,
-    borderColor: colors.warning[200],
-    alignItems: 'center'
-  },
-
-  gradientBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 8,
-  },
-
-  tabsRow: {
-    flexDirection: "row",
-    gap: 8,
-    alignItems: 'center'
-  },
-
-  tabBtn: {
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 8,
-    backgroundColor: colors.gray[200],
-  },
-
-  tabActive: {
-    backgroundColor: colors.brand[50],
-    borderWidth: 1,
-    borderColor: colors.brand[200],
-  },
-
-  skillRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  leftRow: {
-    flexDirection: "row",
-    // alignItems: "center",
-    gap: 8,
-  },
-
-  divider: {
-    height: 1,
-    backgroundColor: colors.gray[200],
-  },
-
-  viewMore: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-  },
-
-  gradientWrapper: {
-    flex: 1,
-    overflow: "hidden",
-  },
-
-  gradientTextcontainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    alignItems: 'center'
-  },
-
-  tabBtnActive: {
-    backgroundColor: colors.brand[50],
-    borderColor: colors.brand[200],
-    borderWidth: 1,
-  },
-
-  tabBtnDeactive: {
-    backgroundColor: colors.gray[50],
-    borderColor: colors.gray[200],
-    borderWidth: 1,
-  },
-});

@@ -1,5 +1,6 @@
 import { StyleSheet, useWindowDimensions } from 'react-native';
 import DeviceInfo from "react-native-device-info";
+import { colors } from '../../../../../theme/colors';
 import { useRNSafeAreaInsets } from '../../../../../hooks/useRNSafeAreaInsets';
 
 export const useStyles = () => {
@@ -39,6 +40,21 @@ export const useStyles = () => {
           gap: 12,
           paddingTop: 12,
           alignItems: 'center'
-        }
+        },
+        mainContainer: { flex: 1 },
+        searchContainer: { paddingHorizontal: 16, gap: 4, paddingVertical: 16 },
+        switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+        flatListContent: {
+          paddingHorizontal: 16,
+          paddingVertical: 16,
+          gap: 16,
+          flexGrow: 1,
+          backgroundColor: colors.common.slightlygray,
+        },
+        emptyStateBg: { height: '100%', width: '100%', top: -90 },
+        emptyStateContainer: { flex: 1, alignSelf: 'center', alignContent: 'center', justifyContent: "center" },
+        emptyStateTextWrap: { alignItems: 'center', paddingHorizontal: 16, zIndex: 10, marginBottom: 10 },
+        emptyStateSubtext: { textAlign: 'center' },
+        emptyStateSvg: { zIndex: -1 },
       })
  }

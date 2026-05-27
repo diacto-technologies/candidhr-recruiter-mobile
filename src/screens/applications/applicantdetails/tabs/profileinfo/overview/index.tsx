@@ -39,6 +39,41 @@ const OverviewCardShimmer = () => {
   );
 };
 
+const InfoRow = ({
+  icon,
+  title,
+  value,
+  copyText,
+  styles
+}: {
+  icon: string;
+  title: string;
+  value: string;
+  copyText?: string;
+  styles: any;
+}) => (
+  <View style={styles.row}>
+    <View style={styles.iconBox}>
+      <SvgXml xml={icon} height={20} width={20} />
+    </View>
+
+    <View style={styles.textBox}>
+      <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>
+        {value || "Not provided"}
+      </Typography>
+      <Typography variant="regularTxtsm" color={colors.gray[600]}>
+        {title}
+      </Typography>
+    </View>
+
+    {!!copyText && (
+      <CopyText text={copyText} message={`${title} copied`}>
+        <SvgXml xml={copyIcon} height={20} width={20} />
+      </CopyText>
+    )}
+  </View>
+);
+
 const OverviewCard = () => {
   const styles = useStyles();
   const application = useAppSelector(selectSelectedApplication) as OverviewApplication | null;
@@ -72,38 +107,7 @@ const OverviewCard = () => {
       0,
   };
 
-  const InfoRow = ({
-    icon,
-    title,
-    value,
-    copyText,
-  }: {
-    icon: string;
-    title: string;
-    value: string;
-    copyText?: string;
-  }) => (
-    <View style={styles.row}>
-      <View style={styles.iconBox}>
-        <SvgXml xml={icon} height={20} width={20} />
-      </View>
 
-      <View style={styles.textBox}>
-        <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>
-          {value || "Not provided"}
-        </Typography>
-        <Typography variant="regularTxtsm" color={colors.gray[600]}>
-          {title}
-        </Typography>
-      </View>
-
-      {!!copyText && (
-        <CopyText text={copyText} message={`${title} copied`}>
-          <SvgXml xml={copyIcon} height={20} width={20} />
-        </CopyText>
-      )}
-    </View>
-  );
 
   return (
     <View style={styles.card}>
@@ -120,6 +124,7 @@ const OverviewCard = () => {
           title="Phone number"
           value={data.contact}
           copyText={data.contact || undefined}
+          styles={styles}
         />
 
         {/* Email */}
@@ -128,6 +133,7 @@ const OverviewCard = () => {
           title="Email address"
           value={data.email}
           copyText={data.email || undefined}
+          styles={styles}
         />
       </View>
       <View style={styles.divider} />

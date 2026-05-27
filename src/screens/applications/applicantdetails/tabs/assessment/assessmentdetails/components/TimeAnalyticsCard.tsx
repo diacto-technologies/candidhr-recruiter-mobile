@@ -1,15 +1,44 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View } from "react-native";
 import Typography from "../../../../../../../components/atoms/typography";
 import { colors } from "../../../../../../../theme/colors";
 import Card from "../../../../../../../components/atoms/card";
+import type { PerformanceReportResponse } from "../../../../../../../features/applications/types";
+import { useStyles } from "../styles";
 
 type Props = {
-  timeAnalytics: any;
-  styles: any;
+  timeAnalytics: NonNullable<PerformanceReportResponse["time_analytics"]> | undefined;
+  styles: ReturnType<typeof useStyles>;
 };
 
 export default function TimeAnalyticsCard({ timeAnalytics, styles }: Props) {
+  const stats = useMemo(() => {
+    if (!timeAnalytics) return [];
+    
+    return [
+      {
+        label: "TOTAL TIME",
+        value: timeAnalytics.total_time_taken_formatted ?? "—",
+      },
+      {
+        label: "TIME LIMIT",
+        value: timeAnalytics.time_limit_formatted ?? "—",
+      },
+      {
+        label: "EFFICIENCY",
+        value: timeAnalytics.time_efficiency != null 
+          ? `${timeAnalytics.time_efficiency}%` 
+          : "—",
+      },
+      {
+        label: "AVG / Q",
+        value: timeAnalytics.average_time_per_question != null 
+          ? `${timeAnalytics.average_time_per_question}s` 
+          : "—",
+      },
+    ];
+  }, [timeAnalytics]);
+
   if (!timeAnalytics) return null;
 
   return (
@@ -23,45 +52,16 @@ export default function TimeAnalyticsCard({ timeAnalytics, styles }: Props) {
       </View>
 
       <View style={styles.statGrid}>
-        <View style={styles.statTile}>
-          <Typography variant="mediumTxtxs" color={colors.gray[600]}>
-            TOTAL TIME
-          </Typography>
-          <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
-            {timeAnalytics?.total_time_taken_formatted ?? "—"}
-          </Typography>
-        </View>
-
-        <View style={styles.statTile}>
-          <Typography variant="mediumTxtxs" color={colors.gray[600]}>
-            TIME LIMIT
-          </Typography>
-          <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
-            {timeAnalytics?.time_limit_formatted ?? "—"}
-          </Typography>
-        </View>
-
-        <View style={styles.statTile}>
-          <Typography variant="mediumTxtxs" color={colors.gray[600]}>
-            EFFICIENCY
-          </Typography>
-          <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
-            {typeof timeAnalytics?.time_efficiency === "number"
-              ? `${timeAnalytics.time_efficiency}%`
-              : `${timeAnalytics?.time_efficiency ?? "—"}%`}
-          </Typography>
-        </View>
-
-        <View style={styles.statTile}>
-          <Typography variant="mediumTxtxs" color={colors.gray[600]}>
-            AVG / Q
-          </Typography>
-          <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
-            {typeof timeAnalytics?.average_time_per_question === "number"
-              ? `${timeAnalytics.average_time_per_question}s`
-              : `${timeAnalytics?.average_time_per_question ?? "—"}s`}
-          </Typography>
-        </View>
+        {stats.map((stat) => (
+          <View key={stat.label} style={styles.statTile}>
+            <Typography variant="mediumTxtxs" color={colors.gray[600]}>
+              {stat.label}
+            </Typography>
+            <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
+              {stat.value}
+            </Typography>
+          </View>
+        ))}
       </View>
     </Card>
   );

@@ -14,7 +14,7 @@ import { filterIcon } from "../../../../../assets/svg/filter";
 import { useStyles } from "./styles";
 import { CandidateAssignmentRow } from "../../../../../components/organisms/candidateassignmentstable /candidateassignmentstable";
 import { screenHeight, windowWidth } from "../../../../../utils/devicelayout";
-import { LEFT_COLUMN_WIDTH } from "../../../applicationstageoverviewdetails/config";
+import { LEFT_COLUMN_WIDTH } from "../../../dashboard/applicationstageoverviewdetails/config";
 import {
   ASSIGNMENT_STATUS_FILTER_OPTIONS,
   SHIMMER_ROWS,

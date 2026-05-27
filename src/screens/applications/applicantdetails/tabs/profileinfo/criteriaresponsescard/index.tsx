@@ -57,7 +57,7 @@ const CriteriaResponsesCardShimmer = () => {
 };
 
 const CriteriaResponsesCard = () => {
-  const ApplicationResponses = useAppSelector(selectApplicationResponses);
+  const applicationResponses = useAppSelector(selectApplicationResponses);
   const loading = useAppSelector(selectApplicationsDetailLoading);
   if (loading) {
     return <CriteriaResponsesCardShimmer />;
@@ -69,8 +69,8 @@ const CriteriaResponsesCard = () => {
         Criteria Responses
       </Typography>
 
-      {ApplicationResponses?.length > 0 ? (
-        ApplicationResponses.map((item, index) => {
+      {applicationResponses?.length > 0 ? (
+        applicationResponses.map((item, index) => {
           const questionText = formatCriteriaField(item?.criteria?.question as unknown);
           const responseText = formatCriteriaField(item?.response as unknown);
           const expectedText = formatCriteriaField(item?.criteria?.expected_response as unknown);
@@ -87,10 +87,10 @@ const CriteriaResponsesCard = () => {
           <View key={rowKey} style={styles.innerCard}>
             {/* Question */}
             <View style={{ flexDirection: 'row' }}>
-              <Typography variant="mediumTxtmd" color="#1F2937">
+              <Typography variant="mediumTxtmd" color={colors.gray[900]}>
                 {index + 1}.
               </Typography>
-              <Typography variant="mediumTxtmd" color="#1F2937">
+              <Typography variant="mediumTxtmd" color={colors.gray[900]}>
                 {" "}
                 {questionText}
               </Typography>

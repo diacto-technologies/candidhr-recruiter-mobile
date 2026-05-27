@@ -10,7 +10,7 @@ import AssessmentCard from '../../../../components/molecules/assessmentcard'
 import AssignedAssessmentCard, { AssignedAssessmentCardShimmer } from '../../../../components/molecules/assignedAssessmentCard'
 import PrebuildAssessmentCard from '../../../../components/molecules/assessmentprebuild'
 import BottomSheet from '../../../../components/organisms/bottomsheet'
-import FilterSheetContent from '../../../../components/organisms/filtersheetcontent'
+import AssessmentFilterSheet from './components/AssessmentFilterSheet'
 import SortingAndFilter from '../../../../components/organisms/sortingandfilter'
 import Shimmer from '../../../../components/atoms/shimmer'
 import Card from '../../../../components/atoms/card'
@@ -338,15 +338,12 @@ const OldAssessmentList: React.FC = () => {
               onClearAll={handleClearFilters}
               hight={screenHeight* 0.8}        
             >
-              <FilterSheetContent
+              <AssessmentFilterSheet
                 onCancel={() => setFilterSheetOpen(false)}
                 onApply={handleApplyFilters}
                 selectedTab={selectedFilter ?? 'Sort'}
                 setSelectedTab={(tab) => setSelectedFilter(tab as FilterOption)}
-                filtersConfig={assessmentAssignedData}
                 onClearAll={handleClearFilters}
-                job_Id={undefined}
-                mode="assessments"
               />
             </BottomSheet>
           </View>

@@ -3,14 +3,15 @@ import { View } from "react-native";
 import Typography from "../../../../../../../components/atoms/typography";
 import { colors } from "../../../../../../../theme/colors";
 import Card from "../../../../../../../components/atoms/card";
-import Icon from "../../../../../../../components/atoms/vectoricon";
 import { SvgXml } from "react-native-svg";
 import { warningIcon } from "../../../../../../../assets/svg/warning";
+import type { PerformanceReportResponse } from "../../../../../../../features/applications/types";
+import { useStyles } from "../styles";
 
 type Props = {
-  recommendations: any;
+  recommendations: PerformanceReportResponse["recommendations"] | undefined;
   overallAssessmentText?: string;
-  styles: any;
+  styles: ReturnType<typeof useStyles>;
 };
 
 export default function RecommendationCard({
@@ -30,55 +31,44 @@ export default function RecommendationCard({
         </View>
       </View>
 
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-        <View
-          style={{
-            paddingHorizontal:8,
-            paddingVertical:4,
-            borderRadius: 999,
-            backgroundColor: colors.warning[50],
-            borderWidth: 1,
-            borderColor: colors.warning[200],
-          }}
-        >
+      <View style={styles.recommendationRow}>
+        <View style={styles.recommendationBadge}>
           <Typography variant="mediumTxtxs" color={colors.warning[700]}>
-            {String(recommendations?.recommendation ?? "—")}
+            {recommendations.recommendation ?? "—"}
           </Typography>
         </View>
 
         <Typography variant="regularTxtsm" color={colors.gray[600]}>
           Confidence:{" "}
           <Typography variant="mediumTxtxs" color={colors.gray[900]}>
-            {String(recommendations?.confidence_level ?? "—")}
+            {recommendations.confidence_level ?? "—"}
           </Typography>
         </Typography>
       </View>
 
-      {!!recommendations?.suggested_next_steps && (
+      {!!recommendations.suggested_next_steps && (
         <Typography variant="regularTxtsm" color={colors.gray[700]}>
-          {String(recommendations.suggested_next_steps)}
+          {recommendations.suggested_next_steps}
         </Typography>
       )}
 
-      {Array.isArray(recommendations?.key_considerations) &&
+      {Array.isArray(recommendations.key_considerations) &&
         recommendations.key_considerations.length > 0 && (
-          <View style={{ gap:8}}>
-            {recommendations.key_considerations.map((txt: any, idx: number) => (
-              <View key={String(idx)} style={styles.bulletRow}>
-                {/* <View style={styles.warningIcon}> */}
+          <View style={styles.recommendationGap}>
+            {recommendations.key_considerations.map((txt: string) => (
+              <View key={txt} style={styles.bulletRow}>
                <SvgXml xml={warningIcon}/>
-                {/* </View> */}
                 <Typography variant="regularTxtsm" color={colors.gray[700]} style={{ flex: 1 }}>
-                  {String(txt)}
+                  {txt}
                 </Typography>
               </View>
             ))}
           </View>
         )}
 
-      {!!recommendations?.suggested_next_steps && (
+      {!!overallAssessmentText && (
         <Typography variant="regularTxtsm" color={colors.gray[500]}>
-          {String(overallAssessmentText ?? "").trim()}
+          {overallAssessmentText.trim()}
         </Typography>
       )}
     </Card>

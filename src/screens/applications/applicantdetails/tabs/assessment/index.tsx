@@ -43,6 +43,21 @@ const normalizeContentType = (v: unknown) =>
     .trim()
     .replace(/[\s-]+/g, '_');
 
+const mapStatusTextToId = (statusText: string): string => {
+  const statusMap: { [key: string]: string } = {
+    'Started': 'started',
+    'Assigned': 'assigned',
+    'Under Review': 'under_review',
+    'Completed': 'completed',
+    'On Hold': 'on_hold',
+    'Rejected': 'rejected',
+    'Shortlisted': 'shortlisted',
+    'Scheduled Final Interview': 'final_interview',
+    'Hired': 'hired',
+  };
+  return statusMap[statusText] || '';
+};
+
 type AssessmentProps = {
   sessionContentId: string | null;
   onSessionContentIdChange: (id: string | null) => void;
@@ -138,20 +153,7 @@ const Assessment = ({ sessionContentId, onSessionContentIdChange }: AssessmentPr
     return getApprovalStageStatusOptions(currentStageStatus);
   }, [currentStageStatus]);
 
-  const mapStatusTextToId = (statusText: string): string => {
-    const statusMap: { [key: string]: string } = {
-      'Started': 'started',
-      'Assigned': 'assigned',
-      'Under Review': 'under_review',
-      'Completed': 'completed',
-      'On Hold': 'on_hold',
-      'Rejected': 'rejected',
-      'Shortlisted': 'shortlisted',
-      'Scheduled Final Interview': 'final_interview',
-      'Hired': 'hired',
-    };
-    return statusMap[statusText] || '';
-  };
+
 
   // Get current status id from selected session
   const currentStatusId = useMemo(() => {
@@ -173,48 +175,50 @@ const Assessment = ({ sessionContentId, onSessionContentIdChange }: AssessmentPr
 
 
 
-  const timelineSteps = [
-    {
-      title: 'Invited On',
-      date: formatMonDDYYYY(assessmentReport?.timeline?.assigned_at, 'DD MMM YYYY HH:mm', 'IST'),
-      completed: !!assessmentReport?.timeline?.assigned_at,
-    },
-    {
-      title: 'Link Opened',
-      date: formatMonDDYYYY(
-        assessmentReport?.timeline?.link_opened_at,
-        'DD MMM YYYY HH:mm', 'IST'
-      ),
-      completed: !!assessmentReport?.timeline?.link_opened,
-    },
-    {
-      title: 'Started',
-      date: formatMonDDYYYY(
-        assessmentReport?.timeline?.started_at,
-        'DD MMM YYYY HH:mm', 'IST'
-      ),
-      completed: !!assessmentReport?.timeline?.started,
-    },
-    {
-      title: 'Completed',
-      date: formatMonDDYYYY(
-        assessmentReport?.timeline?.completed_at,
-        'DD MMM YYYY HH:mm', 'IST'
-      ),
-      completed: !!assessmentReport?.timeline?.completed,
-    },
-  ];
+  const { timelineData, progress } = useMemo(() => {
+    const steps = [
+      {
+        title: 'Invited On',
+        date: formatMonDDYYYY(assessmentReport?.timeline?.assigned_at, 'DD MMM YYYY HH:mm', 'IST'),
+        completed: !!assessmentReport?.timeline?.assigned_at,
+      },
+      {
+        title: 'Link Opened',
+        date: formatMonDDYYYY(
+          assessmentReport?.timeline?.link_opened_at,
+          'DD MMM YYYY HH:mm', 'IST'
+        ),
+        completed: !!assessmentReport?.timeline?.link_opened,
+      },
+      {
+        title: 'Started',
+        date: formatMonDDYYYY(
+          assessmentReport?.timeline?.started_at,
+          'DD MMM YYYY HH:mm', 'IST'
+        ),
+        completed: !!assessmentReport?.timeline?.started,
+      },
+      {
+        title: 'Completed',
+        date: formatMonDDYYYY(
+          assessmentReport?.timeline?.completed_at,
+          'DD MMM YYYY HH:mm', 'IST'
+        ),
+        completed: !!assessmentReport?.timeline?.completed,
+      },
+    ];
 
-  const completedSteps = timelineSteps.filter(step => step.completed).length;
-  const progress = Math.round(
-    (completedSteps / timelineSteps.length) * 100
-  );
+    const completedCount = steps.filter(step => step.completed).length;
+    const progressVal = Math.round((completedCount / steps.length) * 100);
 
-  const timelineData: TimelineItem[] = timelineSteps.map(step => ({
-    title: step.title,
-    date: step.date,
-    status: step.completed ? 'completed' : 'current',
-  }));
+    const mappedData: TimelineItem[] = steps.map(step => ({
+      title: step.title,
+      date: step.date,
+      status: step.completed ? 'completed' : 'current',
+    }));
+
+    return { timelineData: mappedData, progress: progressVal };
+  }, [assessmentReport]);
 
 
   return (
@@ -246,15 +250,12 @@ const Assessment = ({ sessionContentId, onSessionContentIdChange }: AssessmentPr
       />
       <View style={{ zIndex: 1000 }}>
         <Card style={{ gap: 4 ,flex:1,width:'100%'}}>
-          <Typography variant="regularTxtxs" style={{ backgroundColor: colors?.brand['200'], borderTopEndRadius: 12, borderTopStartRadius: 12, padding: 5 }} numberOfLines={2}>
+          <Typography variant="regularTxtxs" style={styles.statusBanner} numberOfLines={2}>
             Stage was {assessmentStatus} by{" "}
-            {stages?.find(s => s.stage_type === "assessment")?.reviewed_by?.name ??
-              "Workflow"}{" "}
+            {assessmentStage?.reviewed_by?.name ?? "Workflow"}{" "}
             on{" "}
             {formatMonDDYYYY(
-              stages?.find(s => s.stage_type === "assessment")?.reviewed_at ??
-              stages?.find(s => s.stage_type === "assessment")
-                ?.workflow_status_updated_at,
+              assessmentStage?.reviewed_at ?? assessmentStage?.workflow_status_updated_at,
               "DD MMM YYYY HH:mm",
               "IST"
             )}
@@ -278,41 +279,29 @@ const Assessment = ({ sessionContentId, onSessionContentIdChange }: AssessmentPr
             />
             <View style={styles.reviewRow}>
               <Typography variant="regularTxtxs" style={{ flex: 1 }}>
-                {filteredAssessmentLogs
-                  ?.find(item => item.content_id === sessionContentId)
-                  ?.action_taken_by?.name ? (
+                {currentSessionLog?.action_taken_by?.name ? (
                   <>
-                    Reviewed by{" "}
-                    {
-                      filteredAssessmentLogs.find(item => item.content_id === sessionContentId)
-                        ?.action_taken_by?.name
-                    }{" "}
-                    ·{" "}
+                    Reviewed by {currentSessionLog.action_taken_by.name} ·{" "}
                     {formatMonDDYYYY(
-                      filteredAssessmentLogs.find(item => item.content_id === sessionContentId)
-                        ?.action_taken_at,
+                      currentSessionLog.action_taken_at,
                       "DD MMM YYYY HH:mm",
                       "IST"
                     )}
                   </>
-                ) : filteredAssessmentLogs?.find(item => item.content_id === sessionContentId)
-                  ?.workflow_status_updated_at ? (
+                ) : currentSessionLog?.workflow_status_updated_at ? (
                   <>
                     Reviewed by Workflow ·{" "}
                     {formatMonDDYYYY(
-                      filteredAssessmentLogs.find(item => item.content_id === sessionContentId)
-                        ?.workflow_status_updated_at,
+                      currentSessionLog.workflow_status_updated_at,
                       "DD MMM YYYY HH:mm",
                       "IST"
                     )}
                   </>
-                ) : filteredAssessmentLogs?.find(item => item.content_id === sessionContentId)
-                  ?.updated_at ? (
+                ) : currentSessionLog?.updated_at ? (
                   <>
                     ·{" "}
                     {formatMonDDYYYY(
-                      filteredAssessmentLogs.find(item => item.content_id === sessionContentId)
-                        ?.updated_at,
+                      currentSessionLog.updated_at,
                       "DD MMM YYYY HH:mm",
                       "IST"
                     )}
@@ -367,7 +356,7 @@ const Assessment = ({ sessionContentId, onSessionContentIdChange }: AssessmentPr
       </View>
 
       {assessmentLoading && !!sessionContentId && !reportMatchesSession ? (
-        <View style={{ gap: 14, paddingVertical: 18 }}>
+        <View style={styles.shimmerContainer}>
           <Shimmer width="40%" height={20} borderRadius={8} />
           <View style={{ flexDirection: 'row', gap: 12 }}>
             <Shimmer width="45%" height={14} borderRadius={8} />

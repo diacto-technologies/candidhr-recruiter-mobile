@@ -17,11 +17,9 @@ const SlideAnimatedTab: React.FC<Props> = ({
   activeTab,
   onChangeTab,
   counts = {},
-  countShow=false
 }) => {
   const underlineX = useRef(new Animated.Value(0)).current;
   const underlineWidth = useRef(new Animated.Value(0)).current;
-  const fadeAnim = useRef(new Animated.Value(1)).current;
   const styles = useStyles();
 
   const tabLayouts = useRef<TabLayout[]>([]).current;
@@ -60,16 +58,10 @@ const SlideAnimatedTab: React.FC<Props> = ({
         toValue: width,
         useNativeDriver: false,
       }),
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 250,
-        useNativeDriver: true,
-      }),
     ]).start();
   };
 
   const handlePress = (label: string, index: number) => {
-    fadeAnim.setValue(0);
     onChangeTab(label, index);
   };
 
@@ -79,21 +71,6 @@ const SlideAnimatedTab: React.FC<Props> = ({
       animateToTab(index);
     }
   }, [activeTab]);
-
-  // Update underline when counts change (tabs may have resized)
-  useEffect(() => {
-    if (initialized.current) {
-      const index = tabs.indexOf(activeTab);
-      if (tabLayouts[index]) {
-        // Use a small delay to ensure layout has updated
-        const timer = setTimeout(() => {
-          animateToTab(index);
-        }, 50);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [counts]);
-
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
       <View style={styles.tabRow}>
