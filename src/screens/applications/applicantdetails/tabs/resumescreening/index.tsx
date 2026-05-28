@@ -1,9 +1,9 @@
 import React, { Fragment, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import ResumeScore from './resumescore';
-import SkillScore from './skillscart';
-import AiSummary from './aisummarycart';
-import DetailedResume from './resumedetailcart';
+import ResumeScore from '../../../../../components/molecules/ResumeScore';
+import SkillScore from '../../../../../components/molecules/SkillScore';
+import AiSummary from '../../../../../components/organisms/AiSummaryCard';
+import DetailedResume from '../../../../../components/organisms/DetailedResume';
 import { useAppSelector } from '../../../../../hooks/useAppSelector';
 import {selectApplicationStages, selectAssessmentLogs, selectMarkSessionReviewedLoading, selectParseResumeLoading, selectResumeScreeningReport, selectSelectedApplication, selectApplicationsLoading, selectResumeScreeningReportLoading } from '../../../../../features/applications/selectors';
 

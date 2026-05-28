@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
-import CustomTimeline from './timelinecard';
-import AssessmentsDetails from './assessmentdetails';
+import CustomTimeline from '../../../../../components/molecules/TimelineCard';
+import AssessmentsDetails from '../../../../../components/organisms/AssessmentDetails';
 import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../../../hooks/useAppSelector';
 import {

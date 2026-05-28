@@ -6,8 +6,8 @@ import {
     selectJobNameList, 
     selectJobNameListLoading, 
     selectJobNameListNext, 
-    selectSelectedJob, 
-    setSelectedJobAction 
+    selectDashboardSelectedJob, 
+    setDashboardSelectedJob 
 } from '../../../../features/jobs';
 import { JobNameItem } from '../../../../features/jobs/types';
 import { useDebounce } from '../../../../hooks/useDebounce';
@@ -19,7 +19,7 @@ export const useJobSearch = (onJobSelectCallback: (jobId?: string) => void) => {
     const jobNameList = useAppSelector(selectJobNameList);
     const jobNameListNext = useAppSelector(selectJobNameListNext);
     const jobNameListLoading = useAppSelector(selectJobNameListLoading);
-    const selectedJob = useAppSelector(selectSelectedJob);
+    const selectedJob = useAppSelector(selectDashboardSelectedJob);
 
     const [openSearch, setOpenSearch] = useState(false);
     const [searchText, setSearchText] = useState('');
@@ -82,7 +82,7 @@ export const useJobSearch = (onJobSelectCallback: (jobId?: string) => void) => {
     }, [jobNameListNext, jobNameListLoading, page, searchText, dispatch]);
 
     const handleSelectJob = useCallback((item: JobNameItem) => {
-        dispatch(setSelectedJobAction(item));
+        dispatch(setDashboardSelectedJob(item));
         if (item?.title) {
             setSearchText(item.title);
         }
@@ -94,7 +94,7 @@ export const useJobSearch = (onJobSelectCallback: (jobId?: string) => void) => {
         setSearchText('');
         setPage(1);
         setOpenSearch(false);
-        dispatch(setSelectedJobAction(null));
+        dispatch(setDashboardSelectedJob(null));
         onJobSelectCallback();
     }, [dispatch, onJobSelectCallback]);
 

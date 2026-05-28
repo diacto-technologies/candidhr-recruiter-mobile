@@ -20,6 +20,7 @@ export {
   deleteJobSuccess,
   deleteJobFailure,
   setSelectedJob,
+  setDashboardSelectedJob,
   clearError,
 } from "./slice";
 

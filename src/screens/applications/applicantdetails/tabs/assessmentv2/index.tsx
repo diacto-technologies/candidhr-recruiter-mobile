@@ -32,16 +32,16 @@ import { Button } from '../../../../../components';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Card from '../../../../../components/atoms/card';
 import { getApprovalStageStatusOptions } from '../stageStatusOptions';
-import AssessmentsDetails from '../assessment/assessmentdetails';
-import CustomTimeline from '../assessment/timelinecard';
+import AssessmentsDetails from '../../../../../components/organisms/AssessmentDetails';
+import CustomTimeline from '../../../../../components/molecules/TimelineCard';
 import AssessmentReportsCard from './assessmentreportscard';
 import AssignmentDropdown from '../../../../../components/organisms/dropdown/assignmentdropdown';
-import AssessmentsDetailsV2 from '../assessment/assessmentdetails/assessmentsdetailsv2';
-import ProctoringCard from '../assessment/assessmentdetails/components/ProctoringCard';
-import TimeAnalyticsCard from '../assessment/assessmentdetails/components/TimeAnalyticsCard';
-import RecommendationCard from '../assessment/assessmentdetails/components/RecommendationCard';
-import { useStyles as useAssessmentDetailsStyles } from '../assessment/assessmentdetails/styles';
-import type { StrengthsWeaknesses } from '../assessment/assessmentdetails/types';
+import AssessmentsDetailsV2 from '../../../../../components/organisms/AssessmentDetails/assessmentsdetailsv2';
+import ProctoringCard from '../../../../../components/organisms/ProctoringCard';
+import TimeAnalyticsCard from '../../../../../components/molecules/TimeAnalyticsCard';
+import RecommendationCard from '../../../../../components/molecules/RecommendationCard';
+import { useStyles as useAssessmentDetailsStyles } from '../../../../../components/organisms/AssessmentDetails/styles';
+import type { StrengthsWeaknesses } from '../../../../../components/organisms/AssessmentDetails/types';
 import { showToastMessage } from '../../../../../utils/toast';
 
 interface TimelineItem {

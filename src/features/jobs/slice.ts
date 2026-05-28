@@ -7,6 +7,7 @@ export const jobsInitialState: JobsState = {
   favouriteJobs: [],
   favouriteJobIds: [],
   selectedJob: null,
+  dashboardSelectedJob: null,
   publishedCount: 0,
   unpublishedCount: 0,
   favouritesCount: 0,
@@ -321,6 +322,9 @@ const jobsSlice = createSlice({
     setSelectedJob: (state, action: PayloadAction<JobDetail | null>) => {
       state.selectedJob = action.payload;
     },
+    setDashboardSelectedJob: (state, action: PayloadAction<JobNameItem | null>) => {
+      state.dashboardSelectedJob = action.payload;
+    },
     clearError: (state) => {
       state.error = null;
     },
@@ -480,6 +484,7 @@ export const {
   deleteJobSuccess,
   deleteJobFailure,
   setSelectedJob,
+  setDashboardSelectedJob,
   clearError,
   setJobFilters,
   setJobSort,

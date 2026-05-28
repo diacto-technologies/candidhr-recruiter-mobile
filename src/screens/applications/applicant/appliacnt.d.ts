@@ -1,7 +1,3 @@
-// =========================
-// JOB DETAIL INTERFACES
-// =========================
-
 export interface JobDetail {
     id: string;
     title: string;

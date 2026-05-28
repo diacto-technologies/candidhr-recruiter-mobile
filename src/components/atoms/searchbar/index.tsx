@@ -76,7 +76,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
         {/* Fake placeholder */}
         {!value && (
-          <Text numberOfLines={1} ellipsizeMode="tail" style={styles.placeholder}>
+          <Text  numberOfLines={1} ellipsizeMode="tail" style={styles.placeholder}>
             {placeholder}
           </Text>
         )}

@@ -1,5 +1,5 @@
 import { formatMonDDYYYY } from '../../../../utils/dateformatter';
-import { buildApplicationPdfHtml } from '../tabs/profileinfo/applicationdetails/buildApplicationPdfHtml';
+import { buildApplicationPdfHtml } from '../../../../components/organisms/ApplicationDetails/buildApplicationPdfHtml';
 
 /** Backend sometimes returns `ai_summary_json` as a stringified JSON object. */
 export function parseResumeAiSummaryJson(raw: unknown): Record<string, any> {

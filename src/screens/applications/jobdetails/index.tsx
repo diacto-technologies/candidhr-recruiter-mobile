@@ -5,7 +5,7 @@ import { goBack } from "../../../utils/navigationUtils";
 import SortingAndFilter from "../../../components/organisms/sortingandfilter";
 import { applicantFiltersOption } from "../../../utils/dummaydata";
 import { BottomSheet, StatusBar, Typography } from "../../../components";
-import ApplicantFilterSheet from "../applicant/components/ApplicantFilterSheet";
+import ApplicantFilterSheet from "../../../components/organisms/ApplicantFilterSheet";
 import JobHeader from "../../../components/organisms/jobs/jobheader/jobheader";
 import { colors } from "../../../theme/colors";
 import FooterButtons from "../../../components/molecules/footerbuttons";

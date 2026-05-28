@@ -8,7 +8,7 @@ import {
   Button,
   Typography,
 } from "../../../../components";
-import VideoInterviewFilterSheet from "./components/VideoInterviewFilterSheet";
+import VideoInterviewFilterSheet from "../../../../components/organisms/VideoInterviewFilterSheet";
 import { goBack, navigate } from "../../../../utils/navigationUtils";
 import { useStyles } from "./styles";
 import Card from "../../../../components/atoms/card";

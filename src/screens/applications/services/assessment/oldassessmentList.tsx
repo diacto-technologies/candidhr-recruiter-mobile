@@ -10,7 +10,7 @@ import AssessmentCard from '../../../../components/molecules/assessmentcard'
 import AssignedAssessmentCard, { AssignedAssessmentCardShimmer } from '../../../../components/molecules/assignedAssessmentCard'
 import PrebuildAssessmentCard from '../../../../components/molecules/assessmentprebuild'
 import BottomSheet from '../../../../components/organisms/bottomsheet'
-import AssessmentFilterSheet from './components/AssessmentFilterSheet'
+import AssessmentFilterSheet from '../../../../components/organisms/AssessmentFilterSheet';
 import SortingAndFilter from '../../../../components/organisms/sortingandfilter'
 import Shimmer from '../../../../components/atoms/shimmer'
 import Card from '../../../../components/atoms/card'

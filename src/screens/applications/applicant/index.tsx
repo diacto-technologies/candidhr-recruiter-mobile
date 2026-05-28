@@ -9,7 +9,7 @@ import {
   Typography,
   ThreeDotDropdown,
 } from '../../../components';
-import ApplicantFilterSheet from './components/ApplicantFilterSheet';
+import ApplicantFilterSheet from '../../../components/organisms/ApplicantFilterSheet';
 import CustomSafeAreaView from '../../../components/atoms/customsafeareaview';
 import { applicantFiltersOption } from '../../../utils/dummaydata';
 import { colors } from '../../../theme/colors';

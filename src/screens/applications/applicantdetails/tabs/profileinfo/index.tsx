@@ -1,10 +1,10 @@
 import React, { Fragment } from "react";
 import { View } from "react-native";
 
-import ProfileOverView from "./overview";
-import ScreeningQuestions from "./screeningquestions";
-import CriteriaResponsesCard from "./criteriaresponsescard";
-import ApplicationDetailsCard from "./applicationdetails";
+import ProfileOverView from "../../../../../components/organisms/Overview";
+import ScreeningQuestions from "../../../../../components/organisms/ScreeningQuestions";
+import CriteriaResponsesCard from "../../../../../components/organisms/CriteriaResponsesCard";
+import ApplicationDetailsCard from "../../../../../components/organisms/ApplicationDetails";
 
 const ProfileInfo = () => {
   return (

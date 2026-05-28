@@ -195,6 +195,7 @@ export interface JobsState {
   favouritesCount: number;
   activeTab: string;
   selectedJob: JobDetail | null;
+  dashboardSelectedJob: JobNameItem | null;
   /**
    * Global loading used by job-detail + mutations (not the tab lists).
    */

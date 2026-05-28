@@ -55,6 +55,7 @@ export const useJobDetailsController = () => {
   const filters = useAppSelector(selectApplicationsFilters);
   const selectedJob = useAppSelector(selectSelectedJob);
   const jobsLoading = useAppSelector(selectJobsLoading);
+  const origin = useAppSelector(organizationalOrigin);
   // Optional: const pagination = useAppSelector(selectApplicationsPagination); 
 
   const canPublish = can(PERMISSIONS.PUBLISH_JOB);
@@ -98,15 +99,15 @@ export const useJobDetailsController = () => {
   }, [dispatch, filters.sortBy, filters.sortDir]);
 
   const handleCopyUrl = useCallback(() => {
-    if (!selectedJob?.encrypted) {
+    if (!jobId) {
       showToastMessage('Job Form URL not available', 'error');
       return;
     }
 
-    const url = `${organizationalOrigin(store.getState())}/app/candidate/${selectedJob.encrypted}/`;
+    const url = `${origin}/apply/${jobId}`;
     Clipboard.setString(url);
     showToastMessage('Job Form URL copied to clipboard', 'success');
-  }, [selectedJob?.encrypted]);
+  }, [jobId, origin]);
 
   const handlePublishToggle = useCallback(() => {
     if (!jobId || !selectedJob || !canPublish || jobsLoading) return;

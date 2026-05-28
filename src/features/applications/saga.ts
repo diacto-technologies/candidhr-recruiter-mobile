@@ -340,9 +340,8 @@ function* updateApplicationStatusWorker(action: { type: string; payload: import(
   try {
     yield put(updateApplicationStatusRequest(action.payload));
     const response = yield call(applicationsApi.updateApplicationStatus, { id, status });
-    const detailResponse = yield call(applicationsApi.getApplicationDetail, id);
-    const application = detailResponse?.application ?? detailResponse;
-    yield put(updateApplicationStatusSuccess(application));
+    const updatedData = response?.data || { id, status };
+    yield put(updateApplicationStatusSuccess(updatedData));
     showToastMessage(response?.message ?? "Application status updated successfully", "success");
 
     // POST /applications/send-email/

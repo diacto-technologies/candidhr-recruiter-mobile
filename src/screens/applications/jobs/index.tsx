@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { SortingAndFilter, Header, JobCardList, BottomSheet, Typography } from '../../../components';
-import JobFilterSheet from './components/JobFilterSheet';
+import JobFilterSheet from '../../../components/organisms/JobFilterSheet';
 import { useStyles } from './styles';
 import CustomSafeAreaView from '../../../components/atoms/customsafeareaview';
 import { jobFiltersOption, jobTabs } from './config';

@@ -18,6 +18,11 @@ export const selectSelectedJob = createSelector(
   (jobs) => jobs.selectedJob
 );
 
+export const selectDashboardSelectedJob = createSelector(
+  [selectJobsState],
+  (jobs) => jobs.dashboardSelectedJob
+);
+
 export const selectJobsLoading = createSelector(
   [selectJobsState],
   (jobs) => jobs.loading
