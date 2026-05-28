@@ -36,6 +36,14 @@ export const useStyles = () =>
             paddingBottom: 16,
             gap: 16,
         },
+        infoTextGroup: {
+            gap: 4,
+        },
+        exportButton: {
+            position: 'absolute',
+            alignSelf: 'flex-end',
+            margin: 10,
+        },
         row: {
             flexDirection: 'row',
             alignItems: 'center',

@@ -1,355 +1,138 @@
-import React, { Fragment, useCallback, useEffect, useRef, useMemo, useState } from 'react';
-import { View, FlatList, useWindowDimensions } from 'react-native';
-import { Header, SortingAndFilter, ApplicantList, Shimmer, BottomSheet, FilterSheetContent, Typography, Button, ThreeDotDropdown } from '../../../components';
-import { useRNSafeAreaInsets } from '../../../hooks/useRNSafeAreaInsets';
-import CustomSafeAreaView from '../../../components/atoms/customsafeareaview';
-import { useAppDispatch } from '../../../hooks/useAppDispatch';
-import { exportApplicationsRequestAction, getApplicationsRequestAction } from '../../../features/applications/actions';
-import { useAppSelector } from '../../../hooks/useAppSelector';
+import React, { useCallback } from 'react';
+import { View, FlatList } from 'react-native';
 import {
-  selectApplications,
-  selectApplicationsFilters,
-  selectApplicationsHasMore,
-  selectApplicationsLoading,
-  selectApplicationsPagination,
-} from '../../../features/applications/selectors';
-import { Application } from '../../../features/applications/types';
-import { setApplicationsFilters, setSort } from '../../../features/applications/slice';
+  AppHeader,
+  SortingAndFilter,
+  ApplicantList,
+  Shimmer,
+  BottomSheet,
+  Typography,
+  ThreeDotDropdown,
+} from '../../../components';
+import ApplicantFilterSheet from '../../../components/organisms/ApplicantFilterSheet';
+import CustomSafeAreaView from '../../../components/atoms/customsafeareaview';
 import { applicantFiltersOption } from '../../../utils/dummaydata';
-import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../../../theme/colors';
-import DeviceInfo from 'react-native-device-info';
 import BackgroundPattern from '../../../components/atoms/backgroundpattern';
 import { Illustrations } from '../../../assets/svg/illustrations';
 import { SvgXml } from 'react-native-svg';
 import { screenHeight } from '../../../utils/devicelayout';
-import { PERMISSIONS } from '../../../utils/permission.constants';
-import { usePermission } from '../../../hooks/usePermission';
+import { horizontalThreedotIcon } from '../../../assets/svg/horizontalthreedoticon';
+import { useStyles } from './styles';
+import { Application } from '../../../features/applications/types';
+import { useApplicantScreenController, RowItem } from './hooks/useApplicantScreenController';
 
-const SKELETON_ROWS = 20;
-
-type RowItem = Application | { __skeleton: true; __id: string };
+const ApplicantEmptyState = ({ styles }: { styles: any }) => (
+  <BackgroundPattern bgStyle={styles.emptyStateBg}>
+    <View style={styles.emptyStateContainer}>
+      <View style={styles.emptyStateContent}>
+        <SvgXml xml={Illustrations} />
+        <Typography variant="semiBoldTxtmd">
+          No results found
+        </Typography>
+        <Typography
+          variant="regularTxtsm"
+          color={colors.gray[500]}
+          style={styles.emptyStateSubtext}
+        >
+          Try adjusting your search or filters
+        </Typography>
+      </View>
+    </View>
+  </BackgroundPattern>
+);
 
 const ApplicantScreen = () => {
-  const { can } = usePermission();
-  const [filterSheet, setFilterSheet] = useState(false);
-  const [selectedTab, setSelectedTab] = useState('Name');
-  const [openSearch, setOpenSearch] = useState(false);
-  const [threeDotOpen, setThreeDotOpen] = useState(false);
-  const inset = useRNSafeAreaInsets();
-  const dispatch = useAppDispatch();
-  const applications = useAppSelector(selectApplications);
-  const pagination = useAppSelector(selectApplicationsPagination);
-  const hasMore = useAppSelector(selectApplicationsHasMore);
-  const loading = useAppSelector(selectApplicationsLoading);
-  const filters = useAppSelector(selectApplicationsFilters);
-
-  const onEndReachedCalledRef = useRef(false);
-  const { width } = useWindowDimensions();
-  const isTablet = DeviceInfo.isTablet();
-  const numColumns = isTablet ? 3 : 1;
-  const horizontalPadding = 32;
-  const gap = 16;
-  const availableWidth = width - horizontalPadding - gap * (numColumns - 1);
-  const itemWidth = availableWidth / numColumns;
-  const debouncedName = useDebouncedValue(filters.name, 400);
-
-  function useDebouncedValue<T>(value: T, delay = 400): T {
-    const [debounced, setDebounced] = useState(value);
-
-    useEffect(() => {
-      const timer = setTimeout(() => setDebounced(value), delay);
-      return () => clearTimeout(timer);
-    }, [value, delay]);
-
-    return debounced;
-  }
-
-  const getApiParams = useCallback(
-    (page: number, append = false) => {
-      const params: any = {
-        page,
-        limit: pagination.limit,
-      };
-      if (append) params.append = true;
-      if (debouncedName) params.applicantName = debouncedName;
-      if (filters.email) params.email = filters.email;
-      if (filters.appliedFor) params.jobTitle = filters.appliedFor;
-      if (filters.contact) params.contact = filters.contact;
-      if (filters.sort) params.sort = filters.sort;
-      if (filters.latestStageStatus)
-        params.latestStageStatus = filters.latestStageStatus;
-
-      if (filters.source)
-        params.source = filters.source;
-
-      if (filters.status)
-        params.status = filters.status;
-
-      if (filters.latestStageName)
-        params.latestStageName = filters.latestStageName;
-
-      return params;
-    },
-    [
-      debouncedName,
-      filters.email,
-      filters.appliedFor,
-      filters.contact,
-      filters.sort,
-      filters.latestStageStatus,
-      filters.source,
-      filters.status,
-      filters.latestStageName,
-      pagination.limit,
-    ]
-  );
-
-  useFocusEffect(
-    useCallback(() => {
-      dispatch(getApplicationsRequestAction(getApiParams(1)));
-    }, [dispatch, getApiParams])
-  );
-
-
-
-  // // Refetch when filters or sort change (permanent fix - no setTimeout)
-  // useEffect(() => {
-  //   // Skip initial fetch - useFocusEffect handles that
-  //   if (skipInitialFetch.current) {
-  //     return;
-  //   }
-
-  //   // Refetch when any filter or sort changes
-  //   dispatch(getApplicationsRequestAction(getApiParams(1, false)));
-  // }, [filters.sort, filters.name, filters.email, filters.appliedFor, filters.contact, dispatch, getApiParams]);
-
-  const handleApplyFilters = () => {
-    setFilterSheet(false);
-  };
-
-  const handleClearAllFilters = () => {
-    dispatch(setApplicationsFilters({
-      name: "",
-      email: "",
-      appliedFor: "",
-      contact: "",
-      latestStageStatus: "",
-      source: "",
-      status: "",
-      latestStageName: "",
-    }));
-    setFilterSheet(false);
-  };
-
-  const handleSort = (item: string) => {
-    const isSortable = item === 'Applied' || item === 'Last Update';
-
-    if (isSortable) {
-      const isSameField = filters.sortBy === item;
-
-      dispatch(setSort({
-        sortBy: item,
-        sortDir: isSameField
-          ? (filters.sortDir === 'desc' ? 'asc' : 'desc')
-          : 'desc',
-      }));
-    } else {
-      setSelectedTab(item);
-      setFilterSheet(true)
-    }
-  };
-
-  const handleLoadMore = useCallback(() => {
-    if (loading || !hasMore) return;
-    dispatch(getApplicationsRequestAction(getApiParams(pagination.page + 1, true)));
-  }, [loading, hasMore, pagination.page, getApiParams]);
-
-
-  const dataSource: RowItem[] = useMemo(() => {
-    if (loading && (!applications || applications.length === 0)) {
-      return Array.from({ length: SKELETON_ROWS }).map((_, i) => ({
-        __skeleton: true,
-        __id: `skeleton-${i}`,
-      }));
-    }
-    return applications as RowItem[];
-  }, [loading, applications]);
+  const styles = useStyles();
+  const ctrl = useApplicantScreenController();
 
   const renderItem = useCallback(
-    ({ item }: { item: RowItem }) =>
-      (item as any).__skeleton ? (
-        <ApplicantList item={undefined} loading cardWidth={itemWidth} />
-      ) : (
-        <ApplicantList item={item as Application} cardWidth={itemWidth} />
-      ),
-    []
-  );
-
-  const threeDotMenuItems = useMemo(
-    () => [
-      {
-        name: 'Export to CSV',
-        onPress: () => {
-          dispatch(exportApplicationsRequestAction({ params: getApiParams(1, false), mode: 'download' }));
-        },
-      },
-    ],
-    [dispatch, getApiParams]
+    ({ item }: { item: RowItem }) => {
+      if ('__skeleton' in item) {
+        return <ApplicantList item={undefined} loading cardWidth={ctrl.itemWidth} />;
+      }
+      return <ApplicantList item={item} cardWidth={ctrl.itemWidth} />;
+    },
+    [ctrl.itemWidth]
   );
 
   return (
-    <Fragment>
-      <CustomSafeAreaView>
-        <Header
-          title="Applicants"
-          threedot={can(PERMISSIONS.EXPORT_APPLICATIONS)}
-          onThreeDotPress={() => setThreeDotOpen(true)}
-        />
-        {/* {!loading && applications.length === 0 && (
-          <View
-            style={{
-              alignItems: "center",
-              marginTop: 60,
-              paddingHorizontal: 16,
-            }}
-          >
-            <Typography variant="semiBoldTxtmd">
-              No results found
-            </Typography>
-            <Typography
-              variant="regularTxtsm"
-              color={colors.gray[500]}
-              style={{ marginTop: 6, textAlign: "center" }}
-            >
-              Try adjusting your search or filters
-            </Typography>
-          </View>
-        )} */}
-        <FlatList<RowItem>
-          data={dataSource}
-          renderItem={renderItem}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingVertical: 16,
-            paddingHorizontal: 16,
-            gap: 12,
-            flexGrow: 1, // 👈 REQUIRED for vertical centering
-          }}
-          onEndReached={() => {
-            if (!onEndReachedCalledRef.current) {
-              handleLoadMore();
-              onEndReachedCalledRef.current = true;
-            }
-          }}
-          onEndReachedThreshold={0.5}
-          onMomentumScrollBegin={() => {
-            onEndReachedCalledRef.current = false;
-          }}
-          initialNumToRender={10}
-          maxToRenderPerBatch={10}
-          windowSize={10}
-          removeClippedSubviews={false}
-          numColumns={isTablet ? 2 : 1}
+    <CustomSafeAreaView>
+      <AppHeader
+        title="Applicants"
+        right={
+          ctrl.canExport ? (
+            <React.Fragment>
+              {/* Using a standard Pressable for right side icon */}
+              <View style={{ padding: 8, marginRight: -8 }} onTouchEnd={() => ctrl.setThreeDotOpen(true)}>
+                <SvgXml xml={horizontalThreedotIcon} />
+              </View>
+            </React.Fragment>
+          ) : null
+        }
+      />
 
-          keyExtractor={(item, index) => {
-            if ((item as any).__skeleton) return `skeleton-${(item as any).__id ?? index}`;
-            const id = (item as Application).id ?? 'no-id';
-            return `app-${id}-${index}`;
-          }}
+      <FlatList<RowItem>
+        data={ctrl.dataSource}
+        renderItem={renderItem}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.flatListContent}
+        onEndReached={ctrl.handleEndReached}
+        onEndReachedThreshold={0.5}
+        onMomentumScrollBegin={ctrl.handleMomentumScrollBegin}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={10}
+        removeClippedSubviews={false}
+        numColumns={ctrl.numColumns}
+        key={ctrl.isTablet ? 'tablet-col-3' : 'mobile-col-1'}
+        keyExtractor={(item, index) => {
+          if ('__skeleton' in item) return item.__id;
+          const id = (item as Application).id ?? 'no-id';
+          return `app-${id}-${index}`;
+        }}
+        ListEmptyComponent={
+          !ctrl.loading ? <ApplicantEmptyState styles={styles} /> : null
+        }
+        ListFooterComponent={
+          ctrl.loading && ctrl.applications.length > 0 ? <Shimmer /> : null
+        }
+      />
 
-          ListEmptyComponent={
-            !loading ? (
-              <BackgroundPattern
-                bgStyle={{
-                  height: '100%',
-                  width: '100%',
-                  top: -90,
-                }}
-              >
-                <View
-                  style={{
-                    flex: 1,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    paddingHorizontal: 16,
-                  }}
-                >
-                  <View
-                    style={{
-                      alignItems: 'center',
-                      marginBottom: 10,
-                      zIndex: 10,
-                    }}
-                  >
-                    <SvgXml xml={Illustrations} />
-                    <Typography variant="semiBoldTxtmd">
-                      No results found
-                    </Typography>
-                    <Typography
-                      variant="regularTxtsm"
-                      color={colors.gray[500]}
-                      style={{ textAlign: 'center' }}
-                    >
-                      Try adjusting your search or filters
-                    </Typography>
-                  </View>
-
-                  {/* <Button
-                    buttonColor={colors.mainColors.slateBlue}
-                    textColor={colors.common.white}
-                    borderColor={colors.mainColors.borderColor}
-                    borderRadius={8}
-                    borderWidth={1}
-                    size="Medium"
-                    onPress={() => {
-                      // optional: navigate to job/applicant creation
-                    }}
-                  >
-                    Add new job
-                  </Button> */}
-                </View>
-              </BackgroundPattern>
-            ) : null
-          }
-
-          ListFooterComponent={
-            loading && applications.length > 0 ? <Shimmer /> : null
-          }
-        />
-      </CustomSafeAreaView>
       <ThreeDotDropdown
-        visible={threeDotOpen}
-        onClose={() => setThreeDotOpen(false)}
-        menuItems={threeDotMenuItems}
+        visible={ctrl.threeDotOpen}
+        onClose={() => ctrl.setThreeDotOpen(false)}
+        menuItems={ctrl.threeDotMenuItems}
         top={100}
         right={20}
       />
+
       <SortingAndFilter
         title="Filters"
         options={applicantFiltersOption}
-        onPressFilter={() => setFilterSheet(true)}
-        setSelectedTab={setSelectedTab}
-        selectedTab={selectedTab}
-        onItemPress={(t) => handleSort(t)}
+        onPressFilter={() => ctrl.setIsFilterSheetVisible(true)}
+        setSelectedTab={ctrl.setSelectedTab}
+        selectedTab={ctrl.selectedTab}
+        onItemPress={(t) => ctrl.handleSort(t)}
       />
 
       <BottomSheet
-        visible={filterSheet}
-        onClose={() => setFilterSheet(false)}
-        onClearAll={() => handleClearAllFilters()}
+        visible={ctrl.isFilterSheetVisible}
+        onClose={() => ctrl.setIsFilterSheetVisible(false)}
+        onClearAll={ctrl.handleClearAllFilters}
         title="Filter by"
-        showHeadline hight={screenHeight * 0.8}      >
-        <FilterSheetContent
-          onCancel={() => setFilterSheet(false)}
-          onApply={() => handleApplyFilters()}
-          onClearAll={() => setFilterSheet(false)}
-          selectedTab={selectedTab}
-          setSelectedTab={setSelectedTab}
-          job_Id={""}
-          filtersConfig={applicantFiltersOption} mode={'applicant'} />
+        showHeadline
+        hight={screenHeight * 0.8}
+      >
+        <ApplicantFilterSheet
+          onCancel={() => ctrl.setIsFilterSheetVisible(false)}
+          onApply={ctrl.handleApplyFilters}
+          onClearAll={() => ctrl.setIsFilterSheetVisible(false)}
+          selectedTab={ctrl.selectedTab}
+          setSelectedTab={ctrl.setSelectedTab}
+        />
       </BottomSheet>
-    </Fragment>
+    </CustomSafeAreaView>
   );
 };
 

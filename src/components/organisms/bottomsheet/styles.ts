@@ -47,9 +47,6 @@ export const useStyles = () => {
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
       overflow: 'hidden',
-      marginHorizontal: 6,
-      borderBottomLeftRadius: 20,
-      borderBottomRightRadius: 20,
     },
     topSection: {
       marginTop: 5,

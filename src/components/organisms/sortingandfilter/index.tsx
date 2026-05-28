@@ -1,13 +1,10 @@
+import React, { FC } from 'react';
 import { View, ScrollView, TouchableOpacity, Pressable } from 'react-native';
-import React, { FC, Fragment } from 'react';
 import Typography from '../../atoms/typography';
 import { colors } from '../../../theme/colors';
 import { SvgXml } from 'react-native-svg';
 import { filterIcon } from '../../../assets/svg/filter';
-import { useAppDispatch } from '../../../hooks/useAppDispatch';
-import { useAppSelector } from '../../../hooks/useAppSelector';
-import { setSort } from '../../../features/applications/slice';
-import { selectApplicationsFilters } from '../../../features/applications/selectors';
+import { useStyles } from './styles';
 
 interface Props {
   title: string;
@@ -16,7 +13,6 @@ interface Props {
   selectedTab: string;
   setSelectedTab?: (tab: string) => void;
   onItemPress: (item: string) => void;
-
   containerStyle?: any;
   filterButtonStyle?: any;
   chipStyle?: any;
@@ -34,87 +30,34 @@ const SortingAndFilter: FC<Props> = ({
   chipStyle,
   activeChipStyle,
 }) => {
-
-  const dispatch = useAppDispatch();
-  const filters = useAppSelector(selectApplicationsFilters);
+  const styles = useStyles();
 
   return (
-    <View
-      style={[
-        {
-          flexDirection: 'row',
-          paddingVertical: 12,
-          backgroundColor: colors.common.white,
-          borderBottomWidth: 1,
-          borderColor: colors.gray[200],
-          // elevation: 10,
-          // shadowColor: '#000',
-          // shadowOffset: { width: 0, height: 2 },
-          // shadowOpacity: 0.15,
-          // shadowRadius: 3,
-        },
-        containerStyle,
-      ]}
-    >
+    <View style={[styles.container, containerStyle]}>
       {/* Filter Button */}
-      <Pressable
-        onPress={onPressFilter}
-        style={[
-          {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 8,
-            paddingHorizontal: 8,
-          },
-          filterButtonStyle,
-        ]}
-      >
-        <View style={{ position: 'relative' }}>
+      <Pressable onPress={onPressFilter} style={[styles.filterButton, filterButtonStyle]}>
+        <View style={styles.iconWrapper}>
           <SvgXml xml={filterIcon} color={colors.brand[500]} />
-          <View
-            style={{
-              position: 'absolute',
-              top: 1,
-              left: 0,
-              height: 7,
-              width: 7,
-              borderRadius: 4,
-              backgroundColor: colors.brand[500],
-            }}
-          />
+          <View style={styles.notificationDot} />
         </View>
 
-        <Typography variant="H4" style={{ color: '#535862' }}>
+        <Typography variant="H4" style={styles.titleText}>
           {title}
         </Typography>
       </Pressable>
 
       {/* Chips */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {options?.map((item, index) => {
-
-          const isSortable = item === 'Applied' || item === 'Last Update';
-          const isSortActive = filters.sortBy === item;
-          const dir = filters.sortDir;
+        {options?.map((item) => {
           const isActive = item === selectedTab;
 
           return (
             <TouchableOpacity
-              key={index}
+              key={item}
               onPress={() => onItemPress(item)}
               style={[
-                {
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  paddingVertical: 4,
-                  paddingHorizontal: 12,
-                  borderRadius: 8,
-                  borderWidth: 1,
-                  borderColor: isActive ? colors.brand[200] : colors.gray[200],
-                  backgroundColor: isActive ? colors.brand[50] : colors.gray[50],
-                  marginRight: 8,
-                  gap: 8,
-                },
+                styles.chip,
+                isActive ? styles.chipActive : styles.chipInactive,
                 chipStyle,
                 isActive && activeChipStyle,
               ]}
@@ -125,14 +68,6 @@ const SortingAndFilter: FC<Props> = ({
               >
                 {item}
               </Typography>
-
-              {isSortable && (
-                <Typography variant="regularTxtxs" color={colors.gray[500]}>
-                  {isSortActive
-                    ? (dir === 'desc' ? '▼' : '▲')
-                    : '▲'}
-                </Typography>
-              )}
             </TouchableOpacity>
           );
         })}
@@ -140,6 +75,5 @@ const SortingAndFilter: FC<Props> = ({
     </View>
   );
 };
-
 
 export default SortingAndFilter;

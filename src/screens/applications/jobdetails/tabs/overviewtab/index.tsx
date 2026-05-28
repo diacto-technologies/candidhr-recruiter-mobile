@@ -1,23 +1,17 @@
-import React, { Fragment } from "react";
+import React from "react";
 import { View } from "react-native";
+import { ScrollView } from "react-native-gesture-handler";
 import { colors } from "../../../../../theme/colors";
 import Icon from "../../../../../components/atoms/vectoricon";
-import { linkIcon } from "../../../../../assets/svg/link";
-import { SvgXml } from "react-native-svg";
-import { employeeIcon } from "../../../../../assets/svg/employee";
-import { ScrollView } from "react-native-gesture-handler";
-import { useAppSelector } from "../../../../../hooks/useAppSelector";
-import { selectJobsLoading, selectSelectedJob } from "../../../../../features/jobs/selectors";
-import { extractSections } from "../../../../../utils/extractSections";
 import Shimmer from "../../../../../components/atoms/shimmer";
 import Typography from "../../../../../components/atoms/typography";
 import { useStyles } from "./styles";
-
+import { useOverviewTabController } from "./hooks/useOverviewTabController";
 
 const OverviewTabShimmer = () => {
   const styles = useStyles();
   return (
-    <ScrollView>
+    <ScrollView bounces={false}>
       <View style={styles.container}>
         {/* Job Description */}
         <Shimmer width="50%" height={18} />
@@ -77,115 +71,94 @@ const OverviewTabShimmer = () => {
   );
 };
 
+// Extracted Presentational Component for Reusability
+const JobSection = ({ section, styles }: { section: any, styles: any }) => (
+  <View style={styles.section}>
+    <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
+      {section.title}
+    </Typography>
+
+    {/* Paragraphs */}
+    {section.paragraphs.map((p: string, pi: number) => (
+      <Typography
+        key={`p-${pi}`}
+        variant="regularTxtsm"
+        color={colors.gray[600]}
+      >
+        {p}
+      </Typography>
+    ))}
+
+    {/* Bullet list items */}
+    {section.items.map((item: string, ii: number) => (
+      <View key={`i-${ii}`} style={styles.bulletRow}>
+        <Icon
+          name="dot-single"
+          size={18}
+          iconFamily="Entypo"
+          color={colors.grayScale.darkGray}
+        />
+        <Typography
+          variant="regularTxtsm"
+          color={colors.gray[600]}
+          style={styles.bulletText}
+        >
+          {item}
+        </Typography>
+      </View>
+    ))}
+  </View>
+);
+
 const OverviewTab = () => {
   const styles = useStyles();
-  const jobs = useAppSelector(selectSelectedJob);
-  const loading = useAppSelector(selectJobsLoading);
-  const extracted = extractSections(jobs?.jd_html ?? "");
+  const ctrl = useOverviewTabController();
 
-  if (loading) {
+  if (ctrl.loading) {
     return <OverviewTabShimmer />;
   }
 
   return (
-    <Fragment>
-      <ScrollView bounces={false}>
-        <View style={styles.container}>
-          {/* ── Job description (overview before first h2) ── */}
-          {extracted.overview ? (
-            <View style={{ gap: 8 }}>
-              <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
-                Job description
-              </Typography>
-              <Typography variant="regularTxtsm" color={colors.gray[600]}>
-                {extracted.overview}
-              </Typography>
-            </View>
-          ) : null}
+    <ScrollView bounces={false}>
+      <View style={styles.container}>
+        
+        {/* ── Job description (overview before first h2) ── */}
+        {ctrl.extracted.overview ? (
+          <View style={styles.section}>
+            <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
+              Job description
+            </Typography>
+            <Typography variant="regularTxtsm" color={colors.gray[600]}>
+              {ctrl.extracted.overview}
+            </Typography>
+          </View>
+        ) : null}
 
-          {/* ── Dynamic sections from jd_html (h2 headings) ── */}
-          {extracted.sections.map((section, idx) => (
-            <View key={idx} style={{ gap: 8 }}>
-              <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
-                {section.title}
-              </Typography>
+        {/* ── Dynamic sections from jd_html (h2 headings) ── */}
+        {ctrl.extracted.sections.map((section: any, idx: number) => (
+          <JobSection key={`section-${idx}`} section={section} styles={styles} />
+        ))}
 
-              {/* Paragraphs */}
-              {section.paragraphs.map((p, pi) => (
-                <Typography
-                  key={`p-${pi}`}
-                  variant="regularTxtsm"
-                  color={colors.gray[600]}
-                >
-                  {p}
-                </Typography>
-              ))}
-
-              {/* Bullet list items */}
-              {section.items.map((item, ii) => (
-                <View key={`i-${ii}`} style={styles.bulletRow}>
-                  <Icon
-                    name="dot-single"
-                    size={18}
-                    iconFamily="Entypo"
-                    color={colors.grayScale.darkGray}
-                  />
-                  <Typography
-                    variant="regularTxtsm"
-                    color={colors.gray[600]}
-                    style={styles.bulletText}
-                  >
-                    {item}
+        {/* ── Skills required (from must_have_skills) ── */}
+        {ctrl.selectedJob?.must_have_skills && ctrl.selectedJob.must_have_skills.length > 0 && (
+          <View style={styles.section}>
+            <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
+              Skills required
+            </Typography>
+            <View style={styles.tagWrap}>
+              {ctrl.selectedJob.must_have_skills.map((item: any, index: number) => (
+                <View style={styles.tag} key={`skill-${index}`}>
+                  <Typography variant="regularTxtsm" color={colors.gray[700]}>
+                    {item.label}
                   </Typography>
                 </View>
               ))}
             </View>
-          ))}
+          </View>
+        )}
 
-          {/* ── Skills required (from must_have_skills) ── */}
-          {jobs?.must_have_skills && jobs.must_have_skills.length > 0 && (
-            <View style={{ gap: 10 }}>
-              <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
-                Skills required
-              </Typography>
-              <View style={styles.tagWrap}>
-                {jobs.must_have_skills.map((item, index) => (
-                  <View style={styles.tag} key={index}>
-                    <Typography variant="regularTxtsm" color={colors.gray[700]}>
-                      {item.label}
-                    </Typography>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {/* ── About Company ── */}
-          {/* <View style={{ gap: 8 }}>
-            <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
-              About company
-            </Typography>
-            <Typography style={styles.list}>
-              Reddit young minds One AI conversation at a time. Fueled by
-              cutting-edge AI, Miko connects with kids, responds to their
-              emotions and fosters empathy in every interaction.
-            </Typography>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <SvgXml xml={linkIcon} />
-              <Typography variant="regularTxtsm" color={colors.gray[600]}>
-                Swift.com
-              </Typography>
-            </View>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <SvgXml xml={employeeIcon} />
-              <Typography variant="regularTxtsm" color={colors.gray[600]}>
-                51-200 employees
-              </Typography>
-            </View>
-          </View> */}
-        </View>
-      </ScrollView>
-    </Fragment>
+      </View>
+    </ScrollView>
   );
 };
 

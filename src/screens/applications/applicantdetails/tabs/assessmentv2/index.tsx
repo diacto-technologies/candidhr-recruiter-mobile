@@ -32,16 +32,16 @@ import { Button } from '../../../../../components';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Card from '../../../../../components/atoms/card';
 import { getApprovalStageStatusOptions } from '../stageStatusOptions';
-import AssessmentsDetails from '../assessment/assessmentdetails';
-import CustomTimeline from '../assessment/timelinecard';
+import AssessmentsDetails from '../../../../../components/organisms/AssessmentDetails';
+import CustomTimeline from '../../../../../components/molecules/TimelineCard';
 import AssessmentReportsCard from './assessmentreportscard';
 import AssignmentDropdown from '../../../../../components/organisms/dropdown/assignmentdropdown';
-import AssessmentsDetailsV2 from '../assessment/assessmentdetails/assessmentsdetailsv2';
-import ProctoringCard from '../assessment/assessmentdetails/components/ProctoringCard';
-import TimeAnalyticsCard from '../assessment/assessmentdetails/components/TimeAnalyticsCard';
-import RecommendationCard from '../assessment/assessmentdetails/components/RecommendationCard';
-import { useStyles as useAssessmentDetailsStyles } from '../assessment/assessmentdetails/styles';
-import type { StrengthsWeaknesses } from '../assessment/assessmentdetails/types';
+import AssessmentsDetailsV2 from '../../../../../components/organisms/AssessmentDetails/assessmentsdetailsv2';
+import ProctoringCard from '../../../../../components/organisms/ProctoringCard';
+import TimeAnalyticsCard from '../../../../../components/molecules/TimeAnalyticsCard';
+import RecommendationCard from '../../../../../components/molecules/RecommendationCard';
+import { useStyles as useAssessmentDetailsStyles } from '../../../../../components/organisms/AssessmentDetails/styles';
+import type { StrengthsWeaknesses } from '../../../../../components/organisms/AssessmentDetails/types';
 import { showToastMessage } from '../../../../../utils/toast';
 
 interface TimelineItem {
@@ -72,6 +72,18 @@ const logLatestActivityMs = (log: {
     log.action_taken_at || log.updated_at || log.assigned_at || 0
   ).getTime();
 
+const STATUS_MAP: Record<string, string> = {
+  'Started': 'started',
+  'Assigned': 'assigned',
+  'Under Review': 'under_review',
+  'Completed': 'completed',
+  'On Hold': 'on_hold',
+  'Rejected': 'rejected',
+  'Shortlisted': 'shortlisted',
+  'Scheduled Final Interview': 'final_interview',
+  'Hired': 'hired',
+};
+
 const AssessmentV2 = ({
   sessionContentId,
   onSessionContentIdChange,
@@ -101,14 +113,12 @@ const AssessmentV2 = ({
   const loadingOptions = useAppSelector(selectAssessmentOptionsLoading);
   const loadingExportReport = useAppSelector(selectExportAssessmentReportLoading);
 
-  const questions: any[] = performanceReport?.question_analysis?.questions ?? [];
+  const questions = performanceReport?.question_analysis?.questions ?? [];
   const hasQuestions = questions.some((q) => q?.question_type !== "coding");
   const hasCoding = questions.some((q) => q?.question_type === "coding");
   const shouldShowEmptyState = !performanceReport || (!hasQuestions && !hasCoding);
 
-  const strengthsWeaknesses = (performanceReport as any)?.strengths_weaknesses as
-    | StrengthsWeaknesses
-    | undefined;
+  const strengthsWeaknesses = performanceReport?.strengths_weaknesses;
 
   useEffect(() => {
     const stageStatus = stages?.find(s => s.stage_type === "assessment_v2")?.status;
@@ -180,14 +190,7 @@ const AssessmentV2 = ({
 
 
 
-  //Ensure dropdown shows the currently active session.
-  // useEffect(() => {
-  //   if (!session && assessmentLogs?.length) {
-  //     setSelectedSession(assessmentLogs[assessmentLogs.length - 1]?.id);
-  //   }
-  // }, [assessmentLogs, session]);
 
-  // Map status_text to STATUS_OPTIONS id format
 
   const currentSessionLog = useMemo(() => {
     if (!sessionContentId || !filteredV2Logs?.length) return null;
@@ -210,28 +213,7 @@ const AssessmentV2 = ({
     return getApprovalStageStatusOptions(currentStageStatus);
   }, [currentStageStatus]);
 
-  const mapStatusTextToId = (statusText: string): string => {
-    const statusMap: { [key: string]: string } = {
-      'Started': 'started',
-      'Assigned': 'assigned',
-      'Under Review': 'under_review',
-      'Completed': 'completed',
-      'On Hold': 'on_hold',
-      'Rejected': 'rejected',
-      'Shortlisted': 'shortlisted',
-      'Scheduled Final Interview': 'final_interview',
-      'Hired': 'hired',
-    };
-    return statusMap[statusText] || '';
-  };
 
-  // Get current status id from selected session
-  const currentStatusId = useMemo(() => {
-    if (currentSessionLog?.status_text) {
-      return mapStatusTextToId(currentSessionLog.status_text);
-    }
-    return '';
-  }, [currentSessionLog]);
 
   const assessmentStatus =
     stages?.find(stage => stage.stage_type === "assessment_v2")?.status
@@ -240,55 +222,57 @@ const AssessmentV2 = ({
 
 
 
-  const timelineSteps = [
-    {
-      title: 'Assigned',
-      date: formatMonDDYYYY(
-        performanceReport?.assessment_info?.assigned_at,
-        'DD MMM YYYY HH:mm',
-        'IST'
-      ),
-      completed: !!performanceReport?.assessment_info?.assigned_at,
-    },
-    {
-      title: 'Started',
-      date: formatMonDDYYYY(
-        performanceReport?.assessment_info?.started_at,
-        'DD MMM YYYY HH:mm',
-        'IST'
-      ),
-      completed: !!performanceReport?.assessment_info?.started_at,
-    },
-    {
-      title: 'Completed',
-      date: formatMonDDYYYY(
-        performanceReport?.assessment_info?.completed_at,
-        'DD MMM YYYY HH:mm',
-        'IST'
-      ),
-      completed: !!performanceReport?.assessment_info?.completed_at,
-    },
-    {
-      title: 'Valid Until',
-      date: formatMonDDYYYY(
-        performanceReport?.assessment_info?.valid_to,
-        'DD MMM YYYY HH:mm',
-        'IST'
-      ),
-      completed: !!performanceReport?.assessment_info?.valid_to,
-    },
-  ];
+  const { timelineData, progress } = useMemo(() => {
+    const steps = [
+      {
+        title: 'Assigned',
+        date: formatMonDDYYYY(
+          performanceReport?.assessment_info?.assigned_at,
+          'DD MMM YYYY HH:mm',
+          'IST'
+        ),
+        completed: !!performanceReport?.assessment_info?.assigned_at,
+      },
+      {
+        title: 'Started',
+        date: formatMonDDYYYY(
+          performanceReport?.assessment_info?.started_at,
+          'DD MMM YYYY HH:mm',
+          'IST'
+        ),
+        completed: !!performanceReport?.assessment_info?.started_at,
+      },
+      {
+        title: 'Completed',
+        date: formatMonDDYYYY(
+          performanceReport?.assessment_info?.completed_at,
+          'DD MMM YYYY HH:mm',
+          'IST'
+        ),
+        completed: !!performanceReport?.assessment_info?.completed_at,
+      },
+      {
+        title: 'Valid Until',
+        date: formatMonDDYYYY(
+          performanceReport?.assessment_info?.valid_to,
+          'DD MMM YYYY HH:mm',
+          'IST'
+        ),
+        completed: !!performanceReport?.assessment_info?.valid_to,
+      },
+    ];
 
-  const completedSteps = timelineSteps.filter(step => step.completed).length;
-  const progress = Math.round(
-    (completedSteps / timelineSteps.length) * 100
-  );
+    const completed = steps.filter(step => step.completed).length;
+    const prog = Math.round((completed / steps.length) * 100);
 
-  const timelineData: TimelineItem[] = timelineSteps.map(step => ({
-    title: step.title,
-    date: step.date,
-    status: step.completed ? 'completed' : 'current',
-  }));
+    const data: TimelineItem[] = steps.map(step => ({
+      title: step.title,
+      date: step.date,
+      status: step.completed ? 'completed' : 'current',
+    }));
+
+    return { timelineData: data, progress: prog };
+  }, [performanceReport]);
 
 
   return (

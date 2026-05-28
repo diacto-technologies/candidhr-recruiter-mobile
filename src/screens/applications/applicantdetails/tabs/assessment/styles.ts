@@ -49,5 +49,15 @@ export const useStyles = () => {
             alignItems: "center",
             marginTop: 12,
         },
+        statusBanner: {
+            backgroundColor: colors.brand['200'], 
+            borderTopEndRadius: 12, 
+            borderTopStartRadius: 12, 
+            padding: 5
+        },
+        shimmerContainer: {
+            gap: 14, 
+            paddingVertical: 18
+        }
     })
 }

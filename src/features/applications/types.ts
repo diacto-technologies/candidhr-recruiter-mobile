@@ -1090,6 +1090,7 @@ export interface PerformanceReportResponse {
     partially_correct: number;
     unanswered: number;
     accuracy: number;
+    questions_considered?: number;
   };
 
   section_performance: {
@@ -1106,6 +1107,9 @@ export interface PerformanceReportResponse {
       time_taken: number;
       difficulty: string;
       performance_rating: string;
+      questions_considered?: number;
+      select_random?: number;
+      scoring_rule?: string;
     }>;
   };
 
@@ -1129,6 +1133,8 @@ export interface PerformanceReportResponse {
     total_time_taken: number;
     total_time_taken_formatted: string;
     average_time_per_question: number;
+    time_limit_formatted?: string;
+    time_efficiency?: number;
   };
 
   proctoring_summary: {
@@ -1137,12 +1143,23 @@ export interface PerformanceReportResponse {
     integrity_status: string;
     video_url: string;
     thumbnail_url: string;
+    gaze_snapshots?: {
+      snapshots: any[];
+    };
+    violations_by_type?: Record<string, number>;
   };
 
   recommendations: {
     recommendation: string;
     confidence_level: string;
     suggested_next_steps: string;
+    key_considerations?: string[];
+  };
+
+  strengths_weaknesses?: {
+    strengths: string[];
+    weaknesses: string[];
+    overall_assessment: string;
   };
 }
 

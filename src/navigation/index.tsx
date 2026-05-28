@@ -13,15 +13,15 @@ import ForgetPasswordScreen from '../screens/auth/forgetpassword'
 import ContactUsScreen from '../screens/auth/contactus'
 import CheckMailScreen from '../screens/auth/checkmail'
 import CreateNewPasswordScreen from '../screens/auth/createnewpassword'
-import AccountInfo from '../screens/applications/profile/accountinfo'
-import CompanyInfo from '../screens/applications/profile/companyinfo'
-import Users from '../screens/applications/profile/users'
+import AccountInfo from '../screens/applications/profile/tabs/accountinfo';
+import CompanyInfo from '../screens/applications/profile/tabs/companyinfo';
+import Users from '../screens/applications/profile/tabs/users';
 import linking from './linking'
 import OrgnizationalSwitch from '../screens/auth/orgnizationalswitch'
 import { useTheme } from '../hooks/useTheme'
 import JobDetailScreen from '../screens/applications/jobdetails'
 import ApplicationStageOverview from '../components/organisms/applicationstageoverview'
-import ApplicationOverviewDetails from '../screens/applications/applicationstageoverviewdetails'
+import ApplicationOverviewDetails from '../components/organisms/ApplicationStageOverviewDetails';
 import AssessmentScreen from '../screens/applications/services/assessment'
 import VideoInterviewScreen from '../screens/applications/services/videoInterview'
 import CommentsScreen from '../screens/applications/comments'
@@ -29,7 +29,7 @@ import OldAssessmentList from '../screens/applications/services/assessment/oldas
 import AssessmentTestList from '../screens/applications/services/assessment/assessmentTestList'
 import AssessmentList from '../screens/applications/services/assessment/assessmentList'
 import AssessmentOverView from '../screens/applications/services/assessment/assessmentoverview'
-import CandidateAssignmentsDeatilsTable from '../screens/applications/services/assessment/candidateassignmentsdetailstable'
+import CandidateAssignmentsDeatilsTable from '../components/organisms/CandidateAssignmentsDetailsTable';
 
 const Stack = createNativeStackNavigator()
 const Navigation: FC = () => {

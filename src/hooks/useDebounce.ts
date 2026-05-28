@@ -1,29 +1,31 @@
-import { useRef, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
-type DebounceFunction<T extends (...args: any[]) => void> = (
-  func: T,
-  wait: number,
-) => (...args: Parameters<T>) => void;
+// Used for debouncing state values (e.g., search text)
+export function useDebouncedValue<T>(value: T, delay = 400): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
 
-export const useDebounce = () => {
-  const timeout = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
 
-  const debounce: DebounceFunction<(...args: any[]) => void> = (func, wait) => {
+  return debouncedValue;
+}
+
+// Used for debouncing function calls
+export function useDebounce() {
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const debounce = (func: Function, delay: number) => {
     return (...args: any[]) => {
-      if (timeout.current) {
-        clearTimeout(timeout.current);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
-      timeout.current = setTimeout(() => func(...args), wait);
+      timeoutRef.current = setTimeout(() => {
+        func(...args);
+      }, delay);
     };
   };
 
-  useEffect(() => {
-    return () => {
-      if (timeout.current) {
-        clearTimeout(timeout.current);
-      }
-    };
-  }, []);
-
   return { debounce };
-};
+}

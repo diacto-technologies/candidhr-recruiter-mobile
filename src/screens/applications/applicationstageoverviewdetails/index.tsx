@@ -1,8 +1,7 @@
-import React, { Fragment, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   View,
   Animated,
-  FlatList,
   ScrollView,
   LayoutChangeEvent,
 } from "react-native";
@@ -19,28 +18,29 @@ import CustomSafeAreaView from "../../../components/atoms/customsafeareaview";
 import Header from "../../../components/organisms/header";
 import { goBack } from "../../../utils/navigationUtils";
 
+// Extracted hook for business logic (SRP)
+const useApplicationOverviewDetails = () => {
+  useNetworkConnectivity();
+  const overviewData = useAppSelector(selectStageGraphOverview);
+  const data: TableRow[] = overviewData?.results ?? [];
+
+  return { data };
+};
+
 const ApplicationOverviewDetails = () => {
   const styles = useStyles();
   const scrollX = useRef(new Animated.Value(0)).current;
   const [contentWidth, setContentWidth] = useState(0);
   const [containerWidth, setContainerWidth] = useState(windowWidth - 40);
-  const OverviewData = useAppSelector(selectStageGraphOverview);
-  const data: TableRow[] = OverviewData?.results ?? [];
-  const shadowOpacity = useRef(new Animated.Value(0)).current;
   
-  // Monitor network connectivity
-  useNetworkConnectivity();
-  // show/hide shadow based on scrollX
-  scrollX.addListener(({ value }) => {
-    Animated.timing(shadowOpacity, {
-      toValue: value > 0 ? 1 : 0,
-      duration: 180,
-      useNativeDriver: false,
-    }).start();
-  });
-
+  const { data } = useApplicationOverviewDetails();
+  
   const onContainerLayout = (e: LayoutChangeEvent) => {
-    setContainerWidth(e.nativeEvent.layout.width);
+    // Only update if it significantly changes to prevent wasted renders
+    const newWidth = e.nativeEvent.layout.width;
+    if (Math.abs(containerWidth - newWidth) > 1) {
+      setContainerWidth(newWidth);
+    }
   };
 
   const visibleWidth = containerWidth - LEFT_COLUMN_WIDTH;
@@ -51,29 +51,37 @@ const ApplicationOverviewDetails = () => {
       ? Math.max((visibleWidth / contentWidth) * TRACK_WIDTH, 40)
       : TRACK_WIDTH - 20;
 
+  // Animate custom scroll thumb natively based on scrollX
   const translateX = scrollX.interpolate({
-    inputRange: [0, scrollRange],
-    outputRange: [0, TRACK_WIDTH - THUMB_WIDTH],
+    inputRange: [0, scrollRange > 0 ? scrollRange : 1],
+    outputRange: [0, Math.max(TRACK_WIDTH - THUMB_WIDTH, 0)],
+    extrapolate: "clamp",
+  });
+
+  // Zero listeners needed! Animate shadow natively based on scrollX
+  const shadowOpacity = scrollX.interpolate({
+    inputRange: [0, 15],
+    outputRange: [0, 1],
     extrapolate: "clamp",
   });
 
   /** LEFT FIXED COLUMN */
-  const renderLeftColumn = ({ item, index }: { item: TableRow; index: number }) => {
+  const renderLeftColumn = (item: TableRow, index: number) => {
     const bg = index % 2 === 1 ? colors.neutrals.lightGray : "#FFF";
 
     return (
-      <View style={[styles.leftFixedColumn, { backgroundColor: bg }]}>
+      <View key={`left-${index}`} style={[styles.leftFixedColumn, { backgroundColor: bg }]}>
         <Typography variant="mediumTxtsm">{item?.job_name}</Typography>
       </View>
     );
   };
 
   /** RIGHT SCROLLABLE CELLS */
-  const renderRightRow = ({ item, index }: { item: TableRow; index: number }) => {
+  const renderRightRow = (item: TableRow, index: number) => {
     const bg = index % 2 === 1 ? colors.neutrals.lightGray : "#FFF";
 
     return (
-      <View style={[styles.row, { backgroundColor: bg }]}>
+      <View key={`right-${index}`} style={[styles.row, { backgroundColor: bg }]}>
         <Typography style={styles.cell}>{item.total_applicants}</Typography>
         <Typography style={styles.cell}>{item?.stages?.resume_screening}</Typography>
         <Typography style={styles.cell}>{item?.stages?.assessment_test}</Typography>
@@ -83,102 +91,89 @@ const ApplicationOverviewDetails = () => {
         <Typography style={styles.cell}>{item?.stages?.on_hold}</Typography>
         <Typography style={styles.cell}>{item?.close_date}</Typography>
         <View style={{backgroundColor:item?.is_closed?colors.error[50]:colors.success[50],paddingHorizontal:8, paddingVertical:2,borderRadius:9999,alignItems:'center', borderWidth:1 ,borderColor:item?.is_closed?colors.error[200]:colors.success[200]}}>
-        <Typography variant="regularTxtxs" color={item?.is_closed?colors.error[600]:colors.success[600]}>{item?.is_closed ? "Closed" : "Open"}</Typography>
+          <Typography variant="regularTxtxs" color={item?.is_closed?colors.error[600]:colors.success[600]}>{item?.is_closed ? "Closed" : "Open"}</Typography>
         </View>
       </View>
     );
   };
 
-
   return (
-    <Fragment>
-      <CustomSafeAreaView>
-        <Header title="Application stage overview" backNavigation showTitle onBack={goBack} />
-        <View style={styles.card} onLayout={onContainerLayout}>
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            nestedScrollEnabled
-            bounces={false}
-          >
-            <View style={{ flexDirection: "row" }}>
+    <CustomSafeAreaView>
+      <Header title="Application stage overview" backNavigation showTitle onBack={goBack} />
+      <View style={styles.card} onLayout={onContainerLayout}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          nestedScrollEnabled
+          bounces={false}
+        >
+          <View style={{ flexDirection: "row" }}>
 
-              <Animated.View
-                style={[
-                  styles.leftFixedWrapper,
-                  {
-                    shadowColor: "#0A0D12",
-                    shadowOffset: { width: 2, height: 0 },
-                    shadowOpacity: shadowOpacity.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, 0.06],
-                    }),
-                    shadowRadius: shadowOpacity.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, 10],
-                    }),
-                    elevation: shadowOpacity.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, 6],
-                    }),
-                  },
-                ]}
-              >
-                {/* LEFT COLUMN HEADER */}
-                <View style={[styles.headerRow, styles.leftHeaderRow]}>
-                  <Typography
-                    variant="semiBoldTxtxs"
-                    style={styles.leftHeaderText}
-                    color={colors.gray[500]}
-                  >
-                    Job title
-                  </Typography>
+            <Animated.View
+              style={[
+                styles.leftFixedWrapper,
+                {
+                  shadowColor: "#0A0D12",
+                  shadowOffset: { width: 2, height: 0 },
+                  shadowOpacity: shadowOpacity.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 0.06],
+                  }),
+                  shadowRadius: shadowOpacity.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 10],
+                  }),
+                  elevation: shadowOpacity.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 6],
+                  }),
+                },
+              ]}
+            >
+              {/* LEFT COLUMN HEADER */}
+              <View style={[styles.headerRow, styles.leftHeaderRow]}>
+                <Typography
+                  variant="semiBoldTxtxs"
+                  style={styles.leftHeaderText}
+                  color={colors.gray[500]}
+                >
+                  Job title
+                </Typography>
+              </View>
+
+              {data.map((item, index) => renderLeftColumn(item, index))}
+            </Animated.View>
+
+            <Animated.ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              scrollEventThrottle={16}
+              onContentSizeChange={(w) => setContentWidth(w)}
+              onScroll={Animated.event(
+                [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+                { useNativeDriver: true }
+              )}
+              bounces={false}
+            >
+              <View>
+                <View style={styles.headerRow}>
+                  {tabelTitle.map((title, index) => (
+                    <Typography
+                      key={index}
+                      variant="semiBoldTxtxs"
+                      style={styles.headerText}
+                      color={colors.gray[500]}
+                    >
+                      {title}
+                    </Typography>
+                  ))}
                 </View>
 
-                <FlatList
-                  data={data}
-                  renderItem={renderLeftColumn}
-                  keyExtractor={(_, i) => `left-${i}`}
-                  scrollEnabled={false}
-                />
-              </Animated.View>
-
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                scrollEventThrottle={16}
-                onContentSizeChange={(w) => setContentWidth(w)}
-                onScroll={Animated.event(
-                  [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-                  { useNativeDriver: false }
-                )}
-                bounces={false}
-              >
-                <View>
-                  <View style={styles.headerRow}>
-                    {tabelTitle.map((title, index) => (
-                      <Typography
-                        key={index}
-                        variant="semiBoldTxtxs"
-                        style={styles.headerText}
-                        color={colors.gray[500]}
-                      >
-                        {title}
-                      </Typography>
-                    ))}
-                  </View>
-
-                  <FlatList
-                    data={data}
-                    renderItem={renderRightRow}
-                    keyExtractor={(_, i) => `right-${i}`}
-                    scrollEnabled={false}
-                  />
-                </View>
-              </ScrollView>
-            </View>
-          </ScrollView>
-        </View>
-      </CustomSafeAreaView>
+                {data.map((item, index) => renderRightRow(item, index))}
+              </View>
+            </Animated.ScrollView>
+          </View>
+        </ScrollView>
+      </View>
       <View style={styles.paginationContainer}>
         <View style={[styles.scrollTrack, { width: TRACK_WIDTH - 250 }]}>
           <Animated.View
@@ -189,8 +184,7 @@ const ApplicationOverviewDetails = () => {
           />
         </View>
       </View>
-
-    </Fragment>
+    </CustomSafeAreaView>
   );
 };
 

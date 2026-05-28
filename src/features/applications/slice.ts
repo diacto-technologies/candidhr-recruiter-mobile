@@ -177,14 +177,26 @@ const applicationsSlice = createSlice({
       state.loading = true;
       state.error = null;
     },
-    updateApplicationStatusSuccess: (state, action: PayloadAction<Application>) => {
+    updateApplicationStatusSuccess: (state, action: PayloadAction<any>) => {
       state.loading = false;
       const index = state.applications.findIndex((app) => app.id === action.payload.id);
+      
+      const newStatus = action.payload.status;
+      const newStatusLabel = newStatus ? newStatus.split('_').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : newStatus;
+
       if (index !== -1) {
-        state.applications[index] = action.payload;
+        state.applications[index] = { 
+          ...state.applications[index], 
+          ...action.payload,
+          status_label: newStatusLabel || state.applications[index].status_label
+        };
       }
       if (state.selectedApplication?.id === action.payload.id) {
-        state.selectedApplication = action.payload;
+        state.selectedApplication = { 
+          ...state.selectedApplication, 
+          ...action.payload,
+          status_label: newStatusLabel || (state.selectedApplication as any).status_label
+        } as any;
       }
       state.error = null;
     },

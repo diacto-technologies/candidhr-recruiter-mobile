@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Pressable, Linking, Platform, TouchableOpacity, Alert } from 'react-native';
+import { View, Pressable, TouchableOpacity, Alert } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { SvgXml } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
@@ -13,19 +13,19 @@ import { formatExperience } from '../../../utils/experienceformatter';
 import { exportIcon } from '../../../assets/svg/export';
 import { PERMISSIONS } from '../../../utils/permission.constants';
 import { usePermission } from '../../../hooks/usePermission';
-import { useAppSelector } from '../../../hooks/useAppSelector';
-import { selectSelectedApplication } from '../../../features/applications/selectors';
 import { useStyles } from './styles';
 import { ApplicationProfileDetails } from '../../../features/applications';
+import { openExternalLink } from '../../../utils/urlUtils';
 
-export interface Props {
+export interface ProfileCardProps {
+  application: ApplicationProfileDetails | null;
   loading: boolean;
   onPressExport?: () => void; // download
   onPressPreview?: () => void; // preview
 }
 
 const ProfileCardShimmer = () => {
-   const styles = useStyles();
+  const styles = useStyles();
   return (
     <View style={styles.container}>
       <Shimmer height={90} borderRadius={12} style={{ margin: 4 }} />
@@ -37,7 +37,7 @@ const ProfileCardShimmer = () => {
       </View>
 
       <View style={styles.infoContainer}>
-        <View style={{ gap: 8 }}>
+        <View style={styles.infoTextGroup}>
           <Shimmer width="60%" height={18} />
           <Shimmer width="90%" height={14} />
           <Shimmer width="70%" height={14} />
@@ -53,10 +53,15 @@ const ProfileCardShimmer = () => {
   );
 };
 
-const ProfileCart: React.FC<Props> = ({loading, onPressExport, onPressPreview }) => {
+const ProfileCard: React.FC<ProfileCardProps> = ({
+  application,
+  loading,
+  onPressExport,
+  onPressPreview,
+}) => {
   const { can } = usePermission();
-   const styles = useStyles();
-   const application = useAppSelector(selectSelectedApplication) as ApplicationProfileDetails | null;
+  const styles = useStyles();
+  
   if (loading) {
     return <ProfileCardShimmer />;
   }
@@ -70,64 +75,6 @@ const ProfileCart: React.FC<Props> = ({loading, onPressExport, onPressPreview })
     typeof relevantExpMonths === 'number' ? relevantExpMonths / 12 : null;
   const hasExperience = typeof relevantExpYears === 'number' && relevantExpYears > 0;
   const personalWebsite = person?.personal_website ?? null;
-  const openGitHub = async (url: string) => {
-    if (!url) return;
-
-    let finalUrl = url.trim();
-    if (!finalUrl.startsWith('http')) {
-      finalUrl = `https://${finalUrl}`;
-    }
-
-    if (Platform.OS === 'android') {
-      const browserUrl = `intent://${finalUrl.replace(
-        /^https?:\/\//,
-        ''
-      )}#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end`;
-
-      try {
-        await Linking.openURL(browserUrl);
-        return;
-      } catch (e) {
-        // Fall through to regular URL
-      }
-    }
-
-    try {
-      await Linking.openURL(finalUrl);
-    } catch (error) {
-      // Silently fail
-    }
-  };
-
-  const openLinkedIn = async (url: string) => {
-    if (!url) return;
-
-    let finalUrl = url.trim();
-    if (!finalUrl.startsWith('http')) {
-      finalUrl = `https://${finalUrl}`;
-    }
-
-    try {
-      await Linking.openURL(finalUrl);
-    } catch (error) {
-      // Silently fail
-    }
-  };
-
-  const openWebsite = async (url: string) => {
-    if (!url) return;
-
-    let finalUrl = url.trim();
-    if (!finalUrl.startsWith('http')) {
-      finalUrl = `https://${finalUrl}`;
-    }
-
-    try {
-      await Linking.openURL(finalUrl);
-    } catch (error) {
-      // Silently fail
-    }
-  };
 
   const handlePressExport = () => {
     if (onPressPreview && onPressExport) {
@@ -162,18 +109,19 @@ const ProfileCart: React.FC<Props> = ({loading, onPressExport, onPressPreview })
           outerSize={16}
         />
       </View>
+      
       {/* Info */}
       <View style={styles.infoContainer}>
-        {can(PERMISSIONS.EXPORT_APPLICATION_PROFILE) &&
+        {can(PERMISSIONS.EXPORT_APPLICATION_PROFILE) && (
           <TouchableOpacity
             onPress={handlePressExport}
-            // disabled={!onPressExport && !onPressPreview}
-            style={{ position: 'absolute', alignSelf: 'flex-end', margin: 10 }}
+            style={styles.exportButton}
           >
             <SvgXml xml={exportIcon} color={colors.gray[400]} height={20} width={20} />
           </TouchableOpacity>
-        }
-        <View style={{ gap: 4 }}>
+        )}
+        
+        <View style={styles.infoTextGroup}>
           {/* Name OR Application ID */}
           <Typography variant="semiBoldDxs">
             {person?.name
@@ -224,7 +172,7 @@ const ProfileCart: React.FC<Props> = ({loading, onPressExport, onPressPreview })
           {/* LinkedIn */}
           {person?.linkedin ? (
             <Pressable
-              onPress={() => openLinkedIn(person.linkedin)}
+              onPress={() => openExternalLink(person.linkedin)}
               style={styles.iconBox}
             >
               <Icon name="logo-linkedin" size={20} color="#0A66C2" iconFamily="Ionicons" />
@@ -233,7 +181,7 @@ const ProfileCart: React.FC<Props> = ({loading, onPressExport, onPressPreview })
           {/* GitHub */}
           {person?.github ? (
             <Pressable
-              onPress={() => openGitHub(person.github)}
+              onPress={() => openExternalLink(person.github)}
               style={styles.iconBox}
             >
               <Icon name="logo-github" size={20} color="#000" iconFamily="Ionicons" />
@@ -242,7 +190,7 @@ const ProfileCart: React.FC<Props> = ({loading, onPressExport, onPressPreview })
           {/* Website */}
           {personalWebsite ? (
             <Pressable
-              onPress={() => openWebsite(String(personalWebsite))}
+              onPress={() => openExternalLink(String(personalWebsite))}
               style={styles.iconBox}
             >
               <Icon name="globe" size={20} color="#444" iconFamily="Entypo" />
@@ -253,4 +201,5 @@ const ProfileCart: React.FC<Props> = ({loading, onPressExport, onPressPreview })
     </View>
   );
 };
-export default ProfileCart;
+
+export default ProfileCard;

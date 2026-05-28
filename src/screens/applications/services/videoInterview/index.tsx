@@ -5,10 +5,10 @@ import {
   BottomSheet,
   Header,
   SortingAndFilter,
-  FilterSheetContent,
   Button,
   Typography,
 } from "../../../../components";
+import VideoInterviewFilterSheet from "../../../../components/organisms/VideoInterviewFilterSheet";
 import { goBack, navigate } from "../../../../utils/navigationUtils";
 import { useStyles } from "./styles";
 import Card from "../../../../components/atoms/card";
@@ -292,15 +292,12 @@ const VideoInterviewScreen = () => {
           onClose={() => setFilterSheetOpen(false)}
           title="Filter by"
           showHeadline   hight={screenHeight* 0.8}               >
-          <FilterSheetContent
+          <VideoInterviewFilterSheet
             selectedTab={selectedFilter ?? ""}
             setSelectedTab={(tab) => setSelectedFilter(tab)}
-            filtersConfig={FILTER_OPTIONS}
             onCancel={() => setFilterSheetOpen(false)}
             onApply={handleApplyFilters}
             onClearAll={handleClearAllFilters}
-            job_Id={undefined}
-            mode="videoInterview"
           />
         </BottomSheet>
       </View>

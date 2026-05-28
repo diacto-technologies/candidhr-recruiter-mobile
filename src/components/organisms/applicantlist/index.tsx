@@ -34,6 +34,7 @@ import { screenshotIcon } from '../../../assets/svg/screenshot';
 import { captureAndShareView } from '../../../utils/captureAndShareView';
 import { usePermission } from '../../../hooks/usePermission';
 import { PERMISSIONS } from '../../../utils/permission.constants';
+import { STATUS_OPTIONS } from './config';
 
 interface ApplicantCardProps {
   item?: Application | null;
@@ -103,21 +104,6 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
   const cardCaptureRef = useRef<View | null>(null);
   const [changeStatusVisible, setChangeStatusVisible] = useState(false);
   const [shareModalVisible, setShareModalVisible] = useState(false);
-
-  const STATUS_OPTIONS = [
-    { id: "shortlisted", name: "Shortlisted" },
-    { id: "rejected", name: "Rejected" },
-    { id: "on_hold", name: "On Hold" },
-    { id: "interview_scheduled", name: "InterviewScheduled" },
-    { id: "final_interview", name: "Final Interview" },
-    { id: "hired", name: "Hired" },
-    { id: "offer_extended", name: "Offer Extended" },
-    { id: "offer_accepted", name: "Offer Accepted" },
-    { id: "offer_rejected", name: "Offer Rejected" },
-    { id: "not_selected", name: "Not Selected" },
-    { id: "withdrawn", name: "Withdrawn" },
-    { id: "archived", name: "Archived" },
-  ];
 
   const handleOpenMenu = () => {
     if (menuTriggerRef.current && 'measureInWindow' in menuTriggerRef.current) {
@@ -261,16 +247,7 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
         onClose={() => setMenuVisible(false)}
         position={dropdownPosition}
         iconColor={colors?.gray[400]}
-        dropdownStyle={{
-          //borderRadius: 12,
-          //backgroundColor: '#fff',
-          //elevation: 8,
-          // paddingRight:10
-        }}
         width={160}
-        itemStyle={{
-          //paddingVertical: 12,
-        }}
         iconStyle={{
           marginRight: 12,
         }}

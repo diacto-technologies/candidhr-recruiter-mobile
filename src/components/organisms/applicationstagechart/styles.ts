@@ -53,7 +53,7 @@ export const useStyles = () => {
             justifyContent: 'flex-end',
             position: 'relative'
         },
-        barLables:{ 
+        barLabels:{ 
             flexDirection: 'row', 
             justifyContent: 'space-around', 
             alignItems: 'flex-end', 

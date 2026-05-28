@@ -1,197 +1,110 @@
-import React, { useState, useRef, useEffect } from "react";
-import {
-  View,
-  Animated,
-} from "react-native";
-import Header from "../../../components/organisms/header";
+import React from "react";
+import { View, Pressable } from "react-native";
+import { AppHeader } from "../../../components";
 import { goBack } from "../../../utils/navigationUtils";
 import SortingAndFilter from "../../../components/organisms/sortingandfilter";
 import { applicantFiltersOption } from "../../../utils/dummaydata";
-import { BottomSheet, FilterSheetContent, StatusBar, Typography } from "../../../components";
+import { BottomSheet, StatusBar, Typography } from "../../../components";
+import ApplicantFilterSheet from "../../../components/organisms/ApplicantFilterSheet";
 import JobHeader from "../../../components/organisms/jobs/jobheader/jobheader";
 import { colors } from "../../../theme/colors";
 import FooterButtons from "../../../components/molecules/footerbuttons";
 import { SvgXml } from "react-native-svg";
 import { copyIcon } from "../../../assets/svg/copy";
+import { backButtonIcon } from "../../../assets/svg/backbutton";
 import Icon from "../../../components/atoms/vectoricon";
 import SlideAnimatedTab from "../../../components/molecules/slideanimatedtab";
 import { useStyles } from "./styles";
 import CustomSafeAreaView from "../../../components/atoms/customsafeareaview";
-import { useIsFocused, useRoute } from "@react-navigation/native";
-import { useAppDispatch } from "../../../hooks/useAppDispatch";
-import { useAppSelector } from "../../../hooks/useAppSelector";
-import { selectJobsLoading, selectSelectedJob } from "../../../features/jobs/selectors";
-import { getJobDetailRequestAction, updateJobRequestAction } from "../../../features/jobs/actions";
-import { setApplicationsFilters, setSort } from "../../../features/applications/slice";
-import { selectApplicationsFilters, selectApplicationsPagination } from "../../../features/applications/selectors";
-import Clipboard from "@react-native-clipboard/clipboard";
-import { showToastMessage } from "../../../utils/toast";
-import { organizationalOrigin } from "../../../features/auth";
-import { store } from "../../../store";
 import ApplicantsTab from "./tabs/applicantstab";
 import OverviewTab from "./tabs/overviewtab";
 import { screenHeight } from "../../../utils/devicelayout";
-import { usePermission } from "../../../hooks/usePermission";
-import { PERMISSIONS } from "../../../utils/permission.constants";
+import { useJobDetailsController, TABS } from "./hooks/useJobDetailsController";
 
-const tabs: string[] = ["Overview", "Applicants"];
+const TAB_OPTIONS = [TABS.OVERVIEW, TABS.APPLICANTS];
+
+const TAB_SCREENS = {
+  [TABS.OVERVIEW]: OverviewTab,
+  [TABS.APPLICANTS]: ApplicantsTab,
+};
 
 const JobDetailScreen: React.FC = () => {
-  const route = useRoute();
-  const { jobId } = route.params as { jobId: string };
   const styles = useStyles();
-  const [filterSheet, setFilterSheet] = useState<boolean>(false);
-  const [selectedTab, setSelectedTab] = useState('Name');
-  const [activeTab, setActiveTab] = useState<string>("Overview");
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-  const dispatch = useAppDispatch();
-  const { can } = usePermission();
-  const pagination = useAppSelector(selectApplicationsPagination);
-  const isFocused = useIsFocused();
-  const filters = useAppSelector(selectApplicationsFilters);
-  const jobs = useAppSelector(selectSelectedJob);
-  const jobsLoading = useAppSelector(selectJobsLoading);
+  const ctrl = useJobDetailsController();
 
-  useEffect(() => {
-    if (!jobId) return;
-    dispatch(getJobDetailRequestAction(jobId));
-  }, [jobId]);
-
-  useEffect(() => {
-    if (isFocused && activeTab === 'Applicants') {
-      dispatch(setApplicationsFilters({
-        name: "",
-        email: "",
-        appliedFor: "", // Fixed: was "AppliedFor" (wrong case)
-        contact: ""
-      }));
-    }
-  }, [isFocused, activeTab]);
-
-  const handleApplyFilters = () => {
-    setFilterSheet(false);
-  }
-
-  const handleSort = (item: string) => {
-    const isSortable = item === 'Applied' || item === 'Last Update';
-
-    if (isSortable) {
-      const isSameField = filters.sortBy === item;
-
-      dispatch(setSort({
-        sortBy: item,
-        sortDir: isSameField
-          ? (filters.sortDir === 'desc' ? 'asc' : 'desc')
-          : 'desc',
-      }));
-    } else {
-      setSelectedTab(item);
-      setFilterSheet(true)
-    }
-  };
-
-  const renderTabScreen = () => {
-    switch (activeTab) {
-      case "Overview":
-        return <OverviewTab />;
-      case "Applicants":
-        return <ApplicantsTab />;
-      default:
-        return null;
-    }
-  };
-  const handleClearAllFilters = () => {
-    dispatch(setApplicationsFilters({ name: "", email: "", appliedFor: "", contact: "" })); // Fixed: was "AppliedFor"
-    setFilterSheet(false);
-  }
-
-  const handleCopyUrl = () => {
-    if (!jobs?.encrypted) {
-      showToastMessage('Job Form URL not available', 'error');
-      return;
-    }
-
-    const url = `${organizationalOrigin(store.getState())}/app/candidate/${jobs.encrypted}/`;
-
-    Clipboard.setString(url);
-
-    showToastMessage('Job Form URL copied to clipboard', 'success');
-  };
-
-  const isPublished = Boolean(jobs?.published);
-  const canPublish = can(PERMISSIONS.PUBLISH_JOB);
-
-  const handlePublishToggle = () => {
-    if (!jobId || jobs == null || !canPublish || jobsLoading) return;
-    dispatch(updateJobRequestAction({ id: jobId, published: !jobs.published }));
-  };
+  const ActiveTabComponent = TAB_SCREENS[ctrl.activeTab] || null;
 
   return (
     <CustomSafeAreaView>
-      <Header backNavigation={true} onBack={goBack} />
-      {activeTab !== "Applicants" && <JobHeader />}
+      <AppHeader 
+        left={
+          <Pressable onPress={goBack} style={{ padding: 8, marginLeft: -8 }}>
+            <SvgXml xml={backButtonIcon} />
+          </Pressable>
+        } 
+      />
+      {ctrl.activeTab !== TABS.APPLICANTS && <JobHeader />}
+      
       <View style={styles.tabContainer}>
         <SlideAnimatedTab
-          tabs={tabs}
-          activeTab={activeTab}
-          onChangeTab={(label) => setActiveTab(label)}
+          tabs={TAB_OPTIONS}
+          activeTab={ctrl.activeTab}
+          onChangeTab={(label) => ctrl.setActiveTab(label as typeof TABS[keyof typeof TABS])}
         />
         <View style={styles.bottomBorder} />
       </View>
+      
       <View style={{ flex: 1 }}>
-        <View style={{ flex: 1 }}>
-          <Animated.View style={{ opacity: fadeAnim, flex: 1 }}>
-            {renderTabScreen()}
-          </Animated.View>
-        </View>
+        {ActiveTabComponent && <ActiveTabComponent />}
       </View>
+
       <SortingAndFilter
         title="Filters"
         options={applicantFiltersOption}
-        onPressFilter={() => setFilterSheet(true)}
-        setSelectedTab={setSelectedTab}
-        selectedTab={selectedTab}
-        onItemPress={(t) => { handleSort(t) }} />
+        onPressFilter={() => ctrl.setIsFilterSheetVisible(true)}
+        setSelectedTab={ctrl.setSelectedTab}
+        selectedTab={ctrl.selectedTab}
+        onItemPress={ctrl.handleSort} 
+      />
 
       <BottomSheet
-        visible={filterSheet}
-        onClose={() => setFilterSheet(false)}
-        onClearAll={() => handleClearAllFilters()}
+        visible={ctrl.isFilterSheetVisible}
+        onClose={() => ctrl.setIsFilterSheetVisible(false)}
+        onClearAll={ctrl.handleClearAllFilters}
         title="Filter by"
-        showHeadline hight={screenHeight * 0.8}
+        showHeadline 
+        hight={screenHeight * 0.8}
       >
-        <FilterSheetContent
-          onCancel={() => setFilterSheet(false)}
-          onApply={handleApplyFilters}
-          onClearAll={() => setFilterSheet(false)}
-          selectedTab={selectedTab}
-          setSelectedTab={setSelectedTab}
-          job_Id={""}
-          filtersConfig={applicantFiltersOption}
-          mode={"applicant"}
+        <ApplicantFilterSheet
+          onCancel={() => ctrl.setIsFilterSheetVisible(false)}
+          onApply={ctrl.handleApplyFilters}
+          onClearAll={ctrl.handleClearAllFilters}
+          selectedTab={ctrl.selectedTab}
+          setSelectedTab={ctrl.setSelectedTab}
         />
       </BottomSheet>
+
       <View>
         <FooterButtons
           leftButtonProps={{
-            children: isPublished ? "Unpublish" : "Publish",
+            children: ctrl.isPublished ? "Unpublish" : "Publish",
             variant: "contain",
             size: 44,
-            buttonColor: isPublished ? styles.leftButton.backgroundColor:"",
-            textColor: isPublished ? styles.leftButtonText.color:"",
-            borderColor: isPublished ? colors.error[300] : "",
+            buttonColor: ctrl.isPublished ? styles.leftButton.backgroundColor : undefined,
+            textColor: ctrl.isPublished ? styles.leftButtonText.color : undefined,
+            borderColor: ctrl.isPublished ? colors.error[300] : undefined,
             borderRadius: styles.leftButton.borderRadius,
-            borderWidth: isPublished? 1:0,
-            onPress: handlePublishToggle,
+            borderWidth: ctrl.isPublished ? 1 : 0,
+            onPress: ctrl.handlePublishToggle,
             startIcon: (
               <Icon
                 size={20}
-                name={isPublished ? "close" : "check"}
+                name={ctrl.isPublished ? "close" : "check"}
                 iconFamily={"AntDesign"}
-                color={isPublished ? styles.iconRed.color :colors.base.white}
+                color={ctrl.isPublished ? styles.iconRed.color : colors.base.white}
               />
             ),
-            disabled: !canPublish || jobsLoading || !jobs,
+            disabled: !ctrl.canPublish || ctrl.jobsLoading || !ctrl.selectedJob,
           }}
           rightButtonProps={{
             children: "Copy URL",
@@ -202,7 +115,7 @@ const JobDetailScreen: React.FC = () => {
             borderColor: styles.rightButton.borderColor,
             borderWidth: 1,
             borderRadius: styles.rightButton.borderRadius,
-            onPress: handleCopyUrl,
+            onPress: ctrl.handleCopyUrl,
             startIcon: <SvgXml xml={copyIcon} />,
           }}
         />

@@ -52,5 +52,22 @@ export const useStyles = () => {
             justifyContent: 'center',
             alignItems: 'center',
         },
+        gridLines: {
+            marginTop: 16,
+            height: 164,
+            justifyContent: 'flex-end',
+            position: 'relative'
+        },
+        barLabels: {
+            flexDirection: 'row',
+            justifyContent: 'space-around',
+            alignItems: 'flex-end',
+            paddingHorizontal: 20,
+        },
+        barItem: {
+            alignItems: 'center',
+            gap: 8,
+            paddingHorizontal: 10,
+        },
     });
 };

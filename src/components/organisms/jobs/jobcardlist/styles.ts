@@ -27,12 +27,19 @@ export const useStyles = () => {
         // unpublished: { backgroundColor: colors.common.white },
     
         // --- Empty Screen Styles ---
+        metricsContainer: { flexDirection: "row", gap: 12 },
+        metricRow: { flexDirection: "row", gap: 4 },
         emptyContainer: {
             flex: 1,
-            alignItems: 'center',
+            alignSelf: 'center',
+            alignContent: 'center',
             justifyContent: 'center',
-            paddingHorizontal: 20,
-            marginTop: -40,
+        },
+        emptyContent: {
+            alignItems: 'center',
+            paddingHorizontal: 16,
+            zIndex: 10,
+            marginBottom: 10,
         },
         emptyTitle: {
             fontSize: 20,
