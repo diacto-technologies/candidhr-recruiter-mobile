@@ -71,7 +71,7 @@ const Dashboard = () => {
                                 ) : (
                                     <Pressable onPress={() => setOpenSearch(true)}>
                                         <Typography variant="semiBoldTxtxl" numberOfLines={1}>
-                                            {"Dashboard"}
+                                        {"Dashboard"}
                                         </Typography>
                                     </Pressable>
                                 )

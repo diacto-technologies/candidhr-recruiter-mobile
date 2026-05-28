@@ -82,22 +82,17 @@ const BottomSheet = ({
             onPress={() => isClose()}
           />
           <View
-            // behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={[styles.sheetContainer, {height: SHEET_HEIGHT, marginBottom: insetsTop+6 }]}
+            style={[styles.sheetContainer, {height: SHEET_HEIGHT, paddingBottom: insetsTop > 0 ? 20 : 0 }]}
           >
             <View style={{
-              marginTop: 5,
-              borderTopWidth: 2,
-              borderLeftWidth: 2,
-              borderRightWidth: 2,
-              borderTopRightRadius: 16,
-              borderTopLeftRadius: 16,
-              paddingTop: 10,
-              marginHorizontal: 5,
-              borderColor: colors.mainColors.borderColor,
-              gap:16
+              paddingTop: 12,
+              paddingHorizontal: 16,
+              gap: 16,
+              paddingBottom: 16,
+              borderBottomWidth: 1,
+              borderBottomColor: colors.gray[200],
             }}>
-              <Pressable style={{ width: 40, borderWidth: 2, borderRadius: 8, borderColor: '#E9EAEB', alignSelf: 'center' }} onPress={onClose}></Pressable>
+              <View style={styles.dragHandle} />
               <View style={styles.header}>
                 <View style={styles.touchableMask}>
                   {title && showHeadline ? (

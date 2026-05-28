@@ -5,14 +5,6 @@ export const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexShrink: 1,
-    borderLeftWidth: 2,
-    borderRightWidth: 2,
-    borderBottomWidth: 2,
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
-    borderColor: colors.mainColors.borderColor,
-    marginHorizontal: 5,
-    marginBottom: 5,
   },
   filterListContainer: {
     marginVertical: 16,
@@ -78,7 +70,5 @@ export const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: '#E5E5E5',
     columnGap: 12,
-    borderBottomRightRadius: 16,
-    borderBottomLeftRadius: 16,
   },
 });
