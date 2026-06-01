@@ -75,10 +75,17 @@ const SortByPanel: React.FC<SortByPanelProps> = ({
                 style={[styles.radioRow, isSelected && styles.radioRowSelected]}
                 activeOpacity={0.7}
               >
-                <Typography variant="P1M" color={colors.gray[800]}>
-                  {option.label}
-                </Typography>
-                <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
+                {/* Text */}
+                <View style={{ flex: 1, paddingRight: 10 }}>
+                  <Typography
+                    variant="P1M"
+                    color={colors.gray[800]}>
+                    {option.label}
+                  </Typography>
+                </View>
+
+                {/* Radio */}
+                <View style={styles.radioOuter}>
                   {isSelected && <View style={styles.radioInner} />}
                 </View>
               </TouchableOpacity>
@@ -127,7 +134,7 @@ const styles = StyleSheet.create({
   radioRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     paddingVertical: 14,
     paddingHorizontal: 12,
     borderRadius: 8,

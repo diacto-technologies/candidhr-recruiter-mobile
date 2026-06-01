@@ -194,8 +194,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     maxHeight: 260,
     overflow: 'hidden',
-
-    // ✅ IMPORTANT
     zIndex: 9999,
     elevation: 10,
 

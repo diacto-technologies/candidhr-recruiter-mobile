@@ -82,15 +82,20 @@ const BottomSheet = ({
             onPress={() => isClose()}
           />
           <View
-            style={[styles.sheetContainer, {height: SHEET_HEIGHT, paddingBottom: insetsTop > 0 ? 20 : 0 }]}
+            style={[styles.sheetContainer, {height: SHEET_HEIGHT, paddingBottom: insetsTop > 0 ? 6 : 0 }]}
           >
             <View style={{
               paddingTop: 12,
-              paddingHorizontal: 16,
               gap: 16,
               paddingBottom: 16,
-              borderBottomWidth: 1,
-              borderBottomColor: colors.gray[200],
+              borderLeftWidth:2,
+              borderRightWidth:2,
+              borderTopWidth:2,
+              marginHorizontal:6,
+              marginTop:6,
+              borderTopRightRadius:16,
+              borderTopLeftRadius:16,
+              borderColor:colors.gray[200]
             }}>
               <View style={styles.dragHandle} />
               <View style={styles.header}>

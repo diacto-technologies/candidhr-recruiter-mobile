@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { colors } from '../../../theme/colors';
+import { shadowStyles } from '../../../theme/shadowcolor';
 export const useStyles = () => {
   return StyleSheet.create({
     backdrop: {
@@ -46,6 +47,9 @@ export const useStyles = () => {
       backgroundColor: colors.common.white,
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
+      borderWidth:1,
+      borderRadius:20,
+      borderColor:colors.gray[200],
       overflow: 'hidden',
     },
     topSection: {
@@ -76,6 +80,6 @@ export const useStyles = () => {
       backgroundColor: '#00000077',
       flex: 1,
     },
-    closeIcon: { flex: 1, backgroundColor: 'rgba(0,0,0,0.1)' },
+    closeIcon: { flex: 1, backgroundColor: 'rgba(0,0,0,0.1)', paddingHorizontal:6, paddingBottom:16, ...shadowStyles['3xl']},
   });
 };
