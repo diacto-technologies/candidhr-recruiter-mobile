@@ -5,9 +5,16 @@ export const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexShrink: 1,
+    marginHorizontal:6,
+    borderLeftWidth:2,
+    borderRightWidth:2,
+    borderBottomWidth:2,
+    borderBottomRightRadius:16,
+    borderBottomLeftRadius:16,
+    borderColor:colors.gray[200]
   },
   filterListContainer: {
-    marginVertical: 16,
+    //marginVertical: 16,
   },
   filterListContent: {
     paddingHorizontal: 16,
