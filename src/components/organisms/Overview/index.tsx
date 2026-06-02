@@ -114,9 +114,11 @@ const OverviewCard = () => {
       <Typography variant="semiBoldTxtlg">Overview</Typography>
       {/* Phone Number */}
       <View style={styles.videoBox}>
-        <VideoPlayerBox
-          source={data.introductionVideo}
-        />
+        {data.introductionVideo &&
+          <VideoPlayerBox
+            source={data.introductionVideo}
+          />
+        }
       </View>
       <View style={{ gap: 12 }}>
         <InfoRow

@@ -12,7 +12,7 @@ import { getStatusColor } from '../applicantlist/helper';
 
 export interface StatusDropdownProps {
   label: string;
-  options: Array<{ id: string; name: string;[key: string]: any }>;
+  options: Array<{ id: string; name: string; [key: string]: any }>;
   labelKey?: string;
   valueKey?: string;
   setValue?: string | null;
@@ -33,27 +33,26 @@ export interface StatusDropdownProps {
 
 const STATUS_COLOR_MAP: Record<string, string> = {
   approved: colors.success[500],
-  "not approved": colors.error[500],
+  'not approved': colors.error[500],
   rejected: colors.error[500],
   shortlisted: colors.success[500],
-  "on hold": colors.warning[500],
+  'on hold': colors.warning[500],
   pending: colors.warning[500],
-  "approval pending": colors.warning[500],
+  'approval pending': colors.warning[500],
 };
 
 /* ---------- STATUS LABEL MAP ---------- */
 
 const STATUS_LABEL_MAP: Record<string, string> = {
-  pending: "Approval Pending",
-  under_review: "Approval Pending",
-  approved: "Approved",
-  not_approved: "Not Approved",
+  pending: 'Approval Pending',
+  under_review: 'Approval Pending',
+  approved: 'Approved',
+  not_approved: 'Not Approved',
 };
 
 /* ---------- HELPERS ---------- */
 
-const normalizeStatus = (value?: string) =>
-  value ? value.replace(/_/g, " ").toLowerCase() : "";
+const normalizeStatus = (value?: string) => (value ? value.replace(/_/g, ' ').toLowerCase() : '');
 
 const getDotColor = (status?: string) => {
   const normalized = normalizeStatus(status);
@@ -75,7 +74,6 @@ const StatusDropdown = ({
   openModalOnSelect = false,
   changeStatusModalProps,
 }: StatusDropdownProps) => {
-
   const [value, setValueInternal] = useState<any>(null);
   const [items, setItems] = useState<any[]>([]);
   const [isFocused, setIsFocused] = useState(false);
@@ -85,7 +83,7 @@ const StatusDropdown = ({
   /* ---------- MAP OPTIONS ---------- */
 
   useEffect(() => {
-    const mapped = options.map((item) => {
+    const mapped = options.map(item => {
       const name = item[labelKey] || '';
 
       return {
@@ -114,18 +112,21 @@ const StatusDropdown = ({
   const displayLabel = selectedItem
     ? selectedItem.name
     : value
-      ? STATUS_LABEL_MAP[value] ||
+    ? STATUS_LABEL_MAP[value] ||
       String(value)
         .replace(/_/g, ' ')
-        .replace(/\b\w/g, (c) => c.toUpperCase())
-      : null;
+        .replace(/\b\w/g, c => c.toUpperCase())
+    : null;
 
-  const dropdownStyle = compact
-    ? [styles.dropdown, styles.dropdownCompact]
-    : styles.dropdown;
+  const dropdownStyle = compact ? [styles.dropdown, styles.dropdownCompact] : styles.dropdown;
 
   const containerStyle = compact
-    ? [styles.container, styles.containerCompact, isFocused && styles.containerFocused, customContainerStyle]
+    ? [
+        styles.container,
+        styles.containerCompact,
+        isFocused && styles.containerFocused,
+        customContainerStyle,
+      ]
     : [styles.container, isFocused && styles.containerFocused, customContainerStyle];
 
   const displayStyle = compact
@@ -139,10 +140,10 @@ const StatusDropdown = ({
     const modalProps = changeStatusModalProps ?? {
       applicantName: undefined,
       currentStatus: value ?? undefined,
-      newStatusOptions: items.map((i) => ({ id: i.value, name: i.name })),
+      newStatusOptions: items.map(i => ({ id: i.value, name: i.name })),
       onUpdateStatus: (newStatusId: string) => {
         setValueInternal(newStatusId);
-        const orig = items.find((i) => i.value === newStatusId)?.original;
+        const orig = items.find(i => i.value === newStatusId)?.original;
         if (orig) onSelect?.(orig);
       },
     };
@@ -152,15 +153,13 @@ const StatusDropdown = ({
         <Pressable
           style={containerStyle}
           onPress={() => !disableDropdown && setChangeStatusModalVisible(true)}
-          disabled={disableDropdown}
-        >
+          disabled={disableDropdown}>
           <View style={styles.selectedValueContainer}>
             <View style={[dropdownStyle, { flexDirection: 'row', alignItems: 'center' }]}>
               <View style={{ marginRight: compact ? 6 : 8 }}>
                 <Typography
                   variant={compact ? 'semiBoldTxtsm' : 'semiBoldTxtmd'}
-                  color={colors.gray[900]}
-                >
+                  color={colors.gray[900]}>
                   {label}
                 </Typography>
               </View>
@@ -172,16 +171,12 @@ const StatusDropdown = ({
                     style={[
                       styles.statusDot,
                       compact && styles.statusDotCompact,
-                      { backgroundColor: getStatusColor(displayLabel), }
+                      { backgroundColor: getStatusColor(displayLabel) },
                     ]}
                   />
                   <Text
-                    style={[
-                      styles.selectedTextStyle,
-                      compact && styles.selectedTextStyleCompact
-                    ]}
-                    numberOfLines={1}
-                  >
+                    style={[styles.selectedTextStyle, compact && styles.selectedTextStyleCompact]}
+                    numberOfLines={1}>
                     {displayLabel}
                   </Text>
                 </View>
@@ -191,12 +186,8 @@ const StatusDropdown = ({
             ) : (
               <View style={displayStyle}>
                 <Text
-                  style={[
-                    styles.placeholderStyle,
-                    compact && styles.placeholderStyleCompact
-                  ]}
-                  numberOfLines={1}
-                >
+                  style={[styles.placeholderStyle, compact && styles.placeholderStyleCompact]}
+                  numberOfLines={1}>
                   {label}
                 </Text>
                 <View style={{ flex: 1 }} />
@@ -205,11 +196,13 @@ const StatusDropdown = ({
             )}
           </View>
         </Pressable>
-        <ChangeStatusModal
-          visible={changeStatusModalVisible}
-          onClose={() => setChangeStatusModalVisible(false)}
-          {...modalProps}
-        />
+        {changeStatusModalVisible && (
+          <ChangeStatusModal
+            visible={changeStatusModalVisible}
+            onClose={() => setChangeStatusModalVisible(false)}
+            {...modalProps}
+          />
+        )}
         {error && <Typography style={styles.error}>{error}</Typography>}
       </View>
     );
@@ -217,40 +210,36 @@ const StatusDropdown = ({
 
   return (
     <View style={[styles.wrapper, compact && styles.wrapperCompact]}>
-
       <View style={containerStyle}>
         <View style={styles.selectedValueContainer}>
-
           <ElementDropdown
             data={items}
             value={value}
             labelField="label"
             valueField="value"
-            placeholder={""}
+            placeholder={''}
             disable={disableDropdown}
             style={dropdownStyle}
             containerStyle={styles.optionsContainer}
             selectedTextStyle={styles.selectedTextStyleHidden}
             placeholderStyle={compact ? styles.placeholderStyleHidden : styles.placeholderStyle}
             activeColor={colors.brand[50]}
-            dropdownPosition='bottom'
-
+            dropdownPosition="bottom"
             renderItem={(item, selected) => (
               <View style={[styles.optionItem, selected && styles.selectedOptionItem]}>
                 <View style={styles.optionTextContainer}>
                   <View style={styles.statusBadge}>
-
                     <View
-                      style={[
-                        styles.statusDot,
-                        { backgroundColor: getStatusColor(item.name) }
-                      ]}
+                      style={[styles.statusDot, { backgroundColor: getStatusColor(item.name) }]}
                     />
 
-                    <Typography variant="mediumTxtmd" color={colors.gray[900]} ellipsizeMode='tail' numberOfLines={2}>
+                    <Typography
+                      variant="mediumTxtmd"
+                      color={colors.gray[900]}
+                      ellipsizeMode="tail"
+                      numberOfLines={2}>
                       {item.name}
                     </Typography>
-
                   </View>
                 </View>
 
@@ -264,9 +253,7 @@ const StatusDropdown = ({
                 )}
               </View>
             )}
-
             flatListProps={{ nestedScrollEnabled: true }}
-
             onChange={item => {
               if (openModalOnSelect && changeStatusModalProps) {
                 setPendingSelectedValue(item.value);
@@ -276,16 +263,11 @@ const StatusDropdown = ({
                 onSelect?.(item.original);
               }
             }}
-
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
-
             renderLeftIcon={() => (
               <View style={{ marginRight: 8, marginLeft: 4 }}>
-                <Typography
-                  variant={'semiBoldTxtsm'}
-                  color={colors.gray[900]}
-                >
+                <Typography variant={'semiBoldTxtsm'} color={colors.gray[900]}>
                   {label}
                 </Typography>
               </View>
@@ -296,7 +278,7 @@ const StatusDropdown = ({
                 size={20}
                 color={colors.gray[500]}
                 style={{
-                  marginRight:8,
+                  marginRight: 8,
                   alignSelf: 'center',
                 }}
               />
@@ -308,45 +290,34 @@ const StatusDropdown = ({
           {displayLabel ? (
             <View style={displayStyle}>
               <View style={styles.statusBadge}>
-
                 <View
                   style={[
                     styles.statusDot,
                     compact && styles.statusDotCompact,
-                    { backgroundColor: getStatusColor(displayLabel) }
+                    { backgroundColor: getStatusColor(displayLabel) },
                   ]}
                 />
 
                 <Text
-                  style={[
-                    styles.selectedTextStyle,
-                    compact && styles.selectedTextStyleCompact
-                  ]}
-                  numberOfLines={1}
-                >
+                  style={[styles.selectedTextStyle, compact && styles.selectedTextStyleCompact]}
+                  numberOfLines={1}>
                   {displayLabel}
                 </Text>
-
               </View>
             </View>
           ) : (
             <View style={displayStyle}>
               <Text
-                style={[
-                  styles.placeholderStyle,
-                  compact && styles.placeholderStyleCompact
-                ]}
-                numberOfLines={1}
-              >
+                style={[styles.placeholderStyle, compact && styles.placeholderStyleCompact]}
+                numberOfLines={1}>
                 {label}
               </Text>
             </View>
           )}
-
         </View>
       </View>
 
-      {openModalOnSelect && changeStatusModalProps ? (
+      {changeStatusModalVisible && openModalOnSelect && changeStatusModalProps ? (
         <ChangeStatusModal
           visible={changeStatusModalVisible}
           onClose={() => {
@@ -359,7 +330,6 @@ const StatusDropdown = ({
       ) : null}
 
       {error && <Typography style={styles.error}>{error}</Typography>}
-
     </View>
   );
 };

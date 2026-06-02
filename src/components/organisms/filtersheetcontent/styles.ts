@@ -5,13 +5,13 @@ export const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexShrink: 1,
-    marginHorizontal:6,
-    borderLeftWidth:2,
-    borderRightWidth:2,
-    borderBottomWidth:2,
-    borderBottomRightRadius:16,
-    borderBottomLeftRadius:16,
-    borderColor:colors.gray[200]
+    marginHorizontal: 6,
+    borderLeftWidth: 2,
+    borderRightWidth: 2,
+    borderBottomWidth: 2,
+    borderBottomRightRadius: 16,
+    borderBottomLeftRadius: 16,
+    borderColor: colors.gray[200],
   },
   filterListContainer: {
     //marginVertical: 16,
@@ -30,6 +30,7 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.gray[200],
     alignItems: 'center',
+    marginBottom: 10,
   },
   content: {
     flex: 1,
@@ -51,7 +52,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 18,
     marginBottom: 4,
-    position: 'relative'
+    position: 'relative',
   },
   firstTabItem: {
     borderTopRightRadius: 20,
