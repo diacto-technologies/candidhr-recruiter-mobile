@@ -439,18 +439,18 @@ export const textvariant = {
 // ---------------- COMPONENT ----------------
 
 const Typography = (props: TypographyProps) => {
-  const variantStyle = textvariant[props.variant || 'P1'];
+  const variantStyle = textvariant[props.variant || 'P1'] as any;
 
   return (
     <Fragment>
       <Text
       allowFontScaling={false}
         {...props}
-        style={{
-          ...variantStyle,
-          ...props.style,
-          color: props.color || colors.gray['900'],
-        }}
+        style={[
+          variantStyle,
+          props.style,
+          { color: props.color || colors.gray['900'] }
+        ]}
       >
         {props.children}
       </Text>

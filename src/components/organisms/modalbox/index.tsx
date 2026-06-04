@@ -80,7 +80,18 @@ const ModalBox = (props: IModalBox) => {
 
   return (
     <Fragment>
-      <Modal visible={props.visible} transparent animationType="fade">
+      <Modal
+        visible={props.visible}
+        transparent
+        animationType="fade"
+        supportedOrientations={[
+          'portrait',
+          'portrait-upside-down',
+          'landscape',
+          'landscape-left',
+          'landscape-right',
+        ]}
+      >
         <View style={styles.backdrop}>
           <View
             style={[

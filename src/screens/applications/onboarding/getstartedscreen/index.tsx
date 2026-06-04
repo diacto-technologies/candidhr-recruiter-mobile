@@ -24,7 +24,7 @@ const GetStartedScreen = () => {
       <ImageBackground
         source={require("../../../../assets/images/welcomescr.png")}
         style={styles.bg}
-        resizeMode="cover"
+        resizeMode="stretch"
       >
         {/* HEADER LOGO */}
         <View style={[styles.headerLogo,{marginTop: insets.top+10,}]}>

@@ -22,16 +22,7 @@ import { playVideoIcon } from "../../../assets/svg/playvideoIcon";
 import { muteVolumeIcon } from "../../../assets/svg/mutevoulme";
 import { colors } from "../../../theme/colors";
 import { styles } from "./styles";
-
-interface VideoPlayerBoxProps {
-  source: string;
-  onProgress?: (data: {
-    currentTime: number;
-    playableDuration: number;
-  }) => void;
-  fullscreen?: boolean;
-  resizeMode?: "contain" | "cover" | "stretch";
-}
+import { VideoPlayerBoxProps } from "./videoplayer.d";
 
 const formatTime = (seconds?: number) => {
   if (!isFinite(seconds as number) || seconds! < 0) {
@@ -66,10 +57,13 @@ export default function VideoPlayerBox({
   const togglePlayPause = () => setIsPaused((prev) => !prev);
   const toggleMute = () => setIsMuted((prev) => !prev);
 
+  const wasLockedRef = useRef(false);
+
   const enterFullscreen = () => {
     if (externalFullscreen === undefined) {
       setInternalFullscreen(true);
     }
+    wasLockedRef.current = true;
     Orientation.lockToLandscape();
     // Status bar will be handled by Modal's presentationStyle on iOS
     // For Android, we use statusBarTranslucent prop on Modal
@@ -79,6 +73,7 @@ export default function VideoPlayerBox({
     if (externalFullscreen === undefined) {
       setInternalFullscreen(false);
     }
+    wasLockedRef.current = false;
     Orientation.lockToPortrait();
   };
 
@@ -88,7 +83,9 @@ export default function VideoPlayerBox({
 
   useEffect(() => {
     return () => {
-      Orientation.lockToPortrait();
+      if (wasLockedRef.current) {
+        Orientation.lockToPortrait();
+      }
     };
   }, []);
 
@@ -112,11 +109,7 @@ export default function VideoPlayerBox({
   const videoContent = (
     <View style={[styles.container, fullscreen && styles.fullscreen]}>
       {!hasSource && (
-        <View style={styles.noVideoBox}>
-          <Text style={styles.noVideoText}>
-            No introduction video uploaded by this candidate.
-          </Text>
-        </View>
+        <></>
       )}
 
       {hasSource && (

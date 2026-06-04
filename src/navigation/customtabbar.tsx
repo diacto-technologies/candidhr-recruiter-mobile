@@ -22,6 +22,7 @@ import { clearCredentials, logoutSuccess, setOrigin } from "../features/auth/sli
 import { resetAndNavigate } from "../utils/navigationUtils";
 import { removeTokens } from "../utils/tokenUtils";
 import { persistor } from "../store";
+import { shadowStyles } from "../theme/shadowcolor";
 
 const CustomTabBar: FC<BottomTabBarProps> = (props) => {
   const bottom = useSafeAreaInsets();
@@ -108,11 +109,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
-    shadowColor: '#0A0D12',
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: -3 },
-    shadowRadius: 10,
-    elevation: 6,
+    //shadowColor: '#0A0D12',
+    //shadowOpacity: 0.05,
+    //shadowOffset: { width: 0, height: -3 },
+    //shadowRadius: 10,
+    //elevation: 6,
+    ...shadowStyles.shadow_lg
   },
 
   tabRow: {

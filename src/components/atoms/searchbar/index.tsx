@@ -1,38 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import {
-  View,
-  TextInput,
-  StyleSheet,
-  Text,
-  TextInputProps,
-  FlatList,
-  Pressable,
-} from 'react-native';
+import { View, TextInput, Text, FlatList, Pressable } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
 import { searchIcon } from '../../../assets/svg/search';
 import { clearIcon } from '../../../assets/svg/clear';
-
-type DropItem = {
-  id: string;
-  title: string;
-};
-
-interface SearchBarProps extends TextInputProps {
-  value: string;
-  onChangeText: (text: string) => void;
-  placeholder?: string;
-
-  // ✅ NEW
-  dropdown?: boolean;
-  data?: DropItem[];
-  onSelect?: (item: DropItem) => void;
-  onEndReached?: () => void;
-  loading?: boolean;
-  onClear?: () => void;
-  /** When true, the dropdown list is NOT rendered internally (parent renders it externally). */
-  externalDropdown?: boolean;
-}
+import { SearchBarProps, DropItem } from './searchbar.d';
+import { useStyles } from './styles';
 
 const SearchBar: React.FC<SearchBarProps> = ({
   value,
@@ -48,6 +21,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   ...rest
 }) => {
   const [open, setOpen] = useState(false);
+  const styles = useStyles();
 
   // ✅ Use API-filtered data directly (no local filtering)
   const filteredData = useMemo(() => data, [data]);
@@ -71,12 +45,12 @@ const SearchBar: React.FC<SearchBarProps> = ({
   return (
     <View style={styles.wrapper}>
       {/* ✅ Input */}
-      <View style={[styles.container]}>
+      <View style={styles.container}>
         <SvgXml xml={searchIcon} style={styles.icon} />
 
         {/* Fake placeholder */}
         {!value && (
-          <Text  numberOfLines={1} ellipsizeMode="tail" style={styles.placeholder}>
+          <Text numberOfLines={1} ellipsizeMode="tail" style={styles.placeholder}>
             {placeholder}
           </Text>
         )}
@@ -119,15 +93,14 @@ const SearchBar: React.FC<SearchBarProps> = ({
             onEndReachedThreshold={0.6}                 // ✅ important
             ListFooterComponent={() =>
               loading ? (
-                <View style={{ padding: 12 }}>
-                  <Text style={{ textAlign: "center", color: colors.gray[500] }}>
+                <View style={styles.footerLoader}>
+                  <Text style={styles.footerLoaderText}>
                     Loading...
                   </Text>
                 </View>
               ) : null
             }
           />
-
         </View>
       )}
     </View>
@@ -136,88 +109,3 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
 export default SearchBar;
 
-const styles = StyleSheet.create({
-  wrapper: {
-    width: '100%',
-    position: 'relative',
-    zIndex: 9999,
-    elevation: 9999,
-  },
-
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.common.white,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.gray[300],
-    paddingHorizontal: 14,
-    height: 44,
-    shadowColor: '#0A0D12',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-
-  icon: {
-    marginRight: 8,
-  },
-
-  input: {
-    flex: 1,
-    fontSize: 18,
-    color: colors.gray[500],
-  },
-
-  clearButton: {
-    marginLeft: 8,
-    padding: 4,
-  },
-
-  placeholder: {
-    position: 'absolute',
-    left: 46,
-    right: 10,
-    color: '#A3A3A7',
-    fontSize: 18,
-  },
-
-  dropdownBox: {
-    position: 'absolute',
-    top: 50,
-    left: 0,
-    right: 0,
-    backgroundColor: colors.base.white,
-    borderWidth: 1,
-    borderColor: colors.gray[300],
-    borderRadius: 10,
-    maxHeight: 260,
-    overflow: 'hidden',
-    zIndex: 9999,
-    elevation: 10,
-
-    shadowColor: '#0A0D12',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-  },
-
-  item: {
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-  },
-
-  itemText: {
-    fontSize: 16,
-    color: colors.gray[900],
-  },
-
-  emptyBox: {
-    padding: 16,
-  },
-
-  emptyText: {
-    color: colors.gray[500],
-  },
-});

@@ -1,7 +1,7 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, ViewStyle } from 'react-native';
 import { colors } from '../../../theme/colors';
 
-export const useStyles = () => {
+export const useStyles = (positionStyle?: ViewStyle) => {
     return StyleSheet.create({
         overlay: {
             flex: 1,
@@ -23,7 +23,8 @@ export const useStyles = () => {
             // Combine smaller subtle shadow
             elevation:6, // Android
             borderWidth:1,
-            borderColor:colors.mainColors.borderColor
+            borderColor:colors.mainColors.borderColor,
+            ...positionStyle,
           },
         
           dropdownItem: {

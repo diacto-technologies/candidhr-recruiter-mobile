@@ -1,13 +1,15 @@
 import React from 'react';
-import { View, StyleSheet, Image, ImageBackground, ViewStyle } from 'react-native';
-type Props = {
-  children: React.ReactNode;
-  bgStyle?: ViewStyle
-  containerStyle?: ViewStyle;
-};
+import { View, ImageBackground } from 'react-native';
+import { BackgroundPatternProps } from './backgroundpattern';
+import { useStyles } from './styles';
 
-const BackgroundPattern: React.FC<Props> = ({ children, bgStyle,
-  containerStyle}) => {
+const BackgroundPattern: React.FC<BackgroundPatternProps> = ({
+  children,
+  bgStyle,
+  containerStyle,
+}) => {
+  const styles = useStyles();
+
   return (
     <View style={[styles.container, containerStyle]}>
       {/* Background Image */}
@@ -25,22 +27,3 @@ const BackgroundPattern: React.FC<Props> = ({ children, bgStyle,
 
 export default BackgroundPattern;
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    width: '100%',
-  },
-  bg: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: '100%',
-    height: '60%',
-    zIndex:10
-  },
-  content: {
-    flex: 1,
-  },
-});

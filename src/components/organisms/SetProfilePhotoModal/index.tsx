@@ -13,14 +13,7 @@ import { useStyles } from './styles';
 import { closeIcon } from '../../../assets/svg/closeicon';
 import { SvgXml } from 'react-native-svg';
 
-export interface SetProfilePhotoModalProps {
-  visible: boolean;
-  onClose: () => void;
-  /** iOS: fired after modal dismiss animation completes — open native picker here. */
-  onDismiss?: () => void;
-  onSelectGallery: () => void;
-  onSelectCamera: () => void;
-}
+import { SetProfilePhotoModalProps } from './setprofilephotomodal.d';
 
 export const SetProfilePhotoModal: React.FC<SetProfilePhotoModalProps> = ({
   visible,
@@ -52,6 +45,13 @@ export const SetProfilePhotoModal: React.FC<SetProfilePhotoModalProps> = ({
       presentationStyle="overFullScreen"
       onRequestClose={handleClose}
       onDismiss={onDismiss}
+      supportedOrientations={[
+        'portrait',
+        'portrait-upside-down',
+        'landscape',
+        'landscape-left',
+        'landscape-right',
+      ]}
     >
       <KeyboardAvoidingView
         style={styles.modalBackdrop}

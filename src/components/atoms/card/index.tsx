@@ -1,20 +1,7 @@
 import React from "react";
-import {
-  View,
-  StyleSheet,
-  ViewStyle,
-  TouchableOpacity,
-  GestureResponderEvent,
-  Pressable,
-} from "react-native";
+import { View, Pressable } from "react-native";
 import { useStyles } from "./styles";
-
-interface CardProps {
-  children?: React.ReactNode;
-  style?: ViewStyle | ViewStyle[];
-  onPress?: (event: GestureResponderEvent) => void;
-  disabled?: boolean;
-}
+import { CardProps } from "./card";
 
 const Card = ({ children, style, onPress, disabled }: CardProps) => {
   const styles = useStyles();
@@ -35,3 +22,4 @@ const Card = ({ children, style, onPress, disabled }: CardProps) => {
 };
 
 export default Card;
+

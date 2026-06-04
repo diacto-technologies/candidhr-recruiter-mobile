@@ -1,14 +1,9 @@
 import React from "react";
-import { View, Image, StyleSheet } from "react-native";
+import { View, Image } from "react-native";
 import Typography from "../typography";
 import { colors } from "../../../theme/colors";
-interface AvatarProps {
-  imageUrl?: string;
-  name?: string;
-  size?: number;
-  borderWidth?: number;
-  borderColor?: string;
-}
+import { AvatarProps } from "./avatar";
+import { useStyles } from "./styles";
 
 export const CustomAvatar: React.FC<AvatarProps> = ({
   imageUrl,
@@ -18,28 +13,14 @@ export const CustomAvatar: React.FC<AvatarProps> = ({
   borderColor = "rgba(0,0,0,0.08)",
 }) => {
   const initial = (name?.trim()?.[0] ?? "?").toUpperCase();
+  const styles = useStyles(size, borderWidth, borderColor);
 
   return (
-    <View
-      style={[
-        styles.wrapper,
-        {
-          height: size,
-          width: size,
-          borderRadius: size / 2,
-          borderWidth,
-          borderColor,
-        },
-      ]}
-    >
+    <View style={styles.wrapper}>
       {imageUrl ? (
         <Image
           source={{ uri: imageUrl }}
-          style={{
-            height: size,
-            width: size,
-            borderRadius: size / 2,
-          }}
+          style={styles.image}
           resizeMode="cover"
         />
       ) : (
@@ -50,11 +31,3 @@ export const CustomAvatar: React.FC<AvatarProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  wrapper: {
-    backgroundColor: colors.gray[100],
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});

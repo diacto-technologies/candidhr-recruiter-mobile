@@ -9,9 +9,5 @@ export interface IBottomsheet {
   subTitle?: string;
   showHeadline?: true | false;
   hight:any;
-  /**
-   * Ratio of screen height to cap the bottom sheet.
-   * Example: 0.8 => max height = screenHeight * 0.8
-   */
   sheetHeightRatio?: number;
 }

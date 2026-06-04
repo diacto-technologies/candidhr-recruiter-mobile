@@ -6,20 +6,9 @@ import { SvgXml } from 'react-native-svg';
 import { filterIcon } from '../../../assets/svg/filter';
 import { useStyles } from './styles';
 
-interface Props {
-  title: string;
-  options: string[];
-  onPressFilter: () => void;
-  selectedTab: string;
-  setSelectedTab?: (tab: string) => void;
-  onItemPress: (item: string) => void;
-  containerStyle?: any;
-  filterButtonStyle?: any;
-  chipStyle?: any;
-  activeChipStyle?: any;
-}
+import { SortingAndFilterProps } from './sortingandfilter.d';
 
-const SortingAndFilter: FC<Props> = ({
+const SortingAndFilter: FC<SortingAndFilterProps> = ({
   title,
   options,
   onPressFilter,

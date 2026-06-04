@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import Typography from '../../atoms/typography';
 import { colors } from '../../../theme/colors';
+import { shadowStyles } from '../../../theme/shadowcolor';
 
 interface AppHeaderProps {
   left?: React.ReactNode;
@@ -41,6 +42,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.base.white,
     paddingHorizontal: 16,
     borderBottomColor: colors.gray['200'],
+     ...shadowStyles.shadow_xs
   },
   leftSlot: {
     flexDirection: 'row',

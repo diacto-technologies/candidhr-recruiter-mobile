@@ -1,32 +1,40 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View } from "react-native";
 import { SvgXml } from "react-native-svg";
 import Typography from "../../../components/atoms/typography";
 import Ring from "../../../components/atoms/ring";
 import { colors } from "../../../theme/colors";
 import { checkMarkIcon } from "../../../assets/svg/checkmark";
-import { shadowStyles } from "../../../theme/shadowcolor";
-interface TimelineItem {
-  title: string;
-  date?: string;
-  status: "completed" | "current" | "upcoming";
-}
+import { TimelineCardProps } from "./timelinecard.d";
+import { useStyles } from "./styles";
 
-interface Props {
-  progress: number;
-  data: TimelineItem[];
-  title:string;
-}
+const getTitleColor = (status: "completed" | "current" | "upcoming") => {
+  if (status === "current") return colors.brand[700];
+  return colors.gray[700];
+};
 
-const CustomTimeline = ({ progress, data,title="Timeline" }: Props) => {
+const getDateColor = (status: "completed" | "current" | "upcoming") => {
+  if (status === "upcoming") return colors.gray[400];
+  return colors.gray[600];
+};
+
+const CustomTimeline: React.FC<TimelineCardProps> = ({
+  progress,
+  data,
+  title = "Timeline",
+}) => {
+  const styles = useStyles();
+
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
-        <Typography variant="semiBoldTxtlg" color={colors.gray[900]}>{title}</Typography>
+        <Typography variant="semiBoldTxtlg" color={colors.gray[900]}>
+          {title}
+        </Typography>
 
         {/* Progress circle */}
         <View style={styles.progressContainer}>
-        <Ring percent={progress} size={20} strokeWidth={4} rotation={90}/>
+          <Ring percent={progress} size={20} strokeWidth={4} rotation={90} />
           <Typography variant="semiBoldTxtmd">{progress}%</Typography>
         </View>
       </View>
@@ -35,6 +43,8 @@ const CustomTimeline = ({ progress, data,title="Timeline" }: Props) => {
       <View>
         {data.map((item, index) => {
           const isLast = index === data.length - 1;
+          const isCompletedOrCurrent = item.status === "completed" || item.status === "current";
+          const isCurrent = item.status === "current";
 
           return (
             <View key={index} style={styles.rowContainer}>
@@ -43,25 +53,22 @@ const CustomTimeline = ({ progress, data,title="Timeline" }: Props) => {
                 {/* DOTS */}
                 {item.status === "completed" && (
                   <View style={styles.completedDot}>
-                    {/* <View style={styles.completedInner} /> */}
                     <SvgXml xml={checkMarkIcon} />
                   </View>
                 )}
 
                 {item.status === "current" && (
-                  <View style={[styles.currentDot,{right:3}]}>
-                      <View style={[styles.completedDot]}>
-                     <View style={styles.completedInner} />
+                  <View style={styles.currentDot}>
+                    <View style={styles.completedDot}>
+                      <View style={styles.completedInner} />
                     </View>
                   </View>
                 )}
 
                 {item.status === "upcoming" && (
-                 <View style={[styles.pendingDot,{right:0.9}]}>
-                 {/* <View style={styles.completedDot}> */}
-                <View style={styles.pendingInner} />
-               {/* </View> */}
-             </View>
+                  <View style={styles.pendingDot}>
+                    <View style={styles.pendingInner} />
+                  </View>
                 )}
 
                 {/* VERTICAL LINE */}
@@ -69,13 +76,10 @@ const CustomTimeline = ({ progress, data,title="Timeline" }: Props) => {
                   <View
                     style={[
                       styles.verticalLine,
-                      {
-                        backgroundColor:
-                          item.status === "completed" || item.status === "current"
-                            ? colors.brand[600]
-                            : colors.gray[300],
-                            marginRight:item.status === "current"?6:0
-                      },
+                      isCompletedOrCurrent
+                        ? styles.verticalLineCompletedCurrent
+                        : styles.verticalLineUpcoming,
+                      isCurrent && styles.verticalLineCurrentMargin,
                     ]}
                   />
                 )}
@@ -85,24 +89,14 @@ const CustomTimeline = ({ progress, data,title="Timeline" }: Props) => {
               <View style={styles.textContainer}>
                 <Typography
                   variant="semiBoldTxtsm"
-                  color={
-                    item.status === "current"
-                      ? colors.brand[700]
-                      : item.status === "upcoming"
-                      ? colors.gray[700]
-                      : colors.gray[700]
-                  }
+                  color={getTitleColor(item.status)}
                 >
                   {item.title}
                 </Typography>
 
                 <Typography
                   variant="regularTxtsm"
-                  color={
-                    item.status === "upcoming"
-                      ? colors.gray[400]
-                      : colors.gray[600]
-                  }
+                  color={getDateColor(item.status)}
                 >
                   {item.date || "—"}
                 </Typography>
@@ -116,139 +110,3 @@ const CustomTimeline = ({ progress, data,title="Timeline" }: Props) => {
 };
 
 export default CustomTimeline;
-
-
-const DOT_SIZE = 24;
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.common.white,
-    borderWidth: 0.5,
-    borderRadius: 12,
-    borderColor: colors.gray[200],
-    padding: 16,
-    gap:20,
-    // shadowColor: '#0A0D12',
-    // shadowOffset: { width: 0, height: 1 },
-    // shadowOpacity: 0.05,
-    // shadowRadius: 3,
-    // elevation: 1,
-    ...shadowStyles.shadow_xs
-  },
-
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  progressContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-
-  progressCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 20,
-    borderWidth: 5,
-    borderColor: colors.gray[300],
-    justifyContent: "center",
-    alignItems: "center",
-    overflow: "hidden",
-  },
-
-  progressFill: {
-    position: "absolute",
-    width: "100%",
-    height: "100%",
-    borderWidth: 5,
-    borderColor: colors.brand[600],
-    borderRightColor: "transparent",
-    borderBottomColor: "transparent",
-    borderRadius: 12,
-  },
-  rowContainer: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    //marginBottom: 22,
-  },
-
-  iconColumn: {
-    paddingRight:12,
-    alignItems: "center",
-  },
-
-  verticalLine: {
-    width: 2,
-    height: 50,
-    marginVertical: 4,
-  },
-
-  textContainer: {
-    flex: 1,
-    //paddingBottom: 8,
-  },
-
-  // Completed (big green)
-  completedDot: {
-    width: DOT_SIZE,
-    height: DOT_SIZE,
-    borderRadius: DOT_SIZE / 2,
-    backgroundColor: colors.brand[600],
-    justifyContent: "center",
-    alignItems: "center",
-    padding:8
-  },
-
-  completedInner: {
-    width: 10,
-    height: 10,
-    backgroundColor: colors.common.white,
-    borderRadius: 5,
-  },
-  pendingInner: {
-    width: 10,
-    height: 10,
-    backgroundColor: colors.gray[200],
-    borderRadius: 5,
-  },
-
-  // Current active dot
-  currentDot: {
-    width: DOT_SIZE + 10,
-    height: DOT_SIZE + 10,
-    borderRadius:9999,
-    borderWidth: 3,
-    borderColor: colors.brand[600],
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  pendingDot: {
-    width: DOT_SIZE + 6,
-    height: DOT_SIZE + 6,
-    borderRadius: DOT_SIZE / 2 + 3,
-    borderWidth: 3,
-    borderColor: colors.gray[200],
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  currentInner: {
-    width: 14,
-    height: 14,
-    backgroundColor: colors.brand[600],
-    borderRadius: 7,
-  },
-
-  // Upcoming grey
-  upcomingDot: {
-    width: DOT_SIZE - 6,
-    height: DOT_SIZE - 6,
-    borderRadius: DOT_SIZE / 2,
-    backgroundColor: colors.gray[300],
-  },
-});
-

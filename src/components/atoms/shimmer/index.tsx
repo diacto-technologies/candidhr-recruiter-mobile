@@ -1,13 +1,8 @@
 import React, { useRef, useEffect } from 'react';
-import { Animated, View, StyleSheet, ViewStyle, DimensionValue } from 'react-native';
+import { Animated, View, StyleSheet } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-
-interface ShimmerProps {
-  width?: DimensionValue;
-  height?: DimensionValue;
-  borderRadius?: number;
-  style?: ViewStyle;
-}
+import { ShimmerProps } from './shimmer.d';
+import { useStyles } from './styles';
 
 const Shimmer: React.FC<ShimmerProps> = ({
   width = '100%',
@@ -37,20 +32,11 @@ const Shimmer: React.FC<ShimmerProps> = ({
     outputRange: [-200, 200],
   });
 
+  const styles = useStyles(width, height, borderRadius);
+
   return (
-    <View
-      style={[
-        {
-          width,
-          height,
-          borderRadius,
-          overflow: 'hidden',
-          backgroundColor: '#E0E0E0',
-        },
-        style,
-      ]}
-    >
-      <Animated.View style={{ flex: 1, transform: [{ translateX }] }}>
+    <View style={[styles.container, style]}>
+      <Animated.View style={[styles.animatedContainer, { transform: [{ translateX }] }]}>
         <LinearGradient
           colors={['#E0E0E0', '#F5F5F5', '#E0E0E0']}
           start={{ x: 0, y: 0.5 }}
@@ -63,3 +49,4 @@ const Shimmer: React.FC<ShimmerProps> = ({
 };
 
 export default Shimmer;
+

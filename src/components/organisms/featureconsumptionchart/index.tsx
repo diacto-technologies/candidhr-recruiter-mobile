@@ -73,7 +73,7 @@ const FeatureConsumptionChart: React.FC<FeatureConsumptionChartProps> = ({
         <View style={styles.container}>
             <Typography variant="semiBoldTxtlg">Feature consumption</Typography>
 
-            <View style={{ overflow: 'hidden' }}>
+            <View style={{width: '100%', overflow: 'hidden'}}>
                 <BarChart
                     data={barData}
                     barWidth={barWidth}

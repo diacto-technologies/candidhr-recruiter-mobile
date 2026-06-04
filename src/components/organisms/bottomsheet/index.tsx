@@ -7,14 +7,15 @@ import {
   Pressable,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { colors } from '../../../theme/colors';
 import Typography from '../../atoms/typography';
 import { IBottomsheet } from './bottomsheet';
 import { useStyles } from './styles';
 import { useRNSafeAreaInsets } from '../../../hooks/useRNSafeAreaInsets';
-import { screenHeight } from '../../../utils/devicelayout';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { screenHeight as staticScreenHeight } from '../../../utils/devicelayout';
 
 const BottomSheet = ({
   visible,
@@ -26,11 +27,27 @@ const BottomSheet = ({
   onClearAll,
   hight
 }: IBottomsheet) => {
+  const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   const { insetsTop } = useRNSafeAreaInsets();
   const backdropOpacity = useRef(new Animated.Value(0)).current;
   const [modalVisible, setModalVisible] = useState(false);
   const styles = useStyles();
-  const SHEET_HEIGHT = (hight);
+
+  const isLandscape = windowWidth > windowHeight;
+  let SHEET_HEIGHT = windowHeight * 0.8;
+
+  if (hight) {
+    if (isLandscape) {
+      SHEET_HEIGHT = Math.min(hight, windowHeight * 0.8);
+    } else {
+      const designBase = staticScreenHeight;
+      const currentBase = windowHeight;
+      SHEET_HEIGHT = hight * (currentBase / designBase);
+      SHEET_HEIGHT = Math.min(SHEET_HEIGHT, windowHeight * 0.85);
+    }
+  }
+
+
   useEffect(() => {
     if (visible) {
       setModalVisible(true);
@@ -74,6 +91,13 @@ const BottomSheet = ({
         onRequestClose={() => {
           isClose();
         }}
+        supportedOrientations={[
+          'portrait',
+          'portrait-upside-down',
+          'landscape',
+          'landscape-left',
+          'landscape-right',
+        ]}
       >
         <View style={styles.closeIcon}>
           <TouchableOpacity

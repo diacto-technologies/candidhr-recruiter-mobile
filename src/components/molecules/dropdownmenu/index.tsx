@@ -1,9 +1,10 @@
 import React from 'react';
-import { Modal, Pressable, View, StyleProp, ViewStyle, TextStyle } from 'react-native';
+import { Modal, Pressable, View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import Typography from '../../atoms/typography';
 import { colors } from '../../../theme/colors';
 import { dropdownMenuStyles } from './styles';
+import { DropdownMenuItem, DropdownMenuProps } from './dropdownmenu.d';
 
 /** Applies dynamic color to SVG XML (stroke and fill, keeps fill="none") */
 function applySvgColor(xml: string, color: string): string {
@@ -12,33 +13,6 @@ function applySvgColor(xml: string, color: string): string {
     .replace(/\bfill=["'](?!none["'])[^"']*["']/g, `fill="${color}"`);
 }
 
-export interface DropdownMenuItem {
-  label: string;
-  icon: string;
-  onPress: () => void;
-  closeOnPress?: boolean;
-  /** Optional icon color for this item (overrides iconColor from props) */
-  iconColor?: string;
-}
-
-export interface DropdownMenuProps {
-  visible: boolean;
-  onClose: () => void;
-  position: { left: number; top: number };
-  items: DropdownMenuItem[];
-  renderContent?: () => React.ReactNode;
-  width?: number;
-  iconWidth:number,
-  iconHight:number
-
-  /** styles from parent */
-  dropdownStyle?: StyleProp<ViewStyle>;
-  itemStyle?: StyleProp<ViewStyle>;
-  textStyle?: StyleProp<TextStyle>;
-  iconStyle?: StyleProp<ViewStyle>;
-  /** Dynamic color for all icons (stroke/fill). Overridable per item via item.iconColor */
-  iconColor?: string;
-}
 
 export const DropdownMenu: React.FC<DropdownMenuProps> = ({
   visible,
@@ -58,7 +32,19 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
   if (!visible) return null;
 
   return (
-    <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
+    <Modal
+      transparent
+      visible={visible}
+      animationType="fade"
+      onRequestClose={onClose}
+      supportedOrientations={[
+        'portrait',
+        'portrait-upside-down',
+        'landscape',
+        'landscape-left',
+        'landscape-right',
+      ]}
+    >
       <Pressable style={dropdownMenuStyles.backdrop} onPress={onClose}>
         <Pressable
           style={[
