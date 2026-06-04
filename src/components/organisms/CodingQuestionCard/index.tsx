@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
-  StyleSheet,
   TouchableOpacity,
 } from "react-native";
 import Typography from "../../../components/atoms/typography";
@@ -11,27 +10,8 @@ import CustomCodeEditor from "../../../components/molecules/codeEditor";
 import { colors } from "../../../theme/colors";
 import Icon from "../../../components/atoms/vectoricon";
 import { formatTime } from "../../../utils/dateformatter";
-
-interface TestCase {
-  input: string;
-  output: string;
-  expectedOutput?: string;
-  passed: boolean;
-}
-
-interface Props {
-  index: number;
-  title: string;
-  language: string;
-  code: string;
-  testCases: TestCase[];
-  pointsObtained?: number;
-  totalPoints?: number;
-  timeSpentSeconds?: number;
-  canEditCode?: boolean;
-}
-
-
+import { CodingQuestionCardProps } from "./codingquestioncard.d";
+import { useStyles } from "./styles";
 
 export default function CodingQuestionCard({
   index,
@@ -43,9 +23,10 @@ export default function CodingQuestionCard({
   totalPoints,
   timeSpentSeconds,
   canEditCode = false,
-}: Props) {
+}: CodingQuestionCardProps) {
   const [expanded, setExpanded] = useState(true);
   const [editorCode, setEditorCode] = useState(code);
+  const styles = useStyles();
 
   useEffect(() => {
     setEditorCode(code);
@@ -56,11 +37,11 @@ export default function CodingQuestionCard({
   return (
     <View style={[
       styles.card,
-      expanded && { paddingBottom: 16 }
+      expanded && styles.cardExpanded
     ]}>
       {/* Header */}
       <TouchableOpacity
-        style={[styles.header,{ borderBottomWidth: expanded ? 1 :0}]}
+        style={[styles.header, expanded ? styles.headerExpanded : styles.headerCollapsed]}
         onPress={() => setExpanded(!expanded)}
       >
         <View style={styles.headerLeft}>
@@ -104,9 +85,7 @@ export default function CodingQuestionCard({
           xml={arrowDown}
           width={20}
           height={20}
-          style={{
-            transform: [{ rotate: expanded ? "180deg" : "0deg" }],
-          }}
+          style={expanded ? styles.arrowExpanded : styles.arrowCollapsed}
         />
       </TouchableOpacity>
 
@@ -183,81 +162,3 @@ export default function CodingQuestionCard({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.common.white,
-    borderRadius: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor:  colors.gray[200],
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    //alignItems: "center",
-    padding: 16,
-    borderColor:colors.gray[200]
-  },
-  headerLeft: {
-    flex: 1,
-    paddingRight: 12,
-    gap: 6,
-  },
-  contentContainer: {
-    paddingHorizontal: 16,
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-  },
-  pointsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  timeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  subTitle: {
-    marginTop: 16,
-    marginBottom: 8,
-    color: colors.gray[700],
-  },
-
-  testHeader: {
-    marginTop: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  testCard: {
-    borderRadius: 10,
-    padding: 12,
-    marginTop: 12,
-  },
-  pass: {
-    backgroundColor: colors.success[50],
-  },
-  fail: {
-    backgroundColor: colors.error[50],
-  },
-  testTitle: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  label: {
-    marginTop: 8,
-    marginBottom: 4,
-    color: colors.gray[600],
-  },
-  box: {
-    backgroundColor: colors.gray[50],
-    borderRadius:8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: colors.gray[300],
-  },
-});

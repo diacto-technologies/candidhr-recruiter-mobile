@@ -2,6 +2,7 @@ import { StyleSheet } from 'react-native';
 import { colors } from '../../../theme/colors';
 import { Fonts } from '../../../theme/fonts';
 import { shadowStyles } from '../../../theme/shadowcolor';
+import { isTablet } from 'react-native-device-info';
 
 export const useStyles = () => {
     return StyleSheet.create({
@@ -32,7 +33,7 @@ export const useStyles = () => {
             flexDirection: 'row',
             alignItems: 'center',
             top: -8,
-            marginLeft: 105,
+            marginLeft: isTablet()? 280:105,
         },
         tooltipArrow: {
             width: 0,

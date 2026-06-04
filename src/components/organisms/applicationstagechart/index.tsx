@@ -69,7 +69,7 @@ const ApplicationStageChart: React.FC<ApplicationStageChartProps> = ({
   return (
     <View style={styles.container}>
       <Typography variant="semiBoldTxtlg">Application per stage</Typography>
-      <View style={{ overflow: 'hidden' }}>
+      <View style={{width: '100%', overflow: 'hidden'}}>
         <BarChart
           data={barData}
           barWidth={barWidth}

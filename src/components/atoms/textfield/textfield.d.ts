@@ -15,4 +15,6 @@ export interface TextFieldProps extends InputProps {
   size?: TextFieldSize;
   height?: number;
   textFieldColor?: string;
+  showDivider?: boolean;
 }
+

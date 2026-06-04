@@ -76,6 +76,12 @@ export const useStyles = (props: any, isFocus: boolean, size: any) => {
           : size[props.size || 'Medium'],
       ...(props.multiline === true && { textAlignVertical: 'top' }),
     },
+    verticalDivider: {
+      width: 1,
+      height: '60%',
+      backgroundColor: colors.gray[300],
+    },
+
 
     // Error Text
     errorText: {

@@ -1,12 +1,5 @@
-import { StyleSheet, useWindowDimensions } from 'react-native';
-import { colors } from '../../../theme/colors';
-import { useRNSafeAreaInsets } from '../../../hooks/useRNSafeAreaInsets';
-import DeviceInfo from "react-native-device-info";
-
+import {StyleSheet} from 'react-native';
 export const useStyles = () => {
-    const { insetsBottom, insetsTop } = useRNSafeAreaInsets();
-    const { width } = useWindowDimensions();
-    const isTablet = DeviceInfo.isTablet();
     return StyleSheet.create({
         dropcard: {
           width: 260,

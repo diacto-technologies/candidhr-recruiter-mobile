@@ -1,5 +1,6 @@
 // components/Button/button.ts
 import { PressableProps, ReactNode } from 'react-native';
+import { TypographyProps } from '../typography/typography';
 
 export type ButtonSize = 'Large' | 'Regular' | 'Medium' | 'Small' | 'Tab' | number;
 export type ButtonVariant = 'outline' | 'text' | 'contain';
@@ -12,7 +13,8 @@ export interface IButton extends PressableProps {
   middleIcon?: ReactNode;
   endIcon?: ReactNode;
 
-  textVariant?: string; 
+  textVariant?: TypographyProps['variant']; 
+
 
   // Core colors
   buttonColor?: string;        // background

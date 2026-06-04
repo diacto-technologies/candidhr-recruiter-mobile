@@ -8,24 +8,13 @@ import { checkIcon } from '../../../assets/svg/check';
 import Divider from '../../atoms/divider';
 import { useStyles } from './styles';
 import { ThemeMode } from '../../../features/theme/types';
-
-interface DisplayPreferenceOption {
-  value: ThemeMode;
-  labelKey: string;
-}
+import { DisplayPreferenceOption, DisplayPreferenceSelectorProps } from './displaypreferenceselector.d';
 
 const DISPLAY_PREFERENCES: DisplayPreferenceOption[] = [
   { value: 'device', labelKey: 'screens.profile.deviceSettings' },
   { value: 'light', labelKey: 'screens.profile.lightMode' },
   { value: 'dark', labelKey: 'screens.profile.darkMode' },
 ];
-
-interface DisplayPreferenceSelectorProps {
-  visible: boolean;
-  onClose: () => void;
-  currentThemeMode: ThemeMode;
-  onSelectThemeMode: (themeMode: ThemeMode) => void;
-}
 
 const DisplayPreferenceSelector: React.FC<DisplayPreferenceSelectorProps> = ({
   visible,

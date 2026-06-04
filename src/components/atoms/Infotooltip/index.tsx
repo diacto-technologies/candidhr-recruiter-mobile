@@ -3,27 +3,24 @@ import {
   View,
   Modal,
   Pressable,
-  StyleSheet,
   UIManager,
   findNodeHandle,
   Dimensions,
 } from "react-native";
 import Typography from "../typography";
 import { colors } from "../../../theme/colors";
+import { InfoTooltipProps } from "./infotooltip.d";
+import { useStyles, TOOLTIP_WIDTH, GAP, SIDE_PADDING } from "./styles";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-const TOOLTIP_WIDTH = 260;
-const GAP = 8;
-const SIDE_PADDING = 10;
-
-const InfoTooltip = ({ text, children }: any) => {
+const InfoTooltip: React.FC<InfoTooltipProps> = ({ text, children }) => {
   const [visible, setVisible] = useState(false);
   const [pos, setPos] = useState({ x: 0, y: 0, w: 0, h: 0 });
   const [tooltipHeight, setTooltipHeight] = useState(0);
 
   const iconRef = useRef<View>(null);
-  const hideTimerRef = useRef<any>(null); // ✅ timer ref
+  const hideTimerRef = useRef<any>(null);
 
   const clearHideTimer = () => {
     if (hideTimerRef.current) {
@@ -33,7 +30,7 @@ const InfoTooltip = ({ text, children }: any) => {
   };
 
   const showTooltip = () => {
-    clearHideTimer(); // ✅ if already scheduled to hide, cancel it
+    clearHideTimer();
 
     const handle = findNodeHandle(iconRef.current);
     if (!handle) return;
@@ -49,7 +46,7 @@ const InfoTooltip = ({ text, children }: any) => {
 
     hideTimerRef.current = setTimeout(() => {
       setVisible(false);
-    }, 2000); // ✅ 3 sec
+    }, 2000);
   };
 
   const position = useMemo(() => {
@@ -73,18 +70,19 @@ const InfoTooltip = ({ text, children }: any) => {
     return { left, top };
   }, [pos, tooltipHeight]);
 
+  const styles = useStyles(position);
+
   return (
     <View>
       <Pressable
         ref={iconRef}
-        onPressIn={showTooltip}            // ✅ show immediately like hover
-        onPressOut={hideTooltipAfterDelay} // ✅ hide after 3 sec
+        onPressIn={showTooltip}
+        onPressOut={hideTooltipAfterDelay}
       >
         {children}
       </Pressable>
 
       <Modal transparent visible={visible} animationType="fade">
-        {/* If user taps outside → close immediately */}
         <Pressable
           style={styles.overlay}
           onPress={() => {
@@ -94,10 +92,7 @@ const InfoTooltip = ({ text, children }: any) => {
         >
           <View
             onLayout={(e) => setTooltipHeight(e.nativeEvent.layout.height)}
-            style={[
-              styles.tooltipBox,
-              { top: position.top, left: position.left },
-            ]}
+            style={styles.tooltipBox}
           >
             <Typography variant="regularTxtxs" color={colors.base.white}>
               {text}
@@ -111,16 +106,3 @@ const InfoTooltip = ({ text, children }: any) => {
 
 export default InfoTooltip;
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-  },
-  tooltipBox: {
-    position: "absolute",
-    width: TOOLTIP_WIDTH,
-    backgroundColor: "#1F2937",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-});

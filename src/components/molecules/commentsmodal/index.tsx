@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   Modal,
-  StyleSheet,
   View,
   TouchableOpacity,
   ScrollView,
@@ -11,23 +10,10 @@ import { Header } from '../../organisms';
 import { goBack } from '../../../utils/navigationUtils';
 import { FloatingActionButton, TextField, Typography } from '../../atoms';
 import { sendButton } from '../../../assets/svg/send';
-
-interface CommentItem {
-  id: string;
-  name: string;
-  tag: string;
-  email: string;
-  date: string;
-  text: string;
-}
-
-interface CommentsModalProps {
-  visible: boolean;
-  onClose: () => void;
-}
+import { CommentsModalProps, CommentItem } from './commentsmodal.d';
+import { useStyles } from './styles';
 
 const CommentsModal: React.FC<CommentsModalProps> = ({ visible, onClose }) => {
-
   const [comments, setComments] = useState<CommentItem[]>([
     {
       id: '1',
@@ -40,6 +26,7 @@ const CommentsModal: React.FC<CommentsModalProps> = ({ visible, onClose }) => {
   ]);
 
   const [commentText, setCommentText] = useState('');
+  const styles = useStyles();
 
   const handleSend = () => {
     if (!commentText.trim()) return;
@@ -68,14 +55,10 @@ const CommentsModal: React.FC<CommentsModalProps> = ({ visible, onClose }) => {
         <Header title="Comments" backNavigation onBack={goBack} />
 
         <View style={styles.content}>
-
           <ScrollView>
-
             {comments.map(item => (
               <View key={item.id} style={styles.card}>
-
                 <View style={styles.headerRow}>
-
                   <View style={styles.userRow}>
                     <View style={styles.avatar} />
 
@@ -116,7 +99,6 @@ const CommentsModal: React.FC<CommentsModalProps> = ({ visible, onClose }) => {
                       <Typography>⋮</Typography>
                     </TouchableOpacity>
                   </View>
-
                 </View>
 
                 <Typography
@@ -126,17 +108,15 @@ const CommentsModal: React.FC<CommentsModalProps> = ({ visible, onClose }) => {
                 >
                   {item.text}
                 </Typography>
-
               </View>
             ))}
-
           </ScrollView>
         </View>
 
         {/* Bottom Input */}
-         <Typography variant="regularTxtxs" color={colors.gray[800]}>
-            Share your thoughts about this profile with your team.
-          </Typography>
+        <Typography variant="regularTxtxs" color={colors.gray[800]}>
+          Share your thoughts about this profile with your team.
+        </Typography>
         <View style={styles.commentContainer}>
           <View style={{ flex: 1 }}>
             <TextField
@@ -157,84 +137,9 @@ const CommentsModal: React.FC<CommentsModalProps> = ({ visible, onClose }) => {
             />
           </View>
         </View>
-
       </View>
     </Modal>
   );
 };
 
 export default CommentsModal;
-
-const styles = StyleSheet.create({
-
-  container: {
-    flex: 1,
-    backgroundColor: colors.base.white,
-  },
-
-  content: {
-    flex: 1,
-    padding: 16,
-  },
-
-  card: {
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderColor: colors.gray[200],
-  },
-
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-
-  userRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.gray[200],
-  },
-
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-
-  tag: {
-    backgroundColor: colors.brand[50],
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-
-  rightRow: {
-    alignItems: 'flex-end',
-  },
-
-  menuDot: {
-    paddingTop: 4,
-  },
-
-  commentText: {
-    marginTop: 10,
-  },
-
-  commentContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderTopWidth: 1,
-    borderColor: colors.gray[200],
-  },
-
-  buttonRow: {
-    paddingLeft: 5,
-  },
-
-});

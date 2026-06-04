@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { colors } from '../../../theme/colors';
+import { shadowStyles } from '../../../theme/shadowcolor';
 
 export const useStyles = () => {
   return StyleSheet.create({
@@ -9,6 +10,7 @@ export const useStyles = () => {
       backgroundColor: colors.common.white,
       borderBottomWidth: 1,
       borderColor: colors.gray[200],
+      ...shadowStyles.shadow_3xl
     },
     filterButton: {
       flexDirection: 'row',

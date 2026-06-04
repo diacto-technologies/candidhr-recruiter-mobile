@@ -7,21 +7,7 @@ import {
   Text,
 } from "react-native";
 import { useStyles } from "./styles";
-interface MenuItem {
-  name: string;
-  title?: string;
-  onPress: () => void;
-}
-
-interface ThreeDotDropdownProps {
-  visible: boolean;
-  onClose: () => void;
-  menuItems: MenuItem[];
-  top?: number;
-  right?: number;
-  left?: number;
-  bottom?: number;
-}
+import { ThreeDotDropdownProps } from "./threedotdropdown.d";
 
 const ThreeDotDropdown: React.FC<ThreeDotDropdownProps> = ({
   visible,
@@ -32,8 +18,6 @@ const ThreeDotDropdown: React.FC<ThreeDotDropdownProps> = ({
   left,
   bottom,
 }) => {
-  const styles = useStyles();
-
   const isBottomLeftAnchored = left !== undefined || bottom !== undefined;
   const positionStyle: Record<string, number> = {};
   if (!isBottomLeftAnchored) {
@@ -48,10 +32,12 @@ const ThreeDotDropdown: React.FC<ThreeDotDropdownProps> = ({
     if (bottom !== undefined) positionStyle.bottom = bottom;
   }
 
+  const styles = useStyles(positionStyle);
+
   return (
     <Modal transparent visible={visible} animationType="fade">
       <Pressable style={styles.overlay} onPress={onClose}>
-        <View style={[styles.dropdownContainer, positionStyle]}>
+        <View style={styles.dropdownContainer}>
           {menuItems.map((item, index) => (
             <View key={index}>
               {index > 0 && <View style={styles.divider} />}

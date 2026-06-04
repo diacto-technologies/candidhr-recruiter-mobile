@@ -26,32 +26,7 @@ import { shareIcon } from '../../../../assets/svg/share';
 import ShareJobModal from '../../shareJobModal';
 import { PERMISSIONS } from '../../../../utils/permission.constants';
 import { usePermission } from '../../../../hooks/usePermission';
-
-export interface JobCardListProps {
-  tabs: string[];
-  activeTab: string;
-  jobsList: Job[];
-  loading: boolean;
-  isTabLoading: boolean;
-  publishedCount: number;
-  unpublishedCount: number;
-  favouritesCount: number;
-  isConnected: boolean;
-  onChangeTab: (label: string) => void;
-  onLoadMore: () => void;
-  onJobPress: (jobId: string) => void;
-  favouriteJobIds?: string[];
-  onToggleFavourite?: (jobId: string) => void;
-  hasMore?: boolean;
-}
-
-interface JobCardRowProps {
-  item: Job;
-  cardStyles: ReturnType<typeof useStyles>;
-  onJobPress: (jobId: string) => void;
-  favouriteJobIds: string[];
-  onToggleFavourite?: (jobId: string) => void;
-}
+import { JobCardListProps, JobCardRowProps } from './jobcardlist.d';
 
 const IS_TABLET = DeviceInfo.isTablet();
 const DUMMY_SHIMMER_DATA = Array.from({ length: 20 }, (_, i) => String(i + 1));

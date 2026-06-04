@@ -1,28 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Animated,
-  TouchableWithoutFeedback,
-  ViewStyle,
-  TextStyle,
-} from "react-native";
-
-interface SwitchProps {
-  onValueChange?: (value: boolean) => void;
-  value?: boolean;
-  activeText?: string;
-  inActiveText?: string;
-  backgroundActive?: string;
-  backgroundInactive?: string;
-  circleActiveColor?: string;
-  circleInActiveColor?: string;
-  textStyle?: TextStyle;
-  containerStyle?: ViewStyle;
-  circleStyle?: ViewStyle;
-  disabled?: boolean;
-}
+import { Animated, TouchableWithoutFeedback } from "react-native";
+import { SwitchProps } from "./switchbutton.d";
+import { useStyles } from "./styles";
 
 const CustomSwitch: React.FC<SwitchProps> = ({
   onValueChange = () => {},
@@ -40,6 +19,7 @@ const CustomSwitch: React.FC<SwitchProps> = ({
 }) => {
   const [isActive, setIsActive] = useState(value);
   const animatedValue = useRef(new Animated.Value(value ? 1 : 0)).current;
+  const styles = useStyles();
 
   useEffect(() => {
     setIsActive(value);
@@ -72,7 +52,6 @@ const CustomSwitch: React.FC<SwitchProps> = ({
       : [backgroundInactive, backgroundActive],
   });
 
-  // Replaced moderateScale(2) → 2, and moderateScale(22) → 22
   const interpolatedCirclePosition = animatedValue.interpolate({
     inputRange: [0, 1],
     outputRange: [2, 22],
@@ -116,27 +95,5 @@ const CustomSwitch: React.FC<SwitchProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    width:40,
-    height:20,
-    padding:2,
-    borderRadius: 15,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  text: {
-    flex: 1,
-    color: "white",
-    textAlign: "center",
-    fontSize: 12,
-  },
-  circle: {
-    position: "absolute",
-    width: 16,
-    height: 16,
-    borderRadius:12,
-  },
-});
-
 export default CustomSwitch;
+

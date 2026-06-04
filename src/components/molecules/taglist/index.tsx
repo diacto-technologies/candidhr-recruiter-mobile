@@ -1,15 +1,9 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View } from "react-native";
 import Typography from "../../atoms/typography";
 import { colors } from "../../../theme/colors";
-
-interface TagListProps {
-  data: string[];
-  textColor?: string;
-  bgColor?: string;
-  borderColor?: string;
-  renderIcon?: (item: string, index: number) => React.ReactNode;
-}
+import { TagListProps } from "./taglist.d";
+import { useStyles } from "./styles";
 
 const TagList: React.FC<TagListProps> = ({
   data = [],
@@ -18,19 +12,12 @@ const TagList: React.FC<TagListProps> = ({
   borderColor = colors.success[200],
   renderIcon,
 }) => {
+  const styles = useStyles(bgColor, borderColor);
+
   return (
     <View style={styles.container}>
       {data?.map((item, index) => (
-        <View
-          key={`${item}-${index}`}
-          style={[
-            styles.tag,
-            {
-              backgroundColor: bgColor,
-              borderColor: borderColor,
-            },
-          ]}
-        >
+        <View key={`${item}-${index}`} style={styles.tag}>
           {renderIcon && (
             <View style={styles.iconContainer}>
               {renderIcon(item, index)}
@@ -47,22 +34,3 @@ const TagList: React.FC<TagListProps> = ({
 };
 
 export default TagList;
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  tag: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 6,
-    borderWidth: 1,
-  },
-  iconContainer: {
-    marginRight: 6,
-  },
-});

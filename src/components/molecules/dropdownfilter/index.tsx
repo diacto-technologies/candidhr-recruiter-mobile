@@ -1,23 +1,19 @@
 import React from "react";
 import { View } from "react-native";
 import CommonDropdown from "../../organisms/commondropdown";
-import { CommonDropdownOption } from "../../organisms/commondropdown/types";
+import { DropdownFilterProps } from "./dropdownfilter.d";
+import { useStyles } from "./styles";
 
-interface Props {
-  value: string;
-  onChange: (val: string) => void;
-  placeholder?: string;
-  options: CommonDropdownOption[];
-}
-
-const DropdownFilter: React.FC<Props> = ({
+const DropdownFilter: React.FC<DropdownFilterProps> = ({
   value,
   onChange,
   placeholder,
   options,
 }) => {
+  const styles = useStyles();
+
   return (
-    <View style={{ paddingHorizontal: 10 }}>
+    <View style={styles.container}>
       <CommonDropdown
         placeholder={placeholder || "Select"}
         options={options}

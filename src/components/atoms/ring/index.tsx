@@ -1,3 +1,4 @@
+import React, { useEffect } from "react";
 import { View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import Animated, {
@@ -8,17 +9,10 @@ import Animated, {
 } from "react-native-reanimated";
 import Typography from "../typography";
 import { colors } from "../../../theme/colors";
-import React = require("react");
+import { RingProps } from "./ring.d";
+import { useStyles } from "./styles";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-
-interface RingProps {
-  percent: number;
-  size?: number;
-  strokeWidth?: number;
-  showText?: boolean;
-  rotation?: number;
-}
 
 const Ring: React.FC<RingProps> = ({
   percent,
@@ -32,7 +26,7 @@ const Ring: React.FC<RingProps> = ({
 
   const progress = useSharedValue(0);
 
-  React.useEffect(() => {
+  useEffect(() => {
     progress.value = withTiming(percent, {
       duration: 1000,
       easing: Easing.out(Easing.ease),
@@ -48,15 +42,10 @@ const Ring: React.FC<RingProps> = ({
     };
   });
 
+  const styles = useStyles(size);
+
   return (
-    <View
-      style={{
-        width: size,
-        height: size,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
+    <View style={styles.container}>
       <Svg width={size} height={size}>
         {/* Background Ring */}
         <Circle
@@ -86,13 +75,7 @@ const Ring: React.FC<RingProps> = ({
       </Svg>
 
       {showText && (
-        <View
-          style={{
-            position: "absolute",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
+        <View style={styles.textContainer}>
           <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
             {percent}%
           </Typography>

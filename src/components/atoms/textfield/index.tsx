@@ -1,9 +1,7 @@
 import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import {
-  NativeSyntheticEvent,
   Pressable,
   TextInput,
-  TextInputFocusEventData,
   View,
 } from 'react-native';
 import { colors } from '../../../theme/colors';
@@ -39,9 +37,9 @@ const TextField = forwardRef((props: TextFieldProps, ref) => {
     <View style={styles.container}>
       {props.lable && (
         <View style={styles.labelRow}>
-          <Typography variant="P1C">{props.lable}</Typography>
+          <Typography variant={"P1C" as any}>{props.lable}</Typography>
           {props.isRequired && (
-            <Typography color={colors.mainColors.main} variant="P1C">
+            <Typography color={colors.mainColors.main} variant={"P1C" as any}>
               *
             </Typography>
           )}
@@ -70,13 +68,13 @@ const TextField = forwardRef((props: TextFieldProps, ref) => {
             props.value ? styles.inputWithValue : styles.inputWithoutValue,
             styles.inputDynamic,
           ]}
-          onFocus={(event: NativeSyntheticEvent<TextInputFocusEventData>) => {
+          onFocus={(event: any) => {
             setInFocus(true);
             if (props.onFocus) {
               props.onFocus(event);
             }
           }}
-          onBlur={(event: NativeSyntheticEvent<TextInputFocusEventData>) => {
+          onBlur={(event: any) => {
             setInFocus(false);
             if (props.onBlur) {
               props.onBlur(event);
@@ -97,3 +95,4 @@ const TextField = forwardRef((props: TextFieldProps, ref) => {
 });
 
 export { TextField };
+

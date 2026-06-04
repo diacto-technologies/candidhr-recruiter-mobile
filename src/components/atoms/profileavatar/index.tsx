@@ -1,18 +1,9 @@
 import React from 'react';
-import { View, Image, StyleSheet, ViewStyle, ImageStyle } from 'react-native';
+import { View, Image } from 'react-native';
 import { colors } from '../../../theme/colors';
 import Typography from '../typography';
-
-interface ProfileAvatarProps {
-  imageUrl?: string | null;
-  name?: string | null;
-  size?: number;
-  style?: ViewStyle;
-  fontVariant?: string;
-
-  /** extra padding outside avatar (gap/ring size) */
-  outerSize?: number;
-}
+import { ProfileAvatarProps } from './profileavatar.d';
+import { useStyles } from './styles';
 
 const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
   imageUrl,
@@ -20,14 +11,8 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
   size = 88,
   style,
   fontVariant = 'semiBoldDxs',
-  outerSize = 8, // ✅ default outerSize
+  outerSize = 8,
 }) => {
-  // ✅ total wrapper size = avatar size + outer gap
-  const totalOuterSize = size + outerSize;
-
-  const borderRadius = totalOuterSize / 2;
-  const innerBorderRadius = size / 2;
-
   const getInitials = (fullName?: string | null): string => {
     if (!fullName?.trim()) return '';
 
@@ -39,34 +24,15 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
   };
 
   const initials = getInitials(name);
-
-  const outerStyle: ViewStyle = {
-    width: totalOuterSize,
-    height: totalOuterSize,
-    borderRadius,
-  };
-
-  const innerStyle: ViewStyle = {
-    width: size,
-    height: size,
-    borderRadius: innerBorderRadius,
-  };
-
-  const imageStyle: ImageStyle = {
-    width: size,
-    height: size,
-    borderRadius: innerBorderRadius,
-    borderWidth:2,
-    borderColor: 'rgba(0, 0, 0, 0.08)'
-  };
+  const styles = useStyles(size, outerSize);
 
   return (
-    <View style={[styles.outerWrapper, outerStyle, style]}>
-      <View style={[styles.borderWrapper, outerStyle]}>
+    <View style={[styles.outerWrapper, style]}>
+      <View style={styles.borderWrapper}>
         {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={imageStyle} resizeMode="stretch" />
+          <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="stretch" />
         ) : (
-          <View style={[styles.initialCircle, innerStyle]}>
+          <View style={styles.initialCircle}>
             <Typography variant={fontVariant as any} color={colors.gray[500]}>
               {initials}
             </Typography>
@@ -79,27 +45,3 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
 
 export default ProfileAvatar;
 
-const styles = StyleSheet.create({
-  outerWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  borderWrapper: {
-    backgroundColor: colors.base.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(0, 0, 0, 0.08)',
-    padding: 4,
-  },
-  initialCircle: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.gray[100],
-    shadowColor: '#0A0D12',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-});

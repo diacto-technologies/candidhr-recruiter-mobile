@@ -4,45 +4,34 @@ import {
   View,
   TouchableOpacity,
   Image,
-  Dimensions,
 } from "react-native";
 import Typography from "../../atoms/typography";
 import { colors } from "../../../theme/colors";
+import { SnapshotModalProps } from "./snapshotmodal.d";
+import { useStyles } from "./styles";
 
-interface Props {
-  visible: boolean;
-  imageUri: string | null;
-  onClose: () => void;
-}
+const SnapshotModal = ({ visible, imageUri, onClose }: SnapshotModalProps) => {
+  const styles = useStyles();
 
-const { width, height } = Dimensions.get("window");
-
-const SnapshotModal = ({ visible, imageUri, onClose }: Props) => {
   return (
     <Modal
       visible={visible}
       transparent
       animationType="fade"
       onRequestClose={onClose}
+      supportedOrientations={[
+        'portrait',
+        'portrait-upside-down',
+        'landscape',
+        'landscape-left',
+        'landscape-right',
+      ]}
     >
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "rgba(0,0,0,0.85)",
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 16,
-        }}
-      >
+      <View style={styles.backdrop}>
         {/* Close Button */}
         <TouchableOpacity
           onPress={onClose}
-          style={{
-            position: "absolute",
-            top: 50,
-            right: 20,
-            zIndex: 10,
-          }}
+          style={styles.closeButton}
         >
           <Typography
             variant="semiBoldTxtlg"
@@ -56,11 +45,7 @@ const SnapshotModal = ({ visible, imageUri, onClose }: Props) => {
         {imageUri && (
           <Image
             source={{ uri: imageUri }}
-            style={{
-              width: width * 0.9,
-              height: height * 0.6,
-              borderRadius: 16,
-            }}
+            style={styles.image}
             resizeMode="stretch"
           />
         )}

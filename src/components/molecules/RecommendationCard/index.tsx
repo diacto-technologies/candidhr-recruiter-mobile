@@ -6,7 +6,7 @@ import Card from "../../../components/atoms/card";
 import { SvgXml } from "react-native-svg";
 import { warningIcon } from "../../../assets/svg/warning";
 import type { PerformanceReportResponse } from "../../../features/applications/types";
-import { useStyles } from "../styles";
+import { useStyles } from "../../organisms/AssessmentDetails/styles";
 
 type Props = {
   recommendations: PerformanceReportResponse["recommendations"] | undefined;

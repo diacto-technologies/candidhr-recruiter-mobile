@@ -3,6 +3,7 @@
 import {
   TextProps,
   TextStyle,
+  StyleProp,
   NativeSyntheticEvent,
   TextLayoutEventData,
   GestureResponderEvent,
@@ -79,7 +80,7 @@ export interface TypographyProps extends TextProps {
     | 'boldTxtxs';
 
   color?: string;
-  style?: TextStyle;
+  style?: StyleProp<TextStyle>;
   children?: ReactNode;
   numberOfLines?: number;
 

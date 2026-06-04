@@ -105,3 +105,28 @@ export const shadowStyles = {
     elevation: 22,
   },
 }
+
+import { Platform } from 'react-native';
+
+export const getElevation = (elevation: number, shadowColor: string = "rgba(10, 13, 18, 0.1)") => {
+  if (Platform.OS === 'ios') {
+    if (elevation === 0) {
+      return {
+        shadowColor: 'transparent',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0,
+        shadowRadius: 0,
+      };
+    }
+    return {
+      shadowColor,
+      shadowOffset: { width: 0, height: Math.max(1, Math.round(elevation * 0.5)) },
+      shadowOpacity: Math.min(0.4, 0.05 + (elevation * 0.015)),
+      shadowRadius: Math.max(1, Math.round(elevation * 0.8)),
+    };
+  }
+  return {
+    elevation,
+  };
+};
+

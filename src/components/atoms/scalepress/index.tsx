@@ -1,48 +1,46 @@
-import {View,Text,ViewStyle, Animated,TouchableOpacity} from 'react-native';
-import React,{FC} from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Animated, TouchableOpacity } from 'react-native';
+import React, { FC, useRef } from 'react';
+import { ScalePressProps } from './scalepress.d';
+import { useStyles } from './styles';
 
-interface ScalePressProps{
-    onPress?:()=>void;
-    onLongPress?:()=>void;
-    children:React.ReactNode;
-    styles?:ViewStyle| ViewStyle[];
-}
+const ScalePress: FC<ScalePressProps> = ({
+  onLongPress,
+  onPress,
+  children,
+  styles,
+}) => {
+  const scaleValue = useRef(new Animated.Value(1)).current;
+  const stylesheet = useStyles();
 
-const ScalePress:FC<ScalePressProps>=({
-    onLongPress,
-    onPress,
-    children,
-    styles
-})=>{
-    const scaleValue= new Animated.Value(1);
+  const onPressIn = () => {
+    Animated.spring(scaleValue, {
+      toValue: 0.96,
+      useNativeDriver: true,
+    }).start();
+  };
 
-    const onPressIn=()=>{
-        Animated.spring(scaleValue,{
-            toValue:0.96,
-            useNativeDriver:true,
-        }).start();
-    };
-    const onPressOut=()=>{
-        Animated.timing(scaleValue,{
-            toValue:1,
-            duration:300,
-            useNativeDriver:true,
-        }).start();
-    };
-    return (
-        <TouchableOpacity 
-        onPress={onPress}
-        onPressOut={onPressOut}
-        onLongPress={onLongPress}
-        onPressIn={onPressIn}
-        activeOpacity={1}
-        style={{...styles}}>
-            <Animated.View style={{transform:[{scale:scaleValue}],width:'100%'}}>
-                {children}
-            </Animated.View>
-        </TouchableOpacity>
-    );
+  const onPressOut = () => {
+    Animated.timing(scaleValue, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      onPressOut={onPressOut}
+      onLongPress={onLongPress}
+      onPressIn={onPressIn}
+      activeOpacity={1}
+      style={styles}
+    >
+      <Animated.View style={[stylesheet.animatedView, { transform: [{ scale: scaleValue }] }]}>
+        {children}
+      </Animated.View>
+    </TouchableOpacity>
+  );
 };
 
-export default ScalePress
+export default ScalePress;

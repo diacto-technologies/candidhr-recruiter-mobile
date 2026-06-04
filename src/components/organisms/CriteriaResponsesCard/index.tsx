@@ -1,14 +1,12 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View } from "react-native";
 import { selectApplicationResponses, selectApplicationsDetailLoading } from "../../../features/applications/selectors";
 import { useAppSelector } from "../../../hooks/useAppSelector";
 import Shimmer from "../../../components/atoms/shimmer";
 import Typography from "../../../components/atoms/typography";
 import { colors } from "../../../theme/colors";
-import { shadowStyles } from "../../../theme/shadowcolor";
-import { SvgXml } from "react-native-svg";
-import { commentIcon } from "../../../assets/svg/comments";
-import { Illustrations } from "../../../assets/svg/illustrations";
+import { CriteriaResponsesCardProps } from "./criteriaresponsescard.d";
+import { useStyles } from "./styles";
 
 /** API may return strings or `{ label, value }` (dropdown/radio) — Text cannot render objects. */
 function formatCriteriaField(value: unknown): string {
@@ -33,6 +31,8 @@ function formatCriteriaField(value: unknown): string {
 }
 
 const CriteriaResponsesCardShimmer = () => {
+  const styles = useStyles();
+
   return (
     <View style={styles.card}>
       <Shimmer height={20} width="50%" />
@@ -43,12 +43,12 @@ const CriteriaResponsesCardShimmer = () => {
 
           <View style={styles.row}>
             <Shimmer width="30%" height={14} />
-            <Shimmer width="40%" height={14} style={{ marginLeft: 8 }} />
+            <Shimmer width="40%" height={14} style={styles.shimmerMargin} />
           </View>
 
           <View style={styles.row}>
             <Shimmer width="40%" height={14} />
-            <Shimmer width="35%" height={14} style={{ marginLeft: 8 }} />
+            <Shimmer width="35%" height={14} style={styles.shimmerMargin} />
           </View>
         </View>
       ))}
@@ -56,9 +56,11 @@ const CriteriaResponsesCardShimmer = () => {
   );
 };
 
-const CriteriaResponsesCard = () => {
+const CriteriaResponsesCard: React.FC<CriteriaResponsesCardProps> = () => {
   const applicationResponses = useAppSelector(selectApplicationResponses);
   const loading = useAppSelector(selectApplicationsDetailLoading);
+  const styles = useStyles();
+
   if (loading) {
     return <CriteriaResponsesCardShimmer />;
   }
@@ -84,57 +86,57 @@ const CriteriaResponsesCard = () => {
             `idx-${index}`;
 
           return (
-          <View key={rowKey} style={styles.innerCard}>
-            {/* Question */}
-            <View style={{ flexDirection: 'row' }}>
-              <Typography variant="mediumTxtmd" color={colors.gray[900]}>
-                {index + 1}.
-              </Typography>
-              <Typography variant="mediumTxtmd" color={colors.gray[900]}>
-                {" "}
-                {questionText}
-              </Typography>
+            <View key={rowKey} style={styles.innerCard}>
+              {/* Question */}
+              <View style={styles.questionRow}>
+                <Typography variant="mediumTxtmd" color={colors.gray[900]}>
+                  {index + 1}.
+                </Typography>
+                <Typography variant="mediumTxtmd" color={colors.gray[900]}>
+                  {" "}
+                  {questionText}
+                </Typography>
+              </View>
+
+              {/* Response */}
+              {responseText !== "" && (
+                <View style={styles.row}>
+                  <Typography variant="regularTxtsm" color={colors.gray[600]}>
+                    Response :
+                  </Typography>
+                  <Typography
+                    variant="semiBoldTxtsm"
+                    color={
+                      matchesExpected
+                        ? colors.success[500]
+                        : colors.error[500]
+                    }
+                  >
+                    {"  "}
+                    {responseText}
+                  </Typography>
+                </View>
+              )}
+
+              {/* Expected */}
+              {expectedText !== "" && (
+                <View style={styles.row}>
+                  <Typography variant="regularTxtsm" color={colors.gray[600]}>
+                    Expected response :
+                  </Typography>
+                  <Typography variant="semiBoldTxtsm" color={colors.success[500]}>
+                    {"  "}
+                    {expectedText}
+                  </Typography>
+                </View>
+              )}
             </View>
-
-            {/* Response */}
-            {responseText !== "" && (
-              <View style={styles.row}>
-                <Typography variant="regularTxtsm" color={colors.gray[600]}>
-                  Response :
-                </Typography>
-                <Typography
-                  variant="semiBoldTxtsm"
-                  color={
-                    matchesExpected
-                      ? colors.success[500]
-                      : colors.error[500]
-                  }
-                >
-                  {"  "}
-                  {responseText}
-                </Typography>
-              </View>
-            )}
-
-            {/* Expected */}
-            {expectedText !== "" && (
-              <View style={styles.row}>
-                <Typography variant="regularTxtsm" color={colors.gray[600]}>
-                  Expected response :
-                </Typography>
-                <Typography variant="semiBoldTxtsm" color={colors.success[500]}>
-                  {"  "}
-                  {expectedText}
-                </Typography>
-              </View>
-            )}
-          </View>
           );
         })
       ) : (
         /* EMPTY STATE */
         <View style={styles.emptyState}>
-          <View style={{flex:1}}>
+          <View style={styles.emptyStateTextContainer}>
             <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
               No criteria responses available
             </Typography>
@@ -155,57 +157,3 @@ const CriteriaResponsesCard = () => {
 };
 
 export default CriteriaResponsesCard;
-
-const styles = StyleSheet.create({
-  card: {
-    flex:1,
-    backgroundColor: colors.common.white,
-    borderWidth: 0.5,
-    borderColor: colors.gray[200],
-    borderRadius: 12,
-    padding: 16,
-    gap: 16,
-    // shadowColor: '#0A0D12',
-    // shadowOffset: { width: 0, height: 1 },
-    // shadowOpacity: 0.05,
-    // shadowRadius: 3,
-    // elevation: 1,
-    ...shadowStyles.shadow_xs
-  },
-
-  title: {
-    marginBottom: 14,
-  },
-
-  innerCard: {
-    borderWidth: 1,
-    borderColor: colors.gray[200],
-    borderRadius: 10,
-    padding: 12,
-    gap: 12,
-    backgroundColor: colors.base.white,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  emptyState: {
-    borderRadius: 12,
-    backgroundColor: colors.gray[50],
-    flexDirection: 'row',
-    alignSelf:'center',
-    marginHorizontal: 20,
-    padding:20,
-    alignItems:'center'
-  },
-  
-  avatarCircle: {
-    height: 48,
-    width: 48,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor:colors.gray[200],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

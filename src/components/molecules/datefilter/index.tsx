@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { View, TouchableOpacity, StyleSheet } from "react-native";
+import { View, TouchableOpacity } from "react-native";
 import Typography from "../../atoms/typography";
 import { colors } from "../../../theme/colors";
 import dayjs from "dayjs";
 import { screenWidth } from "../../../utils/devicelayout";
 
 import ModalBox from "../modalbox";
-import RangePicker from "./rangepicker";
+import RangePicker from "../rangepicker";
 import { SvgXml } from "react-native-svg";
 import { calenderIcon } from "../../../assets/svg/calender";
 
@@ -14,8 +14,10 @@ import { useAppDispatch } from "../../../hooks/useAppDispatch";
 import { useAppSelector } from "../../../hooks/useAppSelector";
 import { selectJobFilters } from "../../../features/jobs/selectors";
 import { setJobFilters } from "../../../features/jobs/slice";
+import { useStyles } from "./styles";
+import { DateFilterProps } from "./datefilter.d";
 
-const DateFilter: React.FC = () => {
+const DateFilter: React.FC<DateFilterProps> = () => {
   const dispatch = useAppDispatch();
   const jobFilters = useAppSelector(selectJobFilters);
 
@@ -26,8 +28,10 @@ const DateFilter: React.FC = () => {
     jobFilters.closeDate
   );
 
+  const styles = useStyles();
+
   return (
-    <View style={{ paddingHorizontal: 16 }}>
+    <View style={styles.container}>
       <TouchableOpacity
         activeOpacity={0.7}
         style={styles.dateInput}
@@ -79,16 +83,3 @@ const DateFilter: React.FC = () => {
 
 export default DateFilter;
 
-const styles = StyleSheet.create({
-  dateInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-});

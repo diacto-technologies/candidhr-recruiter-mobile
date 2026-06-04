@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Modal,
   View,
-  StyleSheet,
   ActivityIndicator,
   Alert,
   Platform,
@@ -16,17 +15,10 @@ import Share from 'react-native-share';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import Typography from '../../atoms/typography';
-import IconButton from '../../atoms/iconbutton';
 import Button from '../../atoms/button';
 import { colors } from '../../../theme/colors';
-import { screenWidth, screenHeight } from '../../../utils/devicelayout';
-
-interface ResumeModalProps {
-  visible: boolean;
-  resumeUrl: string | null;
-  onClose: () => void;
-  candidateName?: string;
-}
+import { ResumeModalProps } from './resumemodal.d';
+import { useStyles } from './styles';
 
 const ResumeModal: React.FC<ResumeModalProps> = ({
   visible,
@@ -40,13 +32,13 @@ const ResumeModal: React.FC<ResumeModalProps> = ({
   const [pageCount, setPageCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [downloading, setDownloading] = useState(false);
+  const styles = useStyles();
 
   useEffect(() => {
     if (visible && resumeUrl) {
       downloadPDF();
     }
   }, [visible, resumeUrl]);
-
 
   // 📥 Download into cache (stable path → avoids ENOENT)
   const downloadPDF = async () => {
@@ -70,7 +62,6 @@ const ResumeModal: React.FC<ResumeModalProps> = ({
       console.log('PDF Load Error:', err);
     }
   };
-
 
   // 📥 Download to device + Share
   const handleDownload = async () => {
@@ -109,7 +100,6 @@ const ResumeModal: React.FC<ResumeModalProps> = ({
     }
   };
 
-
   return (
     <Modal
       visible={visible}
@@ -133,21 +123,12 @@ const ResumeModal: React.FC<ResumeModalProps> = ({
               )}
             </View>
 
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              {/* <Button
-                onPress={handleDownload}
-                disabled={downloading}
-                variant="outline"
-                size={36}
-              >
-                {downloading ? 'Downloading...' : 'Download'}
-              </Button> */}
+            <View style={styles.headerRight}>
               <TouchableOpacity onPress={onClose}>
                 <Ionicons name="close-outline" size={26} />
               </TouchableOpacity>
             </View>
           </View>
-
 
           {/* PDF Area */}
           <View style={styles.pdfContainer}>
@@ -188,48 +169,5 @@ const ResumeModal: React.FC<ResumeModalProps> = ({
     </Modal>
   );
 };
-
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-  },
-  modalContent: {
-    width: screenWidth,
-    height: screenHeight * 0.9,
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    overflow: 'hidden',
-  },
-  header: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  pdfContainer: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  pdf: {
-    flex: 1,
-    width: screenWidth,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
 
 export default ResumeModal;

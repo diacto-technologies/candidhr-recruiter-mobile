@@ -4,7 +4,7 @@ import Typography from "../../../components/atoms/typography";
 import { colors } from "../../../theme/colors";
 import Card from "../../../components/atoms/card";
 import type { PerformanceReportResponse } from "../../../features/applications/types";
-import { useStyles } from "../styles";
+import { useStyles } from "../../organisms/AssessmentDetails/styles";
 
 type Props = {
   timeAnalytics: NonNullable<PerformanceReportResponse["time_analytics"]> | undefined;
