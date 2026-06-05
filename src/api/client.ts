@@ -242,7 +242,7 @@ const handleApiError = async (response: Response, endpoint?: string): Promise<ne
     // Handle non_field_errors (common in Django REST Framework)
     if (errorData.non_field_errors && Array.isArray(errorData.non_field_errors)) {
       errorMessage = errorData.non_field_errors.join(', ');
-    } else if (errorData.error) {
+    } else if (errorData.error && typeof errorData.error === 'string') {
       // Prioritize 'error' field (common in API responses)
       errorMessage = errorData.error;
     } else {

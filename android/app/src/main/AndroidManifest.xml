@@ -31,24 +31,22 @@
         <category android:name="android.intent.category.LAUNCHER" />
     </intent-filter>
 
-    <!-- ✅ App Links (QA + PROD) -->
+    <!-- ✅ App Links (Multi-Tenant Wildcard) -->
     <intent-filter android:autoVerify="true">
         <action android:name="android.intent.action.VIEW" />
 
         <category android:name="android.intent.category.DEFAULT" />
         <category android:name="android.intent.category.BROWSABLE" />
 
-        <!-- QA -->
         <data
             android:scheme="https"
-            android:host="googleqa.candidhr.ai"
-            android:pathPrefix="/apply" />
+            android:host="*.candidhr.ai"
+            android:pathPrefix="/apply/" />
 
-        <!-- PROD -->
         <data
-            android:scheme="https"
-            android:host="app.candidhr.ai"
-            android:pathPrefix="/apply" />
+    android:scheme="candidhr"
+    android:host="apply"
+    android:pathPrefix="/" />
     </intent-filter>
 
     <!-- ✅ Custom Scheme -->

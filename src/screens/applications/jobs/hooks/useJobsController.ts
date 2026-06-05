@@ -87,11 +87,12 @@ export const useJobsController = () => {
     if (!isConnected) return;
     dispatch(getPublishedJobsRequestAction(jobFilters));
     dispatch(getUnpublishedJobsRequestAction(jobFilters));
-  }, [token, isConnected, jobFilters]);
+  }, [token, isConnected, jobFilters, dispatch]);
 
-  // Use the extracted debounce hook to avoid raw setTimeout pollution
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const fetchJobs = useCallback(
+  const lastTabRef = useRef(activeTab);
+
+  // Debounced fetch for filter updates (e.g. typing search queries)
+  const debouncedFetchJobs = useCallback(
     debounce((tab: string, filters: any, limit: number) => {
       if (tab === "Favourites") {
         const ids = favouriteJobIdsRef.current;
@@ -112,10 +113,38 @@ export const useJobsController = () => {
     [dispatch]
   );
 
+  // Immediate fetch for instant actions like tab switching
+  const immediateFetchJobs = useCallback(
+    (tab: string, filters: any, limit: number) => {
+      if (tab === "Favourites") {
+        const ids = favouriteJobIdsRef.current;
+        if (!ids.length || !ids.join(",")) {
+          dispatch(clearFavouriteJobs());
+          return;
+        }
+        dispatch(getJobsRequestAction({
+          page: 1, limit, append: false, favourites: true, idIn: ids.join(","), ...filters,
+        }));
+      } else {
+        dispatch(getJobsRequestAction({
+          page: 1, limit, append: false, published: tab === "Published", ...filters,
+        }));
+      }
+      prevFiltersRef.current = filters;
+    },
+    [dispatch]
+  );
+
   useEffect(() => {
     if (!isConnected) return;
-    fetchJobs(activeTab, jobFilters, pagination.limit);
-  }, [jobFilters, isConnected, pagination.limit, activeTab, fetchJobs]);
+    
+    if (activeTab !== lastTabRef.current) {
+      lastTabRef.current = activeTab;
+      immediateFetchJobs(activeTab, jobFilters, pagination.limit);
+    } else {
+      debouncedFetchJobs(activeTab, jobFilters, pagination.limit);
+    }
+  }, [jobFilters, isConnected, pagination.limit, activeTab, immediateFetchJobs, debouncedFetchJobs]);
 
   const handleApplyFilters = () => {
     if (!isConnected) {
@@ -145,7 +174,7 @@ export const useJobsController = () => {
   };
 
   const handleLoadMore = () => {
-    if (!isConnected || loading || !hasMore) return;
+    if (!isConnected || loading || !hasMore || jobsList.length === 0) return;
     dispatch(
       getJobsRequestAction({
         page: pagination.page + 1,
