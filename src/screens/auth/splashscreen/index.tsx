@@ -36,11 +36,11 @@ const SplashScreen = () => {
     if (isAuthenticated) {
       timeoutId = setTimeout(() => {
       navigate('UserBottomTab');
-    }, 3000);
+    }, 1500);
     } else {
       timeoutId = setTimeout(() => {
         navigate('GetStartedScreen');
-      }, 3000);
+      }, 1500);
     }
     return () => clearTimeout(timeoutId);
   }, [isAuthenticated]);

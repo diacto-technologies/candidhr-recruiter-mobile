@@ -182,11 +182,16 @@ const AssessmentV2 = ({
     );
   }, [selectedAssignmentId, performanceReport]);
 
+  const isSelectedAssignmentValid = useMemo(() => {
+    if (!selectedAssignmentId || !assessmentOptions?.length) return false;
+    return assessmentOptions.some((o) => o.id === selectedAssignmentId);
+  }, [selectedAssignmentId, assessmentOptions]);
+
   useEffect(() => {
-    if (!selectedAssignmentId) return;
+    if (!selectedAssignmentId || !isSelectedAssignmentValid) return;
     if (reportMatchesAssignment) return;
     dispatch(getPerformanceReportRequestAction(selectedAssignmentId));
-  }, [selectedAssignmentId, dispatch, reportMatchesAssignment]);
+  }, [selectedAssignmentId, isSelectedAssignmentValid, dispatch, reportMatchesAssignment]);
 
 
 
