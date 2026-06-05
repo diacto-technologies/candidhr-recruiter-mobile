@@ -4,7 +4,6 @@ import { useTokenRefresh } from '../hooks/useTokenRefresh'
 import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { navigationRef } from '../utils/navigationUtils'
-import { navigationIntegration } from '../utils/sentry'
 import LoginScreen from '../screens/auth/loginscreen'
 import SplashScreen from '../screens/auth/splashscreen'
 import UserBottomTab from './bottomtabs'
@@ -67,9 +66,6 @@ const Navigation: FC = () => {
       ref={navigationRef}
       linking={linking}
       theme={navigationTheme}
-      onReady={() => {
-        navigationIntegration.registerNavigationContainer(navigationRef);
-      }}
     >
       <Stack.Navigator initialRouteName='SplashScreen' screenOptions={{ headerShown: false }}>
         <Stack.Screen name='SplashScreen' component={SplashScreen} />
