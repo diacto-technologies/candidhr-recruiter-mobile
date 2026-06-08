@@ -9,6 +9,11 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { ToastMessageProvider } from './src/components/organisms/toastmessage';
 import { NetworkConnectivityBridge } from './src/hooks/useNetworkConnectivity';
+import * as Sentry from '@sentry/react-native';
+import { initSentry } from './src/utils/sentry';
+
+// Initialize Sentry for crash reporting, performance tracing and profiling
+initSentry();
 
 // ⭐ Disable phone default font scaling for entire app
 (Text as any).defaultProps = {
@@ -22,6 +27,9 @@ import { NetworkConnectivityBridge } from './src/hooks/useNetworkConnectivity';
 };
 
 const App = () => {
+  // To test Sentry error capturing, uncomment the line below:
+  // React.useEffect(() => { throw new Error("Sentry Test JS Error"); }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Provider store={store}>
@@ -40,4 +48,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default Sentry.wrap(App);

@@ -12,6 +12,7 @@ import { logoutSuccess, refreshTokenSuccess } from '../features/auth/slice';
 import { showToastMessage } from '../utils/toast';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_ENDPOINTS } from './endpoints';
+import * as Sentry from '@sentry/react-native';
 
 const API_BASE_URL = config.api.baseURL;
 
@@ -242,7 +243,7 @@ const handleApiError = async (response: Response, endpoint?: string): Promise<ne
     // Handle non_field_errors (common in Django REST Framework)
     if (errorData.non_field_errors && Array.isArray(errorData.non_field_errors)) {
       errorMessage = errorData.non_field_errors.join(', ');
-    } else if (errorData.error && typeof errorData.error === 'string') {
+    } else if (errorData.error) {
       // Prioritize 'error' field (common in API responses)
       errorMessage = errorData.error;
     } else {
@@ -264,6 +265,21 @@ const handleApiError = async (response: Response, endpoint?: string): Promise<ne
       // Use default error message
     }
   }
+
+  // Capture API error in Sentry
+  Sentry.captureException(new Error(errorMessage), {
+    extra: {
+      endpoint,
+      status: response.status,
+      statusText: response.statusText,
+      url: `${API_BASE_URL}${endpoint}`,
+      details: errorDetails,
+    },
+    tags: {
+      api_status: String(response.status),
+      api_endpoint: endpoint || 'unknown',
+    },
+  });
 
   // Log error details for debugging (only in dev, not shown to user)
   if (__DEV__) {
