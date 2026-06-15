@@ -83,12 +83,6 @@ export const useJobsController = () => {
     favouriteJobIdsRef.current = favouriteJobIds;
   }, [favouriteJobIds]);
 
-  useEffect(() => {
-    if (!isConnected) return;
-    dispatch(getPublishedJobsRequestAction(jobFilters));
-    dispatch(getUnpublishedJobsRequestAction(jobFilters));
-  }, [token, isConnected, jobFilters, dispatch]);
-
   const lastTabRef = useRef(activeTab);
 
   // Debounced fetch for filter updates (e.g. typing search queries)
@@ -98,15 +92,21 @@ export const useJobsController = () => {
         const ids = favouriteJobIdsRef.current;
         if (!ids.length || !ids.join(",")) {
           dispatch(clearFavouriteJobs());
-          return;
+        } else {
+          dispatch(getJobsRequestAction({
+            page: 1, limit, append: false, favourites: true, idIn: ids.join(","), ...filters,
+          }));
         }
-        dispatch(getJobsRequestAction({
-          page: 1, limit, append: false, favourites: true, idIn: ids.join(","), ...filters,
-        }));
       } else {
         dispatch(getJobsRequestAction({
           page: 1, limit, append: false, published: tab === "Published", ...filters,
         }));
+      }
+      if (tab !== "Published") {
+        dispatch(getPublishedJobsRequestAction(filters));
+      }
+      if (tab !== "Draft") {
+        dispatch(getUnpublishedJobsRequestAction(filters));
       }
       prevFiltersRef.current = filters;
     }, 400),
@@ -120,15 +120,21 @@ export const useJobsController = () => {
         const ids = favouriteJobIdsRef.current;
         if (!ids.length || !ids.join(",")) {
           dispatch(clearFavouriteJobs());
-          return;
+        } else {
+          dispatch(getJobsRequestAction({
+            page: 1, limit, append: false, favourites: true, idIn: ids.join(","), ...filters,
+          }));
         }
-        dispatch(getJobsRequestAction({
-          page: 1, limit, append: false, favourites: true, idIn: ids.join(","), ...filters,
-        }));
       } else {
         dispatch(getJobsRequestAction({
           page: 1, limit, append: false, published: tab === "Published", ...filters,
         }));
+      }
+      if (tab !== "Published") {
+        dispatch(getPublishedJobsRequestAction(filters));
+      }
+      if (tab !== "Draft") {
+        dispatch(getUnpublishedJobsRequestAction(filters));
       }
       prevFiltersRef.current = filters;
     },
@@ -144,7 +150,7 @@ export const useJobsController = () => {
     } else {
       debouncedFetchJobs(activeTab, jobFilters, pagination.limit);
     }
-  }, [jobFilters, isConnected, pagination.limit, activeTab, immediateFetchJobs, debouncedFetchJobs]);
+  }, [jobFilters, isConnected, pagination.limit, activeTab, immediateFetchJobs, debouncedFetchJobs, token]);
 
   const handleApplyFilters = () => {
     if (!isConnected) {
@@ -163,8 +169,12 @@ export const useJobsController = () => {
         ...jobFilters,
       })
     );
-    dispatch(getPublishedJobsRequestAction(jobFilters));
-    dispatch(getUnpublishedJobsRequestAction(jobFilters));
+    if (activeTab !== "Published") {
+      dispatch(getPublishedJobsRequestAction(jobFilters));
+    }
+    if (activeTab !== "Draft") {
+      dispatch(getUnpublishedJobsRequestAction(jobFilters));
+    }
     setFilterSheet(false);
   };
 

@@ -225,6 +225,7 @@ const StatusDropdown = ({
             placeholderStyle={compact ? styles.placeholderStyleHidden : styles.placeholderStyle}
             activeColor={colors.brand[50]}
             dropdownPosition="bottom"
+            showsVerticalScrollIndicator={false}
             renderItem={(item, selected) => (
               <View style={[styles.optionItem, selected && styles.selectedOptionItem]}>
                 <View style={styles.optionTextContainer}>

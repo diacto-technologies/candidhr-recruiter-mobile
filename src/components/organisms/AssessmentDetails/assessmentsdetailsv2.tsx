@@ -129,7 +129,7 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
     return questions
       .filter((q) => q?.question_type !== "coding")
       .map((q: any, index: number) => {
-        const id = q?.question_id ?? String(index + 1);
+        const id = q?.question_id ? String(q.question_id) : String(index + 1);
         const isCorrect = Boolean(q?.is_correct);
         const difficulty = formatDifficulty(q?.difficulty);
         const time = `${q?.time_spent ?? 0} Sec.`;
@@ -166,7 +166,7 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
         );
 
         const ai = normalizeAiEvaluation(q?.ai_evaluation, q?.points);
-        const aiId = String(q?.question_id ?? index);
+        const aiId = q?.question_id ? String(q.question_id) : String(index);
 
         return {
           id,
@@ -1185,7 +1185,7 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
             .map((q: any, index: number) => {
               const ce = q?.coding_evaluation ?? {};
               const tcr: any[] = ce?.test_cases_result ?? [];
-              const key = q?.question_id ?? String(index);
+              const key = q?.question_id ? String(q.question_id) : String(index);
 
               return (
                 <View key={key} style={{ gap: 12 }}>

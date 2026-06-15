@@ -343,7 +343,7 @@ export default function VideoInterview({
             stageId: videoStage?.id ?? undefined,
             applicationId: applicant?.id ?? undefined,
             contentType: "Automated Video Interview",
-            onUpdateStatus: (newStatusId) => {
+            onUpdateStatus: (newStatusId : string) => {
               setSelectedStageStatus(newStatusId);
             },
           }}
