@@ -104,6 +104,7 @@ const CriteriaResponsesCard: React.FC<CriteriaResponsesCardProps> = () => {
                   <Typography variant="regularTxtsm" color={colors.gray[600]}>
                     Response :
                   </Typography>
+                  <View style={{flex:1}}>
                   <Typography
                     variant="semiBoldTxtsm"
                     color={
@@ -115,6 +116,7 @@ const CriteriaResponsesCard: React.FC<CriteriaResponsesCardProps> = () => {
                     {"  "}
                     {responseText}
                   </Typography>
+                  </View>
                 </View>
               )}
 
@@ -124,10 +126,14 @@ const CriteriaResponsesCard: React.FC<CriteriaResponsesCardProps> = () => {
                   <Typography variant="regularTxtsm" color={colors.gray[600]}>
                     Expected response :
                   </Typography>
-                  <Typography variant="semiBoldTxtsm" color={colors.success[500]}>
-                    {"  "}
-                    {expectedText}
-                  </Typography>
+                  <View style={{ flex: 1}}>
+                    <Typography
+                      variant="semiBoldTxtsm"
+                      color={colors.success[500]}
+                    >
+                      {expectedText}
+                    </Typography>
+                  </View>
                 </View>
               )}
             </View>

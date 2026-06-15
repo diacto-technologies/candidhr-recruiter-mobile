@@ -118,7 +118,7 @@ const DetailedResume = () => {
       {workExperience.length ? (
         workExperience.map((item, index) => {
           const tierLabel = pickTierLabel(item);
-          const key = item?.id ?? item?.title ?? item?.name ?? `work-${index}`;
+          const key = item?.id ? `work-${item.id}` : `work-${index}`;
           return (
             <View key={key} style={styles.block}>
               <View style={styles.row}>
@@ -200,7 +200,7 @@ const DetailedResume = () => {
       {projects.length ? (
         projects.map((item, index) => {
           const tierLabel = pickTierLabel(item);
-          const key = item?.id ?? item?.name ?? item?.title ?? `project-${index}`;
+          const key = item?.id ? `project-${item.id}` : `project-${index}`;
           return (
             <View key={key} style={styles.block}>
               <View style={styles.row}>
@@ -258,7 +258,7 @@ const DetailedResume = () => {
         education.map((item, index) => {
           const tierLabel = pickTierLabel(item);
           const school = item?.school ?? item?.institution ?? "_";
-          const key = item?.id ?? item?.degree ?? school ?? `edu-${index}`;
+          const key = item?.id ? `edu-${item.id}` : `edu-${index}`;
           return (
             <View key={key} style={styles.block}>
               <View style={styles.row}>
@@ -331,7 +331,7 @@ const DetailedResume = () => {
           ]
             .filter(Boolean)
             .join(" · ");
-          const key = item?.id ?? item?.name ?? `cert-${index}`;
+          const key = item?.id ? `cert-${item.id}` : `cert-${index}`;
           return (
             <View key={key} style={styles.block}>
               <View style={styles.row}>

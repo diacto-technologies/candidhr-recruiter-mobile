@@ -119,7 +119,7 @@ const OverviewTab = () => {
   }
 
   return (
-    <ScrollView bounces={false}>
+    <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
       <View style={styles.container}>
         
         {/* ── Job description (overview before first h2) ── */}

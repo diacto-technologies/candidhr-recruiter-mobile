@@ -1,10 +1,12 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useCallback } from "react";
 import {
   View,
   Animated,
   ScrollView,
   LayoutChangeEvent,
   Pressable,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from "react-native";
 import { SvgXml } from "react-native-svg";
 import { backButtonIcon } from "../../../assets/svg/backbutton";
@@ -24,9 +26,12 @@ const ApplicationOverviewDetails = () => {
   const scrollX = useRef(new Animated.Value(0)).current;
   const [contentWidth, setContentWidth] = useState(0);
   const [containerWidth, setContainerWidth] = useState(windowWidth - 40);
-  
+
+  // Ref for the fixed header horizontal scroll (kept in sync with body)
+  const headerScrollRef = useRef<ScrollView>(null);
+
   const { data } = useApplicationOverviewDetails();
-  
+
   const onContainerLayout = (e: LayoutChangeEvent) => {
     // Only update if it significantly changes to prevent wasted renders
     const newWidth = e.nativeEvent.layout.width;
@@ -57,6 +62,15 @@ const ApplicationOverviewDetails = () => {
     extrapolate: "clamp",
   });
 
+  /** Sync header horizontal scroll with body scroll offset */
+  const onBodyHorizontalScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offsetX = event.nativeEvent.contentOffset.x;
+      headerScrollRef.current?.scrollTo({ x: offsetX, animated: false });
+    },
+    [],
+  );
+
   /** LEFT FIXED COLUMN */
   const renderLeftColumn = (item: TableRow, index: number) => {
     const bg = index % 2 === 1 ? colors.neutrals.lightGray : "#FFF";
@@ -82,8 +96,8 @@ const ApplicationOverviewDetails = () => {
         <Typography style={styles.cell}>{item?.stages?.reject}</Typography>
         <Typography style={styles.cell}>{item?.stages?.on_hold}</Typography>
         <Typography style={styles.cell}>{item?.close_date}</Typography>
-        <View style={{backgroundColor:item?.is_closed?colors.error[50]:colors.success[50],paddingHorizontal:8, paddingVertical:2,borderRadius:9999,alignItems:'center', borderWidth:1 ,borderColor:item?.is_closed?colors.error[200]:colors.success[200]}}>
-          <Typography variant="regularTxtxs" color={item?.is_closed?colors.error[600]:colors.success[600]}>{item?.is_closed ? "Closed" : "Open"}</Typography>
+        <View style={{ backgroundColor: item?.is_closed ? colors.error[50] : colors.success[50], paddingHorizontal: 8, paddingVertical: 2, borderRadius: 9999, alignItems: 'center', borderWidth: 1, borderColor: item?.is_closed ? colors.error[200] : colors.success[200] }}>
+          <Typography variant="regularTxtxs" color={item?.is_closed ? colors.error[600] : colors.success[600]}>{item?.is_closed ? "Closed" : "Open"}</Typography>
         </View>
       </View>
     );
@@ -100,13 +114,75 @@ const ApplicationOverviewDetails = () => {
         }
       />
       <View style={styles.card} onLayout={onContainerLayout}>
+
+        {/* ===== STICKY HEADER (outside vertical ScrollView) ===== */}
+        <View style={{ flexDirection: "row" }}>
+          {/* Left header cell — fixed */}
+          <Animated.View
+            style={[
+              styles.leftFixedWrapper,
+              { height: undefined },
+              {
+                shadowColor: "#0A0D12",
+                shadowOffset: { width: 2, height: 0 },
+                shadowOpacity: shadowOpacity.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 0.06],
+                }),
+                shadowRadius: shadowOpacity.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 10],
+                }),
+                elevation: shadowOpacity.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 6],
+                }),
+              },
+            ]}
+          >
+            <View style={[styles.headerRow, styles.leftHeaderRow]}>
+              <Typography
+                variant="semiBoldTxtxs"
+                style={styles.leftHeaderText}
+                color={colors.gray[500]}
+              >
+                Job title
+              </Typography>
+            </View>
+          </Animated.View>
+
+          {/* Right header cells — user-locked; driven by body scroll */}
+          <ScrollView
+            ref={headerScrollRef}
+            horizontal
+            scrollEnabled={false}
+            showsHorizontalScrollIndicator={false}
+            bounces={false}
+          >
+            <View style={styles.headerRow}>
+              {tabelTitle.map((title, index) => (
+                <Typography
+                  key={index}
+                  variant="semiBoldTxtxs"
+                  style={styles.headerText}
+                  color={colors.gray[500]}
+                >
+                  {title}
+                </Typography>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
+
+        {/* ===== SCROLLABLE DATA ROWS ===== */}
         <ScrollView
           showsVerticalScrollIndicator={false}
           nestedScrollEnabled
           bounces={false}
+          style={{ flex: 1 }}
         >
           <View style={{ flexDirection: "row" }}>
-
+            {/* Left fixed data column */}
             <Animated.View
               style={[
                 styles.leftFixedWrapper,
@@ -128,20 +204,10 @@ const ApplicationOverviewDetails = () => {
                 },
               ]}
             >
-              {/* LEFT COLUMN HEADER */}
-              <View style={[styles.headerRow, styles.leftHeaderRow]}>
-                <Typography
-                  variant="semiBoldTxtxs"
-                  style={styles.leftHeaderText}
-                  color={colors.gray[500]}
-                >
-                  Job title
-                </Typography>
-              </View>
-
               {data.map((item, index) => renderLeftColumn(item, index))}
             </Animated.View>
 
+            {/* Right scrollable data columns */}
             <Animated.ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -149,24 +215,14 @@ const ApplicationOverviewDetails = () => {
               onContentSizeChange={(w) => setContentWidth(w)}
               onScroll={Animated.event(
                 [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-                { useNativeDriver: true }
+                {
+                  useNativeDriver: true,
+                  listener: onBodyHorizontalScroll,
+                },
               )}
               bounces={false}
             >
               <View>
-                <View style={styles.headerRow}>
-                  {tabelTitle.map((title, index) => (
-                    <Typography
-                      key={index}
-                      variant="semiBoldTxtxs"
-                      style={styles.headerText}
-                      color={colors.gray[500]}
-                    >
-                      {title}
-                    </Typography>
-                  ))}
-                </View>
-
                 {data.map((item, index) => renderRightRow(item, index))}
               </View>
             </Animated.ScrollView>

@@ -29,7 +29,7 @@ export const useStyles = () => {
     },
     row: {
       flexDirection: "row",
-      alignItems: "center",
+      alignItems: "flex-start",
     },
     emptyState: {
       borderRadius: 12,
