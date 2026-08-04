@@ -23,7 +23,15 @@ export const openExternalLink = async (url: string | null | undefined) => {
   }
 
   try {
-    await Linking.openURL(finalUrl);
+    const encodedUrl = encodeURI(finalUrl);
+    const supported = await Linking.canOpenURL(encodedUrl);
+    
+    if (supported) {
+      await Linking.openURL(encodedUrl);
+    } else {
+      // Fallback to unencoded or just try opening it anyway
+      await Linking.openURL(finalUrl);
+    }
   } catch (error) {
     // Silently fail
   }

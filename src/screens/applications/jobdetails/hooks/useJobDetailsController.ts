@@ -43,7 +43,7 @@ export type TabName = typeof TABS[keyof typeof TABS];
 
 export const useJobDetailsController = () => {
   const route = useRoute();
-  const { jobId } = route.params as { jobId: string };
+  const { jobId, org } = route.params as { jobId: string; org?: string };
   const dispatch = useAppDispatch();
   const isFocused = useIsFocused();
   const { can } = usePermission();
@@ -60,6 +60,13 @@ export const useJobDetailsController = () => {
 
   const canPublish = can(PERMISSIONS.PUBLISH_JOB);
   const isPublished = Boolean(selectedJob?.published);
+
+  useEffect(() => {
+    if (jobId && org) {
+      console.log('Deep link data:', jobId, org);
+      // TODO: pass org to your API if needed, e.g. fetchJobDetails(jobId, org)
+    }
+  }, [jobId, org]);
 
   useEffect(() => {
     if (!jobId) return;
