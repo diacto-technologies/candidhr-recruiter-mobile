@@ -232,7 +232,7 @@ export function ToastMessageProvider({ children }: PropsWithChildren) {
                 <SvgXml xml={variant.svg} />
                 <Typography
                   numberOfLines={3}
-                  variant="P3C"
+                  variant="semiBoldTxtmd"
                   color={variant.color}
                   style={{ flex: 1, ...opts.textStyle }}
                 >

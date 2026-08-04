@@ -41,20 +41,21 @@ export default function ProctoringCard({ proctoring, styles }: Props) {
   );
 
   const metrics = useMemo(
-    () => [
-      {
-        label: "Tab switches",
-        value: getViolationCount(violationsByType, ["tab_switches", "tab_switch", "tab_switch_count"]),
-      },
-      {
-        label: "Mouse leave",
-        value: getViolationCount(violationsByType, ["mouse_leave", "mouse_leaves", "mouse_leave_count"]),
-      },
-      {
-        label: "Screen exit",
-        value: getViolationCount(violationsByType, ["screen_exit", "screen_exits", "screen_exit_count"]),
-      },
-    ],
+    () =>
+      [
+        {
+          label: "Tab switches",
+          value: getViolationCount(violationsByType, ["tab_switches", "tab_switch", "tab_switch_count"]),
+        },
+        {
+          label: "Mouse leave",
+          value: getViolationCount(violationsByType, ["mouse_leave", "mouse_leaves", "mouse_leave_count"]),
+        },
+        {
+          label: "Screen exit",
+          value: getViolationCount(violationsByType, ["screen_exit", "screen_exits", "screen_exit_count"]),
+        },
+      ].filter((m) => m.value > 0), // hide metrics with no data
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [violationsByType]
   );
@@ -65,7 +66,13 @@ export default function ProctoringCard({ proctoring, styles }: Props) {
     return gazeSnapshots.slice(0, Math.min(visibleCount, gazeSnapshots.length));
   }, [gazeSnapshots, visibleCount]);
 
-  if (!proctoring) return null;
+  // Derived presence flags
+  const hasVideo = !!proctoring?.video_url;
+  const hasMetrics = metrics.length > 0;
+  const hasSnapshots = gazeSnapshots.length > 0;
+
+  // Nothing meaningful to render → hide the entire card
+  if (!proctoring || (!hasVideo && !hasMetrics && !hasSnapshots)) return null;
 
   return (
     <Card style={styles.container}>
@@ -77,29 +84,36 @@ export default function ProctoringCard({ proctoring, styles }: Props) {
         </View>
       </View>
 
-      <View style={styles.videoContainer}>
-        <VideoPlayerBox source={proctoring?.video_url ?? ""} />
-      </View>
-      <View style={styles.metricsRow}>
-        {metrics.map((m, idx) => (
-          <React.Fragment key={m.label}>
-            <View style={styles.metricTile}>
-              <Typography variant="semiBoldDxs" color={colors.gray[900]}>
-                {String(m.value).padStart(2, "0")}
-              </Typography>
-              <Typography variant="regularTxtmd" color={colors.gray[600]}>
-                {m.label}
-              </Typography>
-            </View>
-            {idx !== metrics.length - 1 && (
-              <View style={styles.dividerLine} />
-            )}
-          </React.Fragment>
-        ))}
-      </View>
+      {/* Video — only when url is present */}
+      {hasVideo && (
+        <View style={styles.videoContainer}>
+          <VideoPlayerBox source={proctoring.video_url!} />
+        </View>
+      )}
 
-      {/* ================= GAZE SNAPSHOTS ================= */}
-      {gazeSnapshots.length > 0 && (
+      {/* Metrics row — only when at least one violation metric is non-zero */}
+      {hasMetrics && (
+        <View style={styles.metricsRow}>
+          {metrics.map((m, idx) => (
+            <React.Fragment key={m.label}>
+              <View style={styles.metricTile}>
+                <Typography variant="semiBoldDxs" color={colors.gray[900]}>
+                  {String(m.value).padStart(2, "0")}
+                </Typography>
+                <Typography variant="regularTxtmd" color={colors.gray[600]}>
+                  {m.label}
+                </Typography>
+              </View>
+              {idx !== metrics.length - 1 && (
+                <View style={styles.dividerLine} />
+              )}
+            </React.Fragment>
+          ))}
+        </View>
+      )}
+
+      {/* Gaze snapshots — only when snapshots array is non-empty */}
+      {hasSnapshots && (
         <View style={styles.snapshotHeader}>
           <Typography
             variant="mediumTxtxs"
@@ -113,6 +127,8 @@ export default function ProctoringCard({ proctoring, styles }: Props) {
             <View style={styles.snapshotGrid}>
               {visibleSnapshots.map((snapshot: any, idx: number) => {
                 const uri = snapshot?.image_url ?? snapshot?.image ?? null;
+                // Skip thumbnails with no image URI
+                if (!uri) return null;
                 const isFadedPreview = gazeSnapshots.length > 4 && visibleCount <= 6 && idx >= 4;
 
                 return (
@@ -127,13 +143,11 @@ export default function ProctoringCard({ proctoring, styles }: Props) {
                       isFadedPreview && styles.fadedThumbnail,
                     ]}
                   >
-                    {!!uri && (
-                      <Image
-                        source={{ uri }}
-                        style={{ width: "100%", height: "100%" }}
-                        resizeMode="cover"
-                      />
-                    )}
+                    <Image
+                      source={{ uri }}
+                      style={{ width: "100%", height: "100%" }}
+                      resizeMode="cover"
+                    />
                   </TouchableOpacity>
                 );
               })}
@@ -168,4 +182,3 @@ export default function ProctoringCard({ proctoring, styles }: Props) {
     </Card>
   );
 }
-

@@ -37,29 +37,8 @@
 
         <category android:name="android.intent.category.DEFAULT" />
         <category android:name="android.intent.category.BROWSABLE" />
-
         <data
-            android:scheme="https"
-            android:host="*.candidhr.ai"
-            android:pathPrefix="/apply/" />
-
-        <data
-    android:scheme="candidhr"
-    android:host="apply"
-    android:pathPrefix="/" />
-    </intent-filter>
-
-    <!-- ✅ Custom Scheme -->
-    <intent-filter>
-        <action android:name="android.intent.action.VIEW" />
-
-        <category android:name="android.intent.category.DEFAULT" />
-        <category android:name="android.intent.category.BROWSABLE" />
-
-        <data
-            android:scheme="candidhr"
-            android:host="apply"
-            android:pathPrefix="/" />
+            android:scheme="candidhr"/>
     </intent-filter>
 
 </activity>

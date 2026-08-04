@@ -1,13 +1,16 @@
 const linking = {
-  prefixes: ['candidhr://', 'https://app.candidhr.ai', 'https://googleqa.candidhr.ai'],
+  prefixes: ['candidhr://'],
+
   config: {
     screens: {
       Dashboard: 'dashboard',
       ApplicantDetails: 'applicant/:id',
+
       JobDetailScreen: {
-        path: 'apply/:jobId',
+        path: 'apply/:jobId/:org',
         parse: {
           jobId: (jobId: string) => jobId.replace(/\/$/, ''),
+          org: (org: string) => org,
         },
       },
     },
