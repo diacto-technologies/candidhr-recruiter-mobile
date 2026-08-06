@@ -98,6 +98,15 @@ export interface ApplicationsState {
   assessmentOptionsHasMore: boolean;
   loadingAssessmentOptions: boolean;
   assessmentOptionsError: string | null;
+  emailTemplates: EmailTemplate[];
+  loadingEmailTemplates: boolean;
+  emailTemplatesError: string | null;
+  emailTemplatePreview: PreviewEmailTemplateResponse | null;
+  loadingEmailTemplatePreview: boolean;
+  emailTemplatePreviewError: string | null;
+  personalityInterviewOptions: PersonalityScreeningInterviewOptionsResponse | null;
+  loadingPersonalityInterviewOptions: boolean;
+  personalityInterviewOptionsError: string | null;
   loadingExportAssessmentReport?: boolean;
   exportAssessmentReportError?: string | null;
 }
@@ -1454,7 +1463,10 @@ export interface AssessmentOption {
 }
 
 export interface AssessmentOptionsReportResponse {
-  assessmentlogs: AssessmentOption[];
+  results: AssessmentOption[];
+  count?: number;
+  next?: string | null;
+  previous?: string | null;
 
   // pagination (safe optional for future/backend update)
   page?: number;
@@ -1468,6 +1480,32 @@ export interface ExportAssessmentReportRequest {
   select_all?: boolean;
 }
 
+export interface PersonalityScreeningInterviewOption {
+  id: string;
+  status: string;
+  workflow_last_status: string | null;
+  completed: boolean;
+  link_opened: boolean;
+  link_opened_at: string | null;
+  sent_by: {
+    id: string;
+    name: string;
+  } | null;
+  total_questions: number;
+  assigned_at: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  valid_from: string | null;
+  valid_until: string | null;
+  screening_link: string | null;
+}
+
+export interface PersonalityScreeningInterviewOptionsResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: PersonalityScreeningInterviewOption[];
+}
 
 export interface ApplicationProfileDetails {
   id: string;
@@ -1557,4 +1595,37 @@ export interface SendEmailPayload {
   include_job_link: boolean;
   subject: string;
   message: string;
+}
+export interface EmailTemplate {
+    id: string;
+    name: string;
+    subject: string;
+    body: string;
+    associated_status: string | null;
+    is_default: boolean;
+    is_active: boolean;
+    recommended: boolean;
+    usage_count: number;
+    last_used_at: string | null;
+    created_by: any | null;
+    created_at: string;
+    updated_at: string;
+    is_owned_by_caller: boolean;
+}
+
+export interface PreviewEmailTemplatePayload {
+  template_id: string;
+  application_id: string;
+}
+
+export interface PreviewEmailTemplateResponse {
+  subject: string;
+  body: string;
+  html: string;
+  resolved_for: {
+    application_id: string;
+    candidate_name: string;
+    job_title: string;
+    status: string;
+  };
 }

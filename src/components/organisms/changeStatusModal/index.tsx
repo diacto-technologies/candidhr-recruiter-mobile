@@ -22,6 +22,9 @@ import {
   getReasonCategoryListRequestAction,
   getReasonListRequestAction,
   updateStageStatusRequestAction,
+  getEmailTemplatesListRequestAction,
+  previewEmailTemplateRequestAction,
+  clearEmailTemplatePreviewAction,
 } from '../../../features/applications/actions';
 import {
   selectReasonCategoryList,
@@ -30,6 +33,10 @@ import {
   selectReasonListError,
   selectSelectedApplication,
   selectUpdateStageStatusLoading,
+  selectEmailTemplates,
+  selectEmailTemplatesLoading,
+  selectEmailTemplatePreview,
+  selectEmailTemplatePreviewLoading,
 } from '../../../features/applications/selectors';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { capitalizeFirstLetter } from '../../../utils/stringUtils';
@@ -92,12 +99,18 @@ const ChangeStatusModal = ({
     }
   }, [visible, initialEmailMessage]);
 
+  const [selectedEmailTemplateId, setSelectedEmailTemplateId] = useState<string | null>(null);
+
   const dispatch = useDispatch();
   const reasonCategories = useAppSelector(selectReasonCategoryList);
   const reasonList = useAppSelector(selectReasonList);
   const reasonListLoading = useAppSelector(selectReasonListLoading);
   const reasonListError = useAppSelector(selectReasonListError);
   const updateStageStatusLoading = useAppSelector(selectUpdateStageStatusLoading);
+  const emailTemplates = useAppSelector(selectEmailTemplates);
+  const emailTemplatesLoading = useAppSelector(selectEmailTemplatesLoading);
+  const emailTemplatePreview = useAppSelector(selectEmailTemplatePreview);
+  const emailTemplatePreviewLoading = useAppSelector(selectEmailTemplatePreviewLoading);
   const application = useAppSelector(selectSelectedApplication);
   const styles = useStyles();
 
@@ -107,6 +120,19 @@ const ChangeStatusModal = ({
       dispatch(getReasonListRequestAction(1));
     }
   }, [visible, dispatch]);
+
+  useEffect(() => {
+    if (visible && emailCandidate && selectedNewStatusId) {
+      dispatch(getEmailTemplatesListRequestAction(selectedNewStatusId));
+    }
+  }, [visible, emailCandidate, selectedNewStatusId, dispatch]);
+
+  useEffect(() => {
+    if (emailTemplatePreview) {
+      setSubject(emailTemplatePreview.subject || '');
+      setMessage(emailTemplatePreview.body || '');
+    }
+  }, [emailTemplatePreview]);
 
   const reasonDropdownOptions = useMemo(() => {
     const categorySet = selectedCategories.length > 0 ? new Set(selectedCategories) : null;
@@ -196,6 +222,8 @@ const ChangeStatusModal = ({
     setSelectedReasonIds([]);
     setSelectedCategories([]);
     setEmailCandidate(false);
+    setSelectedEmailTemplateId(null);
+    dispatch(clearEmailTemplatePreviewAction());
     setSubject('Update on your application for {{job_title}}');
     setMessage(initialEmailMessage ?? defaultMessage);
   };
@@ -315,36 +343,7 @@ const ChangeStatusModal = ({
                   </View>
                   {addReason ? (
                     <View style={styles.reasonDropdownContainer}>
-                      <View style={styles.categoriesContainer}>
-                        {reasonCategories.map((item) => {
-                          const selected = selectedCategories.includes(item.id);
 
-                          return (
-                            <Pressable
-                              key={item.id}
-                              onPress={() => {
-                                const nextSelectedCategories = selected
-                                  ? selectedCategories.filter(id => id !== item.id)
-                                  : [...selectedCategories, item.id];
-
-                                setSelectedCategories(nextSelectedCategories);
-                                setSelectedCategoryId(nextSelectedCategories[0] ?? null);
-                              }}
-                              style={[
-                                styles.categoryPill,
-                                selected && styles.categoryPillSelected
-                              ]}
-                            >
-                              <Typography
-                                variant="mediumTxtsm"
-                                color={selected ? colors.brand[700] : colors.gray[700]}
-                              >
-                                {item.name}
-                              </Typography>
-                            </Pressable>
-                          );
-                        })}
-                      </View>
                       <CommonDropdown
                         placeholder="Select a reason"
                         options={reasonDropdownOptions}
@@ -360,6 +359,7 @@ const ChangeStatusModal = ({
                         disabled={reasonListLoading}
                         error={reasonListError ?? undefined}
                         multiSelect
+                        multilineOptions
                       />
                     </View>
                   ) : null}
@@ -385,6 +385,8 @@ const ChangeStatusModal = ({
                           if (!next) {
                             setSubject('Update on your application for {{job_title}}');
                             setMessage(initialEmailMessage ?? defaultMessage);
+                            setSelectedEmailTemplateId(null);
+                            dispatch(clearEmailTemplatePreviewAction());
                           }
                           return next;
                         });
@@ -397,19 +399,51 @@ const ChangeStatusModal = ({
                 </View>
                 {emailCandidate ? (
                   <View style={styles.emailFieldsContainer}>
-                    <View style={styles.requiredLabelRow}>
-                      <Typography variant="mediumTxtsm" color={colors.gray[700]}>Subject </Typography>
-                      <Typography variant="regularTxtsm" color={colors.error[500]}>*</Typography>
-                    </View>
-
-                    <TextField
-                      value={subject}
-                      onChangeText={(text) => { setSubject(text) }}
-                      placeholder="Subject"
-                      style={styles.input}
-                      size="Medium"
-                      multiline
+                    <CommonDropdown
+                      placeholder="Use template (optional)"
+                      options={[
+                        ...(emailTemplates || []),
+                        { id: 'clear', name: '✕ Clear selected template' },
+                      ]}
+                      multilineOptions={true}
+                      labelKey="name"
+                      valueKey="id"
+                      value={selectedEmailTemplateId}
+                      onChange={(value, item) => {
+                        if (item.id === 'clear') {
+                          setSelectedEmailTemplateId(null);
+                          setSubject('Update on your application for {{job_title}}');
+                          setMessage(initialEmailMessage ?? defaultMessage);
+                          dispatch(clearEmailTemplatePreviewAction());
+                        } else {
+                          setSelectedEmailTemplateId(item.id);
+                          if (application?.id) {
+                            dispatch(previewEmailTemplateRequestAction({
+                              template_id: item.id,
+                              application_id: application.id
+                            }));
+                          }
+                        }
+                      }}
                     />
+
+                    {selectedEmailTemplateId == null && (
+                      <>
+                        <View style={styles.requiredLabelRow}>
+                          <Typography variant="mediumTxtsm" color={colors.gray[700]}>Subject </Typography>
+                          <Typography variant="regularTxtsm" color={colors.error[500]}>*</Typography>
+                        </View>
+
+                        <TextField
+                          value={subject}
+                          onChangeText={(text) => { setSubject(text) }}
+                          placeholder="Subject"
+                          style={styles.input}
+                          size="Medium"
+                          multiline
+                        />
+                      </>
+                    )}
 
                     <View style={styles.requiredLabelRow}>
                       <Typography variant="mediumTxtsm" color={colors.gray[700]}>Message </Typography>

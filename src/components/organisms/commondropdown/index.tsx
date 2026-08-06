@@ -30,6 +30,7 @@ const CommonDropdown = ({
   dropdownPosition = 'bottom',
   multiSelect = false,
   onLoadMore,
+  multilineOptions = false,
 }: CommonDropdownProps) => {
   const [isFocused, setIsFocused] = useState(false);
 
@@ -136,7 +137,7 @@ const CommonDropdown = ({
                       isSelected && styles.selectedOptionItem,
                     ]}
                   >
-                    <Typography style={styles.optionNameText} numberOfLines={1}>
+                    <Typography style={styles.optionNameText} numberOfLines={multilineOptions ? undefined : 1}>
                       {item.name}
                     </Typography>
 
@@ -210,7 +211,7 @@ const CommonDropdown = ({
                       isSelected && styles.selectedOptionItem,
                     ]}
                   >
-                    <Typography style={styles.optionNameText} numberOfLines={1}>
+                    <Typography style={styles.optionNameText} numberOfLines={multilineOptions ? undefined : 1}>
                       {item.name}
                     </Typography>
 

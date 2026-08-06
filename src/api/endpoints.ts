@@ -70,10 +70,16 @@ export const API_ENDPOINTS = {
       `/assessments/v1/assessment-log/assessment/detailed-report/?assessment_log_id=${assessmentLogId}&assessment_id=${assessmentId}`,
     PERSONALITY_SCREENING_LIST: (application_id: string, job_id: string) =>
       `/personality-screening/list/?application_id=${application_id}&job_id=${job_id}`,
+    PERSONALITY_SCREENING_INTERVIEW_OPTIONS: (application_id: string) =>
+      `/personality-screening/interview-options/?application_id=${application_id}`,
     PERSONALITY_SCREENING_RESPONSES: (screening_id: string) =>
       `/personality-screening/${screening_id}/responses/`,
     /** POST send status update email to candidate */
     SEND_EMAIL: '/applications/send-email/',
+    /** GET email templates list */
+    EMAIL_TEMPLATES: '/email-templates/',
+    /** POST preview email template */
+    PREVIEW_EMAIL_TEMPLATE: (id: string) => `/email-templates/${id}/preview/`,
     /** PATCH share users with an application: /applications/v1/{id}/share/ */
     SHARE: (id: string) => `/applications/v1/${id}/share/`,
   },

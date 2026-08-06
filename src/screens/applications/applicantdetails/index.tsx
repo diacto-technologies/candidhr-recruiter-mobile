@@ -50,19 +50,21 @@ export default function ApplicantDetails() {
       case 'Resume Screening':
         return <ResumeScreening />;
       case 'Assessments':
+        const hasV2 = ctrl.stages?.some((s: any) => s.stage_type === 'assessment_v2');
+        if (hasV2) {
+          return (
+            <AssessmentV2
+              sessionContentId={ctrl.assessmentV2SessionContentId}
+              onSessionContentIdChange={ctrl.setAssessmentV2SessionContentId}
+              selectedAssignmentId={ctrl.assessmentV2SelectedAssignmentId}
+              onSelectedAssignmentIdChange={ctrl.setAssessmentV2SelectedAssignmentId}
+            />
+          );
+        }
         return (
           <Assessment
             sessionContentId={ctrl.assessmentSessionContentId}
             onSessionContentIdChange={ctrl.setAssessmentSessionContentId}
-          />
-        );
-      case 'Assessment V2':
-        return (
-          <AssessmentV2
-            sessionContentId={ctrl.assessmentV2SessionContentId}
-            onSessionContentIdChange={ctrl.setAssessmentV2SessionContentId}
-            selectedAssignmentId={ctrl.assessmentV2SelectedAssignmentId}
-            onSelectedAssignmentIdChange={ctrl.setAssessmentV2SelectedAssignmentId}
           />
         );
       case 'Automated Video Interview':
@@ -103,7 +105,6 @@ export default function ApplicantDetails() {
                     currentStatus: ctrl.application?.status?.value ?? null,
                     newStatusOptions: STATUS_OPTIONS,
                     onUpdateStatus: ctrl.handleUpdateStatus,
-                    hideAddReason: true,
                     initialEmailMessage:
                       'Hi {{candidate_name}},\n\nYour application status has been updated to "{{application_status}}".\n\nThanks,\n{{company}}',
                   }}

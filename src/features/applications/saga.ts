@@ -83,9 +83,16 @@ import {
   exportAssessmentReportRequest,
   exportAssessmentReportSuccess,
   exportAssessmentReportFailure,
+  getEmailTemplatesListSuccess,
+  getEmailTemplatesListFailure,
+  previewEmailTemplateSuccess,
+  previewEmailTemplateFailure,
+  getPersonalityInterviewOptionsRequest,
+  getPersonalityInterviewOptionsSuccess,
+  getPersonalityInterviewOptionsFailure,
 } from "./slice";
 import { applicationsApi } from "./api";
-import { AssessmentDetailedReportApiResponse, AssessmentLog, AssessmentLogApiResponse, AssessmentReportApiResponse, ExportAssessmentReportRequest, GetApplicationResponsesParams, GetApplicationsParams, GetApplicationsSagaAction, PersonalityScreeningResponse, ResumeScreeningApiResponse, ResumeScreeningReportApiResponse, ScreeningAssessment, SessionReviewedResponse, UpdateApplicationShareRequest } from "./types";
+import { AssessmentDetailedReportApiResponse, AssessmentLog, AssessmentLogApiResponse, AssessmentReportApiResponse, ExportAssessmentReportRequest, GetApplicationResponsesParams, GetApplicationsParams, GetApplicationsSagaAction, PersonalityScreeningResponse, ResumeScreeningApiResponse, ResumeScreeningReportApiResponse, ScreeningAssessment, SessionReviewedResponse, UpdateApplicationShareRequest, EmailTemplate, PreviewEmailTemplateResponse, PersonalityScreeningInterviewOptionsResponse } from "./types";
 import { getAssessmentDetailedReportRequestAction, getAssessmentReportRequestAction, getApplicationDetailRequestAction, getApplicationStagesRequestAction, getApplicationReasonsListRequestAction } from "./actions";
 import { showToastMessage } from "../../utils/toast";
 import { selectProfile } from "../profile/selectors";
@@ -592,7 +599,7 @@ function* getAssessmentOptionsReportWorker(
       application_id,
       page
     );
-    console.log(res, "getAssessmentOptionsReportWorkergetAssessmentOptionsReportWorker")
+    console.log("ASSESSMENT OPTIONS API RESPONSE ===>", JSON.stringify(res, null, 2));
     yield put(
       getAssessmentOptionsReportSuccess({
         application_id,
@@ -1106,6 +1113,46 @@ function* updateApplicationReasonWorker(action: {
   }
 }
 
+function* getEmailTemplatesListWorker(action: PayloadAction<string>) {
+  try {
+    const res: EmailTemplate[] = yield call(
+      applicationsApi.getEmailTemplates,
+      action.payload
+    );
+    yield put(getEmailTemplatesListSuccess(res));
+  } catch (err: any) {
+    const msg = err?.message ?? "Failed to fetch email templates";
+    yield put(getEmailTemplatesListFailure(msg));
+  }
+}
+
+function* previewEmailTemplateWorker(action: PayloadAction<{ template_id: string; application_id: string; }>) {
+  try {
+    const res: PreviewEmailTemplateResponse = yield call(
+      applicationsApi.previewEmailTemplate,
+      action.payload
+    );
+    yield put(previewEmailTemplateSuccess(res));
+  } catch (err: any) {
+    const msg = err?.message ?? "Failed to preview email template";
+    yield put(previewEmailTemplateFailure(msg));
+  }
+}
+
+function* getPersonalityInterviewOptionsWorker(action: PayloadAction<string>) {
+  try {
+    yield put(getPersonalityInterviewOptionsRequest());
+    const res: PersonalityScreeningInterviewOptionsResponse = yield call(
+      applicationsApi.getPersonalityScreeningInterviewOptions,
+      action.payload
+    );
+    yield put(getPersonalityInterviewOptionsSuccess(res));
+  } catch (err: any) {
+    const msg = err?.message ?? "Failed to fetch interview options";
+    yield put(getPersonalityInterviewOptionsFailure(msg));
+  }
+}
+
 export function* applicationsSaga() {
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_APPLICATIONS_REQUEST, getApplicationsWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.EXPORT_APPLICATIONS_REQUEST, exportApplicationsWorker);
@@ -1135,5 +1182,7 @@ export function* applicationsSaga() {
   yield takeLatest(APPLICATIONS_ACTION_TYPES.UPDATE_APPLICATION_SHARE_REQUEST, updateApplicationShareWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_ASSESSMENTOPTIONS_REPORT_REQUEST, getAssessmentOptionsReportWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.EXPORT_ASSESSMENT_REPORT_REQUEST, exportAssessmentReportWorker);
+  yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_EMAIL_TEMPLATES_LIST_REQUEST, getEmailTemplatesListWorker);
+  yield takeLatest(APPLICATIONS_ACTION_TYPES.PREVIEW_EMAIL_TEMPLATE_REQUEST, previewEmailTemplateWorker);
+  yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_PERSONALITY_INTERVIEW_OPTIONS_REQUEST, getPersonalityInterviewOptionsWorker);
 }
-

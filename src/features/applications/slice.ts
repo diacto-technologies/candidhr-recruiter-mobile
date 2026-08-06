@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ApplicationsState, Application, ApplicationsListResponse, ApplicationResponseItem, ResumeScreeningResponseItem, ResumeScreeningReportApiResponse, AssessmentLog, AssessmentReport, AssessmentDetailedReport, ScreeningAssessment, PersonalityScreeningResponsesPayload, ApplicationStage, ReasonCategory, ReasonListItem, PerformanceReportResponse, AssessmentOptionsReportResponse, AssessmentOption } from "./types";
+import { ApplicationsState, Application, ApplicationsListResponse, ApplicationResponseItem, ResumeScreeningResponseItem, ResumeScreeningReportApiResponse, AssessmentLog, AssessmentReport, AssessmentDetailedReport, ScreeningAssessment, PersonalityScreeningResponsesPayload, ApplicationStage, ReasonCategory, ReasonListItem, PerformanceReportResponse, AssessmentOptionsReportResponse, AssessmentOption, EmailTemplate, PreviewEmailTemplateResponse } from "./types";
 
 const initialState: ApplicationsState = {
   applications: [],
@@ -74,6 +74,15 @@ const initialState: ApplicationsState = {
   assessmentOptionsError: null as string | null,
   loadingExportAssessmentReport: false,
   exportAssessmentReportError: null,
+  emailTemplates: [],
+  loadingEmailTemplates: false,
+  emailTemplatesError: null,
+  emailTemplatePreview: null,
+  loadingEmailTemplatePreview: false,
+  emailTemplatePreviewError: null,
+  personalityInterviewOptions: null,
+  loadingPersonalityInterviewOptions: false,
+  personalityInterviewOptionsError: null,
 };
 
 const applicationsSlice = createSlice({
@@ -696,7 +705,7 @@ const applicationsSlice = createSlice({
       state.loadingAssessmentOptions = false;
 
       const { application_id, page, response } = action.payload;
-      const assessmentlogs = response?.assessmentlogs ?? [];
+      const assessmentlogs = response?.results ?? [];
 
       // Ignore stale responses (e.g. user switched applications mid-flight)
       if (
@@ -754,6 +763,50 @@ const applicationsSlice = createSlice({
       state.loadingExportAssessmentReport = false;
       state.exportAssessmentReportError = action.payload;
     },
+    getEmailTemplatesListRequest: (state) => {
+      state.loadingEmailTemplates = true;
+      state.emailTemplatesError = null;
+    },
+    getEmailTemplatesListSuccess: (state, action: PayloadAction<EmailTemplate[]>) => {
+      state.loadingEmailTemplates = false;
+      state.emailTemplatesError = null;
+      state.emailTemplates = action.payload;
+    },
+    getEmailTemplatesListFailure: (state, action: PayloadAction<string>) => {
+      state.loadingEmailTemplates = false;
+      state.emailTemplatesError = action.payload;
+    },
+    previewEmailTemplateRequest: (state) => {
+      state.loadingEmailTemplatePreview = true;
+      state.emailTemplatePreviewError = null;
+    },
+    previewEmailTemplateSuccess: (state, action: PayloadAction<PreviewEmailTemplateResponse>) => {
+      state.loadingEmailTemplatePreview = false;
+      state.emailTemplatePreviewError = null;
+      state.emailTemplatePreview = action.payload;
+    },
+    previewEmailTemplateFailure: (state, action: PayloadAction<string>) => {
+      state.loadingEmailTemplatePreview = false;
+      state.emailTemplatePreviewError = action.payload;
+    },
+    clearEmailTemplatePreview: (state) => {
+      state.emailTemplatePreview = null;
+      state.loadingEmailTemplatePreview = false;
+      state.emailTemplatePreviewError = null;
+    },
+    getPersonalityInterviewOptionsSuccess: (state, action: PayloadAction<any>) => {
+      state.personalityInterviewOptions = action.payload;
+      state.loadingPersonalityInterviewOptions = false;
+      state.personalityInterviewOptionsError = null;
+    },
+    getPersonalityInterviewOptionsFailure: (state, action: PayloadAction<string>) => {
+      state.loadingPersonalityInterviewOptions = false;
+      state.personalityInterviewOptionsError = action.payload;
+    },
+    getPersonalityInterviewOptionsRequest: (state) => {
+      state.loadingPersonalityInterviewOptions = true;
+      state.personalityInterviewOptionsError = null;
+    },
   },
 });
 
@@ -761,6 +814,16 @@ export const {
   exportApplicationsRequest,
   exportApplicationsSuccess,
   exportApplicationsFailure,
+  getEmailTemplatesListRequest,
+  getEmailTemplatesListSuccess,
+  getEmailTemplatesListFailure,
+  previewEmailTemplateRequest,
+  previewEmailTemplateSuccess,
+  previewEmailTemplateFailure,
+  clearEmailTemplatePreview,
+  getPersonalityInterviewOptionsSuccess,
+  getPersonalityInterviewOptionsFailure,
+  getPersonalityInterviewOptionsRequest,
   // exportApplicantPdfRequest,
   // exportApplicantPdfSuccess,
   // exportApplicantPdfFailure,

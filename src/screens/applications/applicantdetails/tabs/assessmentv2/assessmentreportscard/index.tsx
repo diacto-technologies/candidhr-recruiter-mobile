@@ -11,6 +11,7 @@ import Feather from "react-native-vector-icons/Feather";
 
 interface AssignmentOption {
     id: string;
+    blueprint_name: string;
     job_title: string;
     date: string;
     status: string;
@@ -62,9 +63,9 @@ const AssessmentReportsCard: React.FC<Props> = ({
                         Assessment Reports
                     </Typography>
 
-                    <Typography variant="regularTxtsm" color={colors.gray[500]}>
+                    {/* <Typography variant="regularTxtsm" color={colors.gray[500]}>
                         {count} assignments found
-                    </Typography>
+                    </Typography> */}
                 </View>
 
                 <View style={{ flexDirection: "row", gap: 10, alignContent: 'flex-start' }}>

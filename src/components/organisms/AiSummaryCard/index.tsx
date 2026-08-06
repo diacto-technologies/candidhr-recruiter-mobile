@@ -27,28 +27,28 @@ import { AiSummaryProps } from "./aisummary";
 const AiSummaryShimmer = () => {
   const styles = useStyles();
   return (
-  <View style={styles.card}>
-    <View style={styles.headerRow}>
-      <Shimmer width={20} height={16} borderRadius={4} />
-      <Shimmer width="40%" height={18} borderRadius={4} />
-    </View>
-    <View style={[styles.sectionBox, { backgroundColor: OVERVIEW_BG }]}>
-      <Shimmer width="28%" height={12} borderRadius={4} />
-      <Shimmer width="100%" height={14} borderRadius={4} />
-      <Shimmer width="95%" height={14} borderRadius={4} />
-    </View>
-    <View style={styles.strengthsGapsRow}>
-      <View style={[styles.sectionBox, { flex: 1, backgroundColor: STRENGTHS_BG }]}>
-        <Shimmer width="50%" height={12} borderRadius={4} />
-        <Shimmer width="100%" height={12} borderRadius={4} />
-        <Shimmer width="88%" height={12} borderRadius={4} />
+    <View style={styles.card}>
+      <View style={styles.headerRow}>
+        <Shimmer width={20} height={16} borderRadius={4} />
+        <Shimmer width="40%" height={18} borderRadius={4} />
       </View>
-      <View style={[styles.sectionBox, { flex: 1, backgroundColor: GAPS_BG }]}>
-        <Shimmer width="35%" height={12} borderRadius={4} />
-        <Shimmer width="100%" height={12} borderRadius={4} />
+      <View style={[styles.sectionBox, { backgroundColor: OVERVIEW_BG }]}>
+        <Shimmer width="28%" height={12} borderRadius={4} />
+        <Shimmer width="100%" height={14} borderRadius={4} />
+        <Shimmer width="95%" height={14} borderRadius={4} />
+      </View>
+      <View style={styles.strengthsGapsRow}>
+        <View style={[styles.sectionBox, { flex: 1, backgroundColor: STRENGTHS_BG }]}>
+          <Shimmer width="50%" height={12} borderRadius={4} />
+          <Shimmer width="100%" height={12} borderRadius={4} />
+          <Shimmer width="88%" height={12} borderRadius={4} />
+        </View>
+        <View style={[styles.sectionBox, { flex: 1, backgroundColor: GAPS_BG }]}>
+          <Shimmer width="35%" height={12} borderRadius={4} />
+          <Shimmer width="100%" height={12} borderRadius={4} />
+        </View>
       </View>
     </View>
-  </View>
   );
 };
 
@@ -91,6 +91,9 @@ const AiSummary = ({
           AI Candidate Summary
         </Typography>
       </View>
+      <Typography variant="semiBoldTxtsm" color={colors.gray[900]}>
+        Strong skills match, unrelated degree, meets experience requirement.
+      </Typography>
 
       {/* OVERVIEW */}
       <View
@@ -147,22 +150,22 @@ const AiSummary = ({
           {(strengthLines.length > 0) ? (
             <View style={styles.bulletBlock}>
               {strengthLines.map((line) => (
-                  <View key={line} style={styles.bulletRow}>
+                <View key={line} style={styles.bulletRow}>
+                  <Typography
+                    variant="regularTxtsm"
+                    color={STRENGTHS_BODY}
+                  >
                     <Typography
                       variant="regularTxtsm"
-                      color={STRENGTHS_BODY}
+                      color={STRENGTHS_LABEL}
+                      style={styles.bulletGlyph}
                     >
-                      <Typography
-                        variant="regularTxtsm"
-                        color={STRENGTHS_LABEL}
-                        style={styles.bulletGlyph}
-                      >
-                        {"\u2022 "}
-                      </Typography>
-                      {line}
+                      {"\u2022 "}
                     </Typography>
-                  </View>
-                ))}
+                    {line}
+                  </Typography>
+                </View>
+              ))}
             </View>
           ) : (
             <Typography variant="regularTxtsm" color={GAPS_BODY}>
@@ -192,13 +195,13 @@ const AiSummary = ({
                     variant="regularTxtsm"
                     color={GAPS_BODY}
                   >
-                     <Typography
-                    variant="regularTxtsm"
-                    color={GAPS_LABEL}
-                    style={styles.bulletGlyph}
-                  >
-                    {"\u2022 "}
-                  </Typography> 
+                    <Typography
+                      variant="regularTxtsm"
+                      color={GAPS_LABEL}
+                      style={styles.bulletGlyph}
+                    >
+                      {"\u2022 "}
+                    </Typography>
                     {line}
                   </Typography>
                 </View>
@@ -223,13 +226,13 @@ const AiSummary = ({
         ]}
       >
         <View style={styles.recruiterTitleRow}>
-            <Typography
-              variant="semiBoldTxtsm"
-              color={colors.gray[800]}
-            >
-              Recruiter Note
-            </Typography>
-          </View>
+          <Typography
+            variant="semiBoldTxtsm"
+            color={colors.gray[800]}
+          >
+            Recruiter Note
+          </Typography>
+        </View>
         <Typography
           variant="regularTxtsm"
           color={colors.gray[800]}

@@ -9,6 +9,7 @@ import { styles as dropdownStyles } from "./styles";
 
 interface Item {
     id: string;
+    blueprint_name: string;
     job_title: string;
     date: string;
     status: string;
@@ -62,19 +63,9 @@ const AssignmentDropdown: React.FC<Props> = ({
                     <View style={localStyles.selectedLeft}>
                         <Typography variant="semiBoldTxtmd" color={colors.gray[900]} numberOfLines={1}>
                             {selectedItem
-                                ? `Assignment ${selectedIndex >= 0 ? selectedIndex + 1 : ""}`.trim()
+                                ? selectedItem.blueprint_name || `Assignment ${selectedIndex >= 0 ? selectedIndex + 1 : ""}`.trim()
                                 : "Select Assignment"}
                         </Typography>
-
-                        {!!selectedItem && (
-                            <Typography
-                                variant="regularTxtxs"
-                                color={colors.gray[500]}
-                                numberOfLines={1}
-                            >
-                                {selectedItem.job_title} · Sent {selectedItem.date}
-                            </Typography>
-                        )}
                     </View>
 
                     <View style={localStyles.selectedRight}>
@@ -129,7 +120,7 @@ const AssignmentDropdown: React.FC<Props> = ({
                                     >
                                         <View style={localStyles.optionTopRow}>
                                             <Typography style={dropdownStyles.optionNameText} numberOfLines={1} ellipsizeMode="tail">
-                                                {`Assignment ${index + 1}`}
+                                                {item.blueprint_name || `Assignment ${index + 1}`}
                                             </Typography>
 
                                             <View style={localStyles.optionRight}>
@@ -147,15 +138,6 @@ const AssignmentDropdown: React.FC<Props> = ({
                                             </View>
                                         </View>
                                     </View>
-                                    <Typography
-                                        variant="regularTxtxs"
-                                        color={colors.gray[500]}
-                                        numberOfLines={1}
-                                        ellipsizeMode="tail"
-                                        style={{marginLeft:16}}
-                                    >
-                                        {item.job_title} · Sent {item.date}
-                                    </Typography>
                                 </TouchableOpacity>
                             );
                         })}
