@@ -16,6 +16,6 @@ export const STATUS_OPTIONS = [
 export const STAGE_TAB_MAP: Record<string, string> = {
   resume_screening: 'Resume Screening',
   assessment: 'Assessments',
-  assessment_v2: 'Assessment V2',
+  assessment_v2: 'Assessments',
   automated_video_interview: 'Automated Video Interview',
 };

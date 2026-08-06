@@ -230,7 +230,7 @@ const AssessmentV2 = ({
   const { timelineData, progress } = useMemo(() => {
     const steps = [
       {
-        title: 'Assigned',
+        title: 'Invited On',
         date: formatMonDDYYYY(
           performanceReport?.assessment_info?.assigned_at,
           'DD MMM YYYY HH:mm',
@@ -255,16 +255,7 @@ const AssessmentV2 = ({
           'IST'
         ),
         completed: !!performanceReport?.assessment_info?.completed_at,
-      },
-      {
-        title: 'Valid Until',
-        date: formatMonDDYYYY(
-          performanceReport?.assessment_info?.valid_to,
-          'DD MMM YYYY HH:mm',
-          'IST'
-        ),
-        completed: !!performanceReport?.assessment_info?.valid_to,
-      },
+      }
     ];
 
     const completed = steps.filter(step => step.completed).length;
@@ -307,110 +298,14 @@ const AssessmentV2 = ({
           },
         }}
       />
-      <View style={{ zIndex: 1000, }}>
-        <Card style={{ gap: 4, width: "100%" }}>
-          <Typography variant="regularTxtxs" style={{ backgroundColor: colors?.brand['200'], borderTopEndRadius: 12, borderTopStartRadius: 12, padding: 5 }} numberOfLines={2}>
-            Stage was {assessmentStatus} by{" "}
-            {stages?.find(s => s.stage_type === "assessment_v2")?.reviewed_by?.name ??
-              "Workflow"}{" "}
-            on{" "}
-            {formatMonDDYYYY(
-              stages?.find(s => s.stage_type === "assessment_v2")?.reviewed_at ??
-              stages?.find(s => s.stage_type === "assessment_v2")
-                ?.workflow_status_updated_at,
-              "DD MMM YYYY HH:mm",
-              "IST"
-            )}
-          </Typography>
-          <View style={{ paddingHorizontal: 16, paddingVertical: 10 }}>
-            <View style={styles.reviewRow}>
-              <Typography variant="regularTxtxs" style={{ flex: 1 }}>
-                {isReviewed ? (
-                  currentSessionLog?.action_taken_by?.name ? (
-                    <>
-                      Reviewed by {currentSessionLog.action_taken_by.name} ·{" "}
-                      {formatMonDDYYYY(
-                        currentSessionLog.action_taken_at,
-                        "DD MMM YYYY HH:mm",
-                        "IST"
-                      )}
-                    </>
-                  ) : currentSessionLog?.workflow_status_updated_at ? (
-                    <>
-                      Reviewed by Workflow ·{" "}
-                      {formatMonDDYYYY(
-                        currentSessionLog.workflow_status_updated_at,
-                        "DD MMM YYYY HH:mm",
-                        "IST"
-                      )}
-                    </>
-                  ) : currentSessionLog?.updated_at ? (
-                    <>
-                      ·{" "}
-                      {formatMonDDYYYY(
-                        currentSessionLog.updated_at,
-                        "DD MMM YYYY HH:mm",
-                        "IST"
-                      )}
-                    </>
-                  ) : null
-                ) : null}
-              </Typography>
-
-              <Button
-                variant="outline"
-                borderRadius={20}
-                borderWidth={1}
-                borderColor={isReviewed ? colors.success[200] : colors.brand[200]}
-                buttonColor={isReviewed ? colors.success[400] : colors.brand[25]}
-                textColor={isReviewed ? colors.success[700] : colors.brand[700]}
-                startIcon={
-                  <Ionicons
-                    name="checkmark"
-                    size={14}
-                    color={isReviewed ? colors.success[700] : colors.brand[700]}
-                  />
-                }
-                size={30}
-                paddingHorizontal={10}
-                style={{ flex: 1 }}
-                textVariant="mediumTxtxs"
-                onPress={() => {
-                  if (currentSessionLog?.id && !isReviewed && !loadingMarkReviewed) {
-                    dispatch(markSessionAsReviewedRequestAction(currentSessionLog.id));
-                  }
-                }}
-                disabled={!currentSessionLog?.id || isReviewed || loadingMarkReviewed}
-              >
-                {loadingMarkReviewed ? 'Marking…' : isReviewed ? 'Review completed' : 'Mark as Reviewed'}
-              </Button>
-            </View>
-          </View>
-        </Card>
-        {/* <View style={styles.shortListedCard}>
-        <View style={styles.rowBetween}>
-          <View style={styles.row}>
-            <View style={[styles.statusDot, { backgroundColor: getStatusColor(filteredV2Logs?.find(item => item.content_id === sessionContentId)?.status_text ?? "_") }]} />
-            <Typography
-              variant="mediumTxtmd"
-              color={colors.gray[900]}
-            >
-              Status {filteredV2Logs?.find(item => item.content_id === sessionContentId)?.status_text ?? "_"}
-            </Typography>
-          </View>
-          <SvgXml xml={arrowDown} />
-        </View>
-      </View> */}
-      </View>
-
+      
       <AssessmentReportsCard
         count={assessmentOptions?.length ?? 0}
         selectedItem={selectedAssignmentId}
         options={
           assessmentOptions?.map((item) => ({
             id: item.id,
-            job_title: item.job_title,
-            date: formatMonDDYYYY(item.created_at, "DD MMM YYYY"),
+            blueprint_name: item.blueprint_name || "Unknown",
             status: item.status,
           })) || []
         }

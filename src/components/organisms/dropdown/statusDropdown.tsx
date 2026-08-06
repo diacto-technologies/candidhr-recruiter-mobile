@@ -320,14 +320,15 @@ const StatusDropdown = ({
 
       {changeStatusModalVisible && openModalOnSelect && changeStatusModalProps ? (
         <ChangeStatusModal
-          visible={changeStatusModalVisible}
+          currentStatus={undefined} newStatusOptions={[]} onUpdateStatus={function (newStatusId: string, options?: { addReason?: boolean; categoryId?: string; reasonId?: string; emailCandidate?: boolean; subject?: string; message?: string; }): void {
+            throw new Error('Function not implemented.');
+          } } visible={changeStatusModalVisible}
           onClose={() => {
             setChangeStatusModalVisible(false);
             setPendingSelectedValue(null);
-          }}
+          } }
           {...changeStatusModalProps}
-          initialNewStatusId={pendingSelectedValue}
-        />
+          initialNewStatusId={pendingSelectedValue}        />
       ) : null}
 
       {error && <Typography style={styles.error}>{error}</Typography>}

@@ -211,6 +211,7 @@ export const useApplicantDetailsController = (
     setActiveTab,
     tabs,
     application,
+    stages,
     loading,
     selectApplicationError,
     candidateName,

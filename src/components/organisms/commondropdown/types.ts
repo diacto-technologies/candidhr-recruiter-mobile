@@ -16,6 +16,7 @@ export interface CommonDropdownProps {
   showIndexAndTotal?: boolean;
   showLabelPrefix?: boolean;
   labelPrefixText?: string;
+  multilineOptions?: boolean;
 
   disabled?: boolean;
   error?: string;

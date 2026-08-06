@@ -191,12 +191,14 @@ export const getAssessmentDetailedReportFailure = (payload: string) => ({
   payload,
 });
 
-export const getPersonalityScreeningListRequestAction = (payload: {
-  application_id: string,
-  job_id: string,
-}) => ({
+export const getPersonalityScreeningListRequestAction = (payload: { application_id: string; job_id: string }) => ({
   type: APPLICATIONS_ACTION_TYPES.GET_PERSONALITY_LIST_REQUEST,
   payload,
+});
+
+export const getPersonalityInterviewOptionsRequestAction = (application_id: string) => ({
+  type: APPLICATIONS_ACTION_TYPES.GET_PERSONALITY_INTERVIEW_OPTIONS_REQUEST,
+  payload: application_id,
 });
 
 export const getPersonalityScreeningListSuccess = (payload: ScreeningAssessment[]) => ({
@@ -319,4 +321,18 @@ export const updateApplicationReasonRequestAction = (payload: {
 export const updateApplicationShareRequestAction = (payload: UpdateApplicationShareRequest) => ({
   type: APPLICATIONS_ACTION_TYPES.UPDATE_APPLICATION_SHARE_REQUEST,
   payload,
+});
+
+export const getEmailTemplatesListRequestAction = (status: string) => ({
+  type: APPLICATIONS_ACTION_TYPES.GET_EMAIL_TEMPLATES_LIST_REQUEST,
+  payload: status,
+});
+
+export const previewEmailTemplateRequestAction = (payload: { template_id: string; application_id: string; }) => ({
+  type: APPLICATIONS_ACTION_TYPES.PREVIEW_EMAIL_TEMPLATE_REQUEST,
+  payload,
+});
+
+export const clearEmailTemplatePreviewAction = () => ({
+  type: APPLICATIONS_ACTION_TYPES.CLEAR_EMAIL_TEMPLATE_PREVIEW,
 });

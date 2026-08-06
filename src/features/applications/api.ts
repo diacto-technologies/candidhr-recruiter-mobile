@@ -1,6 +1,6 @@
 import { apiClient } from "../../api/client";
 import { API_ENDPOINTS } from "../../api/endpoints";
-import { CreateApplicationRequest, UpdateApplicationStatusRequest, Application, GetApplicationsParams, ApplicationsListResponse, ApplicationDetailResponse, GetApplicationResponsesParams, ApplicationResponsesApiResponse, ResumeScreeningApiResponse, ResumeScreeningReportApiResponse, AssessmentLogApiResponse, AssessmentReportApiResponse, AssessmentDetailedReportApiResponse, ScreeningAssessment, PersonalityScreeningResponse, PersonalityScreeningResponsesPayload, ApplicationStagesResponse, SessionReviewedResponse, ReasonCategory, ReasonListItem, UpdateStageStatusPayload, PerformanceReportResponse, AssessmentOptionsReportResponse, ExportAssessmentReportRequest } from "./types";
+import { CreateApplicationRequest, UpdateApplicationStatusRequest, Application, GetApplicationsParams, ApplicationsListResponse, ApplicationDetailResponse, GetApplicationResponsesParams, ApplicationResponsesApiResponse, ResumeScreeningApiResponse, ResumeScreeningReportApiResponse, AssessmentLogApiResponse, AssessmentReportApiResponse, AssessmentDetailedReportApiResponse, ScreeningAssessment, PersonalityScreeningResponse, PersonalityScreeningResponsesPayload, ApplicationStagesResponse, SessionReviewedResponse, ReasonCategory, ReasonListItem, UpdateStageStatusPayload, PerformanceReportResponse, AssessmentOptionsReportResponse, ExportAssessmentReportRequest, EmailTemplate } from "./types";
 
 export const applicationsApi = {
   // getApplications: async (params?: GetApplicationsParams): Promise<ApplicationsListResponse> => {
@@ -258,7 +258,6 @@ export const applicationsApi = {
     const res = await apiClient.get(url);
     return res?.data ?? res;
   },
-
   exportAssessmentReport: async (
     payload: ExportAssessmentReportRequest
   ): Promise<Response> => {
@@ -276,9 +275,25 @@ export const applicationsApi = {
     );
   },
 
+  getEmailTemplates: async (status: string): Promise<EmailTemplate[]> => {
+    const res = await apiClient.get(`${API_ENDPOINTS.APPLICATIONS.EMAIL_TEMPLATES}?status=${status}`);
+    return res?.data ?? res;
+  },
+
+  previewEmailTemplate: async (payload: { template_id: string; application_id: string; }): Promise<any> => {
+    const res = await apiClient.post(API_ENDPOINTS.APPLICATIONS.PREVIEW_EMAIL_TEMPLATE(payload.template_id), { application_id: payload.application_id });
+    return res?.data ?? res;
+  },
+
   getPersonalityScreeningList: async (application_id: string,
     job_id: string,): Promise<ScreeningAssessment[]> => {
     const url = API_ENDPOINTS.APPLICATIONS.PERSONALITY_SCREENING_LIST(application_id, job_id);
+    const res = await apiClient.get(url);
+    return res?.data ?? res;
+  },
+
+  getPersonalityScreeningInterviewOptions: async (application_id: string) => {
+    const url = API_ENDPOINTS.APPLICATIONS.PERSONALITY_SCREENING_INTERVIEW_OPTIONS(application_id);
     const res = await apiClient.get(url);
     return res?.data ?? res;
   },
@@ -404,3 +419,4 @@ export const applicationsApi = {
 
 };
 
+// Fix

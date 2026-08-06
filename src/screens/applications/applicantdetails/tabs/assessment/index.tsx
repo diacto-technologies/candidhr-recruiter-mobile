@@ -206,6 +206,14 @@ const Assessment = ({ sessionContentId, onSessionContentIdChange }: AssessmentPr
         ),
         completed: !!assessmentReport?.timeline?.completed,
       },
+      {
+        title: 'Scheduled Final Interview',
+        date: formatMonDDYYYY(
+          assessmentReport?.timeline?.approved_at,
+          'DD MMM YYYY HH:mm', 'IST'
+        ),
+        completed: assessmentReport?.timeline?.approved_at != null,
+      },
     ];
 
     const completedCount = steps.filter(step => step.completed).length;
@@ -250,7 +258,7 @@ const Assessment = ({ sessionContentId, onSessionContentIdChange }: AssessmentPr
       />
       <View style={{ zIndex: 1000 }}>
         <Card style={{ gap: 4 ,flex:1,width:'100%'}}>
-          <Typography variant="regularTxtxs" style={styles.statusBanner} numberOfLines={2}>
+          {/* <Typography variant="regularTxtxs" style={styles.statusBanner} numberOfLines={2}>
             Stage was {assessmentStatus} by{" "}
             {assessmentStage?.reviewed_by?.name ?? "Workflow"}{" "}
             on{" "}
@@ -259,7 +267,7 @@ const Assessment = ({ sessionContentId, onSessionContentIdChange }: AssessmentPr
               "DD MMM YYYY HH:mm",
               "IST"
             )}
-          </Typography>
+          </Typography> */}
           <View style={{ paddingHorizontal: 16, paddingVertical: 10 }}>
             <Dropdown
               label="Session"
@@ -277,7 +285,7 @@ const Assessment = ({ sessionContentId, onSessionContentIdChange }: AssessmentPr
               onSelect={item => onSessionContentIdChange(item?.id ?? null)}
               onChangeText={() => { }}
             />
-            <View style={styles.reviewRow}>
+            {/* <View style={styles.reviewRow}>
               <Typography variant="regularTxtxs" style={{ flex: 1 }}>
                 {currentSessionLog?.action_taken_by?.name ? (
                   <>
@@ -336,7 +344,7 @@ const Assessment = ({ sessionContentId, onSessionContentIdChange }: AssessmentPr
               >
                 {loadingMarkReviewed ? 'Marking…' : isReviewed ? 'Review completed' : 'Mark as Reviewed'}
               </Button>
-            </View>
+            </View> */}
           </View>
         </Card>
         {/* <View style={styles.shortListedCard}>

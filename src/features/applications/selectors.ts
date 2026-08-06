@@ -268,3 +268,34 @@ export const selectExportAssessmentReportLoading = (state: RootState) =>
 
 export const selectExportAssessmentReportError = (state: RootState) =>
   state.applications.exportAssessmentReportError ?? null;
+
+export const selectEmailTemplates = createSelector(
+  selectApplicationsState,
+  (state) => state.emailTemplates
+);
+export const selectEmailTemplatesLoading = createSelector(
+  selectApplicationsState,
+  (state) => state.loadingEmailTemplates
+);
+export const selectEmailTemplatesError = createSelector(
+  selectApplicationsState,
+  (state) => state.emailTemplatesError
+);
+
+export const selectEmailTemplatePreview = createSelector(
+  selectApplicationsState,
+  (state) => state.emailTemplatePreview
+);
+export const selectEmailTemplatePreviewLoading = createSelector(
+  selectApplicationsState,
+  (state) => state.loadingEmailTemplatePreview
+);
+
+export const selectPersonalityInterviewOptions = createSelector(
+  selectApplicationsState,
+  (state) => state.personalityInterviewOptions
+);
+export const selectLoadingPersonalityInterviewOptions = createSelector(
+  selectApplicationsState,
+  (state) => state.loadingPersonalityInterviewOptions
+);

@@ -2,8 +2,8 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { View, TouchableOpacity, Image, ScrollView, Dimensions } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
-import { getPersonalityScreeningListRequestAction, getPersonalityScreeningResponsesRequestAction, markSessionAsReviewedRequestAction } from '../../../../../features/applications/actions';
-import { selectApplicationStages, selectAssessmentLogs, selectMarkSessionReviewedLoading, selectPersonalityScreeningAiSummary, selectPersonalityScreeningList, selectPersonalityScreeningLoading, selectPersonalityScreeningResponses, selectSelectedApplication } from '../../../../../features/applications/selectors';
+import { getPersonalityScreeningListRequestAction, getPersonalityScreeningResponsesRequestAction, markSessionAsReviewedRequestAction, getPersonalityInterviewOptionsRequestAction } from '../../../../../features/applications/actions';
+import { selectApplicationStages, selectAssessmentLogs, selectMarkSessionReviewedLoading, selectPersonalityScreeningAiSummary, selectPersonalityScreeningList, selectPersonalityScreeningLoading, selectPersonalityScreeningResponses, selectSelectedApplication, selectPersonalityInterviewOptions, selectLoadingPersonalityInterviewOptions } from '../../../../../features/applications/selectors';
 import { useAppSelector } from '../../../../../hooks/useAppSelector';
 import { useStyles } from "./styles";
 import Dropdown from '../../../../../components/organisms/dropdown';
@@ -25,6 +25,8 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { getApprovalStageStatusOptions } from '../stageStatusOptions';
 import Shimmer from '../../../../../components/atoms/shimmer';
 import { formatTime as globalFormatTime } from '../../../../../utils/dateformatter';
+import CustomTimeline from '../../../../../components/molecules/TimelineCard';
+import { TimelineItem } from '../../../../../components/molecules/TimelineCard';
 
 const normalizeContentType = (v: unknown) =>
   String(v ?? '')
@@ -82,6 +84,8 @@ export default function VideoInterview({
   const personalityAiSummary = useAppSelector(selectPersonalityScreeningAiSummary);
   const stages = useAppSelector(selectApplicationStages);
   const loadingMarkReviewed = useAppSelector(selectMarkSessionReviewedLoading);
+  const interviewOptions = useAppSelector(selectPersonalityInterviewOptions);
+  const loadingInterviewOptions = useAppSelector(selectLoadingPersonalityInterviewOptions);
 
   // Detect orientation
   const { width, height } = screenData;
@@ -105,6 +109,12 @@ export default function VideoInterview({
   //     })
   //   );
   // }, []);
+
+  useEffect(() => {
+    if (applicant?.id) {
+      dispatch(getPersonalityInterviewOptionsRequestAction(applicant.id));
+    }
+  }, [applicant?.id, dispatch]);
 
   useEffect(() => {
     if (!sessionContentId) return;
@@ -315,6 +325,63 @@ export default function VideoInterview({
     return getApprovalStageStatusOptions(currentStageStatus);
   }, [currentStageStatus]);
 
+  const { timelineData, progress } = useMemo(() => {
+    if (!interviewOptions?.results || !sessionContentId) return { timelineData: [], progress: 0 };
+    
+    const option = interviewOptions.results.find((opt) => opt.id === sessionContentId);
+    if (!option) return { timelineData: [], progress: 0 };
+
+    const steps = [
+      {
+        title: 'Invited On',
+        date: formatMonDDYYYY(
+          option.assigned_at,
+          'DD MMM YYYY HH:mm',
+          'IST'
+        ),
+        completed: !!option.assigned_at,
+      },
+      {
+        title: 'Link Opened',
+        date: formatMonDDYYYY(
+          option.link_opened_at,
+          'DD MMM YYYY HH:mm',
+          'IST'
+        ),
+        completed: !!option.link_opened_at,
+      },
+      {
+        title: 'Started',
+        date: formatMonDDYYYY(
+          option.started_at,
+          'DD MMM YYYY HH:mm',
+          'IST'
+        ),
+        completed: !!option.started_at,
+      },
+      {
+        title: 'Completed',
+        date: formatMonDDYYYY(
+          option.completed_at,
+          'DD MMM YYYY HH:mm',
+          'IST'
+        ),
+        completed: !!option.completed_at,
+      }
+    ];
+
+    const completed = steps.filter(step => step.completed).length;
+    const prog = Math.round((completed / steps.length) * 100);
+
+    const data: TimelineItem[] = steps.map(step => ({
+      title: step.title,
+      date: step.date || '—',
+      status: step.completed ? 'completed' : 'upcoming',
+    }));
+
+    return { timelineData: data, progress: prog };
+  }, [interviewOptions, sessionContentId]);
+
   /** While fetching responses for the selected session (list fetch is optional). */
   const showVideoContentShimmer =
     personalityLoading && !!sessionContentId;
@@ -351,7 +418,7 @@ export default function VideoInterview({
       </View>
       <View style={{ zIndex: 1000 }}>
         <Card style={{ gap: 4, flex: 1, width: '100%' }}>
-          <Typography variant="regularTxtxs" style={styles.statusBanner} numberOfLines={2}>
+          {/* <Typography variant="regularTxtxs" style={styles.statusBanner} numberOfLines={2}>
             Stage was {assessmentStatus} by{" "}
             {videoStage?.reviewed_by?.name ?? "Workflow"}{" "}
             on{" "}
@@ -360,7 +427,7 @@ export default function VideoInterview({
               "DD MMM YYYY HH:mm",
               "IST"
             )}
-          </Typography>
+          </Typography> */}
           <View style={{ paddingHorizontal: 16, paddingVertical: 10 }}>
             <Dropdown
               label="Session"
@@ -383,7 +450,7 @@ export default function VideoInterview({
                 </>
               ) : (
                 <>
-                  <View style={{flex:2}}>
+                  {/* <View style={{flex:2}}>
                     {isReviewed ?
                       <Typography variant="regularTxtxs" style={{ flex: 1 }}>
                         {currentSessionLog?.action_taken_by?.name ? (
@@ -416,8 +483,8 @@ export default function VideoInterview({
                         ) : null}
                       </Typography>
                       : null}
-                  </View>
-                  <Button
+                  </View> */}
+                  {/* <Button
                     variant="outline"
                     borderRadius={20}
                     borderWidth={1}
@@ -447,7 +514,7 @@ export default function VideoInterview({
                       : isReviewed
                         ? 'Review completed'
                         : 'Mark as Reviewed'}
-                  </Button>
+                  </Button> */}
                 </>
               )}
             </View>
@@ -470,15 +537,12 @@ export default function VideoInterview({
         </View>
       </View> */}
       {/* TIMELINE */}
-      {/* <CustomTimeline
-        progress={50}
-        data={[
-          { title: "Invited On", date: "22 Aug 2025, 12:26 pm", status: "completed" },
-          { title: "Link Opened", date: "22 Aug 2025, 12:28 pm", status: "completed" },
-          { title: "Started", date: "—", status: "current" },
-          { title: "Completed", date: "—", status: "upcoming" },
-        ]}
-      /> */}
+      {timelineData.length > 0 && (
+        <CustomTimeline
+          progress={progress}
+          data={timelineData}
+        />
+      )}
       {showContentShimmer ? (
         <View style={styles.shimmerContainer}>
           <Shimmer width="40%" height={20} borderRadius={8} />
