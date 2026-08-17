@@ -1,9 +1,9 @@
 export const API_ENDPOINTS = {
   // Auth endpoints
   AUTH: {
-    LOGIN: '/core/token/', // Login endpoint: POST /token/
+    LOGIN: '/core/token/?client_type=mobile', // Login endpoint: POST /token/
     LOGOUT: '/auth/logout',
-    REFRESH: '/core/token/refresh/',
+    REFRESH: '/core/token/refresh/?client_type=mobile',
     REGISTER: '/auth/register',
     ME: '/auth/me',
     FORGOT_PASSWORD: "/core/send-reset-password-email/",

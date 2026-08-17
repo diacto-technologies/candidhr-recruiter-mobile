@@ -15,6 +15,19 @@ import { API_ENDPOINTS } from './endpoints';
 
 const API_BASE_URL = config.api.baseURL;
 
+/** Result of a refresh token attempt — drives retry vs logout decisions. */
+enum RefreshResult {
+  /** New tokens obtained successfully. */
+  SUCCESS = 'SUCCESS',
+  /** Refresh token is genuinely expired/revoked (401/403) — user must re-login. */
+  TOKEN_INVALID = 'TOKEN_INVALID',
+  /** Transient failure (429, 5xx, network) — safe to retry. */
+  TRANSIENT_ERROR = 'TRANSIENT_ERROR',
+}
+
+const MAX_REFRESH_RETRIES = 3;
+const INITIAL_RETRY_DELAY_MS = 1_000;
+
 // Single in-flight refresh promise so multiple 401s don't each trigger a refresh (avoids 429)
 let inFlightRefresh: Promise<boolean> | null = null;
 
@@ -78,18 +91,35 @@ const buildHeaders = (customHeaders?: Record<string, string>): Record<string, st
   return headers;
 };
 
-async function doRefresh(refresh: string): Promise<boolean> {
-  const res = await fetch(
-    `${API_BASE_URL}${API_ENDPOINTS.AUTH.REFRESH}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Origin': organizationalOrigin(store.getState()),
-      },
-      body: JSON.stringify({ refresh }),
+/** Determines whether an HTTP status from the refresh endpoint means the token is genuinely invalid. */
+function isTokenInvalidStatus(status: number): boolean {
+  // 401 Unauthorized / 403 Forbidden → token revoked or expired
+  // 400 Bad Request → malformed / already-used token
+  return status === 401 || status === 403 || status === 400;
+}
+
+/** Single attempt to refresh tokens. Returns a granular result for retry/logout decisions. */
+async function doRefresh(refresh: string): Promise<RefreshResult> {
+  let res: Response;
+  try {
+    res = await fetch(
+      `${API_BASE_URL}${API_ENDPOINTS.AUTH.REFRESH}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Origin': organizationalOrigin(store.getState()),
+        },
+        body: JSON.stringify({ refresh }),
+      }
+    );
+  } catch (networkError) {
+    // Network failure (offline, DNS, timeout) — transient
+    if (__DEV__) {
+      console.log('🌐 Refresh network error:', networkError);
     }
-  );
+    return RefreshResult.TRANSIENT_ERROR;
+  }
 
   if (res.ok) {
     const data = await res.json();
@@ -105,60 +135,24 @@ async function doRefresh(refresh: string): Promise<boolean> {
     if (__DEV__) {
       console.log('✅ Tokens updated in Redux & AsyncStorage');
     }
-    return true;
-  }
-
-  let errorBody: any = null;
-  try {
-    errorBody = await res.json();
-  } catch {
-    errorBody = await res.text().catch(() => null);
+    return RefreshResult.SUCCESS;
   }
 
   if (__DEV__) {
-    // console.log('Refresh token API failed', {
-    //   status: res.status,
-    //   statusText: res.statusText,
-    //   errorBody,
-    // });
-    showToastMessage(
-      'Your session expired. Please login again',
-      'error'
-    );
+    let errorBody: string | null = null;
+    try {
+      errorBody = await res.clone().text();
+    } catch { /* ignore */ }
+    console.log('❌ Refresh failed', { status: res.status, errorBody });
   }
 
-  // 429 Too Many Requests: retry once after delay (avoids logout when app opens and many requests hit refresh)
-  if (res.status === 429) {
-    const delayMs = 2000;
-    if (__DEV__) {
-      console.log(`⏳ 429 rate limit, retrying refresh after ${delayMs}ms`);
-    }
-    await new Promise<void>((resolve) => setTimeout(resolve, delayMs));
-    const retryRes = await fetch(
-      `${API_BASE_URL}${API_ENDPOINTS.AUTH.REFRESH}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Origin': organizationalOrigin(store.getState()),
-        },
-        body: JSON.stringify({ refresh }),
-      }
-    );
-    if (retryRes.ok) {
-      const data = await retryRes.json();
-      if (__DEV__) console.log('✅ Refresh success after 429 retry');
-      store.dispatch(refreshTokenSuccess({
-        token: data.access,
-        refreshToken: data.refresh ?? refresh,
-      }));
-      await AsyncStorage.setItem('accessToken', data.access);
-      await AsyncStorage.setItem('refreshToken', data.refresh ?? refresh);
-      return true;
-    }
+  // Token genuinely invalid — no point retrying
+  if (isTokenInvalidStatus(res.status)) {
+    return RefreshResult.TOKEN_INVALID;
   }
 
-  return false;
+  // 429 / 5xx / anything else — transient, safe to retry
+  return RefreshResult.TRANSIENT_ERROR;
 }
 
 /** Proactive + reactive token refresh entry point (used by useTokenRefresh and 401 handler). */
@@ -192,7 +186,38 @@ async function refreshFromStorage(): Promise<boolean> {
         }
         return false;
       }
-      return await doRefresh(refresh);
+
+      // Retry with exponential backoff for transient failures
+      for (let attempt = 0; attempt < MAX_REFRESH_RETRIES; attempt++) {
+        const result = await doRefresh(refresh);
+
+        if (result === RefreshResult.SUCCESS) {
+          return true;
+        }
+
+        if (result === RefreshResult.TOKEN_INVALID) {
+          if (__DEV__) {
+            console.log('🔒 Refresh token is genuinely invalid — must re-login');
+          }
+          showToastMessage('Your session expired. Please login again', 'error');
+          return false;
+        }
+
+        // TRANSIENT_ERROR — retry with exponential backoff
+        if (attempt < MAX_REFRESH_RETRIES - 1) {
+          const delayMs = INITIAL_RETRY_DELAY_MS * Math.pow(2, attempt);
+          if (__DEV__) {
+            console.log(`⏳ Transient refresh failure, retrying in ${delayMs}ms (attempt ${attempt + 1}/${MAX_REFRESH_RETRIES})`);
+          }
+          await new Promise<void>((resolve) => setTimeout(resolve, delayMs));
+        }
+      }
+
+      if (__DEV__) {
+        console.log('❌ All refresh retries exhausted (transient errors)');
+      }
+      // All retries failed but token may still be valid — don't force logout
+      return false;
     } catch (error) {
       if (__DEV__) {
         console.log('Refresh token exception:', error);
@@ -354,11 +379,17 @@ async function executeWithRefresh(
         continue; // retry original request
       }
 
-      // Had a session but refresh failed → clear auth
-      if (selectIsAuthenticated(store.getState())) {
+      // Check whether the refresh token is genuinely gone/invalid
+      // vs a transient failure where the token may still be valid.
+      const stillHasToken = await hasStoredRefreshToken();
+      if (!stillHasToken && selectIsAuthenticated(store.getState())) {
+        // Refresh token truly expired/revoked — clear auth
         store.dispatch(logoutSuccess());
+        throw new Error('Session expired. Please login again.');
       }
-      throw new Error('Session expired. Please login again.');
+
+      // Transient failure — don't logout, just surface the error for this request
+      throw new Error('Unable to refresh session. Please check your connection and try again.');
     }
 
     // ❌ Any other error OR retry already used (non-401 errors)
