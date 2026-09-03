@@ -78,6 +78,22 @@ const JobHeader = () => {
             <Typography variant="mediumTxtxs" color={colors.Teal[700]}>{jobs?.min_experience ?? ""} - {jobs?.max_experience ?? ""} Yrs</Typography>
           </View>
 
+          {jobs?.published ? (
+            <View style={[styles.chip, { backgroundColor: colors.success[50], borderColor: colors.success[200] }]}>
+              <Typography variant="mediumTxtxs" color={colors.success[700]}>Live</Typography>
+            </View>
+          ) : (
+            <View style={[styles.chip, { backgroundColor: colors.gray[100], borderColor: colors.gray[300] }]}>
+              <Typography variant="mediumTxtxs" color={colors.gray[700]}>Draft</Typography>
+            </View>
+          )}
+
+          {jobs?.rapidhire_enabled && (
+            <View style={[styles.chip, { backgroundColor: colors.brand[50], borderColor: colors.brand[200] }]}>
+              <Typography variant="mediumTxtxs" color={colors.brand[700]}>Rapidly</Typography>
+            </View>
+          )}
+
           {/* <View style={[styles.chip,{backgroundColor:colors.orange[50],borderColor:colors.orange[200]}]}>
         <Typography variant="mediumTxtxs" color={colors.orange[700]}>8 - 10 LPA</Typography>
         </View> */}

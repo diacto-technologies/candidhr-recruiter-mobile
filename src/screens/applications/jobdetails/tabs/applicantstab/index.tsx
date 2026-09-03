@@ -23,26 +23,28 @@ const ApplicantsTab = () => {
       <View style={styles.searchContainer}>
         <SearchBar
           value={ctrl.filters.name}
-          placeholder="User search by name"
+          placeholder="Search by name or email"
           onChangeText={ctrl.handleSearch}
         />
 
-        <View style={styles.switchRow}>
-          <View style={styles.switchContainer}>
-            <CustomSwitch value={ctrl.aiEnabled} onValueChange={ctrl.setAiEnabled} />
-            <Typography variant="H4" color={colors.mainColors.carbonGray}>
-              AI recommendation
-            </Typography>
+        {!ctrl.isRapidhire && (
+          <View style={styles.switchRow}>
+            <View style={styles.switchContainer}>
+              <CustomSwitch value={ctrl.aiEnabled} onValueChange={ctrl.setAiEnabled} />
+              <Typography variant="H4" color={colors.mainColors.carbonGray}>
+                AI recommendation
+              </Typography>
+            </View>
+            <TouchableOpacity
+              style={styles.switchContainer}
+              onPress={ctrl.handleExport}
+            >
+              <Typography variant="H4" color={colors.brand[600]}>
+                + Export
+              </Typography>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.switchContainer}
-            onPress={ctrl.handleExport}
-          >
-            <Typography variant="H4" color={colors.brand[600]}>
-              + Export
-            </Typography>
-          </TouchableOpacity>
-        </View>
+        )}
       </View>
 
       <Divider />

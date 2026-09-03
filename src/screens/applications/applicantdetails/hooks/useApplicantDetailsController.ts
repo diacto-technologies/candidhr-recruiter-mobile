@@ -29,6 +29,11 @@ import {
   selectSelectedApplicationError,
 } from '../../../../features/applications/selectors';
 import { resetPersonalityScreeningState } from '../../../../features/applications/slice';
+import {
+  getRapidlyInterviewReportRequestAction,
+  resetRapidlyInterviewReportAction,
+} from '../../../../features/rapidhire/actions';
+import { selectRapidlyInterviewReport } from '../../../../features/rapidhire/selectors';
 
 export const useApplicantDetailsController = (
   application_id: string,
@@ -58,6 +63,7 @@ export const useApplicantDetailsController = (
   const assessmentLogs = useAppSelector(selectAssessmentLogs);
   const resumeScreeningReport = useAppSelector(selectResumeScreeningReport);
   const stages = useAppSelector(selectApplicationStages);
+  const rapidlyInterviewReport = useAppSelector(selectRapidlyInterviewReport);
 
   const resumeUrl = application?.resume_file || null;
   const candidateName = application?.applicant?.name || 'N/A';
@@ -71,8 +77,20 @@ export const useApplicantDetailsController = (
         baseTabs.push(tabName);
       }
     });
+
+    // Add Rapidly Interview tab if rapidhire interview exists or job is rapidhire enabled
+    if (
+      rapidlyInterviewReport?.has_interview ||
+      rapidlyInterviewReport?.recording_url ||
+      (application as any)?.job?.rapidhire_enabled
+    ) {
+      if (!baseTabs.includes('Rapidly Interview')) {
+        baseTabs.push('Rapidly Interview');
+      }
+    }
+
     return baseTabs;
-  }, [stages]);
+  }, [stages, rapidlyInterviewReport, application]);
 
   // Effects
   useEffect(() => {
@@ -84,10 +102,12 @@ export const useApplicantDetailsController = (
 
   useEffect(() => {
     dispatch(resetPersonalityScreeningState());
+    dispatch(resetRapidlyInterviewReportAction());
     dispatch(getApplicationStagesRequestAction(application_id));
     dispatch(getApplicationDetailRequestAction(application_id));
     dispatch(getApplicationResponsesRequestAction({ application_id, job_id }));
     dispatch(getResumeScreeningResponsesRequestAction(application_id));
+    dispatch(getRapidlyInterviewReportRequestAction(application_id));
   }, [application_id, job_id, dispatch]);
 
   useEffect(() => {

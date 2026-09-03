@@ -27,6 +27,7 @@ import Shimmer from '../../../../../components/atoms/shimmer';
 import { formatTime as globalFormatTime } from '../../../../../utils/dateformatter';
 import CustomTimeline from '../../../../../components/molecules/TimelineCard';
 import { TimelineItem } from '../../../../../components/molecules/TimelineCard';
+import { VideoResponseCard, VideoResponseItem } from '../../../../../components/organisms/VideoResponseCard';
 
 const normalizeContentType = (v: unknown) =>
   String(v ?? '')
@@ -300,6 +301,48 @@ export default function VideoInterview({
       value: index,
       original: item,
     }));
+  }, [responses]);
+
+  const formattedVideoResponses: VideoResponseItem[] = useMemo(() => {
+    return (responses || []).map((resp) => {
+      let transText = (resp as { text?: string }).text || '';
+      const nested = resp.video_analysis?.audio_analyses;
+      if (Array.isArray(nested) && nested.length) {
+        const item = nested.find((a) => a?.transcription);
+        if (item?.transcription) transText = item.transcription;
+      }
+      const top = resp.audio_analysis;
+      if (!transText && Array.isArray(top) && top.length) {
+        const item = top.find((a) => a?.transcription);
+        if (item?.transcription) transText = item.transcription;
+      }
+
+      const segments = Array.isArray(resp.transcription_segments)
+        ? resp.transcription_segments.map((seg: any) => ({
+            text: seg?.text ?? '',
+            start: seg?.start ?? null,
+            end: seg?.end ?? null,
+            words: Array.isArray(seg?.words)
+              ? seg.words.map((w: any) => ({
+                  word: w?.word ?? '',
+                  start: w?.start ?? null,
+                  end: w?.end ?? null,
+                }))
+              : [],
+          }))
+        : [];
+
+      return {
+        id: String(resp.id || resp.question?.id || ''),
+        questionText: resp.question?.text ?? '—',
+        startedAt: resp.started,
+        duration: resp.duration,
+        videoFile: resp.video_file,
+        videoThumbnail: resp.video_thumbnail,
+        transcriptionText: transText || 'No transcription available',
+        transcriptionSegments: segments,
+      };
+    });
   }, [responses]);
 
   const selectedResponse = responses[activeIndex];
@@ -620,237 +663,11 @@ export default function VideoInterview({
 
           </View>
 
-          {responses.length > 0 ? (
-          <View style={styles.responsesCard}>
-            <View style={styles.rowBetween}>
-              <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
-                Responses
-              </Typography>
-
-              {responses.length > 0 && (
-                <Typography variant="regularTxtsm" color={colors.gray[600]}>
-                  {String(activeIndex + 1)}/{String(responses.length)}
-                </Typography>
-              )}
-            </View>
-
-            {/* Response Dropdown */}
-            <View style={styles.responseDropdownWrapper}>
-              <TouchableOpacity
-                style={styles.responseDropdownButton}
-                onPress={() => setResponseDropdownOpen(!responseDropdownOpen)}
-              >
-                <View style={styles.responseSelectedItem}>
-                  {/* {selectedResponse?.video_thumbnail ? (
-                <Image
-                  source={{ uri: selectedResponse.video_thumbnail }}
-                  resizeMode="cover"
-                  style={styles.responseThumbnailSmall}
-                />
-              ) : (
-                <View style={styles.thumbnailSmall} />
-              )} */}
-                  <View style={styles.responseSelectedContent}>
-                    <Typography variant="mediumTxtmd" color={colors.gray[900]} numberOfLines={1}>
-                      {selectedResponse?.question?.text ?? "—"}
-                    </Typography>
-                  </View>
-                  <SvgXml xml={arrowDown} />
-                </View>
-              </TouchableOpacity>
-
-              {responseDropdownOpen && (
-                <View style={styles.responseDropdownContainer}>
-                  <ScrollView nestedScrollEnabled style={styles.responseDropdownScroll}>
-                    {responseOptions.map((item) => {
-                      const responseItem = item.original;
-                      const isActive = item.value === activeIndex;
-                      return (
-                        <TouchableOpacity
-                          key={item.value}
-                          style={[
-                            styles.responseDropdownItem,
-                            isActive && styles.responseDropdownItemActive,
-                          ]}
-                          onPress={() => {
-                            setActiveIndex(item.value);
-                            setResponseDropdownOpen(false);
-                          }}
-                        >
-                          {responseItem?.video_thumbnail ? (
-                            <Image
-                              source={{ uri: responseItem.video_thumbnail }}
-                              resizeMode="cover"
-                              style={styles.responseThumbnail}
-                            />
-                          ) : (
-                            <View style={styles.thumbnail} />
-                          )}
-                          <View style={styles.responseDropdownContent}>
-                            <Typography variant="mediumTxtmd" color={colors.gray[900]} numberOfLines={4} ellipsizeMode="tail">
-                              {responseItem.question?.text ?? "—"}
-                            </Typography>
-                            <Typography variant="regularTxtsm" color={colors.gray[600]}>
-                              {formatMonDDYYYY(responseItem?.started, "DD MMM YYYY HH:mm", "IST")}
-                            </Typography>
-                          </View>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </ScrollView>
-                </View>
-              )}
-            </View>
-
-            <View style={styles.tagRow}>
-              <View style={styles.tag}>
-                <Typography variant="regularTxtxs" color={colors.gray[700]}>
-                  Duration: {globalFormatTime(selectedResponse?.duration || 0)}
-                </Typography>
-              </View>
-
-              <View style={styles.tag}>
-                <Typography variant="regularTxtsm" color={colors.gray[600]}>
-                  {formatMonDDYYYY(selectedResponse?.started, "DD MMM YYYY HH:mm", "IST")}
-                </Typography>
-              </View>
-            </View>
-
-            <View style={styles.mainVideoCard}>
-              <VideoPlayerBox
-                source={
-                  selectedResponse?.video_file
-                    ? selectedResponse.video_file
-                    : ""
-                }
-                onProgress={(e) => setCurrentTime(e.currentTime || 0)}
-              />
-            </View>
-
-            {/* Video Title */}
-            {selectedResponse?.question?.text && (
-              <Typography variant="semiBoldTxtmd" color={colors.gray[900]} style={styles.videoTitle}>
-                {selectedResponse.question.text}
-              </Typography>
-            )}
-            <View style={styles.transcriptionSection}>
-              <Divider />
-              <View style={styles.transcriptionHeader}>
-                <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
-                  Transcription
-                </Typography>
-                <CopyText text={getTranscriptionText() ?? ""} message="Transcription copied">
-                  <SvgXml xml={copyIcon} />
-                </CopyText>
-              </View>
-              <View style={styles.transcriptionTabs}>
-                <TouchableOpacity
-                  style={[
-                    styles.transcriptionTab,
-                    transcriptionView === 'continuous' && styles.transcriptionTabActive,
-                  ]}
-                  onPress={() => setTranscriptionView('continuous')}
-                >
-                  <Typography
-                    variant="mediumTxtsm"
-                    color={transcriptionView === 'continuous' ? colors.brand[700] : colors.gray[700]}
-                  >
-                    Continuous
-                  </Typography>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.transcriptionTab,
-                    transcriptionView === 'bytime' && styles.transcriptionTabActive,
-                  ]}
-                  onPress={() => setTranscriptionView('bytime')}
-                >
-                  <Typography
-                    variant="mediumTxtsm"
-                    color={transcriptionView === 'bytime' ? colors.brand[700] : colors.gray[700]}
-                  >
-                    By time
-                  </Typography>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.transcriptionContent}>
-                {transcriptionView === 'continuous' ? (
-                  <Typography
-                    variant="regularTxtsm"
-                    color={colors.gray[700]}
-                    style={styles.transcriptionText}
-                  >
-                    <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-                      {getTranscriptionSegments().map((seg, sIndex) =>
-                        seg.words?.map((w, wIndex) => {
-                          const isActive =
-                            currentTime >= (w.start ?? 0) &&
-                            currentTime <= (w.end ?? 0);
-
-                          return (
-                            <Typography
-                              key={`${sIndex}-${wIndex}`}
-                              variant="regularTxtsm"
-                              style={{
-                                backgroundColor: isActive ? colors.brand[200] : "transparent",
-                                borderRadius: 6,
-                              }}
-                            >
-                              {w.word + " "}
-                            </Typography>
-                          );
-                        })
-                      )}
-                    </View>
-                  </Typography>
-                ) : (
-                  <View style={styles.transcriptionSegments}>
-                    {getTranscriptionSegments().map((segment, index) => {
-                      const isActive =
-                        currentTime >= (segment.start ?? 0) &&
-                        currentTime <= (segment.end ?? 0);
-
-                      return (
-                        <View
-                          key={index}
-                          style={[
-                            styles.transcriptionSegment,
-                            // isActive && { backgroundColor: colors.brand[50] } // highlight color
-                          ]}
-                        >
-                          <Typography
-                            variant="regularTxtsm"
-                            color={isActive ? colors.brand[700] : colors.gray[700]}
-                            style={styles.transcriptionSegmentText}
-                          >
-                            {segment.text}
-                          </Typography>
-
-                          {segment.start !== undefined && segment.end !== undefined && (
-                            <Typography
-                              variant="regularTxtxs"
-                              color={colors.gray[500]}
-                              style={styles.transcriptionTimestamp}
-                            >
-                              {formatTime(segment.start)} - {formatTime(segment.end)}
-                            </Typography>
-                          )}
-                        </View>
-                      );
-                    })}
-                  </View>
-                )}
-              </View>
-            </View>
-          </View>
-          ) : (
-            <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
-              <Typography variant="regularTxtsm" color={colors.gray[600]}>
-                Question-level video and transcription will appear here when response data is available.
-              </Typography>
-            </View>
-          )}
+          <VideoResponseCard
+            responses={formattedVideoResponses}
+            activeIndex={activeIndex}
+            onActiveIndexChange={setActiveIndex}
+          />
         </>
       )}
     </View>

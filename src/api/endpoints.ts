@@ -38,6 +38,11 @@ export const API_ENDPOINTS = {
     APPLY: (id: string) => `/jobs/${id}/apply`,
     JOB_NAME_LIST: "/job/v1/job-names-list/",
   },
+  // Rapidhire endpoints
+  RAPIDHIRE: {
+    LITE_CANDIDATES: (jobId: string) => `/rapidhire/v1/jobs/${jobId}/lite-candidates`,
+    INTERVIEW_REPORT: (applicationId: string) => `/rapidhire/v1/applications/${applicationId}/interview-report`,
+  },
   // Applications endpoints
   APPLICATIONS: {
     LIST: '/applications/v2/filter/',

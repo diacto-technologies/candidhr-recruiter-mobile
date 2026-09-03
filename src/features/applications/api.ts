@@ -36,6 +36,9 @@ export const applicationsApi = {
     if (params?.limit) query.append("limit", String(params.limit));
 
     // SEARCH
+    if (params?.search)
+      query.append("search", params.search);
+
     if (params?.applicantName)
       query.append("applicant_name__icontains", params.applicantName);
 

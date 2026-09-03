@@ -18,4 +18,6 @@ export const STAGE_TAB_MAP: Record<string, string> = {
   assessment: 'Assessments',
   assessment_v2: 'Assessments',
   automated_video_interview: 'Automated Video Interview',
+  rapidhire: 'Rapidly Interview',
+  rapidly_interview: 'Rapidly Interview',
 };

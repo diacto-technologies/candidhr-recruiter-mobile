@@ -97,17 +97,44 @@ const JobCardRow: React.FC<JobCardRowProps> = ({
               {formatMonDDYYYY(item.close_date ?? 0)}
             </Typography>
           </View>
-          <TouchableOpacity
-            onPress={() => onToggleFavourite?.(item.id)}
-            style={{ alignSelf: 'flex-end' }}>
-            <SvgXml
-              xml={heartIcon}
-              height={20}
-              width={20}
-              color={favouriteJobIds?.includes?.(item.id) ? colors.warning[400] : colors.gray[300]}
-              fill={favouriteJobIds?.includes?.(item.id) ? colors.warning[400] : colors.gray[300]}
-            />
-          </TouchableOpacity>
+          <View style={[cardStyles.rowBetween, { alignItems: 'center', minHeight: 24, marginTop: 4 }]}>
+            <View style={cardStyles.badgeContainer}>
+              {item.published ? (
+                <View style={cardStyles.liveBadge}>
+                  <Typography variant="mediumTxtxs" color={colors.success[700]}>
+                    Live
+                  </Typography>
+                </View>
+              ) : (
+                <View style={cardStyles.draftBadge}>
+                  <Typography variant="mediumTxtxs" color={colors.gray[700]}>
+                    Draft
+                  </Typography>
+                </View>
+              )}
+
+              {item.rapidhire_enabled ? (
+                <View style={cardStyles.rapidlyBadge}>
+                  <Typography variant="mediumTxtxs" color={colors.brand[700]}>
+                    Rapidly
+                  </Typography>
+                </View>
+              ) : null}
+            </View>
+
+            <TouchableOpacity
+              onPress={() => onToggleFavourite?.(item.id)}
+              hitSlop={8}
+            >
+              <SvgXml
+                xml={heartIcon}
+                height={20}
+                width={20}
+                color={favouriteJobIds?.includes?.(item.id) ? colors.warning[400] : colors.gray[300]}
+                fill={favouriteJobIds?.includes?.(item.id) ? colors.warning[400] : colors.gray[300]}
+              />
+            </TouchableOpacity>
+          </View>
           <View style={{ marginVertical: 4 }}>
             <Divider height={1.2} marginVertical={8} color={colors.mainColors.borderColor} />
           </View>

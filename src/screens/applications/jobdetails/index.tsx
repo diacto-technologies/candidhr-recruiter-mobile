@@ -21,18 +21,12 @@ import OverviewTab from "./tabs/overviewtab";
 import { screenHeight } from "../../../utils/devicelayout";
 import { useJobDetailsController, TABS } from "./hooks/useJobDetailsController";
 
-const TAB_OPTIONS = [TABS.OVERVIEW, TABS.APPLICANTS];
-
-const TAB_SCREENS = {
-  [TABS.OVERVIEW]: OverviewTab,
-  [TABS.APPLICANTS]: ApplicantsTab,
-};
-
 const JobDetailScreen: React.FC = () => {
   const styles = useStyles();
   const ctrl = useJobDetailsController();
 
-  const ActiveTabComponent = TAB_SCREENS[ctrl.activeTab] || null;
+  const isOverviewTab = ctrl.activeTab === TABS.OVERVIEW;
+  const ActiveTabComponent = isOverviewTab ? OverviewTab : ApplicantsTab;
 
   return (
     <CustomSafeAreaView>
@@ -43,13 +37,14 @@ const JobDetailScreen: React.FC = () => {
           </Pressable>
         } 
       />
-      {ctrl.activeTab !== TABS.APPLICANTS && <JobHeader />}
+      {isOverviewTab && <JobHeader />}
       
       <View style={styles.tabContainer}>
         <SlideAnimatedTab
-          tabs={TAB_OPTIONS}
+          tabs={ctrl.tabOptions}
           activeTab={ctrl.activeTab}
-          onChangeTab={(label) => ctrl.setActiveTab(label as typeof TABS[keyof typeof TABS])}
+          counts={ctrl.tabCounts}
+          onChangeTab={(label) => ctrl.setActiveTab(label)}
         />
         <View style={styles.bottomBorder} />
       </View>

@@ -1,84 +1,51 @@
 import { colors } from "../../../theme/colors";
 
 export const getStatusColor = (status?: string) => {
-  switch (status) {
-    case "Approved":
+  if (!status) return "";
+  const normalized = status.trim().toLowerCase().replace(/_/g, " ");
+
+  switch (normalized) {
+    case "approved":
+    case "shortlisted":
+    case "hired":
+    case "completed":
+    case "published":
+    case "offer accepted":
+    case "offer extended":
       return colors.success[500];
 
-    case "Not Approved":
+    case "not approved":
+    case "rejected":
+    case "not selected":
+    case "offer rejected":
+    case "draft":
       return colors.error[500];
-    case "Applied":
-      return colors.gray[500];
 
-    case "In Progress":
+    case "in progress":
+    case "under review":
+    case "scheduled final interview":
       return colors.blue[500];
 
-    case "Rejected":
-      return colors.error[500];
+    case "offer final interview":
+    case "interview scheduled":
+    case "final interview":
+      return colors.blue[700];
 
-    case "On Hold":
+    case "on hold":
       return colors.orange[500];
 
-    case "Shortlisted":
-      return colors.success[500];
+    case "approval pending":
+      return colors.warning[500];
 
-    case "Hired":
-      return colors.success[500];
-
-    case "Scheduled Final Interview":
-      return colors.blue[500];
-
-    case "Started":
+    case "applied":
+    case "not started":
+    case "started":
+    case "assigned":
+    case "archived":
+    case "withdrawn":
       return colors.gray[500];
 
-    case "Assigned":
-      return colors.gray[500];
-
-    case "Under Review":
-      return colors.blue[500];
-
-    case "Completed":
-      return colors.success[500];
-
-    case "Published":
-      return colors.success[500];
-
-    case "Draft":
-      return colors.error[500]
-
-    case "Archived":
-      return colors.gray[500]
-
-    case "Not Selected":
-      return colors.error[500]
-
-    case "Offer Rejected":
-      return colors.error[500]
-
-    case "Offer Accepted":
-      return colors.success[500]
-
-    case "Offer Final Interview":
-      return colors.blue[700]
-
-    case "Interview Scheduled":
-      return colors.blue[700]
-
-    case "Offer Extended":
-      return colors.success[500]
-
-    case "Offer Accepted":
-      return colors.success[500]
-
-    case "Withdrawn":
-      return colors.gray[500]
-
-    case "Final Interview":
-      return colors.blue[700]
-
-     case "Approval Pending":
-      return colors.warning[500]
     default:
-      return "";
+      return colors.gray[500];
   }
 };
