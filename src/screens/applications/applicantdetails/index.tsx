@@ -35,10 +35,22 @@ import AssessmentV2 from './tabs/assessmentv2';
 import ProfileInfo from './tabs/profileinfo';
 import ResumeScreening from './tabs/resumescreening';
 import VideoInterview from './tabs/videointerview';
+import RapidlyInterview from './tabs/rapidlyinterview';
 
 export default function ApplicantDetails() {
   const route = useRoute();
-  const { application_id, job_id, tab } = route.params as { application_id: string; job_id: string; tab: string };
+  // Supports two param shapes:
+  //  - In-app navigation: { application_id, job_id, tab? }
+  //  - Deep link (interstitial): { applicantId }  →  maps to application_id
+  const rawParams = route.params as {
+    application_id?: string;
+    applicantId?: string;
+    job_id?: string;
+    tab?: string;
+  };
+  const application_id = (rawParams.application_id ?? rawParams.applicantId ?? '') as string;
+  const job_id = (rawParams.job_id ?? '') as string;
+  const tab = rawParams.tab;
   
   const styles = useStyles();
   const ctrl = useApplicantDetailsController(application_id, job_id, tab || 'Profile Info');
@@ -74,6 +86,8 @@ export default function ApplicantDetails() {
             onSessionContentIdChange={ctrl.setVideoInterviewSessionContentId}
           />
         );
+      case 'Rapidly Interview':
+        return <RapidlyInterview application_id={application_id} />;
       default:
         return <View />;
     }

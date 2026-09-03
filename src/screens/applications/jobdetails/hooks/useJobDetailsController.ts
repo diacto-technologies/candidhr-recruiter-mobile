@@ -36,10 +36,11 @@ const DEFAULT_FILTERS = {
 
 export const TABS = {
   OVERVIEW: "Overview",
-  APPLICANTS: "Applicants"
+  APPLICANTS: "Applicants",
+  RAPIDLY_APPLICANTS: "Rapidly Applicants",
 } as const;
 
-export type TabName = typeof TABS[keyof typeof TABS];
+export type TabName = string;
 
 export const useJobDetailsController = () => {
   const route = useRoute();
@@ -50,13 +51,24 @@ export const useJobDetailsController = () => {
 
   const [isFilterSheetVisible, setIsFilterSheetVisible] = useState<boolean>(false);
   const [selectedTab, setSelectedTab] = useState<string>('Name');
-  const [activeTab, setActiveTab] = useState<TabName>(TABS.OVERVIEW);
 
   const filters = useAppSelector(selectApplicationsFilters);
   const selectedJob = useAppSelector(selectSelectedJob);
   const jobsLoading = useAppSelector(selectJobsLoading);
   const origin = useAppSelector(organizationalOrigin);
-  // Optional: const pagination = useAppSelector(selectApplicationsPagination); 
+  const pagination = useAppSelector(selectApplicationsPagination); 
+
+  const isRapidhire = Boolean(selectedJob?.rapidhire_enabled);
+  const applicantsTabName = isRapidhire ? TABS.RAPIDLY_APPLICANTS : TABS.APPLICANTS;
+  const tabOptions = [TABS.OVERVIEW, applicantsTabName];
+
+  const applicantCount = selectedJob?.applicants_count ?? pagination?.total ?? 0;
+  const tabCounts: Record<string, number> = {
+    [TABS.APPLICANTS]: applicantCount,
+    [TABS.RAPIDLY_APPLICANTS]: applicantCount,
+  };
+
+  const [activeTab, setActiveTab] = useState<string>(TABS.OVERVIEW);
 
   const canPublish = can(PERMISSIONS.PUBLISH_JOB);
   const isPublished = Boolean(selectedJob?.published);
@@ -74,7 +86,13 @@ export const useJobDetailsController = () => {
   }, [jobId, dispatch]);
 
   useEffect(() => {
-    if (isFocused && activeTab === TABS.APPLICANTS) {
+    if (activeTab !== TABS.OVERVIEW && activeTab !== applicantsTabName) {
+      setActiveTab(applicantsTabName);
+    }
+  }, [applicantsTabName, activeTab]);
+
+  useEffect(() => {
+    if (isFocused && activeTab !== TABS.OVERVIEW) {
       dispatch(setApplicationsFilters(DEFAULT_FILTERS));
     }
   }, [isFocused, activeTab, dispatch]);
@@ -125,6 +143,8 @@ export const useJobDetailsController = () => {
     // State
     activeTab,
     setActiveTab,
+    tabOptions,
+    tabCounts,
     selectedTab,
     setSelectedTab,
     isFilterSheetVisible,

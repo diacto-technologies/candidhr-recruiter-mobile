@@ -4,13 +4,22 @@ const linking = {
   config: {
     screens: {
       Dashboard: 'dashboard',
-      ApplicantDetails: 'applicant/:id',
 
+      // Job Overview deep link — fired by the interstitial "Open in App" button
+      // candidhr://app/user/jobs/job/<jobId>/overview
       JobDetailScreen: {
-        path: 'apply/:jobId/:org',
+        path: 'app/user/jobs/job/:jobId/overview',
         parse: {
-          jobId: (jobId: string) => jobId.replace(/\/$/, ''),
-          org: (org: string) => org,
+          jobId: (jobId: string) => jobId.replace(/\/*$/, ''),
+        },
+      },
+
+      // Applicant Profile deep link — fired by the interstitial "Open in App" button
+      // candidhr://app/user/applicants/<applicantId>/profile
+      ApplicantDetails: {
+        path: 'app/user/applicants/:applicantId/profile',
+        parse: {
+          applicantId: (applicantId: string) => applicantId.replace(/\/*$/, ''),
         },
       },
     },

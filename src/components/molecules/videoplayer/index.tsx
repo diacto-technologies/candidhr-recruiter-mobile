@@ -1,7 +1,9 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useMemo } from "react";
 import {
   View,
   TouchableOpacity,
+  Pressable,
+  StyleSheet,
   ActivityIndicator,
   Text,
   Dimensions,
@@ -35,6 +37,9 @@ const formatTime = (seconds?: number) => {
 
 export default function VideoPlayerBox({
   source,
+  startTime = 0,
+  duration: segmentDuration,
+  initialTime,
   onProgress,
   fullscreen: externalFullscreen,
   resizeMode = "contain",
@@ -44,17 +49,57 @@ export default function VideoPlayerBox({
   const { width, height } = Dimensions.get('window');
   const isLandscape = width > height;
 
+  const effectiveStartTime = startTime || initialTime || 0;
+
   const [isPaused, setIsPaused] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
   const [internalFullscreen, setInternalFullscreen] = useState(false);
-  const [duration, setDuration] = useState(0);
-  const [currentTime, setCurrentTime] = useState(0);
+  const [videoFileDuration, setVideoFileDuration] = useState(0);
+  const [currentRelativeTime, setCurrentRelativeTime] = useState(0);
+  const [sliderWidth, setSliderWidth] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  const isSlidingRef = useRef(false);
+
+  const effectiveDuration = useMemo(() => {
+    if (segmentDuration && segmentDuration > 0) {
+      return segmentDuration;
+    }
+    if (videoFileDuration > 0) {
+      return Math.max(0, videoFileDuration - effectiveStartTime);
+    }
+    return 0;
+  }, [segmentDuration, videoFileDuration, effectiveStartTime]);
 
   const hasSource = Boolean(source);
   const fullscreen = externalFullscreen !== undefined ? externalFullscreen : internalFullscreen;
 
-  const togglePlayPause = () => setIsPaused((prev) => !prev);
+  const seekToRelativeTime = (relTime: number) => {
+    const clampedRel = Math.max(0, Math.min(effectiveDuration || 9999, relTime));
+    setCurrentRelativeTime(clampedRel);
+    const targetAbsTime = effectiveStartTime + clampedRel;
+    videoRef.current?.seek(targetAbsTime);
+    onProgress?.({
+      currentTime: clampedRel,
+      absoluteTime: targetAbsTime,
+      playableDuration: videoFileDuration,
+    });
+  };
+
+  const togglePlayPause = () => {
+    if (isPaused) {
+      if (effectiveDuration > 0 && currentRelativeTime >= effectiveDuration - 0.5) {
+        seekToRelativeTime(0);
+      } else {
+        const targetAbsTime = effectiveStartTime + currentRelativeTime;
+        videoRef.current?.seek(targetAbsTime);
+      }
+      setIsPaused(false);
+    } else {
+      setIsPaused(true);
+    }
+  };
+
   const toggleMute = () => setIsMuted((prev) => !prev);
 
   const wasLockedRef = useRef(false);
@@ -65,8 +110,6 @@ export default function VideoPlayerBox({
     }
     wasLockedRef.current = true;
     Orientation.lockToLandscape();
-    // Status bar will be handled by Modal's presentationStyle on iOS
-    // For Android, we use statusBarTranslucent prop on Modal
   };
 
   const exitFullscreen = () => {
@@ -82,6 +125,16 @@ export default function VideoPlayerBox({
   };
 
   useEffect(() => {
+    setIsPaused(true);
+    isSlidingRef.current = false;
+    setCurrentRelativeTime(0);
+    setLoading(true);
+    if (effectiveStartTime > 0) {
+      videoRef.current?.seek(effectiveStartTime);
+    }
+  }, [source, effectiveStartTime]);
+
+  useEffect(() => {
     return () => {
       if (wasLockedRef.current) {
         Orientation.lockToPortrait();
@@ -90,27 +143,63 @@ export default function VideoPlayerBox({
   }, []);
 
   const onLoad = (data: any) => {
-    setDuration(data.duration || 0);
-    setCurrentTime(0);
+    setVideoFileDuration(data.duration || 0);
+    setCurrentRelativeTime(0);
+    if (effectiveStartTime > 0) {
+      videoRef.current?.seek(effectiveStartTime);
+      setTimeout(() => {
+        videoRef.current?.seek(effectiveStartTime);
+      }, 50);
+      setTimeout(() => {
+        videoRef.current?.seek(effectiveStartTime);
+      }, 200);
+    }
     setLoading(false);
   };
 
+  const onReadyForDisplay = () => {
+    if (effectiveStartTime > 0) {
+      videoRef.current?.seek(effectiveStartTime);
+    }
+  };
+
   const handleProgress = (data: any) => {
-    setCurrentTime(Math.max(0, data.currentTime));
-    onProgress?.(data);
+    if (isSlidingRef.current) {
+      return;
+    }
+    const absTime = data.currentTime || 0;
+    const relTime = Math.max(0, absTime - effectiveStartTime);
+
+    // If segment reaches duration limit, pause and loop back to start of question
+    if (effectiveDuration > 0 && relTime >= effectiveDuration) {
+      setIsPaused(true);
+      setCurrentRelativeTime(0);
+      videoRef.current?.seek(effectiveStartTime);
+      onProgress?.({
+        currentTime: 0,
+        absoluteTime: effectiveStartTime,
+        playableDuration: data.playableDuration,
+      });
+      return;
+    }
+
+    setCurrentRelativeTime(relTime);
+    onProgress?.({
+      currentTime: relTime,
+      absoluteTime: absTime,
+      playableDuration: data.playableDuration,
+    });
   };
 
   const onEnd = () => {
     setIsPaused(true);
-    setCurrentTime(0);
-    videoRef.current?.seek(0);
+    setCurrentRelativeTime(0);
+    videoRef.current?.seek(effectiveStartTime);
   };
 
   const videoContent = (
     <View style={[styles.container, fullscreen && styles.fullscreen]}>
-      {!hasSource && (
-        <></>
-      )}
+      {!hasSource && <></>}
 
       {hasSource && (
         <>
@@ -125,9 +214,10 @@ export default function VideoPlayerBox({
             fullscreenAutorotate={false}
             fullscreenOrientation="landscape"
             onLoad={onLoad}
+            onReadyForDisplay={onReadyForDisplay}
             onProgress={handleProgress}
             onEnd={onEnd}
-            progressUpdateInterval={500}
+            progressUpdateInterval={250}
             ignoreSilentSwitch="ignore"
             playInBackground={false}
             playWhenInactive={false}
@@ -150,9 +240,9 @@ export default function VideoPlayerBox({
             <View style={[styles.controls, fullscreen && styles.controlsFullscreen]}>
               <TouchableOpacity onPress={togglePlayPause} style={styles.controlButton}>
                 {isPaused ? (
-                  <SvgXml xml={pauseVideoIcon} />
-                ) : (
                   <SvgXml xml={playVideoIcon} />
+                ) : (
+                  <SvgXml xml={pauseVideoIcon} />
                 )}
               </TouchableOpacity>
 
@@ -165,21 +255,39 @@ export default function VideoPlayerBox({
               </TouchableOpacity>
 
               <Text style={[styles.timeText, fullscreen && styles.timeTextFullscreen]}>
-                {formatTime(currentTime)} / {formatTime(duration)}
+                {formatTime(currentRelativeTime)} / {formatTime(effectiveDuration)}
               </Text>
 
-              <Slider
+              <Pressable
                 style={styles.slider}
-                minimumValue={0}
-                maximumValue={duration}
-                value={currentTime}
-                minimumTrackTintColor={colors.base.white}
-                maximumTrackTintColor="#555"
-                thumbTintColor="transparent"
-                onSlidingComplete={(val) =>
-                  videoRef.current?.seek(val)
-                }
-              />
+                onLayout={(e) => setSliderWidth(e.nativeEvent.layout.width)}
+                onPress={(e) => {
+                  if (sliderWidth <= 0 || effectiveDuration <= 0) return;
+                  const locationX = e.nativeEvent.locationX;
+                  const ratio = Math.max(0, Math.min(1, locationX / sliderWidth));
+                  seekToRelativeTime(ratio * effectiveDuration);
+                }}
+              >
+                <Slider
+                  style={StyleSheet.absoluteFillObject}
+                  minimumValue={0}
+                  maximumValue={effectiveDuration > 0 ? effectiveDuration : 1}
+                  value={currentRelativeTime}
+                  minimumTrackTintColor={colors.base.white}
+                  maximumTrackTintColor="#555"
+                  thumbTintColor="transparent"
+                  onSlidingStart={() => {
+                    isSlidingRef.current = true;
+                  }}
+                  onValueChange={(val) => {
+                    setCurrentRelativeTime(val);
+                  }}
+                  onSlidingComplete={(val) => {
+                    isSlidingRef.current = false;
+                    seekToRelativeTime(val);
+                  }}
+                />
+              </Pressable>
 
               <TouchableOpacity onPress={toggleFullscreen} style={styles.controlButton}>
                 <SvgXml xml={expandIcon} />

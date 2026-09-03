@@ -157,15 +157,47 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
       </View>
     );
   }
-  const handlePress = (application_id: string, job_id: string) => {
+  const handlePress = (application_id: string, job_id?: string) => {
     navigate('ApplicantDetails', {
       application_id,
-      job_id,
+      job_id: job_id || '',
     });
   };
 
+  const candidateName = item?.name ?? item?.candidate_name ?? (item?.id ? '?' : '');
+  const candidateInitial = (candidateName?.trim()?.[0] ?? '?').toUpperCase();
+  const appliedDate = item?.applied_at ? formatMonDDYYYY(item.applied_at) : '_';
+  const jobTitle = item?.job?.title ?? '_';
+  const resumeScore = item?.resume_score?.score ?? (typeof item?.resume_score === 'number' ? item.resume_score : '_');
+
+  const formatStatus = (str?: string) => {
+    if (!str) return '_';
+    return str
+      .split(/[_\s]+/)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
+  const stageOrInterviewStatus = item?.interview_status
+    ? formatStatus(item.interview_status)
+    : item?.latest_stage?.stage_name ?? '_';
+
+  const statusLabel = item?.status_label
+    ? item.status_label
+    : item?.application_status
+    ? formatStatus(item.application_status)
+    : item?.status
+    ? formatStatus(item.status)
+    : '';
+
+  const appId = item?.application || item?.id;
+  const jobId = item?.job?.id || '';
+
+  const isRapidlyCandidate = Boolean(item?.interview_status);
+  const sourceText = item?.source ? formatStatus(item.source) : '_';
+
   return (
-    <Pressable style={[styles.card]} onPress={() => handlePress(item?.id, item?.job?.id)}>
+    <Pressable style={[styles.card]} onPress={() => handlePress(appId, jobId)}>
       <View ref={cardCaptureRef} collapsable={false} style={{ width: '100%', gap: 12 }}>
         {/* Top Row - Avatar + Name */}
         <View style={styles.rowBetween}>
@@ -178,17 +210,17 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
                   resizeMode="cover"
                 />
                 :
-                // <View style={[styles.initialCircle]}>
-                <Typography variant="semiBoldTxtlg" color={colors?.gray[700]} style={{ paddingRight: 5 }}> {(item?.name?.trim()?.[0] ?? "?").toUpperCase()}</Typography>
-                // </View>
+                <Typography variant="semiBoldTxtlg" color={colors?.gray[700]} style={{ paddingRight: 5 }}>
+                  {candidateInitial}
+                </Typography>
               }
             </View>
             <View style={{ marginLeft: 12 }}>
               <Typography variant="semiBoldTxtmd">
-                {item?.name ?? (item?.id ? "?" : '')}
+                {candidateName}
               </Typography>
               <Typography variant="regularTxtsm" color={colors.gray[600]}>
-                Applied on : {item?.applied_at ? formatMonDDYYYY(item?.applied_at) : "_"}
+                Applied on : {appliedDate}
               </Typography>
             </View>
           </View>
@@ -207,18 +239,27 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
           </View>
         </View>
 
-        {/* Applied For */}
-        <Typography variant="regularTxtsm" color={colors.gray[600]}>
-          Applied for :{' '}
-          <Typography variant="mediumTxtsm" color={colors.gray[700]}>
-            {item?.job?.title ?? "_"}
-          </Typography>
-        </Typography>
-
+        {/* Applied For / Source */}
+        {isRapidlyCandidate ? (
           <Typography variant="regularTxtsm" color={colors.gray[600]}>
+            Source :{' '}
+            <Typography variant="mediumTxtsm" color={colors.gray[700]}>
+              {sourceText}
+            </Typography>
+          </Typography>
+        ) : (
+          <Typography variant="regularTxtsm" color={colors.gray[600]}>
+            Applied for :{' '}
+            <Typography variant="mediumTxtsm" color={colors.gray[700]}>
+              {jobTitle}
+            </Typography>
+          </Typography>
+        )}
+
+        <Typography variant="regularTxtsm" color={colors.gray[600]}>
           Resume Score :{' '}
           <Typography variant="mediumTxtsm" color={colors.gray[700]}>
-            {item?.resume_score?.score ?? "_"}
+            {resumeScore}
           </Typography>
         </Typography>
 
@@ -228,17 +269,17 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
         <View style={styles.rowBetween}>
           <View style={{ flex: 1 }}>
             <Typography variant="regularTxtsm" color={colors.gray[500]}>
-              {item?.latest_stage?.stage_name ?? "_"}
+              {stageOrInterviewStatus}
             </Typography>
           </View>
-          {item?.status &&
+          {Boolean(statusLabel) && (
             <View style={styles.statusBadge}>
-              <View style={[styles.statusDot, { backgroundColor: getStatusColor(item?.status_label) }]} />
+              <View style={[styles.statusDot, { backgroundColor: getStatusColor(statusLabel) }]} />
               <Typography variant="mediumTxtxs" color={colors.gray[700]}>
-                {item?.status_label ?? "_"}
+                {statusLabel}
               </Typography>
             </View>
-          }
+          )}
         </View>
       </View>
 

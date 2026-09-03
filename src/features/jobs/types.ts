@@ -24,6 +24,8 @@ export interface Job {
   invite_via_email?: boolean;
   emails?: string[];
   application_ids?: string[] | null;
+  rapidhire_enabled?: boolean;
+  rapidly_interview_mode?: string | null;
 
   // Nested objects
   owner: {
@@ -183,6 +185,8 @@ export interface JobDetail {
   emails: string[];
 
   application_ids: string[] | null;
+  rapidhire_enabled?: boolean;
+  rapidly_interview_mode?: string | null;
 }
 
 export interface JobsState {

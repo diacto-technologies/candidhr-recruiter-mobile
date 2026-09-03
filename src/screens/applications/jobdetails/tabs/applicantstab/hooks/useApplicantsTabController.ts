@@ -1,7 +1,8 @@
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { useFocusEffect } from '@react-navigation/native';
 import { useAppDispatch } from "../../../../../../hooks/useAppDispatch";
 import { useAppSelector } from "../../../../../../hooks/useAppSelector";
+import { useDebouncedValue } from "../../../../../../hooks/useDebounce";
 
 import {
   selectApplications,
@@ -17,29 +18,59 @@ import {
 } from "../../../../../../features/applications/actions";
 import { setApplicationsFilters } from "../../../../../../features/applications/slice";
 
+import {
+  selectRapidhireCandidates,
+  selectRapidhireLoading,
+  selectRapidhirePagination,
+  selectRapidhireHasMore,
+} from "../../../../../../features/rapidhire/selectors";
+import {
+  getRapidhireCandidatesRequestAction,
+  resetRapidhireCandidatesAction,
+} from "../../../../../../features/rapidhire/actions";
+
 const SKELETON_ROWS = 6;
 export const AI_RECOMMENDATION_SORT = "-resume_score";
 export const DEFAULT_SORT = "-last_updated";
 
-export type ApplicationListItem = any | { __skeleton: true; __id: string }; // We use 'any' as a fallback for Application since its type is not exported here, but we explicitly add the skeleton type
+export type ApplicationListItem = any | { __skeleton: true; __id: string };
 
 export const useApplicantsTabController = () => {
   const dispatch = useAppDispatch();
   const [aiEnabled, setAiEnabled] = useState(false);
   const onEndReachedCalledRef = useRef(false);
+  const isInitialMount = useRef(true);
 
+  const selectedJob = useAppSelector((state) => state.jobs.selectedJob);
+  const isRapidhire = Boolean(selectedJob?.rapidhire_enabled);
+  const jobId = selectedJob?.id;
+
+  // Applications feature state
   const applications = useAppSelector(selectApplications);
-  const loading = useAppSelector(selectApplicationsLoading);
-  const pagination = useAppSelector(selectApplicationsPagination);
-  const hasMore = useAppSelector(selectApplicationsHasMore);
+  const appsLoading = useAppSelector(selectApplicationsLoading);
+  const appsPagination = useAppSelector(selectApplicationsPagination);
+  const appsHasMore = useAppSelector(selectApplicationsHasMore);
   const filters = useAppSelector(selectApplicationsFilters);
-  const jobId = useAppSelector((state) => state.jobs.selectedJob?.id);
 
-  const getApiPayload = useCallback((page: number, overrideSort?: string) => {
+  // Rapidhire feature state
+  const rapidhireCandidates = useAppSelector(selectRapidhireCandidates);
+  const rapidhireLoading = useAppSelector(selectRapidhireLoading);
+  const rapidhirePagination = useAppSelector(selectRapidhirePagination);
+  const rapidhireHasMore = useAppSelector(selectRapidhireHasMore);
+
+  const loading = isRapidhire ? rapidhireLoading : appsLoading;
+  const hasMore = isRapidhire ? rapidhireHasMore : appsHasMore;
+  const currentPage = isRapidhire ? rapidhirePagination.page : appsPagination.page;
+  const listData = isRapidhire ? rapidhireCandidates : applications;
+
+  const debouncedSearch = useDebouncedValue(filters.name, 400);
+
+  const getApiPayload = useCallback((page: number, overrideSort?: string, searchParam?: string) => {
+    const currentSearch = searchParam !== undefined ? searchParam : filters.name.trim();
     return {
       page,
-      limit: pagination.limit,
-      applicantName: filters.name.trim() || undefined,
+      limit: appsPagination.limit,
+      search: currentSearch || undefined,
       jobId,
       email: filters.email || "",
       jobTitle: filters.appliedFor || "",
@@ -50,25 +81,70 @@ export const useApplicantsTabController = () => {
       latestStageName: filters.latestStageName || undefined,
       sort: overrideSort ?? (aiEnabled ? AI_RECOMMENDATION_SORT : (filters.sort || DEFAULT_SORT)),
     };
-  }, [filters, aiEnabled, jobId, pagination.limit]);
+  }, [filters, aiEnabled, jobId, appsPagination.limit]);
 
+  // Initial focus fetch
   useFocusEffect(
     useCallback(() => {
       if (!jobId) return;
-      dispatch(getApplicationsRequestAction({
-        ...getApiPayload(1),
-        reset: true,
-      }));
-    }, [jobId, getApiPayload, dispatch])
+      const searchVal = filters.name.trim() || undefined;
+      if (isRapidhire) {
+        dispatch(getRapidhireCandidatesRequestAction({
+          jobId,
+          page: 1,
+          reset: true,
+          search: searchVal,
+        }));
+      } else {
+        dispatch(getApplicationsRequestAction({
+          ...getApiPayload(1, undefined, searchVal),
+          reset: true,
+        }));
+      }
+    }, [jobId, isRapidhire, getApiPayload, dispatch])
   );
 
+  // Trigger search on debounced text change
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    if (!jobId) return;
+
+    const searchVal = debouncedSearch.trim() || undefined;
+    if (isRapidhire) {
+      dispatch(getRapidhireCandidatesRequestAction({
+        jobId,
+        page: 1,
+        reset: true,
+        search: searchVal,
+      }));
+    } else {
+      dispatch(getApplicationsRequestAction({
+        ...getApiPayload(1, undefined, searchVal),
+        reset: true,
+      }));
+    }
+  }, [debouncedSearch, aiEnabled, jobId, isRapidhire]);
+
   const handleLoadMore = useCallback(() => {
-    if (loading || !hasMore) return;
-    dispatch(getApplicationsRequestAction({
-      ...getApiPayload(pagination.page + 1),
-      append: true,
-    }));
-  }, [loading, hasMore, pagination.page, getApiPayload, dispatch]);
+    if (loading || !hasMore || !jobId) return;
+    const searchVal = filters.name.trim() || undefined;
+    if (isRapidhire) {
+      dispatch(getRapidhireCandidatesRequestAction({
+        jobId,
+        page: currentPage + 1,
+        append: true,
+        search: searchVal,
+      }));
+    } else {
+      dispatch(getApplicationsRequestAction({
+        ...getApiPayload(currentPage + 1, undefined, searchVal),
+        append: true,
+      }));
+    }
+  }, [loading, hasMore, jobId, isRapidhire, currentPage, filters.name, getApiPayload, dispatch]);
 
   const handleSearch = useCallback((text: string) => {
     dispatch(setApplicationsFilters({ name: text }));
@@ -76,8 +152,6 @@ export const useApplicantsTabController = () => {
 
   const handleExport = useCallback(() => {
     if (!jobId) return;
-    // The export API throws a 500 error if sorted by -resume_score.
-    // We fallback to standard sort for exports to prevent crashes.
     const exportSortValue = filters.sort || DEFAULT_SORT;
     
     dispatch(exportApplicationsRequestAction({
@@ -100,20 +174,21 @@ export const useApplicantsTabController = () => {
   }, [handleLoadMore]);
 
   const dataSource: ApplicationListItem[] = useMemo(() => {
-    if (loading && applications.length === 0) {
+    if (loading && listData.length === 0) {
       return Array.from({ length: SKELETON_ROWS }).map((_, i) => ({
         __skeleton: true,
         __id: `skeleton-${i}`,
       }));
     }
-    return applications;
-  }, [loading, applications]);
+    return listData;
+  }, [loading, listData]);
 
   return {
     // State
     aiEnabled,
     setAiEnabled,
     loading,
+    isRapidhire,
     
     // Data
     dataSource,
@@ -129,3 +204,4 @@ export const useApplicantsTabController = () => {
     filters,
   };
 };
+

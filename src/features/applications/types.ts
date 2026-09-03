@@ -327,6 +327,7 @@ export interface GetApplicationsParams {
   page?: number;
   limit?: number;
   append?: boolean;
+  search?: string;
   applicantName?: string;
   email?: string;
   contact?: string;
