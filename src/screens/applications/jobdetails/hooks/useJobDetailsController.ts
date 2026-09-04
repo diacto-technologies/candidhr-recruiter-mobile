@@ -155,6 +155,7 @@ export const useJobDetailsController = () => {
     jobsLoading,
     isPublished,
     canPublish,
+    isRapidhire,
     
     // Handlers
     handleApplyFilters,

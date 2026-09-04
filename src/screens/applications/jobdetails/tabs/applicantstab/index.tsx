@@ -9,6 +9,7 @@ import { Divider } from "react-native-paper";
 import { Typography } from "../../../../../components";
 import BackgroundPattern from "../../../../../components/atoms/backgroundpattern";
 import CustomSwitch from "../../../../../components/atoms/switchbutton";
+import SlideAnimatedTab from "../../../../../components/molecules/slideanimatedtab";
 import { useStyles } from "./styles";
 import DeviceInfo from "react-native-device-info";
 import { useApplicantsTabController } from "./hooks/useApplicantsTabController";
@@ -20,7 +21,7 @@ const ApplicantsTab = () => {
 
   return (
     <View style={styles.mainContainer}>
-      <View style={styles.searchContainer}>
+      <View style={[styles.searchContainer, ctrl.isRapidhire && styles.searchContainerRapidly]}>
         <SearchBar
           value={ctrl.filters.name}
           placeholder="Search by name or email"
@@ -46,6 +47,18 @@ const ApplicantsTab = () => {
           </View>
         )}
       </View>
+
+      {ctrl.isRapidhire && (
+        <View style={styles.rapidlyTabWrapper}>
+          <SlideAnimatedTab
+            tabs={[...ctrl.rapidlyTabs]}
+            activeTab={ctrl.rapidlyActiveTab}
+            counts={ctrl.rapidhireTabCounts}
+            countShow={true}
+            onChangeTab={ctrl.handleChangeRapidlyTab}
+          />
+        </View>
+      )}
 
       <Divider />
 

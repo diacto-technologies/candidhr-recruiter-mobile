@@ -15,26 +15,26 @@ export const useStyles = () => {
           // },
           tabRow: {
             flexDirection: "row",
-            paddingHorizontal: 16,
-            paddingTop: 10,
-            gap: 12,
+            paddingHorizontal: 12,
+            paddingTop: 6,
+            gap: 8,
             position: "relative",
           },
           tabBtn: {
-            paddingBottom: 12,
-            paddingHorizontal: 6,
+            paddingBottom: 10,
+            paddingHorizontal: 4,
           },
           tabInner: {
             flexDirection: "row",
             alignItems: "center",
-            gap: 8,
+            gap: 6,
           },
         
           // Badge bubble
           countBadge: {
-            paddingHorizontal:8,
-            paddingVertical: 2,
-            borderRadius:9999,
+            paddingHorizontal: 6,
+            paddingVertical: 1.5,
+            borderRadius: 9999,
             borderWidth: 1.5,
           },
           countActive: {

@@ -51,6 +51,8 @@ export interface GetRapidhireCandidatesParams {
   limit?: number;
   search?: string;
   name?: string;
+  status?: string;
+  interview_status?: string;
   append?: boolean;
   reset?: boolean;
 }
@@ -88,12 +90,65 @@ export interface RapidlyInterviewSkillDetail {
   description?: string;
 }
 
+export interface RapidlyInterviewAssessmentOverall {
+  band?: string;
+  score?: number;
+}
+
+export interface RapidlyInterviewAssessmentEvidence {
+  quote?: string;
+  questionRef?: number;
+}
+
+export interface RapidlyInterviewAssessmentDimension {
+  key: string;
+  band?: string;
+  label?: string;
+  score?: number;
+  verdict?: string;
+  evidence?: RapidlyInterviewAssessmentEvidence[];
+  rationale?: string;
+  confidence?: string;
+}
+
+export interface RapidlyInterviewAssessmentDelivery {
+  note?: string;
+  fillers?: Record<string, number>;
+  language?: string;
+  word_count?: number;
+  filler_count?: number;
+  speech_ratio?: number;
+  avg_pause_sec?: number;
+  stt_confidence?: number;
+  total_time_sec?: number;
+  long_pause_count?: number;
+  words_per_minute?: number;
+  speaking_time_sec?: number;
+  filler_rate_per_100w?: number;
+}
+
+export interface RapidlyInterviewAssessment {
+  scale?: string;
+  overall?: RapidlyInterviewAssessmentOverall;
+  summary?: string;
+  version?: number;
+  delivery?: RapidlyInterviewAssessmentDelivery;
+  language?: string;
+  dimensions?: RapidlyInterviewAssessmentDimension[];
+  engine_key?: string;
+  generated_at?: string;
+  engine_version?: string;
+  language_label?: string;
+  target_language_used?: boolean;
+}
+
 export interface RapidlyInterviewReportData {
   turns: RapidlyInterviewTurn[];
   language?: string;
   questions: RapidlyInterviewQuestion[];
   transcript?: string;
   report_type?: string;
+  assessment?: RapidlyInterviewAssessment;
   skills?: Record<string, RapidlyInterviewSkillDetail>;
   [key: string]: any;
 }

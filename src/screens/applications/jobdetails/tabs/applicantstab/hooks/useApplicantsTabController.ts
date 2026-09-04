@@ -23,6 +23,7 @@ import {
   selectRapidhireLoading,
   selectRapidhirePagination,
   selectRapidhireHasMore,
+  selectRapidhireSummary,
 } from "../../../../../../features/rapidhire/selectors";
 import {
   getRapidhireCandidatesRequestAction,
@@ -33,11 +34,29 @@ const SKELETON_ROWS = 6;
 export const AI_RECOMMENDATION_SORT = "-resume_score";
 export const DEFAULT_SORT = "-last_updated";
 
+export const RAPIDLY_APPLICANT_TABS = ['All', 'Not started', 'In progress', 'Completed'] as const;
+export type RapidlyApplicantTab = (typeof RAPIDLY_APPLICANT_TABS)[number];
+
+const getRapidlyInterviewStatusParam = (tab: string) => {
+  switch (tab) {
+    case 'Not started':
+      return 'not_started';
+    case 'In progress':
+      return 'in_progress';
+    case 'Completed':
+      return 'completed';
+    case 'All':
+    default:
+      return undefined;
+  }
+};
+
 export type ApplicationListItem = any | { __skeleton: true; __id: string };
 
 export const useApplicantsTabController = () => {
   const dispatch = useAppDispatch();
   const [aiEnabled, setAiEnabled] = useState(false);
+  const [rapidlyActiveTab, setRapidlyActiveTab] = useState<string>('All');
   const onEndReachedCalledRef = useRef(false);
   const isInitialMount = useRef(true);
 
@@ -57,6 +76,7 @@ export const useApplicantsTabController = () => {
   const rapidhireLoading = useAppSelector(selectRapidhireLoading);
   const rapidhirePagination = useAppSelector(selectRapidhirePagination);
   const rapidhireHasMore = useAppSelector(selectRapidhireHasMore);
+  const rapidhireSummary = useAppSelector(selectRapidhireSummary);
 
   const loading = isRapidhire ? rapidhireLoading : appsLoading;
   const hasMore = isRapidhire ? rapidhireHasMore : appsHasMore;
@@ -64,6 +84,13 @@ export const useApplicantsTabController = () => {
   const listData = isRapidhire ? rapidhireCandidates : applications;
 
   const debouncedSearch = useDebouncedValue(filters.name, 400);
+
+  const rapidhireTabCounts: Record<string, number> = useMemo(() => ({
+    All: rapidhireSummary?.counts?.total ?? 0,
+    'Not started': rapidhireSummary?.counts?.not_started ?? 0,
+    'In progress': rapidhireSummary?.counts?.in_progress ?? 0,
+    Completed: rapidhireSummary?.counts?.completed ?? 0,
+  }), [rapidhireSummary]);
 
   const getApiPayload = useCallback((page: number, overrideSort?: string, searchParam?: string) => {
     const currentSearch = searchParam !== undefined ? searchParam : filters.name.trim();
@@ -94,6 +121,7 @@ export const useApplicantsTabController = () => {
           page: 1,
           reset: true,
           search: searchVal,
+          interview_status: getRapidlyInterviewStatusParam(rapidlyActiveTab),
         }));
       } else {
         dispatch(getApplicationsRequestAction({
@@ -101,7 +129,7 @@ export const useApplicantsTabController = () => {
           reset: true,
         }));
       }
-    }, [jobId, isRapidhire, getApiPayload, dispatch])
+    }, [jobId, isRapidhire, rapidlyActiveTab, getApiPayload, dispatch])
   );
 
   // Trigger search on debounced text change
@@ -119,6 +147,7 @@ export const useApplicantsTabController = () => {
         page: 1,
         reset: true,
         search: searchVal,
+        interview_status: getRapidlyInterviewStatusParam(rapidlyActiveTab),
       }));
     } else {
       dispatch(getApplicationsRequestAction({
@@ -126,7 +155,20 @@ export const useApplicantsTabController = () => {
         reset: true,
       }));
     }
-  }, [debouncedSearch, aiEnabled, jobId, isRapidhire]);
+  }, [debouncedSearch, aiEnabled, jobId, isRapidhire, rapidlyActiveTab]);
+
+  const handleChangeRapidlyTab = useCallback((tab: string) => {
+    setRapidlyActiveTab(tab);
+    if (!jobId) return;
+    const searchVal = filters.name.trim() || undefined;
+    dispatch(getRapidhireCandidatesRequestAction({
+      jobId,
+      page: 1,
+      reset: true,
+      search: searchVal,
+      interview_status: getRapidlyInterviewStatusParam(tab),
+    }));
+  }, [jobId, filters.name, dispatch]);
 
   const handleLoadMore = useCallback(() => {
     if (loading || !hasMore || !jobId) return;
@@ -137,6 +179,7 @@ export const useApplicantsTabController = () => {
         page: currentPage + 1,
         append: true,
         search: searchVal,
+        interview_status: getRapidlyInterviewStatusParam(rapidlyActiveTab),
       }));
     } else {
       dispatch(getApplicationsRequestAction({
@@ -144,7 +187,7 @@ export const useApplicantsTabController = () => {
         append: true,
       }));
     }
-  }, [loading, hasMore, jobId, isRapidhire, currentPage, filters.name, getApiPayload, dispatch]);
+  }, [loading, hasMore, jobId, isRapidhire, currentPage, filters.name, rapidlyActiveTab, getApiPayload, dispatch]);
 
   const handleSearch = useCallback((text: string) => {
     dispatch(setApplicationsFilters({ name: text }));
@@ -189,11 +232,15 @@ export const useApplicantsTabController = () => {
     setAiEnabled,
     loading,
     isRapidhire,
+    rapidlyTabs: RAPIDLY_APPLICANT_TABS,
+    rapidlyActiveTab,
+    rapidhireTabCounts,
     
     // Data
     dataSource,
     
     // Handlers
+    handleChangeRapidlyTab,
     handleLoadMore,
     handleSearch,
     handleExport,

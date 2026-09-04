@@ -53,31 +53,35 @@ const JobDetailScreen: React.FC = () => {
         {ActiveTabComponent && <ActiveTabComponent />}
       </View>
 
-      <SortingAndFilter
-        title="Filters"
-        options={applicantFiltersOption}
-        onPressFilter={() => ctrl.setIsFilterSheetVisible(true)}
-        setSelectedTab={ctrl.setSelectedTab}
-        selectedTab={ctrl.selectedTab}
-        onItemPress={ctrl.handleSort} 
-      />
+      {!ctrl.isRapidhire && !isOverviewTab && (
+        <>
+          <SortingAndFilter
+            title="Filters"
+            options={applicantFiltersOption}
+            onPressFilter={() => ctrl.setIsFilterSheetVisible(true)}
+            setSelectedTab={ctrl.setSelectedTab}
+            selectedTab={ctrl.selectedTab}
+            onItemPress={ctrl.handleSort} 
+          />
 
-      <BottomSheet
-        visible={ctrl.isFilterSheetVisible}
-        onClose={() => ctrl.setIsFilterSheetVisible(false)}
-        onClearAll={ctrl.handleClearAllFilters}
-        title="Filter by"
-        showHeadline 
-        hight={screenHeight * 0.8}
-      >
-        <ApplicantFilterSheet
-          onCancel={() => ctrl.setIsFilterSheetVisible(false)}
-          onApply={ctrl.handleApplyFilters}
-          onClearAll={ctrl.handleClearAllFilters}
-          selectedTab={ctrl.selectedTab}
-          setSelectedTab={ctrl.setSelectedTab}
-        />
-      </BottomSheet>
+          <BottomSheet
+            visible={ctrl.isFilterSheetVisible}
+            onClose={() => ctrl.setIsFilterSheetVisible(false)}
+            onClearAll={ctrl.handleClearAllFilters}
+            title="Filter by"
+            showHeadline 
+            hight={screenHeight * 0.8}
+          >
+            <ApplicantFilterSheet
+              onCancel={() => ctrl.setIsFilterSheetVisible(false)}
+              onApply={ctrl.handleApplyFilters}
+              onClearAll={ctrl.handleClearAllFilters}
+              selectedTab={ctrl.selectedTab}
+              setSelectedTab={ctrl.setSelectedTab}
+            />
+          </BottomSheet>
+        </>
+      )}
 
       <View>
         <FooterButtons

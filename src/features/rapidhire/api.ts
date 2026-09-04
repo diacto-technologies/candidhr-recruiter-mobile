@@ -8,10 +8,14 @@ import {
 
 export const rapidhireApi = {
   getCandidates: async (params: GetRapidhireCandidatesParams): Promise<RapidhireCandidatesResponse> => {
-    const { jobId, page = 1, search } = params;
+    const { jobId, page = 1, search, status, interview_status } = params;
     const query = new URLSearchParams();
     if (page) query.append('page', String(page));
     if (search) query.append('search', search);
+    const activeStatus = interview_status || status;
+    if (activeStatus && activeStatus.toLowerCase() !== 'total' && activeStatus.toLowerCase() !== 'all') {
+      query.append('interview_status', activeStatus.toLowerCase().replace(/\s+/g, '_'));
+    }
 
     const qs = query.toString();
     const endpoint = API_ENDPOINTS.RAPIDHIRE.LITE_CANDIDATES(jobId);

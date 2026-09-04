@@ -13,7 +13,7 @@ import {
 import { selectSelectedApplication } from '../../../../../features/applications/selectors';
 import { Typography } from '../../../../../components';
 import { colors } from '../../../../../theme/colors';
-import { VideoResponseCard, VideoResponseItem } from '../../../../../components/organisms/VideoResponseCard';
+import { RapidlyInterviewCard, RapidlyInterviewItem } from './components/RapidlyInterviewCard';
 import { useStyles } from './styles';
 import { InterviewBreakdownModal } from './components/InterviewBreakdownModal';
 
@@ -56,7 +56,7 @@ export default function RapidlyInterview({ application_id }: RapidlyInterviewPro
     return items;
   }, [reportData?.timeline]);
 
-  const videoResponses: VideoResponseItem[] = useMemo(() => {
+  const videoResponses: RapidlyInterviewItem[] = useMemo(() => {
     if (!reportData) return [];
 
     const count = Math.max(
@@ -65,7 +65,7 @@ export default function RapidlyInterview({ application_id }: RapidlyInterviewPro
       candidateTimelineItems.length,
       1
     );
-    const list: VideoResponseItem[] = [];
+    const list: RapidlyInterviewItem[] = [];
 
     for (let i = 0; i < count; i++) {
       const qText = questions[i]?.text || candidateTurns[i]?.text || (i === 0 ? 'Interview Question' : `Question ${i + 1}`);
@@ -86,18 +86,15 @@ export default function RapidlyInterview({ application_id }: RapidlyInterviewPro
         ? [
             {
               text: answerTurn?.text || timelineItem.text,
-              start: 0,
-              end: durationSec,
-              words: timelineItem.words.map(w => {
-                const wStart = w.start != null ? w.start : 0;
-                const wEnd = w.end != null ? w.end : 0;
-                const baseMs = timelineItem.startMs || 0;
-                const relStart = baseMs > 0 && wStart >= baseMs ? (wStart - baseMs) / 1000 : wStart / 1000;
-                const relEnd = baseMs > 0 && wEnd >= baseMs ? (wEnd - baseMs) / 1000 : wEnd / 1000;
+              start: startTimeSec,
+              end: endTimeSec,
+              words: timelineItem.words.map((w) => {
+                const wStart = w.start != null ? w.start / 1000 : startTimeSec;
+                const wEnd = w.end != null ? w.end / 1000 : endTimeSec;
                 return {
                   word: w.w,
-                  start: Math.max(0, relStart),
-                  end: Math.max(0, relEnd),
+                  start: wStart,
+                  end: wEnd,
                 };
               }),
             },
@@ -105,8 +102,8 @@ export default function RapidlyInterview({ application_id }: RapidlyInterviewPro
         : [
             {
               text: answerTurn?.text || reportData?.report?.transcript || '',
-              start: 0,
-              end: durationSec,
+              start: startTimeSec,
+              end: endTimeSec,
             },
           ];
 
@@ -153,7 +150,7 @@ export default function RapidlyInterview({ application_id }: RapidlyInterviewPro
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
-      <VideoResponseCard
+      <RapidlyInterviewCard
         responses={videoResponses}
         activeIndex={selectedQuestionIndex}
         onActiveIndexChange={setSelectedQuestionIndex}

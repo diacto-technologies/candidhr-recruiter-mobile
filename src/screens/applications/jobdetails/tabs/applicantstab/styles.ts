@@ -42,8 +42,14 @@ export const useStyles = () => {
           alignItems: 'center'
         },
         mainContainer: { flex: 1 },
-        searchContainer: { paddingHorizontal: 16, gap: 4, paddingVertical: 16 },
-        switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+        searchContainer: { paddingHorizontal: 16, gap: 4, paddingTop: 16, paddingBottom: 8 },
+        searchContainerRapidly: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 0 },
+        switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
+        rapidlyTabWrapper: {
+          paddingHorizontal: 0,
+          paddingBottom: 0,
+          backgroundColor: colors.base.white,
+        },
         flatListContent: {
           paddingHorizontal: 16,
           paddingVertical: 16,

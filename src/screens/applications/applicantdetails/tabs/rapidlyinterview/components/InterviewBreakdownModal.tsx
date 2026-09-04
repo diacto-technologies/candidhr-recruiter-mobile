@@ -47,6 +47,24 @@ const DEFAULT_SKILLS = [
   },
 ];
 
+const CEFR_LEVEL_DETAILS: Record<string, { name: string; color: string; bg: string }> = {
+  A1: { name: 'Beginner', color: colors.error[600], bg: colors.error[50] },
+  A2: { name: 'Elementary', color: colors.error[600], bg: colors.error[50] },
+  B1: { name: 'Intermediate', color: colors.warning[600], bg: colors.warning[50] },
+  B2: { name: 'Upper-intermediate', color: colors.blue[600], bg: colors.blue[50] },
+  C1: { name: 'Advanced', color: colors.success[600], bg: colors.success[50] },
+  C2: { name: 'Proficient', color: colors.success[700], bg: colors.success[50] },
+};
+
+const getLevelFromScore = (score: number): string => {
+  if (score >= 90) return 'C2';
+  if (score >= 75) return 'C1';
+  if (score >= 60) return 'B2';
+  if (score >= 40) return 'B1';
+  if (score >= 20) return 'A2';
+  return 'A1';
+};
+
 export const InterviewBreakdownModal: React.FC<InterviewBreakdownModalProps> = ({
   visible,
   onClose,
@@ -57,22 +75,51 @@ export const InterviewBreakdownModal: React.FC<InterviewBreakdownModalProps> = (
   const styles = useStyles();
   const [howDecidedVisible, setHowDecidedVisible] = useState(false);
 
-  const score = reportData?.score ?? 85;
-  const cefrLevel = reportData?.cefr_level ?? 'C1';
+  const assessment = reportData?.report?.assessment;
+  const score = Math.round(assessment?.overall?.score ?? reportData?.score ?? 68);
+
+  // Detect level from reportData assessment band, cefr_level, or candidate/persona text
+  const detectedLevelFromText = React.useMemo(() => {
+    const textToSearch = `${candidateName || ''} ${jobTitle || ''} ${reportData?.simulation_persona || ''}`;
+    const match = textToSearch.match(/\b([A-C][1-2])\b/i);
+    return match ? match[1].toUpperCase() : null;
+  }, [candidateName, jobTitle, reportData?.simulation_persona]);
+
+  const rawCefr =
+    assessment?.overall?.band ||
+    reportData?.cefr_level ||
+    reportData?.report?.cefr_level ||
+    detectedLevelFromText ||
+    getLevelFromScore(score);
+
+  const cefrLevel = (rawCefr || 'B2').toUpperCase();
+  const levelMeta = CEFR_LEVEL_DETAILS[cefrLevel] || CEFR_LEVEL_DETAILS['B2'];
+  const levelName = levelMeta.name;
+
+  const assessmentDimensions = assessment?.dimensions;
   const skillsData = reportData?.report?.skills;
 
-  const skillsList = skillsData
+  const skillsList = assessmentDimensions && assessmentDimensions.length > 0
+    ? assessmentDimensions.map((dim) => ({
+        name: dim.label || dim.key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+        level: (dim.band || cefrLevel).toUpperCase(),
+        description: dim.rationale || '',
+      }))
+    : skillsData
     ? Object.entries(skillsData).map(([key, item]) => ({
         name: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-        level: item.level || cefrLevel,
+        level: (item.level || cefrLevel).toUpperCase(),
         description: item.feedback || item.description || '',
       }))
-    : DEFAULT_SKILLS;
+    : DEFAULT_SKILLS.map((s) => ({
+        ...s,
+        level: cefrLevel,
+      }));
 
   const summaryText =
-    reportData?.report?.transcript
-      ? `The candidate demonstrates strong performance with well-organized spoken responses, precise professional vocabulary, and coherent argumentation across topics.`
-      : `The candidate demonstrates fluent, well-organized spoken responses with strong control of complex grammar, precise professional vocabulary, and coherent argumentation across all topics.`;
+    assessment?.summary ||
+    reportData?.report?.transcript ||
+    'The candidate communicates clearly and coherently about professional topics.';
 
   return (
     <>
@@ -105,8 +152,8 @@ export const InterviewBreakdownModal: React.FC<InterviewBreakdownModalProps> = (
             <ScrollView showsVerticalScrollIndicator={false} style={styles.modalScroll}>
               {/* Score & CEFR Hero Card */}
               <View style={styles.scoreHeroRow}>
-                <View style={styles.cefrBadgeLarge}>
-                  <Typography variant="boldTxtxl" color={colors.success[700]}>
+                <View style={[styles.cefrBadgeLarge, { borderColor: levelMeta.color, backgroundColor: levelMeta.bg }]}>
+                  <Typography variant="boldTxtxl" color={levelMeta.color}>
                     {cefrLevel}
                   </Typography>
                 </View>
@@ -121,7 +168,7 @@ export const InterviewBreakdownModal: React.FC<InterviewBreakdownModalProps> = (
                     </Typography>
                   </View>
                   <Typography variant="regularTxtsm" color={colors.gray[600]}>
-                    Advanced · overall CEFR level
+                    {`${levelName} · overall CEFR level`}
                   </Typography>
                 </View>
               </View>
@@ -136,7 +183,7 @@ export const InterviewBreakdownModal: React.FC<InterviewBreakdownModalProps> = (
                       key={i}
                       style={[
                         styles.segment,
-                        { backgroundColor: isFilled ? colors.success[500] : colors.gray[200] },
+                        { backgroundColor: isFilled ? levelMeta.color : colors.gray[200] },
                       ]}
                     />
                   );
@@ -154,23 +201,26 @@ export const InterviewBreakdownModal: React.FC<InterviewBreakdownModalProps> = (
               </Typography>
 
               <View style={styles.skillCardsList}>
-                {skillsList.map((skill, index) => (
-                  <View key={index} style={styles.skillCard}>
-                    <View style={styles.skillCardHeader}>
-                      <View style={styles.skillLevelPill}>
-                        <Typography variant="semiBoldTxtxs" color={colors.success[700]}>
-                          {skill.level}
+                {skillsList.map((skill, index) => {
+                  const skillMeta = CEFR_LEVEL_DETAILS[skill.level] || levelMeta;
+                  return (
+                    <View key={index} style={styles.skillCard}>
+                      <View style={styles.skillCardHeader}>
+                        <View style={[styles.skillLevelPill, { backgroundColor: skillMeta.bg }]}>
+                          <Typography variant="semiBoldTxtxs" color={skillMeta.color}>
+                            {skill.level}
+                          </Typography>
+                        </View>
+                        <Typography variant="semiBoldTxtsm" color={colors.gray[900]} style={styles.flex1}>
+                          {skill.name}
                         </Typography>
                       </View>
-                      <Typography variant="semiBoldTxtsm" color={colors.gray[900]} style={styles.flex1}>
-                        {skill.name}
+                      <Typography variant="regularTxtxs" color={colors.gray[600]} style={styles.skillDesc}>
+                        {skill.description}
                       </Typography>
                     </View>
-                    <Typography variant="regularTxtxs" color={colors.gray[600]} style={styles.skillDesc}>
-                      {skill.description}
-                    </Typography>
-                  </View>
-                ))}
+                  );
+                })}
               </View>
             </ScrollView>
 

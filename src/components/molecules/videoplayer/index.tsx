@@ -40,6 +40,9 @@ export default function VideoPlayerBox({
   startTime = 0,
   duration: segmentDuration,
   initialTime,
+  chapters,
+  activeChapterIndex,
+  onChapterChange,
   onProgress,
   fullscreen: externalFullscreen,
   resizeMode = "contain",
@@ -49,17 +52,20 @@ export default function VideoPlayerBox({
   const { width, height } = Dimensions.get('window');
   const isLandscape = width > height;
 
-  const effectiveStartTime = startTime || initialTime || 0;
+  const hasChapters = Boolean(chapters && chapters.length > 0);
+  const effectiveStartTime = hasChapters ? 0 : (startTime || initialTime || 0);
 
   const [isPaused, setIsPaused] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
   const [internalFullscreen, setInternalFullscreen] = useState(false);
   const [videoFileDuration, setVideoFileDuration] = useState(0);
-  const [currentRelativeTime, setCurrentRelativeTime] = useState(0);
+  const [currentDisplayTime, setCurrentDisplayTime] = useState(0);
   const [sliderWidth, setSliderWidth] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const isSlidingRef = useRef(false);
+  const seekingTargetRef = useRef<number | null>(null);
+  const seekTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const effectiveDuration = useMemo(() => {
     if (segmentDuration && segmentDuration > 0) {
@@ -74,13 +80,36 @@ export default function VideoPlayerBox({
   const hasSource = Boolean(source);
   const fullscreen = externalFullscreen !== undefined ? externalFullscreen : internalFullscreen;
 
-  const seekToRelativeTime = (relTime: number) => {
-    const clampedRel = Math.max(0, Math.min(effectiveDuration || 9999, relTime));
-    setCurrentRelativeTime(clampedRel);
-    const targetAbsTime = effectiveStartTime + clampedRel;
+  const seekToTime = (targetTime: number, isFromUserSeek = true) => {
+    const clamped = Math.max(0, Math.min(effectiveDuration || 9999, targetTime));
+    setCurrentDisplayTime(clamped);
+    const targetAbsTime = hasChapters ? clamped : (effectiveStartTime + clamped);
+
+    seekingTargetRef.current = targetAbsTime;
+    if (seekTimeoutRef.current) {
+      clearTimeout(seekTimeoutRef.current);
+    }
+    seekTimeoutRef.current = setTimeout(() => {
+      seekingTargetRef.current = null;
+    }, 800);
+
     videoRef.current?.seek(targetAbsTime);
+
+    if (isFromUserSeek && hasChapters && chapters) {
+      let activeIdx = 0;
+      for (let i = chapters.length - 1; i >= 0; i--) {
+        if (clamped >= chapters[i].time - 0.2) {
+          activeIdx = i;
+          break;
+        }
+      }
+      if (activeIdx !== activeChapterIndex) {
+        onChapterChange?.(activeIdx);
+      }
+    }
+
     onProgress?.({
-      currentTime: clampedRel,
+      currentTime: clamped,
       absoluteTime: targetAbsTime,
       playableDuration: videoFileDuration,
     });
@@ -88,10 +117,10 @@ export default function VideoPlayerBox({
 
   const togglePlayPause = () => {
     if (isPaused) {
-      if (effectiveDuration > 0 && currentRelativeTime >= effectiveDuration - 0.5) {
-        seekToRelativeTime(0);
+      if (effectiveDuration > 0 && currentDisplayTime >= effectiveDuration - 0.5) {
+        seekToTime(0);
       } else {
-        const targetAbsTime = effectiveStartTime + currentRelativeTime;
+        const targetAbsTime = hasChapters ? currentDisplayTime : (effectiveStartTime + currentDisplayTime);
         videoRef.current?.seek(targetAbsTime);
       }
       setIsPaused(false);
@@ -127,7 +156,8 @@ export default function VideoPlayerBox({
   useEffect(() => {
     setIsPaused(true);
     isSlidingRef.current = false;
-    setCurrentRelativeTime(0);
+    seekingTargetRef.current = null;
+    setCurrentDisplayTime(0);
     setLoading(true);
     if (effectiveStartTime > 0) {
       videoRef.current?.seek(effectiveStartTime);
@@ -135,7 +165,25 @@ export default function VideoPlayerBox({
   }, [source, effectiveStartTime]);
 
   useEffect(() => {
+    if (
+      hasChapters &&
+      chapters &&
+      activeChapterIndex !== undefined &&
+      activeChapterIndex >= 0 &&
+      activeChapterIndex < chapters.length
+    ) {
+      const targetTime = chapters[activeChapterIndex].time;
+      if (Math.abs(currentDisplayTime - targetTime) > 0.5) {
+        seekToTime(targetTime, false);
+      }
+    }
+  }, [activeChapterIndex, hasChapters, chapters]);
+
+  useEffect(() => {
     return () => {
+      if (seekTimeoutRef.current) {
+        clearTimeout(seekTimeoutRef.current);
+      }
       if (wasLockedRef.current) {
         Orientation.lockToPortrait();
       }
@@ -144,7 +192,7 @@ export default function VideoPlayerBox({
 
   const onLoad = (data: any) => {
     setVideoFileDuration(data.duration || 0);
-    setCurrentRelativeTime(0);
+    setCurrentDisplayTime(0);
     if (effectiveStartTime > 0) {
       videoRef.current?.seek(effectiveStartTime);
       setTimeout(() => {
@@ -168,12 +216,22 @@ export default function VideoPlayerBox({
       return;
     }
     const absTime = data.currentTime || 0;
-    const relTime = Math.max(0, absTime - effectiveStartTime);
 
-    // If segment reaches duration limit, pause and loop back to start of question
-    if (effectiveDuration > 0 && relTime >= effectiveDuration) {
+    // If seeking is in progress, ignore stale incoming progress events until player arrives near target
+    if (seekingTargetRef.current !== null) {
+      if (Math.abs(absTime - seekingTargetRef.current) < 1.0) {
+        seekingTargetRef.current = null;
+      } else {
+        return;
+      }
+    }
+
+    const relTime = hasChapters ? absTime : Math.max(0, absTime - effectiveStartTime);
+
+    // If segment reaches duration limit in non-chapter mode, pause and loop back
+    if (!hasChapters && effectiveDuration > 0 && relTime >= effectiveDuration) {
       setIsPaused(true);
-      setCurrentRelativeTime(0);
+      setCurrentDisplayTime(0);
       videoRef.current?.seek(effectiveStartTime);
       onProgress?.({
         currentTime: 0,
@@ -183,7 +241,22 @@ export default function VideoPlayerBox({
       return;
     }
 
-    setCurrentRelativeTime(relTime);
+    setCurrentDisplayTime(relTime);
+
+    // If chapters are present, synchronize active chapter
+    if (hasChapters && chapters) {
+      let activeIdx = 0;
+      for (let i = chapters.length - 1; i >= 0; i--) {
+        if (relTime >= chapters[i].time - 0.2) {
+          activeIdx = i;
+          break;
+        }
+      }
+      if (activeIdx !== activeChapterIndex) {
+        onChapterChange?.(activeIdx);
+      }
+    }
+
     onProgress?.({
       currentTime: relTime,
       absoluteTime: absTime,
@@ -193,9 +266,11 @@ export default function VideoPlayerBox({
 
   const onEnd = () => {
     setIsPaused(true);
-    setCurrentRelativeTime(0);
+    setCurrentDisplayTime(0);
     videoRef.current?.seek(effectiveStartTime);
   };
+
+  const progressPercent = effectiveDuration > 0 ? (currentDisplayTime / effectiveDuration) * 100 : 0;
 
   const videoContent = (
     <View style={[styles.container, fullscreen && styles.fullscreen]}>
@@ -217,7 +292,7 @@ export default function VideoPlayerBox({
             onReadyForDisplay={onReadyForDisplay}
             onProgress={handleProgress}
             onEnd={onEnd}
-            progressUpdateInterval={250}
+            progressUpdateInterval={200}
             ignoreSilentSwitch="ignore"
             playInBackground={false}
             playWhenInactive={false}
@@ -246,6 +321,83 @@ export default function VideoPlayerBox({
                 )}
               </TouchableOpacity>
 
+              <Text style={[styles.timeText, fullscreen && styles.timeTextFullscreen]}>
+                {formatTime(currentDisplayTime)}
+              </Text>
+
+              {/* Segmented Timeline with Chapter Dots */}
+              {hasChapters ? (
+                <Pressable
+                  style={styles.timelineTrackWrapper}
+                  onLayout={(e) => setSliderWidth(e.nativeEvent.layout.width)}
+                  onPress={(e) => {
+                    if (sliderWidth <= 0 || effectiveDuration <= 0) return;
+                    const locationX = e.nativeEvent.locationX;
+                    const ratio = Math.max(0, Math.min(1, locationX / sliderWidth));
+                    seekToTime(ratio * effectiveDuration);
+                  }}
+                >
+                  <View style={styles.timelineTrack}>
+                    <View style={[styles.timelineProgress, { width: `${progressPercent}%` }]} />
+                    <View style={[styles.scrubberThumb, { left: `${progressPercent}%` }]} />
+
+                    {/* Chapter Marker Dots (skip starting dot at 0:00) */}
+                    {chapters?.map((ch, idx) => {
+                      if (idx === 0 || ch.time <= 0.5) return null;
+                      const dotLeftPct = effectiveDuration > 0 ? (ch.time / effectiveDuration) * 100 : 0;
+                      const isPassed = currentDisplayTime >= ch.time;
+                      return (
+                        <TouchableOpacity
+                          key={`ch-${idx}`}
+                          style={[
+                            styles.chapterDot,
+                            { left: `${dotLeftPct}%` },
+                            isPassed && styles.chapterDotPassed,
+                          ]}
+                          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                          onPress={() => seekToTime(ch.time, true)}
+                        />
+                      );
+                    })}
+                  </View>
+                </Pressable>
+              ) : (
+                <Pressable
+                  style={styles.slider}
+                  onLayout={(e) => setSliderWidth(e.nativeEvent.layout.width)}
+                  onPress={(e) => {
+                    if (sliderWidth <= 0 || effectiveDuration <= 0) return;
+                    const locationX = e.nativeEvent.locationX;
+                    const ratio = Math.max(0, Math.min(1, locationX / sliderWidth));
+                    seekToTime(ratio * effectiveDuration);
+                  }}
+                >
+                  <Slider
+                    style={StyleSheet.absoluteFillObject}
+                    minimumValue={0}
+                    maximumValue={effectiveDuration > 0 ? effectiveDuration : 1}
+                    value={currentDisplayTime}
+                    minimumTrackTintColor={colors.base.white}
+                    maximumTrackTintColor="#555"
+                    thumbTintColor="transparent"
+                    onSlidingStart={() => {
+                      isSlidingRef.current = true;
+                    }}
+                    onValueChange={(val) => {
+                      setCurrentDisplayTime(val);
+                    }}
+                    onSlidingComplete={(val) => {
+                      isSlidingRef.current = false;
+                      seekToTime(val);
+                    }}
+                  />
+                </Pressable>
+              )}
+
+              <Text style={[styles.timeText, fullscreen && styles.timeTextFullscreen]}>
+                {formatTime(effectiveDuration)}
+              </Text>
+
               <TouchableOpacity onPress={toggleMute} style={styles.controlButton}>
                 {isMuted ? (
                   <SvgXml xml={muteVolumeIcon} />
@@ -253,41 +405,6 @@ export default function VideoPlayerBox({
                   <SvgXml xml={sounIcon} />
                 )}
               </TouchableOpacity>
-
-              <Text style={[styles.timeText, fullscreen && styles.timeTextFullscreen]}>
-                {formatTime(currentRelativeTime)} / {formatTime(effectiveDuration)}
-              </Text>
-
-              <Pressable
-                style={styles.slider}
-                onLayout={(e) => setSliderWidth(e.nativeEvent.layout.width)}
-                onPress={(e) => {
-                  if (sliderWidth <= 0 || effectiveDuration <= 0) return;
-                  const locationX = e.nativeEvent.locationX;
-                  const ratio = Math.max(0, Math.min(1, locationX / sliderWidth));
-                  seekToRelativeTime(ratio * effectiveDuration);
-                }}
-              >
-                <Slider
-                  style={StyleSheet.absoluteFillObject}
-                  minimumValue={0}
-                  maximumValue={effectiveDuration > 0 ? effectiveDuration : 1}
-                  value={currentRelativeTime}
-                  minimumTrackTintColor={colors.base.white}
-                  maximumTrackTintColor="#555"
-                  thumbTintColor="transparent"
-                  onSlidingStart={() => {
-                    isSlidingRef.current = true;
-                  }}
-                  onValueChange={(val) => {
-                    setCurrentRelativeTime(val);
-                  }}
-                  onSlidingComplete={(val) => {
-                    isSlidingRef.current = false;
-                    seekToRelativeTime(val);
-                  }}
-                />
-              </Pressable>
 
               <TouchableOpacity onPress={toggleFullscreen} style={styles.controlButton}>
                 <SvgXml xml={expandIcon} />
