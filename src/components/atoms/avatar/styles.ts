@@ -12,6 +12,7 @@ export const useStyles = (size: number, borderWidth: number, borderColor: string
       borderRadius: size / 2,
       borderWidth,
       borderColor,
+      overflow: "hidden",
     },
     image: {
       height: size,

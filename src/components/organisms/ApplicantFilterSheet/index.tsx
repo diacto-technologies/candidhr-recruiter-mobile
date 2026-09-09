@@ -39,6 +39,18 @@ const applicantConfig: FilterConfig[] = [
     options: [
       { label: "Form", value: "application_form" },
       { label: "Bulk Import", value: "imported_using_bulk_resume_upload" },
+      { label: "Email Invite", value: "invite_via_email" },
+    ] 
+  },
+  { 
+    tab: 'Source Channel', 
+    type: 'dropdown', 
+    field: 'sourceChannel', 
+    placeholder: 'All', 
+    options: [
+      { label: "Direct Link", value: "direct_link" },
+      { label: "DeepSearch", value: "deepsearch" },
+      { label: "CandidHR Job Board", value: "candidhr_board" },
     ] 
   },
   { tab: 'Applied For', type: 'text', field: 'appliedFor', placeholder: "Search by 'Applied For'" },

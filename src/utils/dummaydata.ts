@@ -4,6 +4,7 @@ export const applicantFiltersOption = [
     // 'Email',
     'Applied For',
     'Source',
+    'Source Channel',
     'Status',
     'Stage',
     'Approved',

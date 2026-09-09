@@ -3,6 +3,7 @@ export { default as StatCard } from './statcard';
 export { default as FilterOptionItem } from './filteroptionitem';
 export { default as LocationChip } from './locationchip';
 export { default as ThreeDotDropdown } from './threedotdropdown';
+export { default as TagList } from './taglist';
 export { DropdownMenu } from './dropdownmenu';
 export type { DropdownMenuItem, DropdownMenuProps } from './dropdownmenu';
 

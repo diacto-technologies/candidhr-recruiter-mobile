@@ -9,8 +9,10 @@ import {
   Typography,
   Button,
   FloatingActionButton,
+  ViewersModal,
 } from '../../../components';
 import ProfileCard from '../../../components/organisms/profile';
+import SendEmailModal from '../../../components/organisms/SendEmailModal';
 import SlideAnimatedTab from '../../../components/molecules/slideanimatedtab';
 import FooterButtons from '../../../components/molecules/footerbuttons';
 import CustomSafeAreaView from '../../../components/atoms/customsafeareaview';
@@ -19,6 +21,7 @@ import StatusDropdown from '../../../components/organisms/dropdown/statusDropdow
 import { goBack, navigate } from '../../../utils/navigationUtils';
 import { colors } from '../../../theme/colors';
 import { telePhoneIcon } from '../../../assets/svg/telephone';
+import { exportIcon } from '../../../assets/svg/export';
 import { fileIcon } from '../../../assets/svg/file';
 import { commentIcon } from '../../../assets/svg/comments';
 import { permissionDeniedIcon } from '../../../assets/svg/permissionDenied';
@@ -55,30 +58,35 @@ export default function ApplicantDetails() {
   const styles = useStyles();
   const ctrl = useApplicantDetailsController(application_id, job_id, tab || 'Profile Info');
 
-  const renderTabPanel = (tabName: string) => {
-    switch (tabName) {
+  const renderTabPanel = (tabKey: string) => {
+    switch (tabKey) {
+      case 'profile_info':
       case 'Profile Info':
         return <ProfileInfo />;
+      case 'resume_screening':
       case 'Resume Screening':
         return <ResumeScreening />;
+      case 'assessment':
       case 'Assessments':
-        const hasV2 = ctrl.stages?.some((s: any) => s.stage_type === 'assessment_v2');
-        if (hasV2) {
-          return (
-            <AssessmentV2
-              sessionContentId={ctrl.assessmentV2SessionContentId}
-              onSessionContentIdChange={ctrl.setAssessmentV2SessionContentId}
-              selectedAssignmentId={ctrl.assessmentV2SelectedAssignmentId}
-              onSelectedAssignmentIdChange={ctrl.setAssessmentV2SelectedAssignmentId}
-            />
-          );
-        }
+      case 'Assessment':
         return (
           <Assessment
             sessionContentId={ctrl.assessmentSessionContentId}
             onSessionContentIdChange={ctrl.setAssessmentSessionContentId}
           />
         );
+      case 'assessment_v2':
+      case 'Assessment v2':
+      case 'Assessments v2':
+        return (
+          <AssessmentV2
+            sessionContentId={ctrl.assessmentV2SessionContentId}
+            onSessionContentIdChange={ctrl.setAssessmentV2SessionContentId}
+            selectedAssignmentId={ctrl.assessmentV2SelectedAssignmentId}
+            onSelectedAssignmentIdChange={ctrl.setAssessmentV2SelectedAssignmentId}
+          />
+        );
+      case 'automated_video_interview':
       case 'Automated Video Interview':
         return (
           <VideoInterview
@@ -86,6 +94,7 @@ export default function ApplicantDetails() {
             onSessionContentIdChange={ctrl.setVideoInterviewSessionContentId}
           />
         );
+      case 'rapidly_interview':
       case 'Rapidly Interview':
         return <RapidlyInterview application_id={application_id} />;
       default:
@@ -143,6 +152,9 @@ export default function ApplicantDetails() {
                   loading={ctrl.loading}
                   onPressPreview={ctrl.handlePreviewHtml}
                   onPressExport={ctrl.handleDownloadHtmlPreview}
+                  onPressEmail={() => ctrl.setEmailModalVisible(true)}
+                  onPressViewers={ctrl.handleOpenViewers}
+                  viewersCount={ctrl.viewers?.count}
                 />
                 
                 <View style={styles.tabContainer}>
@@ -168,6 +180,7 @@ export default function ApplicantDetails() {
                 backgroundColor={colors.brand[600]}
                 iconColor={colors.base.white}
                 size={50}
+                badgeCount={ctrl.application?.total_comments}
                 onPress={() => {
                   navigate('Comments', { application_id, job_id });
                 }}
@@ -175,37 +188,35 @@ export default function ApplicantDetails() {
             </View>
 
             <View>
-              {ctrl.canExportProfile && (
-                <FooterButtons
-                  leftButtonProps={{
-                    children: 'View resume',
-                    variant: 'contain',
-                    size: 44,
-                    buttonColor: colors.base.white,
-                    textColor: colors.gray[700],
-                    borderColor: colors.gray[300],
-                    borderWidth: 1,
-                    borderRadius: 8,
-                    borderGradientOpacity: 0.25,
-                    shadowColor: colors.gray[700],
-                    onPress: ctrl.handleViewResume,
-                    startIcon: <SvgXml xml={fileIcon} />,
-                    disabled: !ctrl.resumeUrl,
-                  }}
-                  rightButtonProps={{
-                    children: 'call',
-                    variant: 'contain',
-                    size: 44,
-                    borderWidth: 1,
-                    buttonColor: colors.brand[600],
-                    textColor: colors.base.white,
-                    borderColor: colors.base.white,
-                    borderRadius: 8,
-                    onPress: () => ctrl.handleCall(ctrl.application?.applicant?.contact ?? ''),
-                    startIcon: <SvgXml xml={telePhoneIcon} />,
-                  }}
-                />
-              )}
+              <FooterButtons
+                leftButtonProps={{
+                  children: 'View resume',
+                  variant: 'contain',
+                  size: 44,
+                  buttonColor: colors.base.white,
+                  textColor: colors.gray[700],
+                  borderColor: colors.gray[300],
+                  borderWidth: 1,
+                  borderRadius: 8,
+                  borderGradientOpacity: 0.25,
+                  shadowColor: colors.gray[700],
+                  onPress: ctrl.handleViewResume,
+                  startIcon: <SvgXml xml={fileIcon} />,
+                  disabled: !ctrl.resumeUrl,
+                }}
+                rightButtonProps={{
+                  children: 'Call',
+                  variant: 'contain',
+                  size: 44,
+                  borderWidth: 1,
+                  buttonColor: colors.brand[600],
+                  textColor: colors.base.white,
+                  borderColor: colors.brand[600],
+                  borderRadius: 8,
+                  onPress: () => ctrl.handleCall(),
+                  startIcon: <SvgXml xml={telePhoneIcon} width={18} height={18} />,
+                }}
+              />
             </View>
           </>
         ) : (
@@ -231,6 +242,23 @@ export default function ApplicantDetails() {
         resumeUrl={ctrl.resumeUrl}
         onClose={() => ctrl.setResumeModalVisible(false)}
         candidateName={ctrl.candidateName}
+      />
+
+      <SendEmailModal
+        visible={ctrl.emailModalVisible}
+        onClose={() => ctrl.setEmailModalVisible(false)}
+        applicationId={application_id}
+        candidateName={ctrl.candidateName}
+        candidateEmail={ctrl.candidateEmail}
+        jobTitle={ctrl.jobTitle}
+        status={ctrl.application?.status?.value}
+      />
+
+      <ViewersModal
+        visible={ctrl.viewersModalVisible}
+        onClose={() => ctrl.setViewersModalVisible(false)}
+        viewersData={ctrl.viewers}
+        loading={ctrl.loadingViewers}
       />
     </Fragment>
   );

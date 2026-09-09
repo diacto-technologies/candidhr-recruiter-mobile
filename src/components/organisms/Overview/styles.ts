@@ -48,6 +48,15 @@ export const useStyles = () => {
             height: 1,
             backgroundColor: colors.gray[200],
         },
+        percentageBadge: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 4,
+            paddingHorizontal: 6,
+            paddingVertical: 2,
+            borderRadius: 12,
+            borderWidth: 1,
+        },
         videoBox: {
             flex: 1,
             width: "100%",

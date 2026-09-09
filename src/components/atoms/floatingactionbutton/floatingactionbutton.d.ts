@@ -5,4 +5,7 @@ export interface FloatingActionButtonProps extends PressableProps {
   size?: number;
   backgroundColor?: string;
   iconColor?: string;
+  badgeCount?: number | string | null;
+  badgeBackgroundColor?: string;
+  badgeTextColor?: string;
 }

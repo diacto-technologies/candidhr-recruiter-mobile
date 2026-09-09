@@ -851,58 +851,6 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
 
                           <Divider />
 
-                          {/* Correct answer row */}
-                          {/* <Typography variant="mediumTxtsm" color={colors.gray[600]}>
-                            Correct answer:
-                          </Typography> */}
-                          {/* <View style={styles.optionRow}>
-                            {choices.length > 0
-                              ? (() => {
-                                const correctChoices = choices.filter((c) =>
-                                  correctSet.has(Number(c?.choice_id))
-                                );
-                                const missingCorrect = correctChoices.filter(
-                                  (c) => !providedSet.has(Number(c?.choice_id))
-                                );
-                                const toShow = missingCorrect.length ? missingCorrect : correctChoices;
-
-                                return toShow.map((c) => (
-                                  <View
-                                    key={`correct-${String(c?.choice_id)}`}
-                                    style={[
-                                      styles.optionChip,
-                                      {
-                                        backgroundColor: colors.success[50],
-                                        borderColor: colors.success[200],
-                                      },
-                                    ]}
-                                  >
-                                    <Typography variant="mediumTxtsm" color={colors.success[700]}>
-                                      {String(c?.choice_text ?? "").trim() || "_"}
-                                    </Typography>
-                                  </View>
-                                ));
-                              })()
-                              : correctChoiceIds.map((idNum) => (
-                                <View
-                                  key={`correct-${String(idNum)}`}
-                                  style={[
-                                    styles.optionChip,
-                                    {
-                                      backgroundColor: colors.success[50],
-                                      borderColor: colors.success[200],
-                                    },
-                                  ]}
-                                >
-                                  <Typography
-                                    variant="mediumTxtsm"
-                                    color={colors.success[700]}
-                                  >
-                                    {String(idNum)}
-                                  </Typography>
-                                </View>
-                              ))}
-                          </View> */}
                           {String(q?.question_type).toLowerCase() !== "text" && (
                             <>
                               {/* Correct answer row */}
@@ -916,12 +864,8 @@ const AssessmentsDetailsV2 = ({ style }: Props) => {
                                     const correctChoices = choices.filter((c) =>
                                       correctSet.has(Number(c?.choice_id))
                                     );
-                                    const missingCorrect = correctChoices.filter(
-                                      (c) => !providedSet.has(Number(c?.choice_id))
-                                    );
-                                    const toShow = missingCorrect.length ? missingCorrect : correctChoices;
 
-                                    return toShow.map((c) => (
+                                    return correctChoices.map((c) => (
                                       <View
                                         key={`correct-${String(c?.choice_id)}`}
                                         style={[

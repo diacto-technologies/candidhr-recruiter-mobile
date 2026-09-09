@@ -1,6 +1,5 @@
 import { StyleSheet } from 'react-native';
 import { colors } from '../../../theme/colors';
-import { screenWidth } from '../../../utils/devicelayout';
 
 export const useStyles = () =>
     StyleSheet.create({
@@ -11,13 +10,69 @@ export const useStyles = () =>
         header: {
             height: 90,
             borderRadius: 12,
-            margin: 4
+            margin: 4,
         },
         photoWrapper: {
             position: 'absolute',
             top: 35,
-            left: 18,
+            left: 16,
             zIndex: 10,
+        },
+        sideHeaderContent: {
+            marginLeft: 124,
+            marginRight: 16,
+            marginTop: 10,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 10,
+        },
+        mailButton: {
+            // width: 38,
+            // height: 38,
+            //backgroundColor: colors.base.white,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: colors.gray[200],
+            justifyContent: 'center',
+            alignItems: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.06,
+            shadowRadius: 2,
+            elevation: 1,
+            position: 'absolute',
+            alignSelf: 'flex-end',
+            top:10,
+            right: 16,
+        },
+        statusMetaBlock: {
+            marginLeft: 'auto',
+            alignItems: 'flex-end',
+            gap: 4,
+            justifyContent: 'center',
+        },
+        statusRow: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            justifyContent: 'flex-end',
+            gap: 5,
+        },
+        statusDot: {
+            width: 7,
+            height: 7,
+            borderRadius: 3.5,
+        },
+        overriddenBadge: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            alignSelf: 'flex-end',
+            backgroundColor: colors.gray[100],
+            paddingHorizontal: 7,
+            paddingVertical: 1.5,
+            borderRadius: 10,
+            gap: 3,
         },
         shimmerBorder: {
             width: 105,
@@ -32,27 +87,47 @@ export const useStyles = () =>
         },
         infoContainer: {
             paddingHorizontal: 16,
-            paddingTop: 52,
+            paddingTop: 12,
             paddingBottom: 16,
             gap: 16,
         },
         infoTextGroup: {
             gap: 4,
         },
-        exportButton: {
-            position: 'absolute',
-            alignSelf: 'flex-end',
-            margin: 10,
+        nameRow: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 8,
+        },
+        copyLinkButton: {
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginTop: -3,
+        },
+        eyeButton: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 4,
+            paddingVertical: 2,
+            paddingHorizontal: 4,
         },
         row: {
             flexDirection: 'row',
             alignItems: 'center',
-            flexWrap:"wrap",
+            flexWrap: 'wrap',
             gap: 8,
         },
         iconRow: {
             flexDirection: 'row',
+            alignItems: 'center',
             gap: 12,
+        },
+        verticalDivider: {
+            width: 1,
+            height: 24,
+            backgroundColor: colors.gray[300],
         },
         iconBox: {
             width: 40,

@@ -27,11 +27,10 @@ import { arrowDown } from '../../../../../assets/svg/arrowdown';
 import { colors } from '../../../../../theme/colors';
 import { getStatusColor } from '../../../../../components/organisms/applicantlist/helper';
 import { useStyles } from './styles';
-import StatusDropdown from '../../../../../components/organisms/dropdown/statusDropdown';
+import ApplicantTabStatus from '../../../../../components/atoms/applicanttabstatus';
 import { Button } from '../../../../../components';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Card from '../../../../../components/atoms/card';
-import { getApprovalStageStatusOptions } from '../stageStatusOptions';
 import AssessmentsDetails from '../../../../../components/organisms/AssessmentDetails';
 import CustomTimeline from '../../../../../components/molecules/TimelineCard';
 import AssessmentReportsCard from './assessmentreportscard';
@@ -210,13 +209,9 @@ const AssessmentV2 = ({
   const isReviewed = currentSessionLog?.session_status === 'reviewed';
 
   const assessmentStage = useMemo(
-    () => stages?.find((s) => s.stage_type === 'assessment_v2'),
+    () => stages?.find((s) => s.stage_type === 'assessment_v2') ?? stages?.find((s) => s.stage_type === 'assessment'),
     [stages]
   );
-  const currentStageStatus = assessmentStage?.status ?? null;
-  const STAGE_STATUS_OPTIONS = useMemo(() => {
-    return getApprovalStageStatusOptions(currentStageStatus);
-  }, [currentStageStatus]);
 
 
 
@@ -273,31 +268,7 @@ const AssessmentV2 = ({
 
   return (
     <View style={styles.container}>
-      <StatusDropdown
-        label="Stages"
-        options={STAGE_STATUS_OPTIONS}
-        labelKey="name"
-        valueKey="id"
-        setValue={
-          assessmentStage?.status === STAGE_STATUS_OPTIONS?.[0]?.id
-            ? null
-            : selectedStageStatus
-        }
-        onSelect={(item) => setSelectedStageStatus(item?.id)}
-        openModalOnSelect
-        changeStatusModalProps={{
-          applicantName: application?.candidate?.name,
-          entityId: assessmentStage?.id,
-          currentStatus: currentStageStatus,
-          newStatusOptions: STAGE_STATUS_OPTIONS,
-          stageId: assessmentStage?.id ?? undefined,
-          applicationId: application?.id ?? undefined,
-          contentType: "assessment_v2",
-          onUpdateStatus: (newStatusId) => {
-            setSelectedStageStatus(newStatusId);
-          },
-        }}
-      />
+      <ApplicantTabStatus label="Stages" stage={assessmentStage} />
       
       <AssessmentReportsCard
         count={assessmentOptions?.length ?? 0}
@@ -305,7 +276,9 @@ const AssessmentV2 = ({
         options={
           assessmentOptions?.map((item) => ({
             id: item.id,
-            blueprint_name: item.blueprint_name || "Unknown",
+            blueprint_name: item.blueprint_name || item.job_title || "Unknown",
+            job_title: item.job_title || "",
+            date: item.sent_at || item.created_at || item.updated_at || "",
             status: item.status,
           })) || []
         }
@@ -335,6 +308,11 @@ const AssessmentV2 = ({
         }}
         refreshing={loadingOptions}
         exporting={loadingExportReport}
+        performanceReport={performanceReport}
+        currentSessionLog={currentSessionLog}
+        currentAssessmentOption={
+          assessmentOptions?.find((item) => item.id === selectedAssignmentId) ?? null
+        }
       />
 
       {!shouldShowEmptyState && (

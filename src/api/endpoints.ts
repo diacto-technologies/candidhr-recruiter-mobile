@@ -37,6 +37,7 @@ export const API_ENDPOINTS = {
     DELETE: (id: string) => `/jobs/${id}`,
     APPLY: (id: string) => `/jobs/${id}/apply`,
     JOB_NAME_LIST: "/job/v1/job-names-list/",
+    MUST_HAVE_SKILLS: (id: string) => `/job/v1/${id}/must-have-skills/`,
   },
   // Rapidhire endpoints
   RAPIDHIRE: {
@@ -48,6 +49,7 @@ export const API_ENDPOINTS = {
     LIST: '/applications/v2/filter/',
     EXPORT: '/applications/v2/export/',
     DETAIL: (id: string) => `/applications/v1/${id}/profile/`,
+    VIEWERS: (id: string, limit = 20) => `/applications/v2/${id}/viewers/?limit=${limit}`,
     /** GET application profile as PDF (server-generated) */
     PROFILE_PDF: (id: string) => `/applications/v1/${id}/profile/pdf/`,
     CREATE: '/applications',

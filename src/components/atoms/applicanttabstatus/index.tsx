@@ -1,34 +1,91 @@
-import React from "react";
-import Typography from "../typography";
-import { colors } from "../../../theme/colors";
-import { View } from "react-native";
-import { useStyles } from "./styles";
-import { getStatusColor, getStatusLabel } from "../../../constants/applicantStatus";
+import React, { useMemo } from 'react';
+import { View, StyleProp, ViewStyle } from 'react-native';
+import Typography from '../typography';
+import { colors } from '../../../theme/colors';
+import { useStyles } from './styles';
+import { getStatusColor, getStatusLabel } from '../../../constants/applicantStatus';
+import { ApplicationStage } from '../../../features/applications/types';
 
-
-interface ApplicantTabStatusProps {
+export interface ApplicantTabStatusProps {
+  label?: string;
   status?: string;
+  stage?: ApplicationStage | null;
+  style?: StyleProp<ViewStyle>;
 }
 
-const ApplicantTabStatus: React.FC<ApplicantTabStatusProps> = ({ status }) => {
+export const getStageDisplayStatus = (
+  stage?: ApplicationStage | null,
+  fallbackStatus?: string
+): { label: string; color: string } => {
+  const statusCandidate =
+    fallbackStatus?.trim().toLowerCase() ||
+    stage?.latest_session?.progress_status?.trim().toLowerCase();
+
+  if (statusCandidate === 'assigned') {
+    return { label: 'Assigned', color: colors.warning[500] };
+  }
+
+  if (statusCandidate) {
+    if (statusCandidate === 'stage_completed' || statusCandidate === 'stage completed' || statusCandidate === 'completed') {
+      return { label: 'Completed', color: colors.success[500] };
+    }
+    const formatted = statusCandidate
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+    return { label: formatted, color: getStatusColor(statusCandidate) };
+  }
+
+  if (!stage) {
+    return { label: 'Completed', color: colors.success[500] };
+  }
+
+  // 1. If latest_session object is not there, show "Completed"
+  if (!stage.latest_session) {
+    return { label: 'Completed', color: colors.success[500] };
+  }
+
+  // 2. Fallback to stage.status
+  if (stage.status) {
+    if (stage.status === 'stage_completed' || stage.status === 'stage completed' || stage.status === 'completed') {
+      return { label: 'Completed', color: colors.success[500] };
+    }
+    const formatted = stage.status
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+    return { label: formatted, color: getStatusColor(stage.status) };
+  }
+
+  return { label: 'Completed', color: colors.success[500] };
+};
+
+const ApplicantTabStatus: React.FC<ApplicantTabStatusProps> = ({
+  label = 'Stages',
+  status,
+  stage,
+  style,
+}) => {
   const styles = useStyles();
 
+  const { label: displayLabel, color: dotColor } = useMemo(() => {
+    return getStageDisplayStatus(stage, status);
+  }, [stage, status]);
+
   return (
-    <View style={styles.shortListedCard}>
+    <View style={[styles.shortListedCard, style]}>
       <View style={styles.row}>
-        <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
-          Status
+        <Typography variant="semiBoldTxtmd" color={colors.gray[900]} style={styles.label}>
+          {label}
         </Typography>
 
         <View
           style={[
             styles.dot,
-            { backgroundColor: getStatusColor(status as string) }
+            { backgroundColor: dotColor },
           ]}
         />
 
         <Typography variant="mediumTxtmd" color={colors.gray[900]}>
-          {getStatusLabel(status as string)}
+          {displayLabel}
         </Typography>
       </View>
     </View>

@@ -30,6 +30,23 @@ function formatCriteriaField(value: unknown): string {
   return String(value);
 }
 
+function checkResponseMatch(response: string, expected: string): boolean {
+  if (!response || !expected) return false;
+  const normRes = response.trim().toLowerCase();
+  const normExp = expected.trim().toLowerCase();
+  if (normRes === normExp) return true;
+
+  const expTokens = normExp.split(/[,;|]/).map(s => s.trim()).filter(Boolean);
+  const resTokens = normRes.split(/[,;|]/).map(s => s.trim()).filter(Boolean);
+
+  if (expTokens.length > 0 && resTokens.length > 0) {
+    if (resTokens.every(r => expTokens.includes(r))) return true;
+    if (expTokens.includes(normRes)) return true;
+  }
+
+  return false;
+}
+
 const CriteriaResponsesCardShimmer = () => {
   const styles = useStyles();
 
@@ -76,10 +93,8 @@ const CriteriaResponsesCard: React.FC<CriteriaResponsesCardProps> = () => {
           const questionText = formatCriteriaField(item?.criteria?.question as unknown);
           const responseText = formatCriteriaField(item?.response as unknown);
           const expectedText = formatCriteriaField(item?.criteria?.expected_response as unknown);
-          const matchesExpected =
-            responseText !== "" &&
-            expectedText !== "" &&
-            responseText === expectedText;
+          const matchesExpected = checkResponseMatch(responseText, expectedText);
+          const hasExpected = expectedText.trim() !== "";
           const rowKey =
             (item?.criteria?.id != null && String(item.criteria.id)) ||
             item.id ||
@@ -108,7 +123,9 @@ const CriteriaResponsesCard: React.FC<CriteriaResponsesCardProps> = () => {
                   <Typography
                     variant="semiBoldTxtsm"
                     color={
-                      matchesExpected
+                      !hasExpected
+                        ? colors.gray[800]
+                        : matchesExpected
                         ? colors.success[500]
                         : colors.error[500]
                     }

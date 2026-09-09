@@ -1,4 +1,5 @@
 import { call, put, select, takeLatest } from "redux-saga/effects";
+import type { PayloadAction } from "@reduxjs/toolkit";
 import { Platform } from "react-native";
 import RNFS from "react-native-fs";
 import Share from "react-native-share";
@@ -90,9 +91,18 @@ import {
   getPersonalityInterviewOptionsRequest,
   getPersonalityInterviewOptionsSuccess,
   getPersonalityInterviewOptionsFailure,
+  sendEmailRequest,
+  sendEmailSuccess,
+  sendEmailFailure,
+  getMustHaveSkillsRequest,
+  getMustHaveSkillsSuccess,
+  getMustHaveSkillsFailure,
+  getApplicationViewersRequest,
+  getApplicationViewersSuccess,
+  getApplicationViewersFailure,
 } from "./slice";
 import { applicationsApi } from "./api";
-import { AssessmentDetailedReportApiResponse, AssessmentLog, AssessmentLogApiResponse, AssessmentReportApiResponse, ExportAssessmentReportRequest, GetApplicationResponsesParams, GetApplicationsParams, GetApplicationsSagaAction, PersonalityScreeningResponse, ResumeScreeningApiResponse, ResumeScreeningReportApiResponse, ScreeningAssessment, SessionReviewedResponse, UpdateApplicationShareRequest, EmailTemplate, PreviewEmailTemplateResponse, PersonalityScreeningInterviewOptionsResponse } from "./types";
+import { AssessmentDetailedReportApiResponse, AssessmentLog, AssessmentLogApiResponse, AssessmentReportApiResponse, ExportAssessmentReportRequest, GetApplicationResponsesParams, GetApplicationsParams, GetApplicationsSagaAction, PersonalityScreeningResponse, ResumeScreeningApiResponse, ResumeScreeningReportApiResponse, ScreeningAssessment, SessionReviewedResponse, UpdateApplicationShareRequest, EmailTemplate, PreviewEmailTemplateResponse, PersonalityScreeningInterviewOptionsResponse, MustHaveSkillsResponse, ApplicationViewersResponse } from "./types";
 import { getAssessmentDetailedReportRequestAction, getAssessmentReportRequestAction, getApplicationDetailRequestAction, getApplicationStagesRequestAction, getApplicationReasonsListRequestAction } from "./actions";
 import { showToastMessage } from "../../utils/toast";
 import { selectProfile } from "../profile/selectors";
@@ -795,10 +805,18 @@ function* getApplicationStagesWorker(
       action.payload
     );
 
-    console.log(res, "APPLICATION STAGES");
+    const stageResults = Array.isArray(res)
+      ? res
+      : Array.isArray(res?.results)
+      ? res.results
+      : Array.isArray(res?.data?.results)
+      ? res.data.results
+      : Array.isArray(res?.data)
+      ? res.data
+      : [];
 
     yield put(
-      getApplicationStagesSuccess(res.results || [])
+      getApplicationStagesSuccess(stageResults)
     );
   } catch (error: any) {
     yield put(
@@ -1153,6 +1171,61 @@ function* getPersonalityInterviewOptionsWorker(action: PayloadAction<string>) {
   }
 }
 
+function* sendEmailWorker(action: PayloadAction<{
+  application_id: string;
+  subject: string;
+  message: string;
+  onSuccess?: () => void;
+}>) {
+  try {
+    yield put(sendEmailRequest(action.payload));
+    const { application_id, subject, message, onSuccess } = action.payload;
+    const emailPayload = {
+      application_id,
+      include_job_link: false,
+      subject: subject.trim(),
+      message: message.trim(),
+    };
+    const res: any = yield call(applicationsApi.sendEmail, emailPayload);
+console.log('Send email response:', res);
+    yield put(sendEmailSuccess());
+    showToastMessage(res?.message ?? "Email sent successfully", "success");
+    if (onSuccess) {
+      onSuccess();
+    }
+  } catch (err: any) {
+    const msg = err?.response?.data?.message || err?.message || "Failed to send email";
+    yield put(sendEmailFailure(msg));
+    showToastMessage(msg, "error");
+  }
+}
+
+function* getMustHaveSkillsWorker(action: PayloadAction<string>): Generator<any, void, any> {
+  try {
+    yield put(getMustHaveSkillsRequest());
+    const res: MustHaveSkillsResponse = yield call(applicationsApi.getMustHaveSkills, action.payload);
+    yield put(getMustHaveSkillsSuccess(res?.must_have_skills || []));
+  } catch (err: any) {
+    const msg = err?.message || "Failed to fetch must have skills";
+    yield put(getMustHaveSkillsFailure(msg));
+  }
+}
+
+function* getApplicationViewersWorker(action: PayloadAction<{ applicationId: string; limit?: number }>): Generator<any, void, any> {
+  try {
+    yield put(getApplicationViewersRequest(action.payload));
+    const res: ApplicationViewersResponse = yield call(
+      applicationsApi.getApplicationViewers,
+      action.payload.applicationId,
+      action.payload.limit ?? 20
+    );
+    yield put(getApplicationViewersSuccess(res));
+  } catch (err: any) {
+    const msg = err?.response?.data?.message || err?.message || "Failed to fetch viewers";
+    yield put(getApplicationViewersFailure(msg));
+  }
+}
+
 export function* applicationsSaga() {
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_APPLICATIONS_REQUEST, getApplicationsWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.EXPORT_APPLICATIONS_REQUEST, exportApplicationsWorker);
@@ -1185,4 +1258,7 @@ export function* applicationsSaga() {
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_EMAIL_TEMPLATES_LIST_REQUEST, getEmailTemplatesListWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.PREVIEW_EMAIL_TEMPLATE_REQUEST, previewEmailTemplateWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_PERSONALITY_INTERVIEW_OPTIONS_REQUEST, getPersonalityInterviewOptionsWorker);
+  yield takeLatest(APPLICATIONS_ACTION_TYPES.SEND_EMAIL_REQUEST, sendEmailWorker);
+  yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_MUST_HAVE_SKILLS_REQUEST, getMustHaveSkillsWorker);
+  yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_APPLICATION_VIEWERS_REQUEST, getApplicationViewersWorker);
 }

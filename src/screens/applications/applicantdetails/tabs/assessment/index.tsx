@@ -23,11 +23,9 @@ import { arrowDown } from '../../../../../assets/svg/arrowdown';
 import { colors } from '../../../../../theme/colors';
 import { getStatusColor } from '../../../../../components/organisms/applicantlist/helper';
 import { useStyles } from './styles';
-import StatusDropdown from '../../../../../components/organisms/dropdown/statusDropdown';
 import { Button } from '../../../../../components';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Card from '../../../../../components/atoms/card';
-import { getApprovalStageStatusOptions } from '../stageStatusOptions';
 import Shimmer from '../../../../../components/atoms/shimmer';
 import { selectAssessmentLoading } from '../../../../../features/applications/selectors';
 
@@ -65,7 +63,6 @@ type AssessmentProps = {
 
 const Assessment = ({ sessionContentId, onSessionContentIdChange }: AssessmentProps) => {
   const styles = useStyles();
-  const [selectedStageStatus, setSelectedStageStatus] = useState<string | null>(null);
   const dispatch = useAppDispatch();
   const application = useAppSelector(selectSelectedApplication);
   const assessmentLogs = useAppSelector(selectAssessmentLogs);
@@ -77,31 +74,6 @@ const Assessment = ({ sessionContentId, onSessionContentIdChange }: AssessmentPr
   const assessmentLoading = useAppSelector(selectAssessmentLoading);
   const stages = useAppSelector(selectApplicationStages);
   const loadingMarkReviewed = useAppSelector(selectMarkSessionReviewedLoading);
-
-
-  // useEffect(() => {
-  //   // if (!stages?.length) return;
-  //   const stage = stages.find(
-  //     s => s.stage_type === 'assessment'
-  //   );
-  //   if (stage?.id && !assessmentLogs?.length) {
-  //     dispatch(getAssessmentLogsRequestAction(stage.id));
-  //   }
-
-  // }, [stages]);
-
-  // useEffect(() => {
-  //   if (applicant?.id) {
-  //     dispatch(getAssessmentLogsRequestAction(applicant?.id as string));
-  //   }
-  // }, []);
-
-  useEffect(() => {
-    const stageStatus = stages?.find(s => s.stage_type === "assessment")?.status;
-    if (stageStatus) {
-      setSelectedStageStatus(stageStatus);
-    }
-  }, [stages]);
 
   const currentSessionLog = useMemo(
     () =>
@@ -145,13 +117,9 @@ const Assessment = ({ sessionContentId, onSessionContentIdChange }: AssessmentPr
   const isReviewed = currentSessionLog?.session_status === 'reviewed';
 
   const assessmentStage = useMemo(
-    () => stages?.find((s) => s.stage_type === 'assessment'),
+    () => stages?.find((s) => s.stage_type === 'assessment') ?? stages?.find((s) => s.stage_type === 'assessment_v2'),
     [stages]
   );
-  const currentStageStatus = assessmentStage?.status ?? null;
-  const STAGE_STATUS_OPTIONS = useMemo(() => {
-    return getApprovalStageStatusOptions(currentStageStatus);
-  }, [currentStageStatus]);
 
 
 
@@ -231,31 +199,6 @@ const Assessment = ({ sessionContentId, onSessionContentIdChange }: AssessmentPr
 
   return (
     <View style={styles.container}>
-      <StatusDropdown
-        label="Stages"
-        options={STAGE_STATUS_OPTIONS}
-        labelKey="name"
-        valueKey="id"
-        setValue={
-          assessmentStage?.status === STAGE_STATUS_OPTIONS?.[0]?.id
-            ? null
-            : selectedStageStatus
-        }
-        onSelect={(item) => setSelectedStageStatus(item?.id)}
-        openModalOnSelect
-        changeStatusModalProps={{
-          applicantName: application?.candidate?.name,
-          entityId: assessmentStage?.id,
-          currentStatus: currentStageStatus,
-          newStatusOptions: STAGE_STATUS_OPTIONS,
-          stageId: assessmentStage?.id ?? undefined,
-          applicationId: application?.id ?? undefined,
-          contentType: "Assessment",
-          onUpdateStatus: (newStatusId) => {
-            setSelectedStageStatus(newStatusId);
-          },
-        }}
-      />
       <View style={{ zIndex: 1000 }}>
         <Card style={{ gap: 4 ,flex:1,width:'100%'}}>
           {/* <Typography variant="regularTxtxs" style={styles.statusBanner} numberOfLines={2}>

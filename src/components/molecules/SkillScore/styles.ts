@@ -19,12 +19,6 @@ export const useStyles = () => StyleSheet.create({
     alignItems: "center",
   },
 
-  gradientBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 8,
-  },
-
   tabsRow: {
     flexDirection: "row",
     gap: 8,
@@ -63,18 +57,6 @@ export const useStyles = () => StyleSheet.create({
     gap: 8,
   },
 
-  gradientWrapper: {
-    flex: 1,
-    overflow: "hidden",
-  },
-
-  gradientTextcontainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    alignItems: 'center'
-  },
-
   tabBtnActive: {
     backgroundColor: colors.brand[50],
     borderColor: colors.brand[200],
@@ -85,5 +67,14 @@ export const useStyles = () => StyleSheet.create({
     backgroundColor: colors.gray[50],
     borderColor: colors.gray[200],
     borderWidth: 1,
+  },
+
+  mustHaveSection: {
+    gap: 8,
+  },
+
+  mustHaveTitle: {
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
   },
 });

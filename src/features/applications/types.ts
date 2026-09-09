@@ -72,6 +72,7 @@ export interface ApplicationsState {
     sort: string,
     latestStageStatus: string;
     source: string;
+    sourceChannel: string;
     status: string;
     latestStageName: string;
   },
@@ -109,18 +110,65 @@ export interface ApplicationsState {
   personalityInterviewOptionsError: string | null;
   loadingExportAssessmentReport?: boolean;
   exportAssessmentReportError?: string | null;
+  loadingSendEmail: boolean;
+  sendEmailSuccess: boolean;
+  sendEmailError: string | null;
+  mustHaveSkills: string[];
+  loadingMustHaveSkills: boolean;
+  mustHaveSkillsError: string | null;
+  viewers: ApplicationViewersResponse | null;
+  loadingViewers: boolean;
+  viewersError: string | null;
+}
+
+export interface ApplicationViewerUser {
+  id: string;
+  name: string;
+  email: string;
+  profile_pic?: string | null;
+}
+
+export interface ApplicationViewerItem {
+  viewer: ApplicationViewerUser;
+  first_viewed_at: string;
+  last_viewed_at: string;
+  view_count: number;
+  total_duration_ms?: number;
+}
+
+export interface ApplicationViewersResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: ApplicationViewerItem[];
+}
+
+export interface MustHaveSkillsResponse {
+  id: string;
+  title: string;
+  must_have_skills: string[];
 }
 
 export interface AssessmentOption {
   id: string;
+  blueprint_id?: string;
+  blueprint_name?: string;
   status: string;
-  updated_at: string;
-  created_at: string;
-  job_title: string;
-  assessments_count: number;
-  updated_by: string | null;
-  workflow_last_status: string | null;
-  workflow_status_updated_at: string | null;
+  sent_at?: string;
+  sent_by?: {
+    id: string;
+    name: string;
+  } | string | null;
+  started_at?: string;
+  completed_at?: string;
+  valid_until?: string;
+  updated_at?: string;
+  created_at?: string;
+  job_title?: string;
+  assessments_count?: number;
+  updated_by?: string | null;
+  workflow_last_status?: string | null;
+  workflow_status_updated_at?: string | null;
 }
 
 export interface ParseResumeResponse {
@@ -216,6 +264,7 @@ export interface Application {
   status: any;
   workflow_status?: string;
   source?: string;
+  source_channel?: string;
 
   // list-view fallbacks
   cover_letter?: string | null;
@@ -337,6 +386,7 @@ export interface GetApplicationsParams {
   reset?: boolean;
   latestStageStatus?: string;
   source?: string;
+  sourceChannel?: string;
   status?: string;
   latestStageName?: string;
 }
@@ -1419,6 +1469,18 @@ export interface PersonalityScreeningResponsesPayload {
   ai_summary: ScreeningSummary | null;
 }
 
+export interface StageLatestSession {
+  id?: string;
+  content_type?: string;
+  content_id?: string;
+  session_status?: string;
+  progress_status?: string;
+  completed_at?: string | null;
+  assigned_at?: string | null;
+  created_at?: string;
+  updated_at?: string | null;
+}
+
 export interface ApplicationStage {
   id: string;
   stage_type: string;
@@ -1434,6 +1496,7 @@ export interface ApplicationStage {
   executed_by_workflow: boolean;
   has_been_updated_by_workflow: boolean;
   is_status_overridden_by_user: boolean;
+  latest_session?: StageLatestSession | null;
 
   created_at: string;
   updated_at: string | null;
@@ -1453,14 +1516,24 @@ export interface ApplicationStagesResponse {
 
 export interface AssessmentOption {
   id: string;
+  blueprint_id?: string;
+  blueprint_name?: string;
   status: string;
-  updated_at: string;
-  created_at: string;
-  job_title: string;
-  assessments_count: number;
-  updated_by: string | null;
-  workflow_last_status: string | null;
-  workflow_status_updated_at: string | null;
+  sent_at?: string;
+  sent_by?: {
+    id: string;
+    name: string;
+  } | string | null;
+  started_at?: string;
+  completed_at?: string;
+  valid_until?: string;
+  updated_at?: string;
+  created_at?: string;
+  job_title?: string;
+  assessments_count?: number;
+  updated_by?: string | null;
+  workflow_last_status?: string | null;
+  workflow_status_updated_at?: string | null;
 }
 
 export interface AssessmentOptionsReportResponse {
@@ -1526,6 +1599,14 @@ export interface ApplicationProfileDetails {
   job: Job;
 
   meta: Meta;
+  total_comments?: number | null;
+  views?: {
+    state?: string;
+    view_count?: number;
+    distinct_viewer_count?: number;
+    first_viewed_at?: string;
+    last_viewed_at?: string;
+  } | null;
 }
 
 export interface Applicant {
@@ -1556,9 +1637,16 @@ export interface ApplicationContext {
 
 export interface Status {
   value: string;
-  updated_by: string | null;
-  updated_at: string | null;
-  is_overridden_by_user: boolean;
+  source?: string;
+  changed_at?: string | null;
+  changed_by?: {
+    id: string;
+    name: string;
+  } | string | null;
+  updated_by?: string | { id: string; name: string } | null;
+  updated_at?: string | null;
+  is_user_override?: boolean;
+  is_overridden_by_user?: boolean;
 }
 
 export interface Workflow {

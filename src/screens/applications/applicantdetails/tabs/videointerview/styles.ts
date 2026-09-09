@@ -16,19 +16,12 @@ export const useStyles = () => {
       
         shortListedCard: {
           backgroundColor: colors.common.white,
-          borderRadius: 8,
-          borderWidth: 0.5,
-          borderColor: colors.gray[300],
-          paddingVertical: 10,
-          paddingHorizontal: 14,
-          // shadowColor: '#0A0D12',
-          // shadowOffset: { width: 0, height: 1 },
-          // shadowOpacity: 0.05,
-          // shadowRadius: 3,
-          // elevation: 1,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: colors.gray[200],
+          padding: 16,
           ...shadowStyles.shadow_xs,
           gap: 16,
-          paddingTop: 16
         },
       
         tabContainer: {
@@ -42,16 +35,16 @@ export const useStyles = () => {
         },
       
         tab: {
-          paddingVertical: 6,
+          paddingVertical: 8,
           paddingHorizontal: 14,
           borderRadius: 8,
           borderWidth: 1,
           borderColor: colors.gray[200],
-          backgroundColor: colors.gray[50],
+          backgroundColor: colors.common.white,
         },
       
         activeTab: {
-          backgroundColor: colors.brand[50],
+          backgroundColor: colors.brand[25],
           borderColor: colors.brand[200],
         },
       
@@ -73,8 +66,8 @@ export const useStyles = () => {
         },
       
         summaryText: {
-          marginTop: 10,
-          lineHeight: 20,
+          marginTop: 12,
+          lineHeight: 22,
         },
       
         dividerWrapper: {

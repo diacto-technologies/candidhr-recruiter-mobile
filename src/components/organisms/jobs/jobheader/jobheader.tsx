@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React, { useState, useMemo } from "react";
+import { View, TouchableOpacity } from "react-native";
 import Typography from "../../../atoms/typography";
 import { colors } from "../../../../theme/colors";
 import { SvgXml } from "react-native-svg";
@@ -8,7 +8,12 @@ import { useStyles } from "./styles";
 import { useAppSelector } from "../../../../hooks/useAppSelector";
 import { selectJobsLoading, selectSelectedJob } from "../../../../features/jobs/selectors";
 import { formatMonDDYYYY } from "../../../../utils/dateformatter";
+import { eyeVisibleIcon } from "../../../../assets/svg/eyevisible";
 import Shimmer from "../../../atoms/shimmer";
+import { CustomAvatar, getInitials } from "../../../atoms/avatar";
+import ShareJobModal from "../../shareJobModal";
+import { usePermission } from "../../../../hooks/usePermission";
+import { PERMISSIONS } from "../../../../utils/permission.constants";
 
 
 const JobHeaderShimmer = () => {
@@ -41,16 +46,43 @@ const JobHeaderShimmer = () => {
         <Shimmer height={14} width="20%" />
         <Shimmer height={20} width={60} borderRadius={10} />
       </View>
+
+      {/* Owner shimmer */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <Shimmer width={50} height={14} />
+        <Shimmer width={28} height={28} borderRadius={14} />
+        <Shimmer width={100} height={14} />
+      </View>
+
+      {/* Shared with shimmer */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <Shimmer width={75} height={14} />
+        <Shimmer width={60} height={26} borderRadius={13} />
+        <Shimmer width={50} height={14} />
+      </View>
     </View>
   );
 };
 
 const JobHeader = () => {
   const styles = useStyles();
+  const { can } = usePermission();
+  const [shareModalVisible, setShareModalVisible] = useState(false);
   const jobs = useAppSelector(selectSelectedJob);
   const loading = useAppSelector(selectJobsLoading);
   const closeDate = jobs?.close_date ? new Date(jobs.close_date) : null;
   const isClosed = closeDate ? closeDate < new Date() : false;
+
+  const sharedUsers = useMemo(
+    () => jobs?.users_shared_with ?? [],
+    [jobs?.users_shared_with],
+  );
+  const sharedCount = sharedUsers.length;
+  const extraSharedCount = Math.max(0, sharedCount - 3);
+  const initialSharedMemberIds = useMemo(
+    () => sharedUsers.map(u => u.id).filter(Boolean),
+    [sharedUsers],
+  );
 
   if(loading){
    return <JobHeaderShimmer/>
@@ -59,11 +91,16 @@ const JobHeader = () => {
     <View style={styles.container}>
       <Typography variant="semiBoldTxtxl">{jobs?.title ?? ""}</Typography>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Typography variant="mediumTxtsm" color={colors.gray[700]}>{jobs?.applicants_count ?? ""} applicants</Typography>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <SvgXml xml={eyeVisibleIcon} width={16} height={16} />
+          <Typography variant="mediumTxtsm" color={colors.gray[700]}>
+            {jobs?.views_count ?? 0} {jobs?.views_count === 1 ? "view" : "views"}
+          </Typography>
+        </View>
         <View style={styles.dot}></View>
-        <Typography variant="regularTxtsm" color={colors.gray[500]}>{formatMonDDYYYY(jobs?.created_at ?? "")}</Typography>
+        <Typography variant="regularTxtsm" color={colors.gray[500]}>{formatMonDDYYYY(jobs?.created_at ?? "", "DD MMM YYYY")}</Typography>
       </View>
-      <View style={{ gap: 10 }}>
+      <View style={styles.metaSection}>
         <View style={styles.row}>
           <SvgXml xml={locationIcon} />
           <Typography variant="regularTxtsm" color={colors.gray[600]} style={{ paddingLeft: 8 }}>{jobs?.location + ","}</Typography>
@@ -98,9 +135,9 @@ const JobHeader = () => {
         <Typography variant="mediumTxtxs" color={colors.orange[700]}>8 - 10 LPA</Typography>
         </View> */}
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View style={styles.metaRow}>
           <Typography variant='regularTxtsm' color={colors.gray[500]}>Closed on :</Typography>
-          <Typography variant="mediumTxtsm" color={colors.gray[700]}>{formatMonDDYYYY(jobs?.close_date ?? "")}</Typography>
+          <Typography variant="mediumTxtsm" color={colors.gray[700]}>{formatMonDDYYYY(jobs?.close_date ?? "", "DD MMM YYYY")}</Typography>
           <View style={[styles.close, { backgroundColor: isClosed? colors.error[50]:colors.success[50], borderColor: isClosed?colors.error[200]:colors.success[200] }]}>
             {isClosed ? (
               <Typography
@@ -119,7 +156,94 @@ const JobHeader = () => {
             )}
           </View>
         </View>
+
+        {Boolean(jobs?.owner) && (
+          <View style={styles.metaRow}>
+            <Typography variant="regularTxtsm" color={colors.gray[500]}>
+              Owner :
+            </Typography>
+            <View style={styles.ownerDetails}>
+              <CustomAvatar
+                imageUrl={jobs?.owner?.profile_pic}
+                name={jobs?.owner?.name}
+                size={28}
+                borderWidth={0}
+                borderColor="transparent"
+                fontVariant="semiBoldTxtxs"
+              />
+              <View style={styles.ownerTextCol}>
+                <Typography
+                  variant="mediumTxtsm"
+                  color={colors.gray[900]}
+                  numberOfLines={1}
+                >
+                  {jobs?.owner?.name ?? '—'}
+                </Typography>
+                {Boolean(jobs?.owner?.email) && (
+                  <Typography
+                    variant="regularTxtxs"
+                    color={colors.gray[500]}
+                    numberOfLines={1}
+                  >
+                    {jobs?.owner?.email}
+                  </Typography>
+                )}
+              </View>
+            </View>
+          </View>
+        )}
+
+        <TouchableOpacity
+          style={styles.metaRow}
+          disabled={!can(PERMISSIONS.SHARE_JOB) || !jobs?.id}
+          onPress={() => setShareModalVisible(true)}
+          activeOpacity={0.7}
+        >
+          <Typography variant="regularTxtsm" color={colors.gray[500]}>
+            Shared with :
+          </Typography>
+          <View style={styles.sharedDetails}>
+            {sharedUsers.length > 0 && (
+              <View style={styles.sharedAvatarsRow}>
+                {sharedUsers.slice(0, 3).map((user, idx) => (
+                  <View
+                    key={user.id ?? idx}
+                    style={idx > 0 ? styles.sharedAvatarOverlap : undefined}
+                  >
+                    <CustomAvatar
+                      imageUrl={user.profile_pic}
+                      name={user.name}
+                      size={26}
+                      borderWidth={1.5}
+                      borderColor={colors.base.white}
+                      fontVariant="semiBoldTxtxs"
+                    />
+                  </View>
+                ))}
+                {extraSharedCount > 0 && (
+                  <View style={[styles.sharedAvatarOverlap, styles.moreAvatar]}>
+                    <Typography variant="semiBoldTxtxs" color={colors.gray[600]}>
+                      +{extraSharedCount}
+                    </Typography>
+                  </View>
+                )}
+              </View>
+            )}
+            <Typography variant="mediumTxtsm" color={colors.gray[700]}>
+              {sharedCount} {sharedCount === 1 ? 'user' : 'users'}
+            </Typography>
+          </View>
+        </TouchableOpacity>
       </View>
+
+      {shareModalVisible && jobs?.id && (
+        <ShareJobModal
+          visible={shareModalVisible}
+          onClose={() => setShareModalVisible(false)}
+          jobId={jobs.id}
+          initialSharedMemberIds={initialSharedMemberIds}
+        />
+      )}
     </View>
   );
 };

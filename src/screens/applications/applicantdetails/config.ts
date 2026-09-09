@@ -1,23 +1,23 @@
 export const STATUS_OPTIONS = [
+  { id: "applied", name: "Applied" },
+  { id: "in_progress", name: "In Progress" },
   { id: "shortlisted", name: "Shortlisted" },
   { id: "rejected", name: "Rejected" },
   { id: "on_hold", name: "On Hold" },
-  { id: "interview_scheduled", name: "Interview Scheduled" },
-  { id: "final_interview", name: "Final Interview" },
   { id: "hired", name: "Hired" },
-  { id: "offer_extended", name: "Offer Extended" },
-  { id: "offer_accepted", name: "Offer Accepted" },
-  { id: "offer_rejected", name: "Offer Rejected" },
-  { id: "not_selected", name: "Not Selected" },
   { id: "withdrawn", name: "Withdrawn" },
-  { id: "archived", name: "Archived" },
 ];
 
-export const STAGE_TAB_MAP: Record<string, string> = {
-  resume_screening: 'Resume Screening',
-  assessment: 'Assessments',
-  assessment_v2: 'Assessments',
-  automated_video_interview: 'Automated Video Interview',
-  rapidhire: 'Rapidly Interview',
-  rapidly_interview: 'Rapidly Interview',
+export interface StageTabConfig {
+  key: string;
+  label: string;
+}
+
+export const STAGE_TAB_MAP: Record<string, StageTabConfig> = {
+  resume_screening: { key: 'resume_screening', label: 'Resume Screening' },
+  assessment: { key: 'assessment', label: 'Assessment' },
+  assessment_v2: { key: 'assessment_v2', label: 'Assessment' },
+  automated_video_interview: { key: 'automated_video_interview', label: 'Automated Video Interview' },
+  rapidhire: { key: 'rapidly_interview', label: 'Rapidly Interview' },
+  rapidly_interview: { key: 'rapidly_interview', label: 'Rapidly Interview' },
 };

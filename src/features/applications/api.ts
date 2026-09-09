@@ -1,6 +1,6 @@
 import { apiClient } from "../../api/client";
 import { API_ENDPOINTS } from "../../api/endpoints";
-import { CreateApplicationRequest, UpdateApplicationStatusRequest, Application, GetApplicationsParams, ApplicationsListResponse, ApplicationDetailResponse, GetApplicationResponsesParams, ApplicationResponsesApiResponse, ResumeScreeningApiResponse, ResumeScreeningReportApiResponse, AssessmentLogApiResponse, AssessmentReportApiResponse, AssessmentDetailedReportApiResponse, ScreeningAssessment, PersonalityScreeningResponse, PersonalityScreeningResponsesPayload, ApplicationStagesResponse, SessionReviewedResponse, ReasonCategory, ReasonListItem, UpdateStageStatusPayload, PerformanceReportResponse, AssessmentOptionsReportResponse, ExportAssessmentReportRequest, EmailTemplate } from "./types";
+import { CreateApplicationRequest, UpdateApplicationStatusRequest, Application, GetApplicationsParams, ApplicationsListResponse, ApplicationDetailResponse, GetApplicationResponsesParams, ApplicationResponsesApiResponse, ResumeScreeningApiResponse, ResumeScreeningReportApiResponse, AssessmentLogApiResponse, AssessmentReportApiResponse, AssessmentDetailedReportApiResponse, ScreeningAssessment, PersonalityScreeningResponse, PersonalityScreeningResponsesPayload, ApplicationStagesResponse, SessionReviewedResponse, ReasonCategory, ReasonListItem, UpdateStageStatusPayload, PerformanceReportResponse, AssessmentOptionsReportResponse, ExportAssessmentReportRequest, EmailTemplate, MustHaveSkillsResponse, ApplicationViewersResponse } from "./types";
 
 export const applicationsApi = {
   // getApplications: async (params?: GetApplicationsParams): Promise<ApplicationsListResponse> => {
@@ -61,6 +61,9 @@ export const applicationsApi = {
     if (params?.source)
       query.append("source__icontains", params.source);
 
+    if (params?.sourceChannel)
+      query.append("source_channel", params.sourceChannel);
+
     if (params?.status)
       query.append("status__icontains", params.status);
 
@@ -100,6 +103,8 @@ export const applicationsApi = {
 
     if (params?.source)
       query.append("source__icontains", params.source);
+    if (params?.sourceChannel)
+      query.append("source_channel", params.sourceChannel);
     if (params?.status)
       query.append("status__icontains", params.status);
     if (params?.latestStageName)
@@ -420,6 +425,18 @@ export const applicationsApi = {
     return res?.data ?? res;
   },
 
+  getMustHaveSkills: async (jobId: string): Promise<MustHaveSkillsResponse> => {
+    const res = await apiClient.get(API_ENDPOINTS.JOBS.MUST_HAVE_SKILLS(jobId));
+    return res?.data ?? res;
+  },
+
+  getApplicationViewers: async (
+    applicationId: string,
+    limit = 20
+  ): Promise<ApplicationViewersResponse> => {
+    const res = await apiClient.get(API_ENDPOINTS.APPLICATIONS.VIEWERS(applicationId, limit));
+    return res?.data ?? res;
+  },
 };
 
 // Fix
