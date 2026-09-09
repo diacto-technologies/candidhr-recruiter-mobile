@@ -9,7 +9,8 @@ export interface SkillItem {
 
 export interface Props {
   title: string;
-  overall: string;
+  overall?: string;
   data: SkillItem[];
   isloading: boolean;
+  mustHaveSkills?: string[];
 }

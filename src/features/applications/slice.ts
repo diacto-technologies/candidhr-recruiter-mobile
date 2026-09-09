@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ApplicationsState, Application, ApplicationsListResponse, ApplicationResponseItem, ResumeScreeningResponseItem, ResumeScreeningReportApiResponse, AssessmentLog, AssessmentReport, AssessmentDetailedReport, ScreeningAssessment, PersonalityScreeningResponsesPayload, ApplicationStage, ReasonCategory, ReasonListItem, PerformanceReportResponse, AssessmentOptionsReportResponse, AssessmentOption, EmailTemplate, PreviewEmailTemplateResponse } from "./types";
+import { ApplicationsState, Application, ApplicationsListResponse, ApplicationResponseItem, ResumeScreeningResponseItem, ResumeScreeningReportApiResponse, AssessmentLog, AssessmentReport, AssessmentDetailedReport, ScreeningAssessment, PersonalityScreeningResponsesPayload, ApplicationStage, ReasonCategory, ReasonListItem, PerformanceReportResponse, AssessmentOptionsReportResponse, AssessmentOption, EmailTemplate, PreviewEmailTemplateResponse, ApplicationViewersResponse } from "./types";
 
 const initialState: ApplicationsState = {
   applications: [],
@@ -63,6 +63,7 @@ const initialState: ApplicationsState = {
     sort: "-applied_at",
     latestStageStatus: '',
     source: '',
+    sourceChannel: '',
     status: '',
     latestStageName: '',
   },
@@ -83,12 +84,54 @@ const initialState: ApplicationsState = {
   personalityInterviewOptions: null,
   loadingPersonalityInterviewOptions: false,
   personalityInterviewOptionsError: null,
+  loadingSendEmail: false,
+  sendEmailSuccess: false,
+  sendEmailError: null as string | null,
+  mustHaveSkills: [] as string[],
+  loadingMustHaveSkills: false,
+  mustHaveSkillsError: null as string | null,
+  viewers: null as ApplicationViewersResponse | null,
+  loadingViewers: false,
+  viewersError: null as string | null,
 };
 
 const applicationsSlice = createSlice({
   name: "applications",
   initialState,
   reducers: {
+    getMustHaveSkillsRequest: (state) => {
+      state.loadingMustHaveSkills = true;
+      state.mustHaveSkillsError = null;
+    },
+    getMustHaveSkillsSuccess: (state, action: PayloadAction<string[]>) => {
+      state.loadingMustHaveSkills = false;
+      state.mustHaveSkills = action.payload;
+      state.mustHaveSkillsError = null;
+    },
+    getMustHaveSkillsFailure: (state, action: PayloadAction<string>) => {
+      state.loadingMustHaveSkills = false;
+      state.mustHaveSkillsError = action.payload;
+    },
+    sendEmailRequest: (state, _action: PayloadAction<{ application_id: string; subject: string; message: string; onSuccess?: () => void }>) => {
+      state.loadingSendEmail = true;
+      state.sendEmailSuccess = false;
+      state.sendEmailError = null;
+    },
+    sendEmailSuccess: (state) => {
+      state.loadingSendEmail = false;
+      state.sendEmailSuccess = true;
+      state.sendEmailError = null;
+    },
+    sendEmailFailure: (state, action: PayloadAction<string>) => {
+      state.loadingSendEmail = false;
+      state.sendEmailSuccess = false;
+      state.sendEmailError = action.payload;
+    },
+    resetSendEmailState: (state) => {
+      state.loadingSendEmail = false;
+      state.sendEmailSuccess = false;
+      state.sendEmailError = null;
+    },
     exportApplicationsRequest: (state) => {
       state.loadingExportApplications = true;
       state.exportApplicationsError = null;
@@ -807,10 +850,45 @@ const applicationsSlice = createSlice({
       state.loadingPersonalityInterviewOptions = true;
       state.personalityInterviewOptionsError = null;
     },
+    getApplicationViewersRequest: (
+      state,
+      _action: PayloadAction<{ applicationId: string; limit?: number }>
+    ) => {
+      state.loadingViewers = true;
+      state.viewersError = null;
+    },
+    getApplicationViewersSuccess: (
+      state,
+      action: PayloadAction<ApplicationViewersResponse>
+    ) => {
+      state.loadingViewers = false;
+      state.viewers = action.payload;
+      state.viewersError = null;
+    },
+    getApplicationViewersFailure: (state, action: PayloadAction<string>) => {
+      state.loadingViewers = false;
+      state.viewersError = action.payload;
+    },
+    clearApplicationViewers: (state) => {
+      state.viewers = null;
+      state.loadingViewers = false;
+      state.viewersError = null;
+    },
   },
 });
 
 export const {
+  getMustHaveSkillsRequest,
+  getMustHaveSkillsSuccess,
+  getMustHaveSkillsFailure,
+  getApplicationViewersRequest,
+  getApplicationViewersSuccess,
+  getApplicationViewersFailure,
+  clearApplicationViewers,
+  sendEmailRequest,
+  sendEmailSuccess,
+  sendEmailFailure,
+  resetSendEmailState,
   exportApplicationsRequest,
   exportApplicationsSuccess,
   exportApplicationsFailure,

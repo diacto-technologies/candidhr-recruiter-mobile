@@ -34,6 +34,7 @@ export interface DropdownProps {
     customLabelStyle?: StyleProp<TextStyle>
     loaderStyle?: StyleProp<TextStyle>
     showHelpIcon?: boolean;
+    onPressHelpIcon?: () => void;
     statusKey?: string;
     searchable?: boolean;
     searchPlaceholder?: string;

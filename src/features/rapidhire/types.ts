@@ -88,6 +88,41 @@ export interface RapidlyInterviewSkillDetail {
   description?: string;
 }
 
+export interface RapidlyInterviewAssessmentDimension {
+  key: string;
+  band: string;
+  label: string;
+  score: number;
+  verdict?: string;
+  rationale?: string;
+  confidence?: string;
+  evidence?: Array<{ quote: string; questionRef: number }>;
+}
+
+export interface RapidlyInterviewAssessment {
+  scale?: string;
+  overall?: {
+    band: string;
+    score: number;
+  };
+  summary?: string;
+  version?: number;
+  delivery?: {
+    total_time_sec?: number;
+    speaking_time_sec?: number;
+    word_count?: number;
+    words_per_minute?: number;
+    [key: string]: any;
+  };
+  language?: string;
+  dimensions?: RapidlyInterviewAssessmentDimension[];
+  engine_key?: string;
+  generated_at?: string;
+  engine_version?: string;
+  language_label?: string;
+  target_language_used?: boolean;
+}
+
 export interface RapidlyInterviewReportData {
   turns: RapidlyInterviewTurn[];
   language?: string;
@@ -95,8 +130,76 @@ export interface RapidlyInterviewReportData {
   transcript?: string;
   report_type?: string;
   skills?: Record<string, RapidlyInterviewSkillDetail>;
+  assessment?: RapidlyInterviewAssessment;
   [key: string]: any;
 }
+
+// ─── Proctoring Types ─────────────────────────────────────────────────────────
+
+export interface ProctoringDeviceInfo {
+  language?: string;
+  platform?: string;
+  timezone?: string;
+  viewport?: string;
+  user_agent?: string;
+  screen_count?: number;
+}
+
+export interface ProctoringDeviceLabel {
+  headline: string;
+  details: string[];
+  known: boolean;
+}
+
+export interface ProctoringCapabilities {
+  camera?: string;
+  fullscreen?: string;
+  microphone?: string;
+  screen_layout?: string;
+  window_visibility?: string;
+}
+
+export interface ProctoringByQuestion {
+  index: number;
+  label: string;
+  count: number;
+}
+
+export interface ProctoringObserved {
+  key: string;
+  icon: string;
+  state: string;
+  sentence: string;
+  where?: string;
+  notable: boolean;
+  occurrences: number;
+  total_seconds?: number;
+  longest_seconds?: number;
+  questions: number[];
+}
+
+export interface ProctoringData {
+  session_id?: string;
+  consent_given_at?: string;
+  device?: ProctoringDeviceInfo;
+  device_label?: ProctoringDeviceLabel;
+  capabilities?: ProctoringCapabilities;
+  started_at?: string;
+  last_signal_at?: string;
+  signal_count?: number;
+  observed_count?: number;
+  observed_questions?: number;
+  total_questions?: number;
+  by_question?: ProctoringByQuestion[];
+  observed?: ProctoringObserved[];
+  clear_names?: string[];
+  clear_count?: number;
+  unavailable?: string[];
+  gap_count?: number;
+  gap_note?: string | null;
+}
+
+// ─── Report Response ──────────────────────────────────────────────────────────
 
 export interface RapidlyInterviewReportResponse {
   has_interview: boolean;
@@ -114,6 +217,7 @@ export interface RapidlyInterviewReportResponse {
   simulated?: boolean;
   simulation_persona?: string | null;
   duration_seconds?: number;
+  proctoring?: ProctoringData | null;
   [key: string]: any;
 }
 

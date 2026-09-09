@@ -26,6 +26,8 @@ const Dropdown = ({
   searchable = false,
   searchPlaceholder = 'Search...',
   searchField = 'name',
+  showHelpIcon = false,
+  onPressHelpIcon,
 }: DropdownProps) => {
 
   const [value, setValueInternal] = useState<any>(null);
@@ -141,26 +143,46 @@ const Dropdown = ({
               </View>
             )}
             renderRightIcon={() => (
-              <Ionicons
-                name={isFocused ? 'chevron-up' : 'chevron-down'}
-                size={20}
-                color={colors.gray[500]}
-                style={{
-                  marginRight:8,
-                  alignSelf: 'center',
-                }}
-              />
+              <View style={styles.rightIconContainer}>
+                {showHelpIcon && (
+                  <TouchableOpacity
+                    onPress={onPressHelpIcon}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    activeOpacity={0.7}
+                    style={styles.helpIconTouch}
+                  >
+                    <Ionicons
+                      name="information-circle-outline"
+                      size={18}
+                      color={colors.gray[500]}
+                    />
+                  </TouchableOpacity>
+                )}
+                <Ionicons
+                  name={isFocused ? 'chevron-up' : 'chevron-down'}
+                  size={20}
+                  color={colors.gray[500]}
+                  style={styles.chevronIcon}
+                />
+              </View>
             )}
           />
           {selectedItem && (
-            <View style={styles.customSelectedDisplay}>
-              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', marginLeft:4 }}>
-                <Typography style={styles.selectedTextStyle} numberOfLines={1} ellipsizeMode='tail'>
+            <View
+              style={[
+                styles.customSelectedDisplay,
+                showHelpIcon && styles.customSelectedDisplayWithHelp,
+              ]}
+            >
+              <View style={styles.selectedContentRow}>
+                <Typography style={styles.selectedItemNameText} numberOfLines={1} ellipsizeMode='tail'>
                   {" "} {selectedItem.name}
                 </Typography>
-                <Typography style={styles.selectedTextStyle} numberOfLines={1} ellipsizeMode='tail'>
-                  {showIndexAndTotal ? ` ${selectedItem.indexs}` : ''}
-                </Typography>
+                {showIndexAndTotal && (
+                  <Typography style={styles.selectedIndexText} numberOfLines={1}>
+                    {` ${selectedItem.indexs}`}
+                  </Typography>
+                )}
               </View>
               {showIndexAndTotal && (
                 <View style={styles.selectedTotalBadge}>
@@ -170,7 +192,12 @@ const Dropdown = ({
             </View>
           )}
           {!selectedItem && (
-            <View style={styles.customSelectedDisplay}>
+            <View
+              style={[
+                styles.customSelectedDisplay,
+                showHelpIcon && styles.customSelectedDisplayWithHelp,
+              ]}
+            >
               <Text style={styles.placeholderStyle}>{label}</Text>
             </View>
           )}

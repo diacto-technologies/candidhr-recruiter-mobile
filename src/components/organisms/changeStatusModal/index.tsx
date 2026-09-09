@@ -399,29 +399,35 @@ const ChangeStatusModal = ({
                 </View>
                 {emailCandidate ? (
                   <View style={styles.emailFieldsContainer}>
+                    <Typography variant="mediumTxtsm" color={colors.gray[700]}>
+                      Use template (optional)
+                    </Typography>
                     <CommonDropdown
                       placeholder="Use template (optional)"
                       options={[
+                        ...(selectedEmailTemplateId ? [{ id: 'clear', name: 'Clear template' }] : []),
                         ...(emailTemplates || []),
-                        { id: 'clear', name: '✕ Clear selected template' },
                       ]}
                       multilineOptions={true}
                       labelKey="name"
                       valueKey="id"
                       value={selectedEmailTemplateId}
                       onChange={(value, item) => {
-                        if (item.id === 'clear') {
+                        if (item?.id === 'clear' || value === 'clear') {
                           setSelectedEmailTemplateId(null);
                           setSubject('Update on your application for {{job_title}}');
                           setMessage(initialEmailMessage ?? defaultMessage);
                           dispatch(clearEmailTemplatePreviewAction());
-                        } else {
-                          setSelectedEmailTemplateId(item.id);
+                        } else if (item?.id || value) {
+                          const id = item?.id || value;
+                          setSelectedEmailTemplateId(id);
                           if (application?.id) {
-                            dispatch(previewEmailTemplateRequestAction({
-                              template_id: item.id,
-                              application_id: application.id
-                            }));
+                            dispatch(
+                              previewEmailTemplateRequestAction({
+                                template_id: id,
+                                application_id: application.id,
+                              })
+                            );
                           }
                         }
                       }}
@@ -466,6 +472,7 @@ const ChangeStatusModal = ({
               </View>
             </ScrollView>
             <FooterButtons
+              footerStyle={{ paddingBottom: 16 }}
               leftButtonProps={{
                 children: "Cancel",
                 variant: "outline",

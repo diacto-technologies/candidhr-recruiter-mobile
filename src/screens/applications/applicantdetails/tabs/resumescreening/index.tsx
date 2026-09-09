@@ -5,19 +5,18 @@ import SkillScore from '../../../../../components/molecules/SkillScore';
 import AiSummary from '../../../../../components/organisms/AiSummaryCard';
 import DetailedResume from '../../../../../components/organisms/DetailedResume';
 import { useAppSelector } from '../../../../../hooks/useAppSelector';
-import {selectApplicationStages, selectAssessmentLogs, selectMarkSessionReviewedLoading, selectParseResumeLoading, selectResumeScreeningReport, selectSelectedApplication, selectApplicationsLoading, selectResumeScreeningReportLoading } from '../../../../../features/applications/selectors';
+import {selectApplicationStages, selectAssessmentLogs, selectMarkSessionReviewedLoading, selectMustHaveSkills, selectParseResumeLoading, selectResumeScreeningReport, selectSelectedApplication, selectApplicationsLoading, selectResumeScreeningReportLoading } from '../../../../../features/applications/selectors';
 
 import { colors } from '../../../../../theme/colors';
 import Typography from '../../../../../components/atoms/typography';
-import StatusDropdown from '../../../../../components/organisms/dropdown/statusDropdown';
+import ApplicantTabStatus from '../../../../../components/atoms/applicanttabstatus';
 import Card from '../../../../../components/atoms/card';
 import { formatMonDDYYYY } from '../../../../../utils/dateformatter';
 import Button from '../../../../../components/atoms/button';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { getResumeScreeningReportRequestAction, markSessionAsReviewedRequestAction, parseResumeRequestAction } from '../../../../../features/applications/actions';
+import { getMustHaveSkillsRequestAction, getResumeScreeningReportRequestAction, markSessionAsReviewedRequestAction, parseResumeRequestAction } from '../../../../../features/applications/actions';
 import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
 import Feather from 'react-native-vector-icons/Feather';
-import { getApprovalStageStatusOptions } from '../stageStatusOptions';
 import { PERMISSIONS } from '../../../../../utils/permission.constants';
 import Divider from '../../../../../components/atoms/divider';
 import { useStyles } from './styles';
@@ -30,7 +29,6 @@ export default function ResumeScreening() {
   const application = useAppSelector(selectSelectedApplication);
   const resumeScreeningReport = useAppSelector(selectResumeScreeningReport);
   const loading = useAppSelector(selectResumeScreeningReportLoading);
-  const [selectedStageStatus, setSelectedStageStatus] = useState<string | null>(null);
   const loadingMarkReviewed = useAppSelector(
     selectMarkSessionReviewedLoading
   );
@@ -60,6 +58,15 @@ export default function ResumeScreening() {
     if (fromLog) return fromLog;
     return application?.resume_id?.trim() ?? '';
   }, [resumeSessionLog?.content_id, application?.resume_id]);
+
+  const jobId = application?.job?.id;
+  const mustHaveSkills = useAppSelector(selectMustHaveSkills);
+
+  useEffect(() => {
+    if (jobId) {
+      dispatch(getMustHaveSkillsRequestAction(jobId));
+    }
+  }, [jobId, dispatch]);
 
   useEffect(() => {
     if (!resumeScreeningContentId) return;
@@ -107,18 +114,6 @@ export default function ResumeScreening() {
     });
   }, [components]);
 
-  const currentStageStatus = resumeStage?.status ?? null;
-  const STAGE_STATUS_OPTIONS = useMemo(() => {
-    return getApprovalStageStatusOptions(currentStageStatus);
-  }, [currentStageStatus]);
-
-  useEffect(() => {
-    const stageStatus = stages?.find(s => s.stage_type === "resume_screening")?.status;
-    if (stageStatus) {
-      setSelectedStageStatus(stageStatus);
-    }
-  }, [stages]);
-
   const resumeScreeningStatus =
     stages?.find(stage => stage.stage_type === "resume_screening")?.status
       ?.replace("_", " ")
@@ -127,43 +122,9 @@ export default function ResumeScreening() {
   return (
     <Fragment>
       <View style={styles.container}>
-        <StatusDropdown
-          label="Stages"
-          options={STAGE_STATUS_OPTIONS}
-          labelKey="name"
-          valueKey="id"
-          setValue={selectedStageStatus ?? currentStageStatus}
-          onSelect={(item) => setSelectedStageStatus(item?.id)}
-          openModalOnSelect
-          changeStatusModalProps={{
-            applicantName: application?.candidate?.name,
-            entityId: resumeStage?.id,
-            currentStatus: currentStageStatus,
-            newStatusOptions: STAGE_STATUS_OPTIONS,
-            stageId: resumeStage?.id ?? undefined,
-            applicationId: application?.id ?? undefined,
-            contentType: "Resume Screening",
-            onUpdateStatus: (newStatusId) => {
-              setSelectedStageStatus(newStatusId);
-            },
-          }}
-        />
+        <ApplicantTabStatus label="Stages" stage={resumeStage} />
 
         <Card style={{ gap: 4, flex: 1, width: '100%' }}>
-          <Typography variant="regularTxtxs" style={{ backgroundColor: colors?.brand['200'], borderTopRightRadius: 12, borderTopLeftRadius: 12, borderTopStartRadius: 12, padding: 5 }} numberOfLines={2}>
-            Stage was {resumeScreeningStatus} by{" "}
-            {stages?.find(s => s.stage_type === "resume_screening")?.reviewed_by?.name ??
-              "Workflow"}{" "}
-            on{" "}
-            {formatMonDDYYYY(
-              stages?.find(s => s.stage_type === "resume_screening")?.reviewed_at ??
-              stages?.find(s => s.stage_type === "resume_screening")
-                ?.workflow_status_updated_at,
-              "DD MMM YYYY HH:mm",
-              "IST"
-            )}
-            <Divider />
-          </Typography>
           <View style={{ paddingHorizontal: 16, paddingBottom: 10 }}>
             <View style={styles.reviewRow}>
               <View style={{ flex: 1 }}>
@@ -265,8 +226,8 @@ export default function ResumeScreening() {
         <SkillScore
           title="Skills"
           isloading={loading}
-          overall={String(Math.round(skillComponent?.raw_score_percent ?? 0))}
           data={skills}
+          mustHaveSkills={mustHaveSkills}
         />
 
         <AiSummary

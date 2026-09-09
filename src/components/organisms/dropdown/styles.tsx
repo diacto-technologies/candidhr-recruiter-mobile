@@ -179,7 +179,7 @@ export const styles = StyleSheet.create({
         bottom: 0,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingLeft: 60,
+        paddingLeft: 68,
         paddingRight: 40,
         pointerEvents: 'none',
         gap: 8,
@@ -257,9 +257,8 @@ export const styles = StyleSheet.create({
 
     statusBadge: {
         flexDirection: 'row',
-         alignItems: 'center',
-        gap:4,
-        //marginLeft:6
+        alignItems: 'center',
+        gap: 8,
     },
 
     statusDot: {
@@ -327,6 +326,53 @@ export const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '500',
         color: colors.brand[700],
+    },
+
+    customSelectedDisplayWithHelp: {
+        paddingRight: 76,
+    },
+
+    selectedContentRow: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginLeft: 4,
+        minWidth: 0,
+    },
+
+    selectedItemNameText: {
+        flexShrink: 1,
+        color: colors.gray[900],
+        fontFamily: Fonts.InterMedium,
+        fontSize: 16,
+        fontWeight: '500',
+        fontStyle: 'normal',
+        lineHeight: 24,
+    },
+
+    selectedIndexText: {
+        flexShrink: 0,
+        color: colors.gray[900],
+        fontFamily: Fonts.InterMedium,
+        fontSize: 16,
+        fontWeight: '500',
+        fontStyle: 'normal',
+        lineHeight: 24,
+    },
+
+    rightIconContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginRight: 8,
+    },
+
+    helpIconTouch: {
+        padding: 2,
+    },
+
+    chevronIcon: {
+        alignSelf: 'center',
     },
 
 });

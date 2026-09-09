@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Linking, Platform } from 'react-native';
+import { Linking, Platform, Alert } from 'react-native';
 import DeviceInfo from 'react-native-device-info';
 import { useAppDispatch } from '../../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../../hooks/useAppSelector';
@@ -18,6 +18,7 @@ import {
   getResumeScreeningResponsesRequestAction,
   getApplicationStagesRequestAction,
   updateApplicationStatusRequestAction,
+  getApplicationViewersRequestAction,
 } from '../../../../features/applications/actions';
 
 import {
@@ -27,6 +28,8 @@ import {
   selectResumeScreeningReport,
   selectSelectedApplication,
   selectSelectedApplicationError,
+  selectApplicationViewers,
+  selectLoadingApplicationViewers,
 } from '../../../../features/applications/selectors';
 import { resetPersonalityScreeningState } from '../../../../features/applications/slice';
 import {
@@ -45,6 +48,8 @@ export const useApplicantDetailsController = (
 
   const [activeTab, setActiveTab] = useState(initialTabLabel);
   const [resumeModalVisible, setResumeModalVisible] = useState(false);
+  const [emailModalVisible, setEmailModalVisible] = useState(false);
+  const [viewersModalVisible, setViewersModalVisible] = useState(false);
   
   const [htmlPreviewVisible, setHtmlPreviewVisible] = useState(false);
   const [htmlPreview, setHtmlPreview] = useState<string>('');
@@ -64,17 +69,21 @@ export const useApplicantDetailsController = (
   const resumeScreeningReport = useAppSelector(selectResumeScreeningReport);
   const stages = useAppSelector(selectApplicationStages);
   const rapidlyInterviewReport = useAppSelector(selectRapidlyInterviewReport);
+  const viewers = useAppSelector(selectApplicationViewers);
+  const loadingViewers = useAppSelector(selectLoadingApplicationViewers);
 
   const resumeUrl = application?.resume_file || null;
   const candidateName = application?.applicant?.name || 'N/A';
 
   // Derived Tabs
   const tabs = useMemo(() => {
-    const baseTabs = ['Profile Info'];
+    const baseTabs: Array<{ key: string; label: string }> = [
+      { key: 'profile_info', label: 'Profile Info' },
+    ];
     stages?.forEach((stage: any) => {
-      const tabName = STAGE_TAB_MAP[stage.stage_type];
-      if (tabName && !baseTabs.includes(tabName)) {
-        baseTabs.push(tabName);
+      const config = STAGE_TAB_MAP[stage.stage_type];
+      if (config && !baseTabs.some((t) => t.key === config.key)) {
+        baseTabs.push(config);
       }
     });
 
@@ -84,8 +93,8 @@ export const useApplicantDetailsController = (
       rapidlyInterviewReport?.recording_url ||
       (application as any)?.job?.rapidhire_enabled
     ) {
-      if (!baseTabs.includes('Rapidly Interview')) {
-        baseTabs.push('Rapidly Interview');
+      if (!baseTabs.some((t) => t.key === 'rapidly_interview')) {
+        baseTabs.push({ key: 'rapidly_interview', label: 'Rapidly Interview' });
       }
     }
 
@@ -108,6 +117,7 @@ export const useApplicantDetailsController = (
     dispatch(getApplicationResponsesRequestAction({ application_id, job_id }));
     dispatch(getResumeScreeningResponsesRequestAction(application_id));
     dispatch(getRapidlyInterviewReportRequestAction(application_id));
+    dispatch(getApplicationViewersRequestAction({ applicationId: application_id, limit: 20 }));
   }, [application_id, job_id, dispatch]);
 
   useEffect(() => {
@@ -148,10 +158,13 @@ export const useApplicantDetailsController = (
   }, [resumeScreeningContentId, dispatch]);
 
   useEffect(() => {
-    if (!tabs.includes(activeTab)) {
-      setActiveTab(tabs[0]);
+    const activeExists = tabs.some(
+      (t) => t.key === activeTab || t.label === activeTab
+    );
+    if (!activeExists && tabs.length > 0) {
+      setActiveTab(tabs[0].key);
     }
-  }, [tabs]);
+  }, [tabs, activeTab]);
 
   // Handlers
   const handleViewResume = useCallback(() => {
@@ -194,11 +207,12 @@ export const useApplicantDetailsController = (
   }, [application, stages, resumeScreeningReport, candidateName, application_id]);
 
   const handleCall = useCallback(async (phoneNumber?: string | number) => {
-    if (!phoneNumber) {
+    const targetNumber = phoneNumber || application?.applicant?.contact || (application as any)?.candidate?.contact;
+    if (!targetNumber) {
       showToastMessage('Phone number not available', 'error');
       return;
     }
-    const cleanedNumber = phoneNumber.toString().replace(/\D/g, '');
+    const cleanedNumber = targetNumber.toString().replace(/\D/g, '');
     if (cleanedNumber.length < 8) {
       showToastMessage('Invalid phone number', 'error');
       return;
@@ -210,9 +224,9 @@ export const useApplicantDetailsController = (
     try {
       await Linking.openURL(`tel:${cleanedNumber}`);
     } catch (error) {
-      showToastMessage('Unable to open dialer', 'error');
+      showToastMessage('Could not launch dialer', 'error');
     }
-  }, []);
+  }, [application]);
 
   const handleUpdateStatus = useCallback((selectedStatusId: string, options?: any) => {
     dispatch(updateApplicationStatusRequestAction({ 
@@ -225,6 +239,21 @@ export const useApplicantDetailsController = (
     dispatch(getApplicationDetailRequestAction(application_id));
   }, [dispatch, application_id]);
 
+  const handleExport = useCallback(() => {
+    Alert.alert('Export Application', 'Choose an option', [
+      { text: 'Preview PDF', onPress: handlePreviewHtml },
+      { text: 'Download PDF', onPress: handleDownloadHtmlPreview },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  }, [handlePreviewHtml, handleDownloadHtmlPreview]);
+
+  const handleOpenViewers = useCallback(() => {
+    if (application_id) {
+      dispatch(getApplicationViewersRequestAction({ applicationId: application_id, limit: 20 }));
+    }
+    setViewersModalVisible(true);
+  }, [application_id, dispatch]);
+
   return {
     // State & Derived Data
     activeTab,
@@ -235,9 +264,13 @@ export const useApplicantDetailsController = (
     loading,
     selectApplicationError,
     candidateName,
+    candidateEmail: application?.applicant?.email ?? '',
+    jobTitle: application?.job?.title ?? '',
     resumeUrl,
     resumeModalVisible,
     setResumeModalVisible,
+    emailModalVisible,
+    setEmailModalVisible,
     htmlPreviewVisible,
     setHtmlPreviewVisible,
     htmlPreview,
@@ -261,7 +294,13 @@ export const useApplicantDetailsController = (
     handleViewResume,
     handlePreviewHtml,
     handleDownloadHtmlPreview,
+    handleExport,
     handleCall,
     handleUpdateStatus,
+    handleOpenViewers,
+    viewersModalVisible,
+    setViewersModalVisible,
+    viewers,
+    loadingViewers,
   };
 };

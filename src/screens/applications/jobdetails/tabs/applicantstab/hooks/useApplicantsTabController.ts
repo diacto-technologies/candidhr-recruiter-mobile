@@ -77,6 +77,7 @@ export const useApplicantsTabController = () => {
       contact: filters.contact || "",
       latestStageStatus: filters.latestStageStatus || undefined,
       source: filters.source || undefined,
+      sourceChannel: filters.sourceChannel || undefined,
       status: filters.status || undefined,
       latestStageName: filters.latestStageName || undefined,
       sort: overrideSort ?? (aiEnabled ? AI_RECOMMENDATION_SORT : (filters.sort || DEFAULT_SORT)),

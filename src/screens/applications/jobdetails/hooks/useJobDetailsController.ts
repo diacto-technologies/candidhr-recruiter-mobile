@@ -31,7 +31,12 @@ const DEFAULT_FILTERS = {
   name: "", 
   email: "", 
   appliedFor: "", 
-  contact: "" 
+  contact: "",
+  latestStageStatus: "",
+  source: "",
+  sourceChannel: "",
+  status: "",
+  latestStageName: "",
 };
 
 export const TABS = {

@@ -12,11 +12,43 @@ import { useStyles } from "../AssessmentDetails/styles";
 type ProctoringData = NonNullable<PerformanceReportResponse["proctoring_summary"]>;
 
 type Props = {
-  proctoring: ProctoringData;
+  proctoring?: ProctoringData | null;
   styles: ReturnType<typeof useStyles>;
 };
 
-const getViolationCount = (violationsByType: Record<string, number> | undefined, keys: string[]) => {
+const VIOLATION_LABEL_MAP: Record<string, string> = {
+  fullscreen_exit: "Fullscreen Exit",
+  fullscreen_exits: "Fullscreen Exit",
+  fullscreen_exit_count: "Fullscreen Exit",
+  tab_switch: "Tab Switch",
+  tab_switches: "Tab Switch",
+  tab_switch_count: "Tab Switch",
+  mouse_leave: "Mouse Leave",
+  mouse_leaves: "Mouse Leave",
+  mouse_leave_count: "Mouse Leave",
+  screen_exit: "Screen Exit",
+  screen_exits: "Screen Exit",
+  screen_exit_count: "Screen Exit",
+  multiple_faces: "Multiple Faces",
+  face_not_visible: "Face Not Visible",
+  no_face: "No Face",
+  window_blur: "Window Blur",
+};
+
+const formatViolationKey = (key: string): string => {
+  const normalized = key.toLowerCase().trim();
+  if (VIOLATION_LABEL_MAP[normalized]) {
+    return VIOLATION_LABEL_MAP[normalized];
+  }
+  return normalized
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+};
+
+const getViolationCount = (
+  violationsByType: Record<string, number> | undefined,
+  keys: string[]
+) => {
   if (!violationsByType) return 0;
   for (const k of keys) {
     const v = violationsByType[k as keyof typeof violationsByType];
@@ -40,25 +72,53 @@ export default function ProctoringCard({ proctoring, styles }: Props) {
     [proctoring]
   );
 
-  const metrics = useMemo(
-    () =>
-      [
-        {
-          label: "Tab switches",
-          value: getViolationCount(violationsByType, ["tab_switches", "tab_switch", "tab_switch_count"]),
-        },
-        {
-          label: "Mouse leave",
-          value: getViolationCount(violationsByType, ["mouse_leave", "mouse_leaves", "mouse_leave_count"]),
-        },
-        {
-          label: "Screen exit",
-          value: getViolationCount(violationsByType, ["screen_exit", "screen_exits", "screen_exit_count"]),
-        },
-      ].filter((m) => m.value > 0), // hide metrics with no data
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [violationsByType]
-  );
+  const metrics = useMemo(() => {
+    const list: Array<{ label: string; value: number; key: string }> = [];
+
+    // Preferred key order: Fullscreen Exit first, then Tab Switch, then others
+    const preferredOrder = ["fullscreen_exit", "tab_switch", "mouse_leave", "screen_exit"];
+
+    if (violationsByType && typeof violationsByType === "object") {
+      const keys = Object.keys(violationsByType);
+      keys.sort((a, b) => {
+        const idxA = preferredOrder.indexOf(a.toLowerCase());
+        const idxB = preferredOrder.indexOf(b.toLowerCase());
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return a.localeCompare(b);
+      });
+
+      for (const k of keys) {
+        const val = Number(violationsByType[k]);
+        if (Number.isFinite(val) && val > 0) {
+          list.push({
+            key: k,
+            label: formatViolationKey(k),
+            value: val,
+          });
+        }
+      }
+    }
+
+    // Fallback if violations_by_type was empty but individual count fields exist on proctoring object
+    if (list.length === 0 && proctoring) {
+      const fallbackDefs = [
+        { label: "Fullscreen Exit", keys: ["fullscreen_exit", "fullscreen_exits", "fullscreen_exit_count"] },
+        { label: "Tab Switch", keys: ["tab_switch", "tab_switches", "tab_switch_count"] },
+        { label: "Mouse Leave", keys: ["mouse_leave", "mouse_leaves", "mouse_leave_count"] },
+        { label: "Screen Exit", keys: ["screen_exit", "screen_exits", "screen_exit_count"] },
+      ];
+      for (const def of fallbackDefs) {
+        const val = getViolationCount(proctoring as any, def.keys);
+        if (val > 0) {
+          list.push({ key: def.keys[0], label: def.label, value: val });
+        }
+      }
+    }
+
+    return list;
+  }, [violationsByType, proctoring]);
 
   const hiddenSnapshotCount = Math.max(0, gazeSnapshots.length - visibleCount);
   
@@ -78,10 +138,17 @@ export default function ProctoringCard({ proctoring, styles }: Props) {
     <Card style={styles.container}>
       <View style={styles.sectionHeaderRow}>
         <View style={styles.sectionTitleRow}>
-          <Typography variant="semiBoldTxtlg">
+          <Typography variant="semiBoldTxtlg" color={colors.gray[900]}>
             Proctoring
           </Typography>
         </View>
+        {proctoring?.integrity_status ? (
+          <View style={styles.recommendationBadge}>
+            <Typography variant="mediumTxtxs" color={colors.warning[700]}>
+              {proctoring.integrity_status}
+            </Typography>
+          </View>
+        ) : null}
       </View>
 
       {/* Video — only when url is present */}
@@ -91,23 +158,18 @@ export default function ProctoringCard({ proctoring, styles }: Props) {
         </View>
       )}
 
-      {/* Metrics row — only when at least one violation metric is non-zero */}
+      {/* Metrics row */}
       {hasMetrics && (
-        <View style={styles.metricsRow}>
-          {metrics.map((m, idx) => (
-            <React.Fragment key={m.label}>
-              <View style={styles.metricTile}>
-                <Typography variant="semiBoldDxs" color={colors.gray[900]}>
-                  {String(m.value).padStart(2, "0")}
-                </Typography>
-                <Typography variant="regularTxtmd" color={colors.gray[600]}>
-                  {m.label}
-                </Typography>
-              </View>
-              {idx !== metrics.length - 1 && (
-                <View style={styles.dividerLine} />
-              )}
-            </React.Fragment>
+        <View style={styles.statGrid}>
+          {metrics.map((m) => (
+            <View key={m.label} style={styles.statTile}>
+              <Typography variant="mediumTxtxs" color={colors.gray[600]}>
+                {m.label}
+              </Typography>
+              <Typography variant="semiBoldTxtlg" color={colors.gray[900]}>
+                {m.value}
+              </Typography>
+            </View>
           ))}
         </View>
       )}

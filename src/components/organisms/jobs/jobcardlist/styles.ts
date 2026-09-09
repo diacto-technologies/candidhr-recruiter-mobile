@@ -62,7 +62,33 @@ export const useStyles = () => {
     
         // --- Empty Screen Styles ---
         metricsContainer: { flexDirection: "row", gap: 12 },
-        metricRow: { flexDirection: "row", gap: 4 },
+        metricRow: { flexDirection: "row", gap: 4, alignItems: "center" },
+        todayBadge: {
+            backgroundColor: colors.brand[50],
+            borderColor: colors.brand[200],
+            borderWidth: 1.5,
+            paddingHorizontal: 6,
+            paddingVertical: 1.5,
+            borderRadius: 9999,
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        bottomRow: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+        },
+        ownerContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 6,
+            flexShrink: 1,
+            justifyContent: 'flex-end',
+            maxWidth: '55%',
+        },
+        ownerName: {
+            flexShrink: 1,
+        },
         emptyContainer: {
             flex: 1,
             alignSelf: 'center',

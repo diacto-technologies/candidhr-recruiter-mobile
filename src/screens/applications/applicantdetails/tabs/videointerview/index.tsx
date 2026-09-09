@@ -18,16 +18,16 @@ import { TranscriptionSegment } from '../../../../../features/applications/types
 import { getStatusColor } from '../../../../../components/organisms/applicantlist/helper';
 import { copyIcon } from '../../../../../assets/svg/copy';
 import CopyText from '../../../../../components/molecules/copyText';
-import StatusDropdown from '../../../../../components/organisms/dropdown/statusDropdown';
+import ApplicantTabStatus from '../../../../../components/atoms/applicanttabstatus';
 import Card from '../../../../../components/atoms/card';
 import Button from '../../../../../components/atoms/button';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { getApprovalStageStatusOptions } from '../stageStatusOptions';
 import Shimmer from '../../../../../components/atoms/shimmer';
 import { formatTime as globalFormatTime } from '../../../../../utils/dateformatter';
 import CustomTimeline from '../../../../../components/molecules/TimelineCard';
-import { TimelineItem } from '../../../../../components/molecules/TimelineCard';
+import { TimelineItem } from '../../../../../components/molecules/TimelineCard/timelinecard.d';
 import { VideoResponseCard, VideoResponseItem } from '../../../../../components/organisms/VideoResponseCard';
+import TestDetailsModal from '../../../../../components/organisms/TestDetailsModal';
 
 const normalizeContentType = (v: unknown) =>
   String(v ?? '')
@@ -65,8 +65,8 @@ export default function VideoInterview({
   const [transcriptionView, setTranscriptionView] = useState<'continuous' | 'bytime'>('continuous');
   const [currentTime, setCurrentTime] = useState(0);
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
-  const [selectedStageStatus, setSelectedStageStatus] = useState<string | null>(null);
   const [isResponsesLoading, setIsResponsesLoading] = useState(false);
+  const [testDetailsVisible, setTestDetailsVisible] = useState(false);
 
   const dispatch = useAppDispatch();
   const styles = useStyles();
@@ -87,6 +87,15 @@ export default function VideoInterview({
   const loadingMarkReviewed = useAppSelector(selectMarkSessionReviewedLoading);
   const interviewOptions = useAppSelector(selectPersonalityInterviewOptions);
   const loadingInterviewOptions = useAppSelector(selectLoadingPersonalityInterviewOptions);
+
+  const currentInterviewOption = useMemo(() => {
+    if (!interviewOptions?.results?.length) return null;
+    return (
+      interviewOptions.results.find((opt) => opt.id === sessionContentId) ??
+      interviewOptions.results[0] ??
+      null
+    );
+  }, [interviewOptions, sessionContentId]);
 
   // Detect orientation
   const { width, height } = screenData;
@@ -154,21 +163,27 @@ export default function VideoInterview({
     }
   }, [filteredVideoLogs, sessionContentId, onSessionContentIdChange]);
 
-  useEffect(() => {
-    const stageStatus = stages?.find(s => s.stage_type === "automated_video_interview")?.status;
-    if (stageStatus) {
-      setSelectedStageStatus(stageStatus);
-    }
-  }, [stages]);
-
   const sessionOptions = useMemo(() => {
-    return filteredVideoLogs?.map((item, index) => ({
-      id: item.content_id,
-      name: `Automated Video Interview`,
-      status_text: item?.session_status ?? "—",
-      raw: item,
-    })) ?? [];
-  }, [filteredVideoLogs]);
+    return (
+      filteredVideoLogs?.map((item) => {
+        const opt = interviewOptions?.results?.find(
+          (o) => o.id === item.content_id
+        );
+        const statusText =
+          opt?.status ||
+          item?.progress_status ||
+          item?.status_text ||
+          item?.session_status ||
+          "—";
+        return {
+          id: item.content_id,
+          name: `Automated Video Interview`,
+          status_text: statusText,
+          raw: item,
+        };
+      }) ?? []
+    );
+  }, [filteredVideoLogs, interviewOptions?.results]);
 
   // Get current status id from selected session
   const currentStatusId = useMemo(() => {
@@ -205,31 +220,34 @@ export default function VideoInterview({
       case "Articulation":
         return {
           score: s.articulation_score,
-          text: s.articulation_exp,
+          text: s.articulation_exp || "No articulation analysis available",
         };
 
       case "Communication":
         return {
           score: s.communication_score,
-          text: s.communication_exp,
+          text: s.communication_exp || "No communication analysis available",
         };
 
       case "Language":
         return {
           score: s.language_score,
-          text: s.language_exp,
+          text: s.language_exp || "No language analysis available",
         };
 
       case "Logical Thinking":
         return {
           score: s.logical_thinking_score,
-          text: s.logical_thinking_exp,
+          text: s.logical_thinking_exp || "No logical thinking analysis available",
         };
 
       case "Technical":
         return {
           score: s.technical_score,
-          text: s.technical_question_exp,
+          text:
+            s.technical_question_exp ||
+            (s as any).technical_exp ||
+            "No technical analysis available",
         };
 
       default:
@@ -360,13 +378,88 @@ export default function VideoInterview({
   const isReviewed = currentSessionLog?.session_status === 'reviewed';
 
   const videoStage = useMemo(
-    () => stages?.find((s) => s.stage_type === 'automated_video_interview'),
+    () =>
+      stages?.find(
+        (s) =>
+          s.stage_type === 'automated_video_interview' ||
+          s.stage_type === 'video_interview'
+      ),
     [stages]
   );
-  const currentStageStatus = videoStage?.status ?? null;
-  const STAGE_STATUS_OPTIONS = useMemo(() => {
-    return getApprovalStageStatusOptions(currentStageStatus);
-  }, [currentStageStatus]);
+
+  const selectedSessionStatus = useMemo(() => {
+    if (!sessionContentId) return null;
+
+    const currentOption = interviewOptions?.results?.find(
+      (opt) => opt.id === sessionContentId
+    );
+    const currentLog = filteredVideoLogs?.find(
+      (item) => item.content_id === sessionContentId
+    );
+    const currentScreening = PersonalityScreeningList?.find(
+      (item) => item.id === sessionContentId
+    );
+
+    if (currentOption?.completed || currentOption?.completed_at) {
+      return 'completed';
+    }
+
+    if (currentLog?.completed_at) {
+      return 'completed';
+    }
+
+    if (currentOption?.status) {
+      return currentOption.status;
+    }
+
+    if (currentLog?.progress_status) {
+      return currentLog.progress_status;
+    }
+
+    if (currentLog?.status_text && currentLog.status_text !== '—') {
+      return currentLog.status_text;
+    }
+
+    if (currentScreening?.status_text) {
+      return currentScreening.status_text;
+    }
+
+    if (
+      personalityAiSummary &&
+      ((personalityAiSummary as any)?.screening === sessionContentId ||
+        responses?.[0]?.screening_id === sessionContentId)
+    ) {
+      return 'completed';
+    }
+
+    return null;
+  }, [
+    sessionContentId,
+    interviewOptions?.results,
+    filteredVideoLogs,
+    PersonalityScreeningList,
+    personalityAiSummary,
+    responses,
+  ]);
+
+  const currentVideoStage = useMemo(() => {
+    if (!videoStage) return null;
+
+    const effectiveStatus =
+      selectedSessionStatus ||
+      videoStage.latest_session?.progress_status ||
+      videoStage.status;
+
+    return {
+      ...videoStage,
+      status: effectiveStatus,
+      latest_session: {
+        ...(videoStage.latest_session || {}),
+        content_id: sessionContentId ?? videoStage.latest_session?.content_id,
+        progress_status: effectiveStatus,
+      },
+    };
+  }, [videoStage, selectedSessionStatus, sessionContentId]);
 
   const { timelineData, progress } = useMemo(() => {
     if (!interviewOptions?.results || !sessionContentId) return { timelineData: [], progress: 0 };
@@ -435,30 +528,11 @@ export default function VideoInterview({
 
   return (
     <View style={styles.container}>
-      <View style={{ zIndex: 9999 }}>
-        <StatusDropdown
-          label="Stages"
-          options={STAGE_STATUS_OPTIONS}
-          labelKey="name"
-          valueKey="id"
-          setValue={selectedStageStatus ?? currentStageStatus}
-          // customContainerStyle={{paddingHorizontal:10}}
-          onSelect={(item) => setSelectedStageStatus(item?.id)}
-          openModalOnSelect
-          changeStatusModalProps={{
-            applicantName: applicant?.candidate?.name,
-            entityId: videoStage?.id,
-            currentStatus: currentStageStatus,
-            newStatusOptions: STAGE_STATUS_OPTIONS,
-            stageId: videoStage?.id ?? undefined,
-            applicationId: applicant?.id ?? undefined,
-            contentType: "Automated Video Interview",
-            onUpdateStatus: (newStatusId : string) => {
-              setSelectedStageStatus(newStatusId);
-            },
-          }}
-        />
-      </View>
+      <ApplicantTabStatus
+        label="Stages"
+        stage={currentVideoStage}
+        status={selectedSessionStatus ?? undefined}
+      />
       <View style={{ zIndex: 1000 }}>
         <Card style={{ gap: 4, flex: 1, width: '100%' }}>
           {/* <Typography variant="regularTxtxs" style={styles.statusBanner} numberOfLines={2}>
@@ -480,6 +554,8 @@ export default function VideoInterview({
               valueKey="id"
               statusKey="status_text"
               setValue={sessionContentId ?? ''}
+              showHelpIcon={true}
+              onPressHelpIcon={() => setTestDetailsVisible(true)}
               onSelect={(item) => {
                 onSessionContentIdChange(item?.id ?? null);
               }}
@@ -582,6 +658,7 @@ export default function VideoInterview({
       {/* TIMELINE */}
       {timelineData.length > 0 && (
         <CustomTimeline
+          title="Timeline"
           progress={progress}
           data={timelineData}
         />
@@ -670,6 +747,12 @@ export default function VideoInterview({
           />
         </>
       )}
+
+      <TestDetailsModal
+        visible={testDetailsVisible}
+        onClose={() => setTestDetailsVisible(false)}
+        interviewOption={currentInterviewOption}
+      />
     </View>
   );
 }

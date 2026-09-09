@@ -336,3 +336,25 @@ export const previewEmailTemplateRequestAction = (payload: { template_id: string
 export const clearEmailTemplatePreviewAction = () => ({
   type: APPLICATIONS_ACTION_TYPES.CLEAR_EMAIL_TEMPLATE_PREVIEW,
 });
+
+export const sendEmailRequestAction = (payload: {
+  application_id: string;
+  subject: string;
+  message: string;
+  onSuccess?: () => void;
+}) => ({
+  type: APPLICATIONS_ACTION_TYPES.SEND_EMAIL_REQUEST,
+  payload,
+});
+
+export const getMustHaveSkillsRequestAction = (jobId: string) => ({
+  type: APPLICATIONS_ACTION_TYPES.GET_MUST_HAVE_SKILLS_REQUEST,
+  payload: jobId,
+});
+
+export const getApplicationViewersRequestAction = (payload: { applicationId: string; limit?: number }) => ({
+  type: APPLICATIONS_ACTION_TYPES.GET_APPLICATION_VIEWERS_REQUEST,
+  payload,
+});
+
+

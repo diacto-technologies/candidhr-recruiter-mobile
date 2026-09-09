@@ -12,6 +12,16 @@ import { ScrollView } from "react-native-gesture-handler";
 import { Props, TabLayout } from "./slideanimatedtab";
 import { useStyles } from "./styles";
 
+const getTabKey = (item: any, index: number): string => {
+  if (typeof item === 'string') return item;
+  return item?.key ?? item?.label ?? String(index);
+};
+
+const getTabLabel = (item: any): string => {
+  if (typeof item === 'string') return item;
+  return item?.label ?? item?.key ?? '';
+};
+
 const SlideAnimatedTab: React.FC<Props> = ({
   tabs,
   activeTab,
@@ -29,8 +39,10 @@ const SlideAnimatedTab: React.FC<Props> = ({
     const { x, width } = e.nativeEvent.layout;
     tabLayouts[index] = { x, width };
 
+    const itemKey = getTabKey(tabs[index], index);
+    const itemLabel = getTabLabel(tabs[index]);
     // Update underline if this is the active tab
-    if (activeTab === tabs[index]) {
+    if (activeTab === itemKey || activeTab === itemLabel) {
       if (!initialized.current) {
         // Initial setup - set immediately without animation
         underlineX.setValue(x);
@@ -61,26 +73,37 @@ const SlideAnimatedTab: React.FC<Props> = ({
     ]).start();
   };
 
-  const handlePress = (label: string, index: number) => {
-    onChangeTab(label, index);
+  const handlePress = (item: any, index: number) => {
+    const key = getTabKey(item, index);
+    onChangeTab(key, index);
   };
 
   useEffect(() => {
-    const index = tabs.indexOf(activeTab);
-    if (tabLayouts[index]) {
+    const index = tabs.findIndex(
+      (t, idx) => getTabKey(t, idx) === activeTab || getTabLabel(t) === activeTab
+    );
+    if (index !== -1 && tabLayouts[index]) {
       animateToTab(index);
     }
-  }, [activeTab]);
+  }, [activeTab, tabs]);
+
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
       <View style={styles.tabRow}>
         {tabs.map((item, index) => {
-          const isActive = item === activeTab;
-          const count = typeof counts[item] === "number" ? counts[item] : null;
+          const itemKey = getTabKey(item, index);
+          const itemLabel = getTabLabel(item);
+          const isActive = itemKey === activeTab || itemLabel === activeTab;
+          const count =
+            typeof counts[itemKey] === "number"
+              ? counts[itemKey]
+              : typeof counts[itemLabel] === "number"
+              ? counts[itemLabel]
+              : null;
 
           return (
             <TouchableOpacity
-              key={index}
+              key={`${itemKey}-${index}`}
               onLayout={(e) => onTabLayout(e, index)}
               onPress={() => handlePress(item, index)}
               style={styles.tabBtn}
@@ -90,9 +113,9 @@ const SlideAnimatedTab: React.FC<Props> = ({
                   variant="semiBoldTxtsm"
                   color={isActive ? colors.brand[700] : colors.gray[500]}
                 >
-                  {item}
+                  {itemLabel}
                 </Typography>
-                {typeof count === "number" &&(
+                {typeof count === "number" && (
                   <View
                     style={[
                       styles.countBadge,

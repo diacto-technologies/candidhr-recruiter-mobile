@@ -11,20 +11,26 @@ const TagList: React.FC<TagListProps> = ({
   bgColor = colors.success[50],
   borderColor = colors.success[200],
   renderIcon,
+  size = "md",
+  textVariant,
+  tagStyle,
+  containerStyle,
 }) => {
-  const styles = useStyles(bgColor, borderColor);
+  const styles = useStyles(bgColor, borderColor, size);
+  const resolvedTextVariant =
+    textVariant ?? (size === "sm" ? "mediumTxtxs" : "mediumTxtsm");
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, containerStyle]}>
       {data?.map((item, index) => (
-        <View key={`${item}-${index}`} style={styles.tag}>
+        <View key={`${item}-${index}`} style={[styles.tag, tagStyle]}>
           {renderIcon && (
             <View style={styles.iconContainer}>
               {renderIcon(item, index)}
             </View>
           )}
 
-          <Typography variant="mediumTxtsm" color={textColor}>
+          <Typography variant={resolvedTextVariant} color={textColor}>
             {item}
           </Typography>
         </View>

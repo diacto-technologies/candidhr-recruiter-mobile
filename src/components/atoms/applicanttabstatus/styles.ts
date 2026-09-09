@@ -13,20 +13,23 @@ export const useStyles = () => {
       borderColor: colors.gray[300],
       paddingVertical: 10,
       paddingHorizontal: 14,
-      gap: 8,
       ...shadowStyles.shadow_xs,
     },
 
     row: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+
+    label: {
+      marginRight: 8,
     },
 
     dot: {
       height: 8,
       width: 8,
-      borderRadius: 30,
+      borderRadius: 4,
+      marginRight: 6,
     },
   });
-}
+};

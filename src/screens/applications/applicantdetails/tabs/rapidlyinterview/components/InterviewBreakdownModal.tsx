@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Modal,
@@ -11,6 +11,13 @@ import { colors } from '../../../../../../theme/colors';
 import { useStyles } from '../styles';
 import { HowLevelDecidedModal } from './HowLevelDecidedModal';
 import { RapidlyInterviewReportResponse } from '../../../../../../features/rapidhire/types';
+import { getCefrColor } from '../cefrUtils';
+
+interface SkillItem {
+  name: string;
+  level: string;
+  description: string;
+}
 
 interface InterviewBreakdownModalProps {
   visible: boolean;
@@ -20,28 +27,28 @@ interface InterviewBreakdownModalProps {
   jobTitle?: string;
 }
 
-const DEFAULT_SKILLS = [
+const DEFAULT_SKILLS: SkillItem[] = [
   {
     name: 'Fluency & coherence',
-    level: 'C1',
+    level: 'B2',
     description:
-      'The candidate produces long, connected stretches of speech with minimal hesitation markers, maintaining a natural pace and coherent flow across all answers without breakdowns.',
+      'Speech flows naturally with connected clauses and minimal disruptive hesitation; fillers are low (1.3 per 100 words) and pauses do not impede understanding. Ideas are delivered at a natural pace with logical progression across sentences.',
   },
   {
     name: 'Grammatical range & accuracy',
-    level: 'C1',
+    level: 'B2',
     description:
-      'Demonstrates control of complex structures including conditional sentences, subjunctive, relative clauses, and varied verb tenses with only minor slips.',
+      "Demonstrates control of complex structures like conditional sentences (si pudiera...sería) and subordinate clauses, though there is a minor lapse in verb form ('tener llamadas' instead of 'tengo llamadas'), showing occasional inconsistency at higher complexity.",
   },
   {
     name: 'Vocabulary / lexical resource',
-    level: 'C1',
+    level: 'B2',
     description:
       'Uses precise, topic-appropriate professional vocabulary and abstract/evaluative language fluently without obvious lexical gaps.',
   },
   {
     name: 'Coherence & organization',
-    level: 'C1',
+    level: 'B2',
     description:
       'Answers are well-structured with clear logical progression, using contrastive and connective markers effectively.',
   },
@@ -57,22 +64,39 @@ export const InterviewBreakdownModal: React.FC<InterviewBreakdownModalProps> = (
   const styles = useStyles();
   const [howDecidedVisible, setHowDecidedVisible] = useState(false);
 
-  const score = reportData?.score ?? 85;
-  const cefrLevel = reportData?.cefr_level ?? 'C1';
-  const skillsData = reportData?.report?.skills;
+  const assessment = reportData?.report?.assessment;
+  const score = Math.round(reportData?.score ?? assessment?.overall?.score ?? 85);
+  const cefrLevel = reportData?.cefr_level ?? assessment?.overall?.band ?? 'B2';
+  const heroBadge = getCefrColor(cefrLevel);
 
-  const skillsList = skillsData
-    ? Object.entries(skillsData).map(([key, item]) => ({
+  const levelLabel = useMemo(() => {
+    return heroBadge.name || 'Advanced';
+  }, [heroBadge]);
+
+  const skillsList: SkillItem[] = useMemo(() => {
+    if (assessment?.dimensions && assessment.dimensions.length > 0) {
+      return assessment.dimensions.map((dim) => ({
+        name: dim.label,
+        level: dim.band || cefrLevel,
+        description: dim.rationale || '',
+      }));
+    }
+    const skillsData = reportData?.report?.skills;
+    if (skillsData) {
+      return Object.entries(skillsData).map(([key, item]) => ({
         name: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
         level: item.level || cefrLevel,
         description: item.feedback || item.description || '',
-      }))
-    : DEFAULT_SKILLS;
+      }));
+    }
+    return DEFAULT_SKILLS;
+  }, [assessment, reportData, cefrLevel]);
 
   const summaryText =
-    reportData?.report?.transcript
+    assessment?.summary ||
+    (reportData?.report?.transcript
       ? `The candidate demonstrates strong performance with well-organized spoken responses, precise professional vocabulary, and coherent argumentation across topics.`
-      : `The candidate demonstrates fluent, well-organized spoken responses with strong control of complex grammar, precise professional vocabulary, and coherent argumentation across all topics.`;
+      : `The candidate communicates clearly and coherently in Spanish about professional topics, using a good range of vocabulary and grammatical structures including conditionals and subordinate clauses. Minor grammatical slips appear but do not hinder communication, and overall fluency and organization are consistent with a solid B2 level.`);
 
   return (
     <>
@@ -105,8 +129,8 @@ export const InterviewBreakdownModal: React.FC<InterviewBreakdownModalProps> = (
             <ScrollView showsVerticalScrollIndicator={false} style={styles.modalScroll}>
               {/* Score & CEFR Hero Card */}
               <View style={styles.scoreHeroRow}>
-                <View style={styles.cefrBadgeLarge}>
-                  <Typography variant="boldTxtxl" color={colors.success[700]}>
+                <View style={[styles.cefrBadgeLarge, { borderColor: heroBadge.border }]}>
+                  <Typography variant="boldTxtxl" color={heroBadge.color}>
                     {cefrLevel}
                   </Typography>
                 </View>
@@ -121,22 +145,22 @@ export const InterviewBreakdownModal: React.FC<InterviewBreakdownModalProps> = (
                     </Typography>
                   </View>
                   <Typography variant="regularTxtsm" color={colors.gray[600]}>
-                    Advanced · overall CEFR level
+                    {levelLabel} · overall CEFR level
                   </Typography>
                 </View>
               </View>
 
-              {/* Progress Segment Bar */}
+              {/* Progress Segment Bar - 20 Segments */}
               <View style={styles.segmentedBar}>
-                {Array.from({ length: 24 }).map((_, i) => {
-                  const filledSegments = Math.round((score / 100) * 24);
+                {Array.from({ length: 20 }).map((_, i) => {
+                  const filledSegments = Math.round((score / 100) * 20);
                   const isFilled = i < filledSegments;
                   return (
                     <View
                       key={i}
                       style={[
                         styles.segment,
-                        { backgroundColor: isFilled ? colors.success[500] : colors.gray[200] },
+                        { backgroundColor: isFilled ? (heroBadge.barColor || '#10B981') : colors.gray[200] },
                       ]}
                     />
                   );
@@ -154,23 +178,26 @@ export const InterviewBreakdownModal: React.FC<InterviewBreakdownModalProps> = (
               </Typography>
 
               <View style={styles.skillCardsList}>
-                {skillsList.map((skill, index) => (
-                  <View key={index} style={styles.skillCard}>
-                    <View style={styles.skillCardHeader}>
-                      <View style={styles.skillLevelPill}>
-                        <Typography variant="semiBoldTxtxs" color={colors.success[700]}>
-                          {skill.level}
+                {skillsList.map((skill: SkillItem, index: number) => {
+                  const skillBadge = getCefrColor(skill.level);
+                  return (
+                    <View key={index} style={styles.skillCard}>
+                      <View style={styles.skillCardHeader}>
+                        <View style={[styles.skillLevelPill, { backgroundColor: skillBadge.bg }]}>
+                          <Typography variant="semiBoldTxtxs" color={skillBadge.color}>
+                            {skill.level}
+                          </Typography>
+                        </View>
+                        <Typography variant="semiBoldTxtsm" color={colors.gray[900]} style={styles.flex1}>
+                          {skill.name}
                         </Typography>
                       </View>
-                      <Typography variant="semiBoldTxtsm" color={colors.gray[900]} style={styles.flex1}>
-                        {skill.name}
+                      <Typography variant="regularTxtxs" color={colors.gray[600]} style={styles.skillDesc}>
+                        {skill.description}
                       </Typography>
                     </View>
-                    <Typography variant="regularTxtxs" color={colors.gray[600]} style={styles.skillDesc}>
-                      {skill.description}
-                    </Typography>
-                  </View>
-                ))}
+                  );
+                })}
               </View>
             </ScrollView>
 

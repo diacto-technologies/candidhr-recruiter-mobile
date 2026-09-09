@@ -5,6 +5,12 @@ export const getStatusColor = (status?: string) => {
   const normalized = status.trim().toLowerCase().replace(/_/g, " ");
 
   switch (normalized) {
+    case "applied":
+      return colors.gray[400];
+
+    case "in progress":
+      return "#EAAA08";
+
     case "approved":
     case "shortlisted":
     case "hired":
@@ -21,7 +27,6 @@ export const getStatusColor = (status?: string) => {
     case "draft":
       return colors.error[500];
 
-    case "in progress":
     case "under review":
     case "scheduled final interview":
       return colors.blue[500];
@@ -37,12 +42,13 @@ export const getStatusColor = (status?: string) => {
     case "approval pending":
       return colors.warning[500];
 
-    case "applied":
+    case "withdrawn":
+      return colors.gray[600];
+
     case "not started":
     case "started":
     case "assigned":
     case "archived":
-    case "withdrawn":
       return colors.gray[500];
 
     default:

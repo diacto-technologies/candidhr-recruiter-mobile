@@ -32,11 +32,15 @@ export interface StatusDropdownProps {
 /* ---------- STATUS COLOR MAP ---------- */
 
 const STATUS_COLOR_MAP: Record<string, string> = {
+  applied: colors.gray[400],
+  'in progress': '#EAAA08',
+  shortlisted: colors.success[500],
+  rejected: colors.error[500],
+  'on hold': colors.orange[500],
+  hired: colors.success[500],
+  withdrawn: colors.gray[600],
   approved: colors.success[500],
   'not approved': colors.error[500],
-  rejected: colors.error[500],
-  shortlisted: colors.success[500],
-  'on hold': colors.warning[500],
   pending: colors.warning[500],
   'approval pending': colors.warning[500],
 };

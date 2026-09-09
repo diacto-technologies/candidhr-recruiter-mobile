@@ -36,6 +36,7 @@ export interface GetApplicationsPayload {
   sort?: string;
   latestStageStatus?: string;
   source?: string;
+  sourceChannel?: string;
   status?: string;
   latestStageName?: string;
 }
@@ -80,6 +81,7 @@ export const useApplicantScreenController = () => {
     if (filters.sort) params.sort = filters.sort;
     if (filters.latestStageStatus) params.latestStageStatus = filters.latestStageStatus;
     if (filters.source) params.source = filters.source;
+    if (filters.sourceChannel) params.sourceChannel = filters.sourceChannel;
     if (filters.status) params.status = filters.status;
     if (filters.latestStageName) params.latestStageName = filters.latestStageName;
 
@@ -104,6 +106,7 @@ export const useApplicantScreenController = () => {
       contact: "",
       latestStageStatus: "",
       source: "",
+      sourceChannel: "",
       status: "",
       latestStageName: "",
     }));

@@ -299,3 +299,45 @@ export const selectLoadingPersonalityInterviewOptions = createSelector(
   selectApplicationsState,
   (state) => state.loadingPersonalityInterviewOptions
 );
+
+export const selectSendEmailLoading = createSelector(
+  selectApplicationsState,
+  (state) => state.loadingSendEmail ?? false
+);
+
+export const selectSendEmailSuccess = createSelector(
+  selectApplicationsState,
+  (state) => state.sendEmailSuccess ?? false
+);
+
+export const selectSendEmailError = createSelector(
+  selectApplicationsState,
+  (state) => state.sendEmailError ?? null
+);
+
+export const selectMustHaveSkills = createSelector(
+  selectApplicationsState,
+  (state) => state.mustHaveSkills ?? []
+);
+
+export const selectLoadingMustHaveSkills = createSelector(
+  selectApplicationsState,
+  (state) => state.loadingMustHaveSkills ?? false
+);
+
+export const selectApplicationViewers = createSelector(
+  selectApplicationsState,
+  (state) => state.viewers
+);
+
+export const selectLoadingApplicationViewers = createSelector(
+  selectApplicationsState,
+  (state) => state.loadingViewers ?? false
+);
+
+export const selectApplicationViewersError = createSelector(
+  selectApplicationsState,
+  (state) => state.viewersError ?? null
+);
+
+

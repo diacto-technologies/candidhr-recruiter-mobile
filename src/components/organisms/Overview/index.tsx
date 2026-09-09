@@ -14,6 +14,7 @@ import { colors } from "../../../theme/colors";
 import { walletIcon } from "../../../assets/svg/wallet";
 import { currencyRuppeIcon } from "../../../assets/svg/currencyruppe";
 import { calenderIcon } from "../../../assets/svg/calender";
+import Icon from "../../../components/atoms/vectoricon";
 import { useStyles } from "./styles";
 import { ApplicationContext, OverviewApplication } from "./overView";
 const fallbackContext: ApplicationContext = {};
@@ -97,7 +98,7 @@ const OverviewCard = () => {
       ctx?.current_ctc ?? application?.current_ctc ?? 0,
     expectedCtc:
       ctx?.expected_ctc ?? application?.expected_ctc ?? 0,
-    noticePeriodMonths:
+    noticePeriodDays:
       ctx?.notice_period_in_months ??
       person?.notice_period_in_months ??
       0,
@@ -107,7 +108,13 @@ const OverviewCard = () => {
       0,
   };
 
-
+  const currentCtcNum = Number(data.currentCtc) || 0;
+  const expectedCtcNum = Number(data.expectedCtc) || 0;
+  const hasBothCtc = currentCtcNum > 0 && expectedCtcNum > 0;
+  const percentageChange = hasBothCtc
+    ? Math.round((Math.abs(expectedCtcNum - currentCtcNum) / currentCtcNum) * 100)
+    : null;
+  const isPositive = expectedCtcNum >= currentCtcNum;
 
   return (
     <View style={styles.card}>
@@ -148,9 +155,9 @@ const OverviewCard = () => {
 
         <View style={styles.textBox}>
           <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>
-            ₹ {data.currentCtc || 0}
+            ₹ {Number(data.currentCtc || 0).toLocaleString('en-IN')}
           </Typography>
-          <Typography variant="P2" color={colors.gray[600]}>
+          <Typography variant="regularTxtsm" color={colors.gray[600]}>
             Current salary
           </Typography>
         </View>
@@ -163,9 +170,35 @@ const OverviewCard = () => {
         </View>
 
         <View style={styles.textBox}>
-          <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>
-            ₹ {data.expectedCtc || 0}
-          </Typography>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>
+              ₹ {Number(data.expectedCtc || 0).toLocaleString('en-IN')}
+            </Typography>
+            {percentageChange !== null && (
+              <View
+                style={[
+                  styles.percentageBadge,
+                  {
+                    backgroundColor: isPositive ? colors.success[50] : colors.error[50],
+                    borderColor: isPositive ? colors.success[200] : colors.error[200],
+                  },
+                ]}
+              >
+                <Icon
+                  name={isPositive ? "trending-up" : "trending-down"}
+                  iconFamily="Feather"
+                  size={12}
+                  color={isPositive ? colors.success[700] : colors.error[700]}
+                />
+                <Typography
+                  variant="mediumTxtxs"
+                  color={isPositive ? colors.success[700] : colors.error[700]}
+                >
+                  {percentageChange}%
+                </Typography>
+              </View>
+            )}
+          </View>
           <Typography variant="regularTxtsm" color={colors.gray[600]}>
             Expected salary
           </Typography>
@@ -179,7 +212,7 @@ const OverviewCard = () => {
 
         <View style={styles.textBox}>
           <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>
-            {data.noticePeriodMonths || 0} months
+            {data.noticePeriodDays || 0} {data.noticePeriodDays === 1 ? "day" : "days"}
           </Typography>
           <Typography variant="regularTxtsm" color={colors.gray[600]}>
             Notice period

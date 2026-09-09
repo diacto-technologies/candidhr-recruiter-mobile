@@ -11,6 +11,9 @@ export { default as ProfileAvatar } from './profileavatar';
 export { default as CompanyLogoAvatar } from './companylogoavatar';
 export { default as FloatingActionButton } from './floatingactionbutton';
 export { UrlInputField } from './urlinputfield';
+export { default as ApplicantTabStatus } from './applicanttabstatus';
+export { CustomAvatar } from './avatar';
+export { default as Divider } from './divider';
 
 // Export types
 export type { IButton } from './button/button';
@@ -20,3 +23,5 @@ export type { IIconButton } from './iconbutton/iconbutton';
 export type { IStatusBar } from './statusbar/statusbar';
 export type { UrlInputFieldProps } from './urlinputfield/urlinputfield.d';
 export type { CompanyLogoAvatarProps } from './companylogoavatar/companylogoavatar.d';
+export type { ApplicantTabStatusProps } from './applicanttabstatus';
+export type { AvatarProps } from './avatar/avatar.d';

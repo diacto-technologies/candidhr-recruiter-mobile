@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
 import { View, FlatList, Pressable, TouchableOpacity } from 'react-native';
 import { SvgXml } from 'react-native-svg';
-import { Typography } from '../../../atoms';
+import { Typography, CustomAvatar } from '../../../atoms';
 import Divider from '../../../atoms/divider';
 import { useStyles } from './styles';
 import { Job } from '../../../../features/jobs';
@@ -94,7 +94,7 @@ const JobCardRow: React.FC<JobCardRowProps> = ({
               Open until : {''}
             </Typography>
             <Typography variant="mediumTxtsm" color={colors.gray[600]}>
-              {formatMonDDYYYY(item.close_date ?? 0)}
+              {formatMonDDYYYY(item.close_date ?? 0, "DD MMM YYYY")}
             </Typography>
           </View>
           <View style={[cardStyles.rowBetween, { alignItems: 'center', minHeight: 24, marginTop: 4 }]}>
@@ -139,7 +139,7 @@ const JobCardRow: React.FC<JobCardRowProps> = ({
             <Divider height={1.2} marginVertical={8} color={colors.mainColors.borderColor} />
           </View>
 
-          <View style={cardStyles.rowBetween}>
+          <View style={cardStyles.bottomRow}>
             <View style={cardStyles.metricsContainer}>
               <View style={cardStyles.metricRow}>
                 <SvgXml xml={eyeVisibleIcon} width={20} height={20} />
@@ -153,12 +153,38 @@ const JobCardRow: React.FC<JobCardRowProps> = ({
                 <Typography variant="mediumTxtsm" color={colors.gray[600]}>
                   {item.applicants_count ?? ''}
                 </Typography>
+                {Boolean(item.applicants_today_count && item.applicants_today_count > 0) && (
+                  <View style={cardStyles.todayBadge}>
+                    <Typography variant="mediumTxtxs" color={colors.brand[700]}>
+                      {`+${item.applicants_today_count}`}
+                    </Typography>
+                  </View>
+                )}
               </View>
             </View>
 
-            <Typography variant="regularTxtsm" color={colors.gray[500]}>
-              {item.owner?.name ?? ''}
-            </Typography>
+            {Boolean(item.owner) && (
+              <View style={cardStyles.ownerContainer}>
+                <CustomAvatar
+                  imageUrl={item.owner.profile_pic}
+                  name={item.owner.name}
+                  size={24}
+                  borderWidth={1.5}
+                  borderColor={colors.base.white}
+                  fontVariant="semiBoldTxtxs"
+                />
+                {Boolean(item.owner.name) && (
+                  <Typography
+                    variant="regularTxtsm"
+                    color={colors.gray[500]}
+                    numberOfLines={1}
+                    style={cardStyles.ownerName}
+                  >
+                    {item.owner.name}
+                  </Typography>
+                )}
+              </View>
+            )}
           </View>
         </Pressable>
       </View>
