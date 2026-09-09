@@ -27,14 +27,19 @@ import { userIcon } from '../../../assets/svg/usericon';
 import { exportIcon } from '../../../assets/svg/export';
 import { editIcon } from '../../../assets/svg/edit';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { useAppSelector } from '../../../hooks/useAppSelector';
+import { organizationalOrigin } from '../../../features/auth';
 import { updateApplicationStatusRequestAction } from '../../../features/applications/actions';
 import { applicantUserIcon } from '../../../assets/svg/applicantUser';
 import { shareIcon } from '../../../assets/svg/share';
+import { copyIcon } from '../../../assets/svg/copy';
 import { screenshotIcon } from '../../../assets/svg/screenshot';
 import { captureAndShareView } from '../../../utils/captureAndShareView';
 import { usePermission } from '../../../hooks/usePermission';
 import { PERMISSIONS } from '../../../utils/permission.constants';
 import { STATUS_OPTIONS } from './config';
+import Clipboard from '@react-native-clipboard/clipboard';
+import { showToastMessage } from '../../../utils/toast';
 
 interface ApplicantCardProps {
   item?: Application | null;
@@ -91,10 +96,13 @@ const ShimmerBox: React.FC<{
   );
 };
 
+const MENU_WIDTH = 185;
+
 const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = false, cardWidth }) => {
   const styles = useStyles();
   const dispatch = useAppDispatch();
   const { can } = usePermission();
+  const origin = useAppSelector(organizationalOrigin);
   const [menuVisible, setMenuVisible] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState<{ left: number; top: number }>({
     left: 0,
@@ -105,12 +113,24 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
   const [changeStatusVisible, setChangeStatusVisible] = useState(false);
   const [shareModalVisible, setShareModalVisible] = useState(false);
 
+  const handleCopyProfileLink = () => {
+    const appId = item?.application || item?.id;
+    if (!appId) {
+      showToastMessage('Profile link not available', 'error');
+      return;
+    }
+    const baseUrl = (origin).replace(/\/+$/, '');
+    const fullUrl = `${baseUrl}/app/user/applicants/${appId}/profile`;
+    Clipboard.setString(fullUrl);
+    showToastMessage('Profile link copied to clipboard', 'success');
+  };
+
   const handleOpenMenu = () => {
     if (menuTriggerRef.current && 'measureInWindow' in menuTriggerRef.current) {
       (menuTriggerRef.current as any).measureInWindow(
         (x: number, y: number, width: number, height: number) => {
           setDropdownPosition({
-            left: Math.max(8, x + width - 160),
+            left: Math.max(8, x + width - MENU_WIDTH),
             top: y + height - 5,
           });
           setMenuVisible(true);
@@ -288,7 +308,7 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
         onClose={() => setMenuVisible(false)}
         position={dropdownPosition}
         iconColor={colors?.gray[400]}
-        width={160}
+        width={MENU_WIDTH}
         iconStyle={{
           marginRight: 12,
         }}
@@ -321,7 +341,11 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
               },
             ]
             : []),
-
+          {
+            label: 'Copy profile link',
+            icon: copyIcon,
+            onPress: handleCopyProfileLink,
+          },
           ...(can(PERMISSIONS.SHARE_APPLICATION)
             ? [
               {

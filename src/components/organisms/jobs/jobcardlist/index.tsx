@@ -49,12 +49,14 @@ const JobCardRow: React.FC<JobCardRowProps> = ({
     [item.users_shared_with],
   );
 
+const MENU_WIDTH = 190;
+
   const handleOpenMenu = () => {
     const trigger = menuTriggerRef.current;
     if (trigger && 'measureInWindow' in trigger) {
       trigger.measureInWindow((x: number, y: number, width: number, height: number) => {
         setDropdownPosition({
-          left: Math.max(8, x + width - 160),
+          left: Math.max(8, x + width - MENU_WIDTH),
           top: y + height - 5,
         });
         setMenuVisible(true);
@@ -64,14 +66,28 @@ const JobCardRow: React.FC<JobCardRowProps> = ({
     }
   };
 
-  const handleCopyJobFormUrl = () => {
+  const handleCopyApplyJobUrl = () => {
     if (!item?.encrypted) {
-      showToastMessage('Job Form URL not available', 'error');
+      showToastMessage('Apply job URL not available', 'error');
       return;
     }
-    const url = `${organizationalOrigin(store.getState())}/app/candidate/${item.encrypted}/`;
+    const origin = organizationalOrigin(store.getState());
+    const baseUrl = (origin).replace(/\/+$/, '');
+    const url = `${baseUrl}/app/candidate/${item.encrypted}/`;
     Clipboard.setString(url);
-    showToastMessage('Job Form URL copied to clipboard', 'success');
+    showToastMessage('Apply job URL copied to clipboard', 'success');
+  };
+
+  const handleCopyJobUrl = () => {
+    if (!item?.id) {
+      showToastMessage('Job URL not available', 'error');
+      return;
+    }
+    const origin = organizationalOrigin(store.getState());
+    const baseUrl = (origin).replace(/\/+$/, '');
+    const url = `${baseUrl}/app/user/jobs/job/${item.id}/overview/`;
+    Clipboard.setString(url);
+    showToastMessage('Job URL copied to clipboard', 'success');
   };
 
   return (
@@ -204,7 +220,7 @@ const JobCardRow: React.FC<JobCardRowProps> = ({
           onClose={() => setMenuVisible(false)}
           position={dropdownPosition}
           iconColor={colors?.gray[400]}
-          width={160}
+          width={MENU_WIDTH}
           iconStyle={{ marginRight: 12 }}
           iconHight={20}
           iconWidth={20}
@@ -215,9 +231,14 @@ const JobCardRow: React.FC<JobCardRowProps> = ({
               onPress: () => onJobPress(item.id),
             },
             {
-              label: 'Copy URL',
+              label: 'Apply job copy URL',
               icon: copyIcon,
-              onPress: handleCopyJobFormUrl,
+              onPress: handleCopyApplyJobUrl,
+            },
+            {
+              label: 'Copy job URL',
+              icon: copyIcon,
+              onPress: handleCopyJobUrl,
             },
             ...(can(PERMISSIONS.SHARE_JOB)
               ? [

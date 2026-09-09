@@ -102,7 +102,7 @@ const JobDetailScreen: React.FC = () => {
             disabled: !ctrl.canPublish || ctrl.jobsLoading || !ctrl.selectedJob,
           }}
           rightButtonProps={{
-            children: "Copy URL",
+            children: "Copy Apply Job URL",
             variant: "contain",
             size: 44,
             buttonColor: styles.rightButton.backgroundColor,
