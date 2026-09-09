@@ -91,7 +91,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     const baseUrl = (origin || 'https://app.candidhr.ai').replace(/\/+$/, '');
     const url = `${baseUrl}/app/user/applicants/${application.id}/profile`;
     Clipboard.setString(url);
-    showToastMessage('Link copied to clipboard', 'success');
+    showToastMessage('Profile link copied to clipboard', 'success');
   };
 
   if (loading) {

@@ -225,10 +225,12 @@ export interface UpdateStageStatusRequest {
 export interface Application {
   id: string;
   name: string;
+  slug?: string;
   candidate: {
     id: string;
     name: string;
     email: string;
+    slug?: string;
     contact?: string | number | null;
     profile_pic?: string | null; // ✅ allows null
     notice_period_in_months: number,
@@ -1583,6 +1585,7 @@ export interface PersonalityScreeningInterviewOptionsResponse {
 
 export interface ApplicationProfileDetails {
   id: string;
+  slug?: string;
   applied_at: string;
   source: string;
   resume_id: string;
@@ -1613,6 +1616,7 @@ export interface Applicant {
   candidate_id: string;
   name: string;
   email: string;
+  slug?: string;
   contact: string;
   linkedin: string;
   github: string;
