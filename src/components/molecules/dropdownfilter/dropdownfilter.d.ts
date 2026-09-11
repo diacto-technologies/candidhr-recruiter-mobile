@@ -5,4 +5,8 @@ export interface DropdownFilterProps {
   onChange: (val: string) => void;
   placeholder?: string;
   options: CommonDropdownOption[];
+  field?: string;
+  showsVerticalScrollIndicator?: boolean;
+  persistentScrollbar?: boolean;
+  maxHeight?: number;
 }

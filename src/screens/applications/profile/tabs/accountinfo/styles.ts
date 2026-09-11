@@ -12,10 +12,18 @@ export const useStyles = () => {
     return StyleSheet.create({
     keyboardView: {
       flex: 1,
+      paddingBottom: insetsTop,
     },
     container: {
-      // flex: 1,
+      flex: 1,
       backgroundColor: colors.gray[50],
+    },
+    scrollContent: {
+      flexGrow: 1,
+      paddingBottom: Math.max(insetsBottom, 16) + 32,
+    },
+    innerWrapper: {
+      flex: 1,
     },
     avatarSection: {
       alignItems: 'center',

@@ -1,4 +1,4 @@
-import { PROD_BASE_URL, QA_BASE_URL } from '@env';
+import {QA_BASE_URL,PROD_BASE_URL } from '@env';
 
 export const config = {
   api: {

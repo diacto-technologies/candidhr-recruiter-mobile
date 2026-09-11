@@ -1,12 +1,12 @@
 import { apiClient } from "../../api/client";
 import { API_ENDPOINTS } from "../../api/endpoints";
-import { UpdateProfileRequest, Profile } from "./types";
+import { UpdateProfilePayload, Profile } from "./types";
 
 export const profileApi = {
   getProfile: async (): Promise<Profile> => {
     return apiClient.get(API_ENDPOINTS.PROFILE.GET);
   },
-  updateProfile: async (data: UpdateProfileRequest): Promise<Profile | { profile: Profile }> => {
+  updateProfile: async (data: UpdateProfilePayload): Promise<Profile | { profile: Profile }> => {
     return apiClient.patch(API_ENDPOINTS.PROFILE.UPDATE, data);
   },
 

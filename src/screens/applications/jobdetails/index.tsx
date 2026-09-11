@@ -53,14 +53,16 @@ const JobDetailScreen: React.FC = () => {
         {ActiveTabComponent && <ActiveTabComponent />}
       </View>
 
-      <SortingAndFilter
-        title="Filters"
-        options={applicantFiltersOption}
-        onPressFilter={() => ctrl.setIsFilterSheetVisible(true)}
-        setSelectedTab={ctrl.setSelectedTab}
-        selectedTab={ctrl.selectedTab}
-        onItemPress={ctrl.handleSort} 
-      />
+      {!isOverviewTab && (
+        <SortingAndFilter
+          title="Filters"
+          options={applicantFiltersOption}
+          onPressFilter={() => ctrl.setIsFilterSheetVisible(true)}
+          setSelectedTab={ctrl.setSelectedTab}
+          selectedTab={ctrl.selectedTab}
+          onItemPress={ctrl.handleSort} 
+        />
+      )}
 
       <BottomSheet
         visible={ctrl.isFilterSheetVisible}

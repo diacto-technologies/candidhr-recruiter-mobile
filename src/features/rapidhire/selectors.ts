@@ -47,3 +47,13 @@ export const selectRapidlyInterviewReportError = createSelector(
   [selectRapidhireState],
   state => state?.interviewReportError ?? null,
 );
+
+export const selectSendingInterviewLink = createSelector(
+  [selectRapidhireState],
+  state => state?.sendingInterviewLink ?? false,
+);
+
+export const selectSendInterviewLinkSuccess = createSelector(
+  [selectRapidhireState],
+  state => state?.sendInterviewLinkSuccess ?? false,
+);

@@ -7,6 +7,8 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { Header, CompanyLogoAvatar, ProfileAvatar } from '../../../../../components';
 import { goBack } from '../../../../../utils/navigationUtils';
@@ -237,19 +239,25 @@ const CompanyInfo = () => {
   return (
     <Fragment>
       <CustomSafeAreaView>
-        <Header title="Account info" backNavigation={true} onBack={() => goBack()} />
+        <Header title="Company info" backNavigation={true} onBack={() => goBack()} />
 
         <KeyboardAvoidingView
           style={styles.keyboardView}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? undefined : undefined}
         >
           <ScrollView
             style={styles.container}
+            contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+            bounces={true}
           >
-            {/* Logo Section */}
-            <View style={styles.logoSection}>
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+              <View style={styles.innerWrapper}>
+                {/* Logo Section */}
+                <View style={styles.logoSection}>
             {/* <View style={styles.avatarContainer}> */}
               <CompanyLogoAvatar
                 imageUrl={profile?.tenant?.logo}
@@ -390,6 +398,8 @@ const CompanyInfo = () => {
               Save
             </Button>
           </View>
+              </View>
+            </TouchableWithoutFeedback>
           </ScrollView>
         </KeyboardAvoidingView>
       </CustomSafeAreaView>

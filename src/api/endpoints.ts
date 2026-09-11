@@ -43,6 +43,7 @@ export const API_ENDPOINTS = {
   RAPIDHIRE: {
     LITE_CANDIDATES: (jobId: string) => `/rapidhire/v1/jobs/${jobId}/lite-candidates`,
     INTERVIEW_REPORT: (applicationId: string) => `/rapidhire/v1/applications/${applicationId}/interview-report`,
+    SEND_INTERVIEW_LINK: (applicationId: string) => `/rapidhire/v1/applications/${applicationId}/send-interview-link`,
   },
   // Applications endpoints
   APPLICATIONS: {

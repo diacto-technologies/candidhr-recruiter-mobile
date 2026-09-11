@@ -61,7 +61,129 @@ export const useApplicantsTabController = () => {
   const loading = isRapidhire ? rapidhireLoading : appsLoading;
   const hasMore = isRapidhire ? rapidhireHasMore : appsHasMore;
   const currentPage = isRapidhire ? rapidhirePagination.page : appsPagination.page;
-  const listData = isRapidhire ? rapidhireCandidates : applications;
+  const filteredRapidhireCandidates = useMemo(() => {
+    if (!isRapidhire || !rapidhireCandidates) return [];
+
+    let result = [...rapidhireCandidates];
+
+    // 1. Name / Search filter
+    const nameSearch = (filters.name || '').trim().toLowerCase();
+    if (nameSearch) {
+      result = result.filter(item => {
+        const name = (item.candidate_name || item.name || item.candidate?.name || '').toLowerCase();
+        const email = (item.candidate_email || item.email || item.candidate?.email || '').toLowerCase();
+        return name.includes(nameSearch) || email.includes(nameSearch);
+      });
+    }
+
+    // 2. Email filter
+    if (filters.email?.trim()) {
+      const emailVal = filters.email.trim().toLowerCase();
+      result = result.filter(item => {
+        const email = (item.candidate_email || item.email || item.candidate?.email || '').toLowerCase();
+        return email.includes(emailVal);
+      });
+    }
+
+    // 3. Applied For filter (job title)
+    if (filters.appliedFor?.trim()) {
+      const appliedForVal = filters.appliedFor.trim().toLowerCase();
+      result = result.filter(item => {
+        const jobTitle = (item.job?.title || '').toLowerCase();
+        return jobTitle.includes(appliedForVal);
+      });
+    }
+
+    // 4. Source filter
+    if (filters.source?.trim()) {
+      const sourceVal = filters.source.trim().toLowerCase();
+      result = result.filter(item => {
+        const source = (item.source || '').toLowerCase();
+        return source === sourceVal || source.includes(sourceVal);
+      });
+    }
+
+    // 5. Source Channel filter
+    if (filters.sourceChannel?.trim()) {
+      const channelVal = filters.sourceChannel.trim().toLowerCase();
+      result = result.filter(item => {
+        const channel = (item.source_channel || item.sourceChannel || '').toLowerCase();
+        return channel === channelVal || channel.includes(channelVal);
+      });
+    }
+
+    // 6. Status filter
+    if (filters.status?.trim()) {
+      const statusVal = filters.status.trim().toLowerCase();
+      result = result.filter(item => {
+        const appStatus = (item.application_status || item.status || item.status_label || '').toLowerCase();
+        return (
+          appStatus === statusVal ||
+          appStatus.includes(statusVal) ||
+          appStatus.replace(/\s+/g, '_') === statusVal
+        );
+      });
+    }
+
+    // 7. Stage filter (matches interview_status or stage_name)
+    if (filters.latestStageName?.trim()) {
+      const stageVal = filters.latestStageName.trim().toLowerCase();
+      result = result.filter(item => {
+        const interviewStatus = (item.interview_status || '').toLowerCase();
+        const stageName = (item.latest_stage?.stage_name || '').toLowerCase();
+        return (
+          interviewStatus === stageVal ||
+          stageName === stageVal ||
+          interviewStatus.includes(stageVal) ||
+          stageName.includes(stageVal) ||
+          interviewStatus.replace(/\s+/g, '_') === stageVal
+        );
+      });
+    }
+
+    // 8. Approved filter
+    if (filters.latestStageStatus?.trim()) {
+      const approvedVal = filters.latestStageStatus.trim().toLowerCase();
+      result = result.filter(item => {
+        const stageStatus = (item.latest_stage_status || item.approval_status || item.status || '').toLowerCase();
+        return (
+          stageStatus === approvedVal ||
+          stageStatus.includes(approvedVal) ||
+          stageStatus.replace(/\s+/g, '_') === approvedVal
+        );
+      });
+    }
+
+    // 9. Sorting
+    const sortBy = filters.sortBy;
+    const sortDir = filters.sortDir || 'desc';
+
+    if (sortBy === 'Applicant name') {
+      result.sort((a, b) => {
+        const nameA = (a.candidate_name || a.name || a.candidate?.name || '').toLowerCase();
+        const nameB = (b.candidate_name || b.name || b.candidate?.name || '').toLowerCase();
+        return sortDir === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+      });
+    } else if (sortBy === 'Resume Score') {
+      result.sort((a, b) => {
+        const scoreA = typeof a.resume_score === 'number' ? a.resume_score : -1;
+        const scoreB = typeof b.resume_score === 'number' ? b.resume_score : -1;
+        return sortDir === 'asc' ? scoreA - scoreB : scoreB - scoreA;
+      });
+    } else if (sortBy === 'Applied' || sortBy === 'Last Update') {
+      result.sort((a, b) => {
+        const dateA = a.applied_at || a.last_updated;
+        const dateB = b.applied_at || b.last_updated;
+        const timeA = dateA ? new Date(dateA).getTime() : 0;
+        const timeB = dateB ? new Date(dateB).getTime() : 0;
+        return sortDir === 'asc' ? timeA - timeB : timeB - timeA;
+      });
+    }
+
+    return result;
+  }, [isRapidhire, rapidhireCandidates, filters]);
+
+  const listData = isRapidhire ? filteredRapidhireCandidates : applications;
 
   const debouncedSearch = useDebouncedValue(filters.name, 400);
 

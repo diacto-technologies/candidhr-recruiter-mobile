@@ -1,5 +1,13 @@
-import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import {
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+  TextInput,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
+} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
   Dropdown as ElementDropdown,
@@ -31,8 +39,13 @@ const CommonDropdown = ({
   multiSelect = false,
   onLoadMore,
   multilineOptions = false,
+  showsVerticalScrollIndicator = true,
+  maxHeight = 200,
 }: CommonDropdownProps) => {
   const [isFocused, setIsFocused] = useState(false);
+  const [scrollOffset, setScrollOffset] = useState(0);
+  const [measuredContainerHeight, setMeasuredContainerHeight] = useState(0);
+  const [measuredContentHeight, setMeasuredContentHeight] = useState(0);
 
   const items = useMemo(() => {
     return (options ?? []).map((item) => ({
@@ -43,6 +56,11 @@ const CommonDropdown = ({
       original: item,
     }));
   }, [options, labelKey, valueKey, usernameKey]);
+
+  useEffect(() => {
+    setScrollOffset(0);
+    setMeasuredContentHeight(0);
+  }, [options]);
 
   const multiValues = useMemo(() => {
     if (!multiSelect) return [];
@@ -81,6 +99,89 @@ const CommonDropdown = ({
     return next != null && next !== '' ? [next] : [];
   };
 
+  // Only scrollable when content overflows maxHeight (e.g. 5+ items; never for 3 items)
+  const isScrollable = useMemo(() => {
+    const estimatedHeight = items.length * 44;
+    const contentH = measuredContentHeight > 0 ? measuredContentHeight : estimatedHeight;
+    return contentH > maxHeight + 5;
+  }, [items.length, measuredContentHeight, maxHeight]);
+
+  const trackPadding = 6;
+  const effectiveContainerHeight = Math.min(
+    measuredContainerHeight > 0 ? measuredContainerHeight : maxHeight,
+    maxHeight
+  );
+  const trackHeight = Math.max(30, effectiveContainerHeight - trackPadding * 2);
+
+  const totalContentHeight = Math.max(
+    measuredContentHeight || 0,
+    items.length * 44
+  );
+
+  const thumbHeight = Math.min(
+    trackHeight,
+    Math.max(
+      28,
+      totalContentHeight > 0
+        ? (effectiveContainerHeight / totalContentHeight) * trackHeight
+        : 28
+    )
+  );
+
+  const maxScroll = Math.max(1, totalContentHeight - effectiveContainerHeight);
+  const maxThumbOffset = Math.max(0, trackHeight - thumbHeight);
+  const thumbOffset = Math.min(
+    maxThumbOffset,
+    Math.max(0, (scrollOffset / maxScroll) * maxThumbOffset)
+  );
+
+  const renderCustomScrollbar = useCallback(() => {
+    if (!isScrollable || !showsVerticalScrollIndicator) return null;
+    return (
+      <View
+        pointerEvents="none"
+        style={[
+          styles.customScrollTrack,
+          {
+            top: trackPadding,
+            height: trackHeight,
+          },
+        ]}
+      >
+        <View
+          style={[
+            styles.customScrollThumb,
+            {
+              height: thumbHeight,
+              transform: [{ translateY: thumbOffset }],
+            },
+          ]}
+        />
+      </View>
+    );
+  }, [isScrollable, showsVerticalScrollIndicator, trackHeight, thumbHeight, thumbOffset]);
+
+  const handleRenderSearch = useCallback(
+    (onSearch: (text: string) => void) => {
+      if (searchable) {
+        return (
+          <View style={styles.searchWrapper}>
+            <TextInput
+              placeholder={searchPlaceholder}
+              placeholderTextColor={colors.gray[400]}
+              style={styles.inputSearchStyle}
+              onChangeText={onSearch}
+              autoCorrect={false}
+            />
+            {renderCustomScrollbar()}
+          </View>
+        );
+      }
+      return renderCustomScrollbar();
+    },
+    [searchable, searchPlaceholder, renderCustomScrollbar]
+  );
+
   return (
     <View style={[styles.wrapper, { zIndex: isFocused ? 999 : 1 }]}>
       <View
@@ -100,25 +201,56 @@ const CommonDropdown = ({
               placeholder=""
               disable={!!disabled}
               style={styles.dropdown}
-              containerStyle={styles.optionsContainer}
+              containerStyle={[styles.optionsContainer, maxHeight ? { maxHeight } : undefined]}
+              maxHeight={maxHeight}
               selectedTextStyle={styles.selectedTextStyleHidden as any}
               selectedStyle={{ height: 0, width: 0, opacity: 0 } as any}
               activeColor={colors.brand[50]}
               mode={mode as any}
               dropdownPosition={dropdownPosition as any}
-              search={searchable}
+              search={searchable || (isScrollable && showsVerticalScrollIndicator)}
               searchPlaceholder={searchPlaceholder}
               searchField={searchField as any}
-              flatListProps={
-                onLoadMore
+              renderInputSearch={handleRenderSearch}
+              showsVerticalScrollIndicator={false}
+              flatListProps={{
+                showsVerticalScrollIndicator: false,
+                scrollEventThrottle: 16,
+                nestedScrollEnabled: true,
+                onScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+                  const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+                  setScrollOffset(contentOffset.y);
+                  if (contentSize?.height > 0) {
+                    setMeasuredContentHeight(contentSize.height);
+                  }
+                  if (layoutMeasurement?.height > 0) {
+                    setMeasuredContainerHeight(layoutMeasurement.height);
+                  }
+                },
+                onContentSizeChange: (_w, h) => {
+                  if (h > 0) {
+                    setMeasuredContentHeight(h);
+                  }
+                },
+                onLayout: (e) => {
+                  const h = e.nativeEvent.layout.height;
+                  if (h > 0) {
+                    setMeasuredContainerHeight(h);
+                  }
+                },
+                ...(onLoadMore
                   ? { keyboardShouldPersistTaps: 'always', onEndReached: onLoadMore, onEndReachedThreshold: 0.3 }
-                  : { keyboardShouldPersistTaps: 'always' }
-              }
+                  : { keyboardShouldPersistTaps: 'always' }),
+              }}
               onFocus={() => {
                 setIsFocused(true);
+                setScrollOffset(0);
                 onOpen?.();
               }}
-              onBlur={() => setIsFocused(false)}
+              onBlur={() => {
+                setIsFocused(false);
+                setScrollOffset(0);
+              }}
               renderSelectedItem={() => <View style={{ height: 0, width: 0 }} />}
               onChange={(next) => {
                 const nextValues = normalizeMultiOnChange(next);
@@ -182,24 +314,55 @@ const CommonDropdown = ({
               placeholder=""
               disable={!!disabled}
               style={styles.dropdown}
-              containerStyle={styles.optionsContainer}
+              containerStyle={[styles.optionsContainer, maxHeight ? { maxHeight } : undefined]}
+              maxHeight={maxHeight}
               selectedTextStyle={styles.selectedTextStyleHidden}
               activeColor={colors.brand[50]}
               mode={mode as any}
               dropdownPosition={dropdownPosition as any}
-              search={searchable}
+              search={searchable || (isScrollable && showsVerticalScrollIndicator)}
               searchPlaceholder={searchPlaceholder}
               searchField={searchField}
-              flatListProps={
-                onLoadMore
+              renderInputSearch={handleRenderSearch}
+              showsVerticalScrollIndicator={false}
+              flatListProps={{
+                showsVerticalScrollIndicator: false,
+                scrollEventThrottle: 16,
+                nestedScrollEnabled: true,
+                onScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+                  const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+                  setScrollOffset(contentOffset.y);
+                  if (contentSize?.height > 0) {
+                    setMeasuredContentHeight(contentSize.height);
+                  }
+                  if (layoutMeasurement?.height > 0) {
+                    setMeasuredContainerHeight(layoutMeasurement.height);
+                  }
+                },
+                onContentSizeChange: (_w, h) => {
+                  if (h > 0) {
+                    setMeasuredContentHeight(h);
+                  }
+                },
+                onLayout: (e) => {
+                  const h = e.nativeEvent.layout.height;
+                  if (h > 0) {
+                    setMeasuredContainerHeight(h);
+                  }
+                },
+                ...(onLoadMore
                   ? { keyboardShouldPersistTaps: 'always', onEndReached: onLoadMore, onEndReachedThreshold: 0.3 }
-                  : { keyboardShouldPersistTaps: 'always' }
-              }
+                  : { keyboardShouldPersistTaps: 'always' }),
+              }}
               onFocus={() => {
                 setIsFocused(true);
+                setScrollOffset(0);
                 onOpen?.();
               }}
-              onBlur={() => setIsFocused(false)}
+              onBlur={() => {
+                setIsFocused(false);
+                setScrollOffset(0);
+              }}
               onChange={(item) => onChange(item.value, item.original)}
               renderItem={(item) => {
                 const isSelected = item.value === value;

@@ -85,6 +85,10 @@ const applicantConfig: FilterConfig[] = [
       { label: "Resume Screening", value: "resume_screening" },
       { label: "Assessment", value: "assessment" },
       { label: "Automated Video Interview", value: "automated_video_interview" },
+      { label: "Completed", value: "completed" },
+      { label: "In Progress", value: "in_progress" },
+      { label: "Not Started", value: "not_started" },
+      { label: "Abandoned", value: "abandoned" },
     ] 
   },
   { 

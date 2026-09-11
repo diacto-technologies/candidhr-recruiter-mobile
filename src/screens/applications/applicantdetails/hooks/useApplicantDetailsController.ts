@@ -37,6 +37,7 @@ import {
   resetRapidlyInterviewReportAction,
 } from '../../../../features/rapidhire/actions';
 import { selectRapidlyInterviewReport } from '../../../../features/rapidhire/selectors';
+import { selectSelectedJob, selectPublishedJobs } from '../../../../features/jobs/selectors';
 
 export const useApplicantDetailsController = (
   application_id: string,
@@ -46,7 +47,29 @@ export const useApplicantDetailsController = (
   const dispatch = useAppDispatch();
   const { can } = usePermission();
 
-  const [activeTab, setActiveTab] = useState(initialTabLabel);
+  const selectedJob = useAppSelector(selectSelectedJob);
+  const publishedJobs = useAppSelector(selectPublishedJobs);
+
+  const normalizedInitialTab = useMemo(() => {
+    if (!initialTabLabel) return 'profile_info';
+    if (initialTabLabel === 'Rapidly Interview' || initialTabLabel === 'rapidly_interview') {
+      return 'rapidly_interview';
+    }
+    return initialTabLabel;
+  }, [initialTabLabel]);
+
+  const [activeTab, setActiveTab] = useState(normalizedInitialTab);
+
+  useEffect(() => {
+    if (initialTabLabel) {
+      const tabToSet =
+        initialTabLabel === 'Rapidly Interview' || initialTabLabel === 'rapidly_interview'
+          ? 'rapidly_interview'
+          : initialTabLabel;
+      setActiveTab(tabToSet);
+    }
+  }, [initialTabLabel, application_id]);
+
   const [resumeModalVisible, setResumeModalVisible] = useState(false);
   const [emailModalVisible, setEmailModalVisible] = useState(false);
   const [viewersModalVisible, setViewersModalVisible] = useState(false);
@@ -87,11 +110,24 @@ export const useApplicantDetailsController = (
       }
     });
 
-    // Add Rapidly Interview tab if rapidhire interview exists or job is rapidhire enabled
+    const isJobRapidly =
+      (selectedJob?.id === job_id && (Boolean(selectedJob?.rapidhire_enabled) || Boolean(selectedJob?.rapidly_interview_mode))) ||
+      publishedJobs?.some((j: any) => j.id === job_id && (Boolean(j?.rapidhire_enabled) || Boolean(j?.rapidly_interview_mode)));
+
+    const isRapidlyRequested =
+      initialTabLabel === 'Rapidly Interview' ||
+      initialTabLabel === 'rapidly_interview' ||
+      activeTab === 'Rapidly Interview' ||
+      activeTab === 'rapidly_interview';
+
+    // Add Rapidly Interview tab if requested, report exists, or job is rapidhire enabled
     if (
+      isRapidlyRequested ||
+      isJobRapidly ||
       rapidlyInterviewReport?.has_interview ||
       rapidlyInterviewReport?.recording_url ||
-      (application as any)?.job?.rapidhire_enabled
+      (application as any)?.job?.rapidhire_enabled ||
+      (application as any)?.rapidhire_enabled
     ) {
       if (!baseTabs.some((t) => t.key === 'rapidly_interview')) {
         baseTabs.push({ key: 'rapidly_interview', label: 'Rapidly Interview' });
@@ -99,7 +135,7 @@ export const useApplicantDetailsController = (
     }
 
     return baseTabs;
-  }, [stages, rapidlyInterviewReport, application]);
+  }, [stages, rapidlyInterviewReport, application, initialTabLabel, activeTab, selectedJob, publishedJobs, job_id]);
 
   // Effects
   useEffect(() => {

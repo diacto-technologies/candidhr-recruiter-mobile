@@ -29,5 +29,8 @@ export interface CommonDropdownProps {
   dropdownPosition?: 'auto' | 'top' | 'bottom';
   onOpen?: () => void;
   onLoadMore?: () => void;
+  showsVerticalScrollIndicator?: boolean;
+  persistentScrollbar?: boolean;
+  maxHeight?: number;
 }
 

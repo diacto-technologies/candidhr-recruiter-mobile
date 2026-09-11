@@ -35,6 +35,10 @@ export const LABEL_MAP: Record<string, Record<string, string>> = {
     resume_screening: "Resume Screening",
     assessment: "Assessment",
     automated_video_interview: "Automated Video Interview",
+    completed: "Completed",
+    in_progress: "In Progress",
+    not_started: "Not Started",
+    abandoned: "Abandoned",
   },
   latestStageStatus: {
     approved: "Approved",
