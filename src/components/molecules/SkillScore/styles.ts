@@ -26,12 +26,31 @@ export const useStyles = () => StyleSheet.create({
   },
 
   tabBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
     paddingVertical: 4,
-    paddingHorizontal: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingHorizontal: 10,
+    justifyContent: "center",
     borderRadius: 8,
     backgroundColor: colors.gray[200],
+  },
+
+  countBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    minWidth: 18,
+  },
+
+  countActive: {
+    backgroundColor: colors.brand[100],
+  },
+
+  countInactive: {
+    backgroundColor: colors.gray[100],
   },
 
   skillRow: {

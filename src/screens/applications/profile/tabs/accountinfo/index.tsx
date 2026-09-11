@@ -5,6 +5,8 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { Header, ProfileAvatar } from '../../../../../components';
 import { goBack } from '../../../../../utils/navigationUtils';
@@ -23,9 +25,7 @@ import {
   selectProfile,
   selectProfileLoading,
 } from '../../../../../features/profile/selectors';
-import { updateProfileRequestAction, getProfileRequestAction } from '../../../../../features/profile/actions';
-import { apiClient } from '../../../../../api/client';
-import { API_ENDPOINTS } from '../../../../../api/endpoints';
+import { updateProfileRequestAction } from '../../../../../features/profile/actions';
 import PhoneInput from '../../../../../components/atoms/phonefield';
 import { editAvatarIcon } from '../../../../../assets/svg/editavatar';
 import { SetProfilePhotoModal } from '../../../../../components/organisms/SetProfilePhotoModal';
@@ -50,8 +50,6 @@ const AccountInfo = () => {
   const [jobTitle, setJobTitle] = useState('');
   const [selectedImage, setSelectedImage] = useState<Asset | null>(null);
 
-  // Local loading state for image upload
-  const [isUploading, setIsUploading] = useState(false);
   const [showSetProfileModal, setShowSetProfileModal] = useState(false);
   const pendingPickerRef = useRef<PendingPickerAction | null>(null);
   const pickerBusyRef = useRef(false);
@@ -72,6 +70,7 @@ const AccountInfo = () => {
       setLocation(profile.state || '');
       setRole(profile.role?.name || '');
       setJobTitle(profile.position || '');
+      setSelectedImage(null);
     }
   }, [profile]);
 
@@ -82,7 +81,7 @@ const AccountInfo = () => {
   const phoneIncomplete =
     phoneDigits.length > 0 && phoneDigits.length < 10;
 
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(() => {
     const parsedContact =
       phoneNumber && phoneNumber.trim()
         ? parseInt(phoneNumber.replace(/\s/g, ''), 10)
@@ -93,84 +92,55 @@ const AccountInfo = () => {
       return;
     }
 
-  // =========================
-  // ✅ IMAGE CASE (FormData)
-  // =========================
-  if (selectedImage?.uri) {
-    const formData = new FormData();
+    if (selectedImage?.uri) {
+      const formData = new FormData();
 
-    // Basic fields
-    formData.append('name', fullName?.trim() || '');
-    formData.append('email', email?.trim() || '');
+      formData.append('name', fullName?.trim() || '');
+      formData.append('email', email?.trim() || '');
+      formData.append('country', country?.trim() || '');
+      formData.append('state', location?.trim() || '');
 
-    // Country & State
-    formData.append('country', country?.trim() || '');
-    formData.append('state', location?.trim() || '');
+      if (parsedContact && !isNaN(parsedContact)) {
+        formData.append('contact', String(parsedContact));
+      }
 
-    // Phone
-    if (parsedContact && !isNaN(parsedContact)) {
-      formData.append('contact', String(parsedContact));
+      formData.append('position', jobTitle?.trim() ?? '');
+
+      const imageUri =
+        Platform.OS === 'ios'
+          ? selectedImage.uri?.replace('file://', '')
+          : selectedImage.uri;
+
+      formData.append('profile_pic', {
+        uri: imageUri,
+        name: selectedImage.fileName || `profile_${Date.now()}.jpg`,
+        type: selectedImage.type || 'image/jpeg',
+      } as any);
+
+      dispatch(updateProfileRequestAction(formData));
+    } else {
+      const updatePayload: Record<string, any> = {
+        name: fullName?.trim() || null,
+        email: email?.trim() || null,
+        country: country?.trim() || null,
+        state: location?.trim() || null,
+        position: jobTitle?.trim() || null,
+        contact: parsedContact && !isNaN(parsedContact) ? parsedContact : null,
+      };
+
+      dispatch(updateProfileRequestAction(updatePayload));
     }
-
-    formData.append('position', jobTitle?.trim() ?? '');
-
-    // Image
-    const imageUri =
-      Platform.OS === 'ios'
-        ? selectedImage.uri?.replace('file://', '')
-        : selectedImage.uri;
-
-    formData.append('profile_pic', {
-      uri: imageUri,
-      name: selectedImage.fileName || `profile_${Date.now()}.jpg`,
-      type: selectedImage.type || 'image/jpeg',
-    } as any);
-
-    try {
-      setIsUploading(true);
-
-      await apiClient.patch(API_ENDPOINTS.PROFILE.UPDATE, formData);
-
-      setSelectedImage(null);
-      dispatch(getProfileRequestAction());
-      showToastMessage('Profile updated successfully', 'success');
-    } catch (error: any) {
-      console.log('Upload error:', error);
-      showToastMessage(error.message || 'Failed to update profile', 'error');
-    } finally {
-      setIsUploading(false);
-    }
-  }
-
-  // =========================
-  // ✅ NORMAL CASE (JSON)
-  // =========================
-  else {
-    const updatePayload: Record<string, any> = {
-      name: fullName?.trim() || null,
-      email: email?.trim() || null,
-
-      // Country & State
-      country: country?.trim() || null,
-      state: location?.trim() || null,
-
-      position: jobTitle?.trim() || null,
-      contact: parsedContact && !isNaN(parsedContact) ? parsedContact : null,
-    };
-
-    dispatch(updateProfileRequestAction(updatePayload));
-  }
-}, [
-  dispatch,
-  fullName,
-  email,
-  phoneNumber,
-  phoneDigits,
-  location,
-  country,
-  jobTitle,
-  selectedImage,
-]);
+  }, [
+    dispatch,
+    fullName,
+    email,
+    phoneNumber,
+    phoneDigits,
+    location,
+    country,
+    jobTitle,
+    selectedImage,
+  ]);
 
   const PROFILE_IMAGE_SIZE = 500;
 
@@ -290,16 +260,21 @@ const AccountInfo = () => {
         <Header title="Account info" backNavigation={true} onBack={() => goBack()} />
         <KeyboardAvoidingView
           style={styles.keyboardView}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? undefined : 'height'}
         >
           <ScrollView
             style={styles.container}
+            contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="always"
-            bounces={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+            bounces={true}
           >
-            {/* Avatar Section */}
-            <View style={styles.avatarSection}>
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+              <View style={styles.innerWrapper}>
+                {/* Avatar Section */}
+                <View style={styles.avatarSection}>
               <View style={styles.avatarContainer}>
                 <ProfileAvatar
                   imageUrl={selectedImage?.uri || profile?.profile_pic}
@@ -432,12 +407,14 @@ const AccountInfo = () => {
              <View style={styles.buttonContainer}>
               <Button
                 onPress={handleSave}
-                isLoading={loading || isUploading}
+                isLoading={loading}
                 style={styles.saveButton}
               >
                 Save
               </Button>
             </View>
+              </View>
+            </TouchableWithoutFeedback>
           </ScrollView>
         </KeyboardAvoidingView>
       </CustomSafeAreaView>

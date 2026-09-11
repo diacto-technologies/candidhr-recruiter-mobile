@@ -152,4 +152,31 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.error[500],
   },
+  customScrollTrack: {
+    position: 'absolute',
+    right: 3,
+    width: 4,
+    borderRadius: 2,
+    backgroundColor: colors.gray[100],
+    zIndex: 9999,
+    elevation: 10,
+  },
+  customScrollThumb: {
+    width: 4,
+    borderRadius: 2,
+    backgroundColor: colors.mainColors?.scrollBar || colors.gray[400],
+  },
+  searchWrapper: {
+    position: 'relative',
+  },
+  inputSearchStyle: {
+    height: 40,
+    fontSize: 14,
+    fontFamily: Fonts.InterRegular,
+    color: colors.gray[900],
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray[200],
+  },
 });
+

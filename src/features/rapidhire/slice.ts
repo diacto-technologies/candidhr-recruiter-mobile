@@ -9,6 +9,9 @@ import {
   getRapidlyInterviewReportSuccessAction,
   getRapidlyInterviewReportFailureAction,
   resetRapidlyInterviewReportAction,
+  sendInterviewLinkRequestAction,
+  sendInterviewLinkSuccessAction,
+  sendInterviewLinkFailureAction,
 } from './actions';
 
 const initialState: RapidhireState = {
@@ -25,6 +28,10 @@ const initialState: RapidhireState = {
   interviewReport: null,
   loadingInterviewReport: false,
   interviewReportError: null,
+
+  sendingInterviewLink: false,
+  sendInterviewLinkSuccess: false,
+  sendInterviewLinkError: null,
 };
 
 const rapidhireSlice = createSlice({
@@ -88,6 +95,33 @@ const rapidhireSlice = createSlice({
         state.interviewReport = null;
         state.loadingInterviewReport = false;
         state.interviewReportError = null;
+      })
+
+      // Send Interview Link
+      .addCase(sendInterviewLinkRequestAction, state => {
+        state.sendingInterviewLink = true;
+        state.sendInterviewLinkSuccess = false;
+        state.sendInterviewLinkError = null;
+      })
+      .addCase(sendInterviewLinkSuccessAction, (state, action) => {
+        state.sendingInterviewLink = false;
+        state.sendInterviewLinkSuccess = true;
+        state.sendInterviewLinkError = null;
+        const { applicationId, response } = action.payload;
+        const candidate = state.candidates.find(
+          c => c.application === applicationId || c.id === applicationId
+        );
+        if (candidate) {
+          candidate.interview_invite_url = response.join_url;
+          candidate.interview_invite_sent_at = response.sent_at;
+          candidate.interview_invite_count = response.invite_count;
+          candidate.interview_invite_expires_at = response.token_expires_at;
+        }
+      })
+      .addCase(sendInterviewLinkFailureAction, (state, action) => {
+        state.sendingInterviewLink = false;
+        state.sendInterviewLinkSuccess = false;
+        state.sendInterviewLinkError = action.payload;
       });
   },
 });

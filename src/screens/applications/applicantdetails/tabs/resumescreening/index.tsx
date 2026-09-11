@@ -224,7 +224,7 @@ export default function ResumeScreening() {
         />
 
         <SkillScore
-          title="Skills"
+          title="Skill Intelligence"
           isloading={loading}
           data={skills}
           mustHaveSkills={mustHaveSkills}

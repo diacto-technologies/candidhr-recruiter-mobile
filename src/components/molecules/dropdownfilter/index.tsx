@@ -9,6 +9,9 @@ const DropdownFilter: React.FC<DropdownFilterProps> = ({
   onChange,
   placeholder,
   options,
+  showsVerticalScrollIndicator = true,
+  persistentScrollbar,
+  maxHeight,
 }) => {
   const styles = useStyles();
 
@@ -21,6 +24,9 @@ const DropdownFilter: React.FC<DropdownFilterProps> = ({
         labelKey="label"
         valueKey="value"
         onChange={onChange}
+        showsVerticalScrollIndicator={showsVerticalScrollIndicator}
+        persistentScrollbar={persistentScrollbar}
+        maxHeight={maxHeight}
       />
     </View>
   );

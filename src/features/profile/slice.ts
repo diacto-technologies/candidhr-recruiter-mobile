@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ProfileState, Profile } from "./types";
+import { ProfileState, Profile, Role } from "./types";
 
 const initialState: ProfileState = {
   profile: null,
@@ -30,7 +30,29 @@ const profileSlice = createSlice({
     },
     updateProfileSuccess: (state, action: PayloadAction<Profile>) => {
       state.loading = false;
-      state.profile = action.payload;
+      if (state.profile) {
+        const existingRole = state.profile.role;
+        const incomingRole = action.payload?.role;
+        const mergedRole: Role = {
+          ...(existingRole || {}),
+          ...(incomingRole || {}),
+          id: incomingRole?.id ?? existingRole?.id ?? 0,
+          name: incomingRole?.name ?? existingRole?.name ?? '',
+          permissions:
+            incomingRole?.permissions && incomingRole.permissions.length > 0
+              ? incomingRole.permissions
+              : existingRole?.permissions ?? [],
+        };
+
+        state.profile = {
+          ...state.profile,
+          ...action.payload,
+          role: mergedRole,
+          tenant: action.payload?.tenant ?? state.profile.tenant,
+        };
+      } else {
+        state.profile = action.payload;
+      }
       state.error = null;
     },
     updateProfileFailure: (state, action: PayloadAction<string>) => {

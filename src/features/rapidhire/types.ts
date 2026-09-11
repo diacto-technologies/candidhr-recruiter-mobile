@@ -236,4 +236,18 @@ export interface RapidhireState {
   interviewReport: RapidlyInterviewReportResponse | null;
   loadingInterviewReport: boolean;
   interviewReportError: string | null;
+
+  // Send Interview Link state
+  sendingInterviewLink: boolean;
+  sendInterviewLinkSuccess: boolean;
+  sendInterviewLinkError: string | null;
+}
+
+export interface SendInterviewLinkResponse {
+  sent: boolean;
+  email: string;
+  join_url: string;
+  sent_at: string;
+  invite_count: number;
+  token_expires_at: string;
 }

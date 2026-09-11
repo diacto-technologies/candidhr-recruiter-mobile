@@ -16,6 +16,13 @@ export const useStyles = () => {
       flex: 1,
       backgroundColor: colors.base.white,
     },
+    scrollContent: {
+      flexGrow: 1,
+      paddingBottom: Math.max(insetsBottom, 16) + 32,
+    },
+    innerWrapper: {
+      flex: 1,
+    },
     logoSection: {
       alignItems: 'center',
       paddingVertical: 24,

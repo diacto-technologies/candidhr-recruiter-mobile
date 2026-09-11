@@ -4,6 +4,7 @@ import {
   GetRapidhireCandidatesParams,
   RapidhireCandidatesResponse,
   RapidlyInterviewReportResponse,
+  SendInterviewLinkResponse,
 } from './types';
 
 export const rapidhireApi = {
@@ -25,5 +26,22 @@ export const rapidhireApi = {
     const endpoint = API_ENDPOINTS.RAPIDHIRE.INTERVIEW_REPORT(applicationId);
     const res = await apiClient.get(endpoint);
     return res?.data ?? res;
+  },
+
+  sendInterviewLink: async (applicationId: string): Promise<SendInterviewLinkResponse> => {
+    const endpoint = API_ENDPOINTS.RAPIDHIRE.SEND_INTERVIEW_LINK(applicationId);
+    console.log('[rapidhireApi.sendInterviewLink] Request -> POST', endpoint);
+    try {
+      const res = await apiClient.post(endpoint);
+      console.log('[rapidhireApi.sendInterviewLink] Response ->', JSON.stringify(res?.data ?? res, null, 2));
+      return res?.data ?? res;
+    } catch (error: any) {
+      console.log(
+        '[rapidhireApi.sendInterviewLink] Error ->',
+        error?.response?.status,
+        error?.response?.data || error?.message || error
+      );
+      throw error;
+    }
   },
 };

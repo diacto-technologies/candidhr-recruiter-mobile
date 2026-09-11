@@ -4,6 +4,7 @@ import {
   GetRapidhireCandidatesParams,
   RapidhireCandidatesResponse,
   RapidlyInterviewReportResponse,
+  SendInterviewLinkResponse,
 } from './types';
 
 // Candidates List Actions
@@ -40,4 +41,18 @@ export const getRapidlyInterviewReportFailureAction = createAction<string>(
 
 export const resetRapidlyInterviewReportAction = createAction(
   RAPIDHIRE_ACTION_TYPES.RESET_INTERVIEW_REPORT,
+);
+
+// Send Interview Link Actions
+export const sendInterviewLinkRequestAction = createAction<string>(
+  RAPIDHIRE_ACTION_TYPES.SEND_INTERVIEW_LINK_REQUEST,
+);
+
+export const sendInterviewLinkSuccessAction = createAction<{
+  applicationId: string;
+  response: SendInterviewLinkResponse;
+}>(RAPIDHIRE_ACTION_TYPES.SEND_INTERVIEW_LINK_SUCCESS);
+
+export const sendInterviewLinkFailureAction = createAction<string>(
+  RAPIDHIRE_ACTION_TYPES.SEND_INTERVIEW_LINK_FAILURE,
 );

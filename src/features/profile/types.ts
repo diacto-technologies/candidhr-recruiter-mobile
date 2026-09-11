@@ -83,12 +83,14 @@ export interface ProfileState {
 }
 
 export interface UpdateProfileRequest {
-  name?: string;
-  contact?: number;
-  position?: string;
-  state?: string;
-  country?: string;
-  profile_pic?: string;
+  name?: string | null;
+  contact?: number | null;
+  position?: string | null;
+  state?: string | null;
+  country?: string | null;
+  profile_pic?: any;
   bio?: string;
   location?: string;
 }
+
+export type UpdateProfilePayload = UpdateProfileRequest | FormData;

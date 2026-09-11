@@ -9,12 +9,13 @@ import {
   updateProfileFailure,
 } from "./slice";
 import { profileApi } from "./api";
+import { showToastMessage } from "../../utils/toast";
+import { UpdateProfilePayload } from "./types";
 
 function* getProfileWorker(): Generator<any, void, any> {
   try {
     // yield put(getProfileRequest());
     const response = yield call(profileApi.getProfile);
-    console.log(response,"responseresponseresponseresponse")
     yield put(getProfileSuccess(response));
   } catch (error: any) {
     if (__DEV__) {
@@ -24,14 +25,27 @@ function* getProfileWorker(): Generator<any, void, any> {
   }
 }
 
-function* updateProfileWorker(action: { type: string; payload: any }): Generator<any, void, any> {
+function* updateProfileWorker(action: { type: string; payload: UpdateProfilePayload }): Generator<any, void, any> {
   try {
     yield put(updateProfileRequest(action.payload));
     const response = yield call(profileApi.updateProfile, action.payload);
     const nextProfile = response?.profile ?? response;
     yield put(updateProfileSuccess(nextProfile));
+
+    try {
+      const fullProfile = yield call(profileApi.getProfile);
+      yield put(getProfileSuccess(fullProfile));
+    } catch (fetchError) {
+      if (__DEV__) {
+        console.log("Failed to re-fetch full profile after update:", fetchError);
+      }
+    }
+
+    showToastMessage("Profile updated successfully", "success");
   } catch (error: any) {
-    yield put(updateProfileFailure(error.message || "Failed to update profile"));
+    const message = error?.message || "Failed to update profile";
+    yield put(updateProfileFailure(message));
+    showToastMessage(message, "error");
   }
 }
 

@@ -13,7 +13,8 @@ import InfoTooltip from "../../../components/atoms/Infotooltip";
 import { infoIcon } from "../../../assets/svg/infoicon";
 import TagList from "../taglist";
 
-const TABS = ["All", "Matched", "Unmatched"];
+const TABS = ["All", "Matched", "Gap"] as const;
+type TabType = (typeof TABS)[number];
 
 const SkillScoreShimmer = () => {
   const styles = useStyles();
@@ -58,7 +59,7 @@ const SkillScoreShimmer = () => {
 
 const SkillScore = ({ title, overall, data, isloading, mustHaveSkills }: Props) => {
   const styles = useStyles();
-  const [activeTab, setActiveTab] = useState("All");
+  const [activeTab, setActiveTab] = useState<TabType>("All");
   const [expanded, setExpanded] = useState(false);
 
   const filteredData = React.useMemo(() => {
@@ -67,6 +68,23 @@ const SkillScore = ({ title, overall, data, isloading, mustHaveSkills }: Props) 
       activeTab === "Matched" ? item.matched : !item.matched
     );
   }, [activeTab, data]);
+
+  const counts = React.useMemo(() => {
+    let matched = 0;
+    let gap = 0;
+    (data ?? []).forEach((item) => {
+      if (item.matched) {
+        matched++;
+      } else {
+        gap++;
+      }
+    });
+    return {
+      All: data?.length ?? 0,
+      Matched: matched,
+      Gap: gap,
+    };
+  }, [data]);
 
   const visibleData = expanded ? filteredData : filteredData.slice(0, 5);
   if (isloading) {
@@ -100,28 +118,48 @@ const SkillScore = ({ title, overall, data, isloading, mustHaveSkills }: Props) 
 
       {/* Tabs */}
       <View style={styles.tabsRow}>
-        {TABS.map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            onPress={() => {
-              setActiveTab(tab);
-              setExpanded(false); // reset when switching tabs
-            }}
-            style={[
-              styles.tabBtn,
-              activeTab === tab ? styles.tabBtnActive : styles.tabBtnDeactive,
-            ]}
-          >
-            <Typography
-              variant="mediumTxtsm"
-              color={
-                activeTab === tab ? colors.brand[700] : colors.gray[700]
-              }
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab;
+          const count = counts[tab];
+
+          return (
+            <TouchableOpacity
+              key={tab}
+              onPress={() => {
+                setActiveTab(tab);
+                setExpanded(false); // reset when switching tabs
+              }}
+              style={[
+                styles.tabBtn,
+                isActive ? styles.tabBtnActive : styles.tabBtnDeactive,
+              ]}
             >
-              {tab}
-            </Typography>
-          </TouchableOpacity>
-        ))}
+              <Typography
+                variant="mediumTxtsm"
+                color={
+                  isActive ? colors.brand[700] : colors.gray[700]
+                }
+              >
+                {tab}
+              </Typography>
+              <View
+                style={[
+                  styles.countBadge,
+                  isActive ? styles.countActive : styles.countInactive,
+                ]}
+              >
+                <Typography
+                  variant="mediumTxtxs"
+                  color={
+                    isActive ? colors.brand[700] : colors.gray[700]
+                  }
+                >
+                  {count}
+                </Typography>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       {/* Skill List */}
