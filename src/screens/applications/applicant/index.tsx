@@ -60,6 +60,7 @@ const ApplicantScreen = () => {
     <CustomSafeAreaView>
       <AppHeader
         title="Applicants"
+        badgeCount={ctrl.loading && ctrl.totalCount === 0 ? undefined : ctrl.totalCount}
         right={
           ctrl.canExport ? (
             <React.Fragment>

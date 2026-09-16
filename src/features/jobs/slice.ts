@@ -1,5 +1,12 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { JobsState, Job, CreateJobRequest, UpdateJobRequest, JobsListApiResponse, GetJobsParams, JobDetail, JobNamesListApiResponse } from "./types";
+import { createSlice, PayloadAction, createAction } from "@reduxjs/toolkit";
+import { REHYDRATE } from "redux-persist";
+import { JobsState, Job, CreateJobRequest, UpdateJobRequest, JobsListApiResponse, GetJobsParams, JobDetail, JobNamesListApiResponse, JobNameItem } from "./types";
+
+interface RehydrateJobsPayload {
+  jobs?: Partial<JobsState>;
+}
+
+const rehydrateAction = createAction<RehydrateJobsPayload | undefined>(REHYDRATE);
 
 export const jobsInitialState: JobsState = {
   publishedJobs: [],
@@ -464,6 +471,33 @@ const jobsSlice = createSlice({
       state.favouritesCount = 0;
     },
 
+  },
+  extraReducers: (builder) => {
+    builder.addCase(rehydrateAction, (state, action) => {
+      if (action.payload?.jobs?.favouriteJobIds) {
+        state.favouriteJobIds = action.payload.jobs.favouriteJobIds;
+        state.favouritesCount = action.payload.jobs.favouriteJobIds.length;
+      }
+      state.filters = {
+        title: "",
+        experience: "",
+        employmentType: "",
+        location: "",
+        owner_name: "",
+        closeDate: "",
+        closeDateTo: "",
+        sortBy: "",
+        sortDir: "desc",
+        orderBy: "",
+      };
+      state.activeTab = "Published";
+      state.publishedPagination = { ...jobsInitialState.publishedPagination };
+      state.unpublishedPagination = { ...jobsInitialState.unpublishedPagination };
+      state.favouritesPagination = { ...jobsInitialState.favouritesPagination };
+      state.publishedHasMore = true;
+      state.unpublishedHasMore = true;
+      state.favouritesHasMore = true;
+    });
   },
 });
 

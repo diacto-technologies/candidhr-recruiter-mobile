@@ -77,6 +77,11 @@ export const selectApplicationsPagination = createSelector(
   (applications) => applications.pagination
 );
 
+export const selectApplicationsTotalCount = createSelector(
+  [selectApplicationsPagination],
+  (pagination) => pagination.total
+);
+
 export const selectApplicationsHasMore = createSelector(
   [selectApplicationsState],
   (state) => state.hasMore

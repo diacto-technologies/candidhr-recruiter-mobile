@@ -25,6 +25,7 @@ import { RapidlyInterviewCard, RapidlyInterviewItem } from './components/Rapidly
 import { useStyles } from './styles';
 import { InterviewBreakdownModal } from './components/InterviewBreakdownModal';
 import { InterviewMonitoringModal } from './components/InterviewMonitoringModal';
+import { buildRapidlyInterviewItems } from './interviewSyncUtils';
 
 interface RapidlyInterviewProps {
   application_id: string;
@@ -51,131 +52,38 @@ export default function RapidlyInterview({ application_id }: RapidlyInterviewPro
   const candidateName = reportData?.candidate_name || application?.applicant?.name || 'Candidate';
   const jobTitle = application?.job?.title || 'Job';
 
-  const questions = useMemo(() => {
-    if (reportData?.report?.questions?.length) {
-      return reportData.report.questions;
-    }
-    const aiTurns = reportData?.report?.turns?.filter(t => t.role === 'ai') ?? [];
-    return aiTurns.map((turn, index) => ({
-      text: turn.text,
-      order: index,
-    }));
-  }, [reportData?.report?.questions, reportData?.report?.turns]);
-
-  const candidateTurns = useMemo(() => {
-    return reportData?.report?.turns?.filter(t => t.role === 'candidate') ?? [];
-  }, [reportData?.report?.turns]);
-
-  const candidateTimelineItems = useMemo(() => {
-    const items = reportData?.timeline ?? [];
-    if (!items.length) return [];
-    const candidateOnly = items.filter(item => !item.role || (item.role as string) === 'candidate');
-    if (candidateOnly.length > 0) return candidateOnly;
-    return items;
-  }, [reportData?.timeline]);
-
   const videoResponses: RapidlyInterviewItem[] = useMemo(() => {
-    if (!reportData) return [];
+    return buildRapidlyInterviewItems(reportData);
+  }, [reportData]);
 
-    const count = Math.max(
-      questions.length,
-      candidateTurns.length,
-      candidateTimelineItems.length,
-      1
-    );
-    const list: RapidlyInterviewItem[] = [];
-    const allTimelineItems = reportData?.timeline ?? [];
-    const totalDur =
-      reportData.duration_seconds ||
-      reportData?.report?.assessment?.delivery?.total_time_sec ||
-      (allTimelineItems.length > 0
-        ? Math.round(Math.max(...allTimelineItems.map(t => t.endMs || t.startMs || 0)) / 1000)
-        : 0);
-    const aiTimelineItems = allTimelineItems.filter(item => item.role === 'ai');
+  const calculatedTotalDuration = useMemo(() => {
+    const timelineMaxSec =
+      reportData?.timeline && reportData.timeline.length > 0
+        ? Math.round(
+            Math.max(...reportData.timeline.map((t) => t.endMs || t.startMs || 0)) / 1000
+          )
+        : 0;
 
-    for (let i = 0; i < count; i++) {
-      const qText = questions[i]?.text || candidateTurns[i]?.text || (i === 0 ? 'Interview Question' : `Question ${i + 1}`);
-      const answerTurn = candidateTurns[i];
-      const timelineItem = candidateTimelineItems[i] || aiTimelineItems[i] || allTimelineItems[i];
+    const responseMaxSec =
+      videoResponses && videoResponses.length > 0
+        ? Math.max(...videoResponses.map((r) => r.endTime || (r.startTime + r.duration) || 0))
+        : 0;
 
-      let startTimeSec = 0;
-      if (i === 0) {
-        startTimeSec = 0;
-      } else {
-        if (aiTimelineItems[i]?.startMs !== undefined && aiTimelineItems[i].startMs > 0) {
-          startTimeSec = aiTimelineItems[i].startMs / 1000;
-        } else if (candidateTimelineItems[i]?.startMs !== undefined && candidateTimelineItems[i].startMs > 0) {
-          startTimeSec = candidateTimelineItems[i].startMs / 1000;
-        } else if (timelineItem?.startMs !== undefined && timelineItem.startMs > 0) {
-          startTimeSec = timelineItem.startMs / 1000;
-        }
+    const candidates = [
+      timelineMaxSec,
+      responseMaxSec,
+      reportData?.duration_seconds || 0,
+      reportData?.report?.assessment?.delivery?.total_time_sec || 0,
+    ];
 
-        const prevStart = list[i - 1]?.startTime || 0;
-        if (startTimeSec <= prevStart) {
-          if (totalDur > 0) {
-            startTimeSec = Math.round((i * totalDur) / count);
-          } else {
-            startTimeSec = prevStart + (list[i - 1]?.duration || 30);
-          }
-        }
-      }
+    const maxVal = Math.max(...candidates);
+    return maxVal > 0 ? maxVal : undefined;
+  }, [reportData, videoResponses]);
 
-      let durationSec = 0;
-      if (timelineItem?.endMs && timelineItem?.startMs && timelineItem.endMs > timelineItem.startMs) {
-        durationSec = Math.max(1, Math.round((timelineItem.endMs - timelineItem.startMs) / 1000));
-      } else if (totalDur > 0) {
-        const nextStart = i < count - 1 ? Math.round(((i + 1) * totalDur) / count) : totalDur;
-        durationSec = Math.max(1, nextStart - startTimeSec);
-      } else {
-        durationSec = 30;
-      }
-
-      const endTimeSec = startTimeSec + durationSec;
-
-      const segments = timelineItem?.words?.length
-        ? [
-          {
-            text: answerTurn?.text || timelineItem.text,
-            start: 0,
-            end: durationSec,
-            words: timelineItem.words.map(w => {
-              const wStart = w.start != null ? w.start : 0;
-              const wEnd = w.end != null ? w.end : 0;
-              const baseMs = timelineItem.startMs || 0;
-              const relStart = baseMs > 0 && wStart >= baseMs ? (wStart - baseMs) / 1000 : wStart / 1000;
-              const relEnd = baseMs > 0 && wEnd >= baseMs ? (wEnd - baseMs) / 1000 : wEnd / 1000;
-              return {
-                word: w.w,
-                start: Math.max(0, relStart),
-                end: Math.max(0, relEnd),
-              };
-            }),
-          },
-        ]
-        : [
-          {
-            text: answerTurn?.text || reportData?.report?.transcript || '',
-            start: 0,
-            end: durationSec,
-          },
-        ];
-
-      list.push({
-        id: `rapidly-q-${i}-${startTimeSec}`,
-        questionText: qText,
-        startedAt: reportData.updated_at,
-        duration: durationSec,
-        startTime: startTimeSec,
-        endTime: endTimeSec,
-        videoFile: reportData.recording_url,
-        videoThumbnail: reportData.thumbnail_url,
-        transcriptionText: answerTurn?.text || reportData?.report?.transcript || 'No transcription available.',
-        transcriptionSegments: segments,
-      });
-    }
-
-    return list;
-  }, [reportData, questions, candidateTurns, candidateTimelineItems]);
+  const activeQuestionIndex = Math.min(
+    selectedQuestionIndex,
+    Math.max(0, videoResponses.length - 1)
+  );
 
   const rapidlyStage = useMemo(() => {
     return (
@@ -320,15 +228,9 @@ export default function RapidlyInterview({ application_id }: RapidlyInterviewPro
 
       <RapidlyInterviewCard
         responses={videoResponses}
-        activeIndex={selectedQuestionIndex}
+        activeIndex={activeQuestionIndex}
         onActiveIndexChange={setSelectedQuestionIndex}
-        totalDuration={
-          reportData?.duration_seconds ||
-          reportData?.report?.assessment?.delivery?.total_time_sec ||
-          (reportData?.timeline && reportData.timeline.length > 0
-            ? Math.round(Math.max(...reportData.timeline.map(t => t.endMs || t.startMs || 0)) / 1000)
-            : undefined)
-        }
+        totalDuration={calculatedTotalDuration}
         candidateName={candidateName}
         headerRight={headerButtons}
       />

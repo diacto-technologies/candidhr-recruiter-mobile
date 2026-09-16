@@ -34,7 +34,7 @@ const jobConfig: FilterConfig[] = [
     tab: 'Employment Type', 
     type: 'dropdown', 
     field: 'employmentType', 
-    placeholder: "Search by 'Employee Type'", 
+    placeholder: "All", 
     options: [
       { label: "Full Time", value: "Full Time" },
       { label: "Part Time", value: "Part Time" },

@@ -1,5 +1,16 @@
 // features/jobs/types.ts
 
+export interface JobLocationDetail {
+  id?: string;
+  display_name?: string;
+  name?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  country_code?: string;
+  location_type?: string;
+}
+
 // Single job object from your API
 export interface Job {
   id: string;
@@ -7,6 +18,7 @@ export interface Job {
   description: string;
   jd_html: string;
   location: string;
+  location_detail?: JobLocationDetail | null;
   employment_type: string;
   experience?: number | null;
   min_experience?: number | null;
@@ -169,6 +181,7 @@ export interface JobDetail {
 
   employment_type: string;
   location: string;
+  location_detail?: JobLocationDetail | null;
 
   published: boolean;
   close_date: string | null;   // ISO date string

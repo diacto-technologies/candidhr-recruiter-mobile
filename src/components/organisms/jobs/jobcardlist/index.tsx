@@ -90,6 +90,11 @@ const MENU_WIDTH = 190;
     showToastMessage('Job URL copied to clipboard', 'success');
   };
 
+  const cityName =
+    item.location_detail?.city?.trim() ||
+    item.location_detail?.name?.trim() ||
+    (item.location ? item.location.split(',')[0].trim() : '');
+
   return (
     <View style={cardStyles.card}>
       <View collapsable={false} style={{ width: '100%' }}>
@@ -115,6 +120,14 @@ const MENU_WIDTH = 190;
           </View>
           <View style={[cardStyles.rowBetween, { alignItems: 'center', minHeight: 24, marginTop: 4 }]}>
             <View style={cardStyles.badgeContainer}>
+              {Boolean(cityName) && (
+                <View style={cardStyles.locationBadge}>
+                  <Typography variant="mediumTxtxs" color={colors.gray[700]} numberOfLines={1}>
+                    {cityName}
+                  </Typography>
+                </View>
+              )}
+
               {item.published ? (
                 <View style={cardStyles.liveBadge}>
                   <Typography variant="mediumTxtxs" color={colors.success[700]}>

@@ -15,6 +15,7 @@ import {
   selectApplicationsHasMore,
   selectApplicationsLoading,
   selectApplicationsPagination,
+  selectApplicationsTotalCount,
 } from '../../../../features/applications/selectors';
 import { 
   exportApplicationsRequestAction, 
@@ -54,6 +55,7 @@ export const useApplicantScreenController = () => {
   
   const applications = useAppSelector(selectApplications);
   const pagination = useAppSelector(selectApplicationsPagination);
+  const totalCount = useAppSelector(selectApplicationsTotalCount);
   const hasMore = useAppSelector(selectApplicationsHasMore);
   const loading = useAppSelector(selectApplicationsLoading);
   const filters = useAppSelector(selectApplicationsFilters);
@@ -194,6 +196,7 @@ export const useApplicantScreenController = () => {
     itemWidth,
     canExport,
     loading,
+    totalCount,
     applications,
     dataSource,
     threeDotMenuItems,

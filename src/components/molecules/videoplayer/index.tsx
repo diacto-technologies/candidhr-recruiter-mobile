@@ -14,8 +14,7 @@ import {
 import Video, { OnLoadData, OnProgressData, OnSeekData } from "react-native-video";
 import Orientation from "react-native-orientation-locker";
 import { SvgXml } from "react-native-svg";
-import { useNavigation } from "@react-navigation/native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { videoButton } from "../../../assets/svg/videobutton";
 import { sounIcon } from "../../../assets/svg/sound";
 import { pauseVideoIcon } from "../../../assets/svg/pausevideo";
@@ -45,11 +44,13 @@ export default function VideoPlayerBox({
   onChapterChange,
   seekToTime,
   onProgress,
+  onDurationLoaded,
   fullscreen: externalFullscreen,
   resizeMode = "contain",
+  showMuteButton = false,
 }: VideoPlayerBoxProps) {
   const videoRef = useRef<React.ElementRef<typeof Video>>(null);
-  const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
 
   const effectiveStartTime = startTime || initialTime || 0;
 
@@ -65,7 +66,8 @@ export default function VideoPlayerBox({
   const sliderRef = useRef<View>(null);
   const sliderWidthRef = useRef(0);
   const sliderPageXRef = useRef(0);
-  const lastChapterRef = useRef<number>(activeChapterIndex || 0);
+  const lastChapterRef = useRef<number>(-1);
+  const wasPlayingBeforeSlideRef = useRef<boolean>(false);
   const savedTimeRef = useRef<number>(0);
   const needRestoreRef = useRef<boolean>(false);
   const isSeekingRef = useRef<boolean>(false);
@@ -73,8 +75,17 @@ export default function VideoPlayerBox({
   const seekTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dragStartTimeRef = useRef(0);
   const wasLockedRef = useRef(false);
+  const chapterLockUntilRef = useRef<number>(0);
 
   const effectiveDuration = useMemo(() => {
+    // When playing the full continuous video from start or with chapters,
+    // the loaded video file's actual duration is the true duration.
+    if (effectiveStartTime === 0 || (chapters && chapters.length > 0)) {
+      if (videoFileDuration > 0) {
+        return videoFileDuration;
+      }
+      return segmentDuration || 0;
+    }
     if (segmentDuration && segmentDuration > 0) {
       return segmentDuration;
     }
@@ -82,7 +93,7 @@ export default function VideoPlayerBox({
       return Math.max(0, videoFileDuration - effectiveStartTime);
     }
     return 0;
-  }, [segmentDuration, videoFileDuration, effectiveStartTime]);
+  }, [segmentDuration, videoFileDuration, effectiveStartTime, chapters]);
 
   const hasSource = Boolean(source);
   const fullscreen = externalFullscreen !== undefined ? externalFullscreen : internalFullscreen;
@@ -108,6 +119,7 @@ export default function VideoPlayerBox({
 
     if (targetChapter !== undefined) {
       lastChapterRef.current = targetChapter;
+      chapterLockUntilRef.current = Date.now() + 2000;
     } else if (chapters && chapters.length > 0) {
       let matched = 0;
       for (let i = 0; i < chapters.length; i++) {
@@ -141,14 +153,16 @@ export default function VideoPlayerBox({
 
   useEffect(() => {
     if (activeChapterIndex !== undefined && chapters && chapters[activeChapterIndex]) {
+      if (activeChapterIndex === lastChapterRef.current) {
+        return;
+      }
       const targetTime = chapters[activeChapterIndex].time;
       lastChapterRef.current = activeChapterIndex;
-      if (Math.abs(currentRelativeTime - targetTime) > 0.5) {
-        seekToRelativeTime(targetTime, activeChapterIndex);
-        setIsPaused(false);
-      }
+      chapterLockUntilRef.current = Date.now() + 2000;
+      seekToRelativeTime(targetTime, activeChapterIndex);
+      setIsPaused(true);
     }
-  }, [activeChapterIndex]);
+  }, [activeChapterIndex, chapters]);
 
   useEffect(() => {
     if (seekToTime !== undefined && seekToTime >= 0) {
@@ -164,6 +178,8 @@ export default function VideoPlayerBox({
         onMoveShouldSetPanResponder: () => true,
         onPanResponderGrant: (evt) => {
           isSlidingRef.current = true;
+          wasPlayingBeforeSlideRef.current = !isPaused;
+          setIsPaused(true);
           measureSlider();
           const currentWidth = sliderWidthRef.current || sliderWidth;
           if (currentWidth <= 0 || effectiveDuration <= 0) return;
@@ -209,10 +225,10 @@ export default function VideoPlayerBox({
           }
 
           seekToRelativeTime(targetTime);
-          setIsPaused(false);
+          setIsPaused(!wasPlayingBeforeSlideRef.current);
         },
       }),
-    [sliderWidth, effectiveDuration, chapters]
+    [sliderWidth, effectiveDuration, chapters, isPaused]
   );
 
   const togglePlayPause = () => {
@@ -279,6 +295,9 @@ export default function VideoPlayerBox({
   const onLoad = (data: OnLoadData) => {
     const dur = data.duration || 0;
     setVideoFileDuration(dur);
+    if (dur > 0) {
+      onDurationLoaded?.(dur);
+    }
     setLoading(false);
 
     // Restore playback position ONLY when returning from fullscreen
@@ -366,7 +385,7 @@ export default function VideoPlayerBox({
       playableDuration: data.playableDuration,
     });
 
-    if (chapters && chapters.length > 0 && onChapterChange) {
+    if (chapters && chapters.length > 0 && onChapterChange && Date.now() >= chapterLockUntilRef.current) {
       let matched = 0;
       for (let i = 0; i < chapters.length; i++) {
         if (relTime >= chapters[i].time - 0.2) {
@@ -430,22 +449,42 @@ export default function VideoPlayerBox({
           )}
 
           {!loading && (
-            <View style={[styles.controls, fullscreen && styles.controlsFullscreen]}>
-              <TouchableOpacity onPress={togglePlayPause} style={styles.controlButton}>
+            <View
+              style={[
+                styles.controls,
+                fullscreen && styles.controlsFullscreen,
+                fullscreen && {
+                  paddingBottom: Math.max(10, insets.bottom),
+                  paddingLeft: Math.max(16, insets.left),
+                  paddingRight: Math.max(16, insets.right),
+                },
+              ]}
+            >
+              <TouchableOpacity
+                onPress={togglePlayPause}
+                style={styles.controlButton}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
                 {isPaused ? (
-                  <SvgXml xml={playVideoIcon} />
+                  <SvgXml xml={playVideoIcon} width={16} height={16} />
                 ) : (
-                  <SvgXml xml={pauseVideoIcon} />
+                  <SvgXml xml={pauseVideoIcon} width={16} height={16} />
                 )}
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={toggleMute} style={styles.controlButton}>
-                {isMuted ? (
-                  <SvgXml xml={muteVolumeIcon} />
-                ) : (
-                  <SvgXml xml={sounIcon} />
-                )}
-              </TouchableOpacity>
+              {showMuteButton && (
+                <TouchableOpacity
+                  onPress={toggleMute}
+                  style={styles.controlButton}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  {isMuted ? (
+                    <SvgXml xml={muteVolumeIcon} />
+                  ) : (
+                    <SvgXml xml={sounIcon} />
+                  )}
+                </TouchableOpacity>
+              )}
 
               <Text style={[styles.timeText, fullscreen && styles.timeTextFullscreen]}>
                 {formatTime(currentRelativeTime)}
@@ -530,8 +569,12 @@ export default function VideoPlayerBox({
                 {formatTime(effectiveDuration)}
               </Text>
 
-              <TouchableOpacity onPress={toggleFullscreen} style={styles.controlButton}>
-                <SvgXml xml={expandIcon} />
+              <TouchableOpacity
+                onPress={toggleFullscreen}
+                style={styles.controlButton}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <SvgXml xml={expandIcon} width={14} height={14} />
               </TouchableOpacity>
             </View>
           )}
@@ -553,14 +596,9 @@ export default function VideoPlayerBox({
           presentationStyle={Platform.OS === 'ios' ? 'fullScreen' : undefined}
         >
           <View style={styles.modalContent}>
-            <SafeAreaView 
-              edges={Platform.OS === 'ios' ? ['bottom'] : ['left', 'right', 'bottom']} 
-              style={styles.safeAreaContainer}
-            >
-              <View style={styles.fullscreenWrapper}>
-                {videoContent}
-              </View>
-            </SafeAreaView>
+            <View style={styles.fullscreenWrapper}>
+              {videoContent}
+            </View>
           </View>
         </Modal>
       ) : (
