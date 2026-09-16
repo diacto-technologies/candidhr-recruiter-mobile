@@ -48,6 +48,16 @@ export const useStyles = () => {
             borderRadius: 6,
             alignSelf: 'flex-start',
         },
+        locationBadge: {
+            backgroundColor: colors.gray[100],
+            borderColor: colors.gray[300],
+            borderWidth: 1,
+            paddingHorizontal: 8,
+            paddingVertical: 2,
+            borderRadius: 6,
+            alignSelf: 'flex-start',
+            maxWidth: 140,
+        },
         rapidlyBadge: {
             backgroundColor: colors.brand[50],
             borderColor: colors.brand[200],

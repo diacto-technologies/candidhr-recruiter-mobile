@@ -7,11 +7,11 @@ import { useStyles } from './styles';
 import { screenWidth } from '../../../utils/devicelayout';
 import { buildBarData } from './helpers';
 import Shimmer from '../../atoms/shimmer';
-import { BarItem, FeatureConsumptionChartProps } from './featureconsumptionchart';
+import { BarItem, FeatureConsumptionChartProps, featureData } from './featureconsumptionchart';
 import { isTablet } from 'react-native-device-info';
 
 const CHART_HEIGHT = 164;
-const SCREEN_PADDING = 10;
+const SCREEN_PADDING = 32;
 const DUMMY_BAR_HEIGHTS = [85, 130, 95];
 const IS_TABLET = isTablet();
 
@@ -23,15 +23,17 @@ const FeatureConsumptionChart: React.FC<FeatureConsumptionChartProps> = ({
     const [selectedIndex, setSelectedIndex] = useState<number>(-1);
 
     const barData = useMemo(() => {
-        return buildBarData(featureData, selectedIndex);
-    }, [featureData, selectedIndex]);
+        return buildBarData(featureData, selectedIndex, styles.topLabelText);
+    }, [featureData, selectedIndex, styles.topLabelText]);
 
     const maxValue = useMemo(() => {
-        return Math.max(...barData.map(b => b.value), 0) + 20;
+        const maxVal = Math.max(...barData.map(b => b.value), 0);
+        if (maxVal === 0) return 20;
+        return Math.ceil(maxVal * 1.25);
     }, [barData]);
 
     const barCount = barData.length;
-    const barWidth = IS_TABLET ? 280 : 101;
+    const barWidth = IS_TABLET ? 280 : 94;
     const availableWidth = screenWidth - SCREEN_PADDING;
 
     const dynamicSpacing = Math.max(
@@ -73,7 +75,7 @@ const FeatureConsumptionChart: React.FC<FeatureConsumptionChartProps> = ({
         <View style={styles.container}>
             <Typography variant="semiBoldTxtlg">Feature consumption</Typography>
 
-            <View style={{width: '100%', overflow: 'hidden'}}>
+            <View style={{width: '100%'}}>
                 <BarChart
                     data={barData}
                     barWidth={barWidth}
@@ -84,6 +86,7 @@ const FeatureConsumptionChart: React.FC<FeatureConsumptionChartProps> = ({
                     xAxisThickness={0}
                     height={CHART_HEIGHT}
                     maxValue={maxValue}
+                    minHeight={4}
                     barBorderTopLeftRadius={5}
                     barBorderTopRightRadius={5}
                     xAxisTextNumberOfLines={2}
@@ -97,16 +100,37 @@ const FeatureConsumptionChart: React.FC<FeatureConsumptionChartProps> = ({
                     focusedBarIndex={selectedIndex}
                     onPress={handleBarPress}
                     hideYAxisText
-                    renderTooltip={(item: BarItem) => (
-                        <View style={styles.tooltipWrapper}>
-                            <View style={styles.tooltipArrow} />
-                            <View style={styles.tooltipContainer}>
-                                <Typography variant="semiBoldTxtxs" color={colors.base.white}>
-                                    {item.value.toString().padStart(2, '0')} Users
-                                </Typography>
+                    topLabelContainerStyle={styles.topLabelContainer}
+                    topLabelTextStyle={styles.topLabelText}
+                    renderTooltip={(item: BarItem, index?: number) => {
+                        const activeIdx = index !== undefined ? index : selectedIndex;
+                        const isRightSide = activeIdx >= 2;
+                        const count = item.actualValue !== undefined ? item.actualValue : item.value;
+
+                        if (isRightSide) {
+                            return (
+                                <View style={styles.tooltipWrapperRightSide}>
+                                    <View style={styles.tooltipContainer}>
+                                        <Typography variant="semiBoldTxtxs" color={colors.base.white}>
+                                            {count.toLocaleString()} Users
+                                        </Typography>
+                                    </View>
+                                    <View style={styles.tooltipArrowRight} />
+                                </View>
+                            );
+                        }
+
+                        return (
+                            <View style={styles.tooltipWrapperLeftSide}>
+                                <View style={styles.tooltipArrowLeft} />
+                                <View style={styles.tooltipContainer}>
+                                    <Typography variant="semiBoldTxtxs" color={colors.base.white}>
+                                        {count.toLocaleString()} Users
+                                    </Typography>
+                                </View>
                             </View>
-                        </View>
-                    )}
+                        );
+                    }}
                 />
             </View>
         </View>

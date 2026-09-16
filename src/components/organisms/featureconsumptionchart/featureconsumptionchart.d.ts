@@ -1,8 +1,14 @@
+import type { ReactNode } from 'react';
+import type { ViewStyle } from 'react-native';
+
 export interface BarItem {
     value: number;
+    actualValue: number;
     label: string;
     frontColor: string;
     gradientColor?: string;
+    topLabelComponent?: () => ReactNode;
+    barStyle?: ViewStyle;
 }
 
 export interface featureData {

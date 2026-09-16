@@ -17,7 +17,9 @@ export interface VideoPlayerBoxProps {
     absoluteTime?: number;
     playableDuration?: number;
   }) => void;
+  onDurationLoaded?: (duration: number) => void;
   fullscreen?: boolean;
   resizeMode?: "contain" | "cover" | "stretch";
+  showMuteButton?: boolean;
 }
 

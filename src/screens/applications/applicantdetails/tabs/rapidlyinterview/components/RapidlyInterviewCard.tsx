@@ -57,22 +57,33 @@ export const RapidlyInterviewCard: React.FC<RapidlyInterviewCardProps> = ({
 }) => {
   const styles = useStyles();
   const [currentTime, setCurrentTime] = useState(0);
+  const [loadedVideoDuration, setLoadedVideoDuration] = useState<number>(0);
   const [transcriptionView, setTranscriptionView] = useState<'continuous' | 'bytime'>('continuous');
 
   const selectedResponse = responses[activeIndex] || responses[0];
 
   const totalVideoDuration = useMemo(() => {
-    if (totalDuration && totalDuration > 0) {
-      return totalDuration;
+    if (loadedVideoDuration > 0) {
+      return loadedVideoDuration;
     }
+
     let maxTime = 0;
     responses.forEach((r) => {
       const end = (r.startTime || 0) + (r.duration || 0);
       if (end > maxTime) maxTime = end;
       if ((r.endTime || 0) > maxTime) maxTime = r.endTime;
     });
-    return maxTime || selectedResponse?.duration || 0;
-  }, [totalDuration, responses, selectedResponse]);
+
+    const candidates = [
+      totalDuration || 0,
+      maxTime,
+      selectedResponse?.duration || 0,
+    ];
+
+    return Math.max(...candidates, 0);
+  }, [totalDuration, responses, selectedResponse, loadedVideoDuration]);
+
+  const userNavigatedTimeRef = React.useRef<number>(0);
 
   const chapters = useMemo(() => {
     const totalDur = totalVideoDuration || totalDuration || 0;
@@ -80,7 +91,8 @@ export const RapidlyInterviewCard: React.FC<RapidlyInterviewCardProps> = ({
     return responses.map((r, idx) => {
       let time = r.startTime || 0;
       if (idx > 0 && (time <= 0 || time <= (responses[idx - 1]?.startTime || 0))) {
-        time = totalDur > 0 ? Math.round((idx * totalDur) / count) : idx * 30;
+        const prevTime = responses[idx - 1]?.startTime || 0;
+        time = Math.max(prevTime + 1, totalDur > 0 ? Math.round((idx * totalDur) / count) : idx * 30);
       }
       return {
         time,
@@ -91,7 +103,15 @@ export const RapidlyInterviewCard: React.FC<RapidlyInterviewCardProps> = ({
 
   const handleSelectIndex = (index: number) => {
     if (index < 0 || index >= responses.length) return;
+    userNavigatedTimeRef.current = Date.now() + 2000;
     onActiveIndexChange(index);
+  };
+
+  const handleChapterChange = (chapterIndex: number) => {
+    if (Date.now() < userNavigatedTimeRef.current) {
+      return;
+    }
+    onActiveIndexChange(chapterIndex);
   };
 
   if (!responses || responses.length === 0) {
@@ -104,7 +124,8 @@ export const RapidlyInterviewCard: React.FC<RapidlyInterviewCardProps> = ({
     );
   }
 
-  const transcriptionText = selectedResponse?.transcriptionText || 'No transcription available';
+  const transcriptionText =
+    selectedResponse?.transcriptionText || 'No spoken answer was transcribed for this question.';
   const transcriptionSegments = selectedResponse?.transcriptionSegments || [];
   const questionRelativeTime = Math.max(0, currentTime - (selectedResponse?.startTime || 0));
 
@@ -117,6 +138,12 @@ export const RapidlyInterviewCard: React.FC<RapidlyInterviewCardProps> = ({
           (s.words && s.words.length > 0 && s.words.some((w) => w.start !== null && w.start !== undefined))
       )
   );
+
+  React.useEffect(() => {
+    if (!hasTimestamps && transcriptionView === 'bytime') {
+      setTranscriptionView('continuous');
+    }
+  }, [hasTimestamps, transcriptionView]);
 
   return (
     <View style={styles.cardContainer}>
@@ -180,8 +207,9 @@ export const RapidlyInterviewCard: React.FC<RapidlyInterviewCardProps> = ({
           duration={totalVideoDuration}
           chapters={chapters}
           activeChapterIndex={activeIndex}
-          onChapterChange={handleSelectIndex}
+          onChapterChange={handleChapterChange}
           onProgress={(e) => setCurrentTime(e.currentTime || 0)}
+          onDurationLoaded={setLoadedVideoDuration}
         />
       </View>
 

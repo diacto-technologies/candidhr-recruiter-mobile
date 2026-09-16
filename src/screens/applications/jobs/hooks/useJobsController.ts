@@ -67,12 +67,25 @@ export const useJobsController = () => {
   const accessLoading = profileLoading || (profile === null && profileError === null);
   const hasPermission = accessLoading || can(PERMISSIONS.VIEW_JOB);
 
+  const isNavigatingToDetailRef = useRef(false);
+
   useFocusEffect(
     useCallback(() => {
       dispatch(setApplicationsFilters({
         name: "", email: "", appliedFor: "", contact: "",
         latestStageStatus: "", source: "", status: "", latestStageName: "",
       }));
+
+      isNavigatingToDetailRef.current = false;
+
+      return () => {
+        if (!isNavigatingToDetailRef.current) {
+          dispatch(clearJobFilters());
+          dispatch(setActiveTab("Published"));
+          setOpenSearch(false);
+          setSelectedTab(jobFiltersOption[0]);
+        }
+      };
     }, [dispatch])
   );
 
@@ -209,7 +222,10 @@ export const useJobsController = () => {
 
   const handleClearFilters = () => dispatch(clearJobFilters());
   const handleToggleFavourite = (jobId: string) => dispatch(toggleFavouriteJob(jobId));
-  const handleJobPress = (jobId: string) => navigate('JobDetailScreen', { jobId });
+  const handleJobPress = (jobId: string) => {
+    isNavigatingToDetailRef.current = true;
+    navigate('JobDetailScreen', { jobId });
+  };
 
   return {
     hasPermission,
