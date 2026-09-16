@@ -17,7 +17,7 @@
     "clean": "rm -rf node_modules && npm install",
     "clean:android": "cd android && ./gradlew clean && cd ..",
     "clean:ios": "cd ios && rm -rf Pods Podfile.lock && bundle exec pod install && cd ..",
-    "postinstall": "cd ios && bundle exec pod install || true",
+    "postinstall": "export PATH=\"/opt/homebrew/opt/ruby/bin:/opt/homebrew/bin:$PATH\"; bundle install && cd ios && bundle exec pod install || true",
     "pod-install": "RCT_NEW_ARCH_ENABLED=1 pod install"
   },
   "dependencies": {
