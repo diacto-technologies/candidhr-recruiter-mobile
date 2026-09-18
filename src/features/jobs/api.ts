@@ -13,7 +13,7 @@ export const jobsApi = {
     const queryParams = new URLSearchParams();
   
     queryParams.append("page", (params?.page || 1).toString());
-    queryParams.append("limit", (params?.limit && params.limit > 0 ? params.limit : 10).toString());
+    queryParams.append("limit", (params?.limit && params.limit > 0 ? params.limit : 30).toString());
   
     if (typeof params?.published === "boolean") {
       queryParams.append("published", String(params.published));

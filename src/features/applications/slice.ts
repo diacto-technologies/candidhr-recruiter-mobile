@@ -49,7 +49,7 @@ const initialState: ApplicationsState = {
   performanceReportError: null,
   pagination: {
     page: 1,
-    limit: 10,
+    limit: 30,
     total: 0,
   },
   hasMore: true,
