@@ -22,8 +22,6 @@ import {
   getApplicationsRequestAction 
 } from '../../../../features/applications/actions';
 import { setApplicationsFilters, setSort } from '../../../../features/applications/slice';
-import { selectPublishedJobs } from '../../../../features/jobs/selectors';
-import { getJobsRequestAction } from '../../../../features/jobs/actions';
 
 export const SKELETON_ROWS = 10;
 export type RowItem = Application | { __skeleton: true; __id: string };
@@ -59,7 +57,6 @@ export const useApplicantScreenController = () => {
   const hasMore = useAppSelector(selectApplicationsHasMore);
   const loading = useAppSelector(selectApplicationsLoading);
   const filters = useAppSelector(selectApplicationsFilters);
-  const publishedJobs = useAppSelector(selectPublishedJobs);
 
   const onEndReachedCalledRef = useRef(false);
   
@@ -72,12 +69,6 @@ export const useApplicantScreenController = () => {
   const itemWidth = availableWidth / numColumns;
   
   const debouncedName = useDebouncedValue(filters.name, 400);
-
-  useEffect(() => {
-    if (!publishedJobs || publishedJobs.length === 0) {
-      dispatch(getJobsRequestAction({ page: 1, limit: 100 }));
-    }
-  }, [dispatch, publishedJobs]);
 
   const getApiParams = useCallback((page: number, append = false): GetApplicationsPayload => {
     const params: GetApplicationsPayload = {

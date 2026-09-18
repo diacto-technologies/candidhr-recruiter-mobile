@@ -32,18 +32,18 @@ export const jobsInitialState: JobsState = {
   latestFavouritesRequestId: 0,
   publishedPagination: {
     page: 1,
-    limit: 10,
+    limit: 30,
     total: 0,
   },
   unpublishedPagination: {
     page: 1,
-    limit: 10,
+    limit: 30,
     total: 0,
   },
   favouritesPagination: {
-  page: 1,
-  limit: 10,
-  total: 0,
+    page: 1,
+    limit: 30,
+    total: 0,
   },
   publishedHasMore: true,
   unpublishedHasMore: true,

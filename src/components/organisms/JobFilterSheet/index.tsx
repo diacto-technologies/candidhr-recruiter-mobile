@@ -39,6 +39,7 @@ const jobConfig: FilterConfig[] = [
       { label: "Full Time", value: "Full Time" },
       { label: "Part Time", value: "Part Time" },
       { label: "Contract", value: "Contract" },
+      { label: "Internship", value: "Internship" },
     ] 
   },
   { tab: 'Created By', type: 'text', field: 'createdBy', placeholder: "Search by 'Created By'" },
