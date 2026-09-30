@@ -18,7 +18,15 @@ export interface AuthState {
   resetPasswordLoading: boolean,
   resetPasswordMessage: string | null,
   resetPasswordError: string | null,
-  origin:string,
+  origin: string;
+  checkSubdomainLoading: boolean;
+  checkSubdomainError: string | null;
+}
+
+export interface CheckSubdomainResponse {
+  subdomain: string;
+  exists: boolean;
+  detail?: string;
 }
 
 export interface LoginRequest {

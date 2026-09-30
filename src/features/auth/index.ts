@@ -28,5 +28,9 @@ export {
   setUser,
   setLoading,
   setError,
+  checkSubdomainRequest,
+  checkSubdomainSuccess,
+  checkSubdomainFailure,
+  clearSubdomainError,
 } from "./slice";
 

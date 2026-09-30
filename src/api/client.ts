@@ -270,6 +270,23 @@ const handleApiError = async (response: Response, endpoint?: string): Promise<ne
     } else if (errorData.error && typeof errorData.error === 'string') {
       // Prioritize 'error' field (common in API responses)
       errorMessage = errorData.error;
+    } else if (typeof errorData === 'object' && errorData !== null) {
+      const fieldErrors = Object.entries(errorData)
+        .map(([field, err]) => {
+          if (Array.isArray(err)) return `${err.join(', ')}`;
+          if (typeof err === 'string') return `${field}: ${err}`;
+          return null;
+        })
+        .filter(Boolean);
+      errorMessage =
+        fieldErrors.length > 0
+          ? (fieldErrors.join(', ') as string)
+          : errorData.message ||
+            errorData.detail ||
+            errorData.errors?.message ||
+            (Array.isArray(errorData.errors) ? errorData.errors.join(', ') : null) ||
+            errorData.error_description ||
+            errorMessage;
     } else {
       errorMessage = errorData.message ||
         errorData.detail ||

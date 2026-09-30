@@ -17,6 +17,7 @@ export interface JobCardListProps {
   favouriteJobIds?: string[];
   onToggleFavourite?: (jobId: string) => void;
   hasMore?: boolean;
+  onDeleteJob?: (jobId: string) => void;
 }
 
 export interface JobCardRowProps {
@@ -25,4 +26,5 @@ export interface JobCardRowProps {
   onJobPress: (jobId: string) => void;
   favouriteJobIds: string[];
   onToggleFavourite?: (jobId: string) => void;
+  onDeleteJob?: (jobId: string) => void;
 }

@@ -93,6 +93,16 @@ export const forgetPassowrdError = createSelector(
   (auth) => auth.error
 );
 
+export const selectCheckSubdomainLoading = createSelector(
+  [selectAuthState],
+  (auth) => auth.checkSubdomainLoading
+);
+
+export const selectCheckSubdomainError = createSelector(
+  [selectAuthState],
+  (auth) => auth.checkSubdomainError
+);
+
 
 
 

@@ -1,5 +1,5 @@
 import { AUTH_ACTION_TYPES } from "./constants";
-import { LoginRequest, RegisterRequest } from "./types";
+import { CheckSubdomainResponse, LoginRequest, RegisterRequest } from "./types";
 
 // Action creators for saga triggers
 export const loginRequestAction = (payload: LoginRequest) => ({
@@ -63,6 +63,21 @@ export const resetPasswordSuccessAction = (message: string) => ({
 
 export const resetPasswordFailureAction = (error: string) => ({
   type: AUTH_ACTION_TYPES.RESET_PASSWORD_FAILURE,
+  payload: error,
+});
+
+export const checkSubdomainRequestAction = (subdomain: string) => ({
+  type: AUTH_ACTION_TYPES.CHECK_SUBDOMAIN_REQUEST,
+  payload: subdomain,
+});
+
+export const checkSubdomainSuccessAction = (payload: CheckSubdomainResponse) => ({
+  type: AUTH_ACTION_TYPES.CHECK_SUBDOMAIN_SUCCESS,
+  payload,
+});
+
+export const checkSubdomainFailureAction = (error: string) => ({
+  type: AUTH_ACTION_TYPES.CHECK_SUBDOMAIN_FAILURE,
   payload: error,
 });
 

@@ -317,6 +317,24 @@ const jobsSlice = createSlice({
         );
       }
 
+      const beforeFav = state.favouriteJobs.length;
+      state.favouriteJobs = state.favouriteJobs.filter(
+        (job) => job.id !== action.payload
+      );
+      const hadFavId = state.favouriteJobIds.includes(action.payload);
+      if (hadFavId) {
+        state.favouriteJobIds = state.favouriteJobIds.filter(
+          (id) => id !== action.payload
+        );
+        state.favouritesCount = Math.max(0, state.favouritesCount - 1);
+      }
+      if (state.favouriteJobs.length !== beforeFav) {
+        state.favouritesPagination.total = Math.max(
+          0,
+          state.favouritesPagination.total - 1
+        );
+      }
+
       if (state.selectedJob?.id === action.payload) {
         state.selectedJob = null;
       }

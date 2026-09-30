@@ -11,7 +11,8 @@ import { navigate } from '../../../../utils/navigationUtils';
 import {
   getJobsRequestAction,
   getPublishedJobsRequestAction,
-  getUnpublishedJobsRequestAction
+  getUnpublishedJobsRequestAction,
+  deleteJobRequestAction,
 } from '../../../../features/jobs/actions';
 import {
   selectJobFilters,
@@ -222,6 +223,12 @@ export const useJobsController = () => {
 
   const handleClearFilters = () => dispatch(clearJobFilters());
   const handleToggleFavourite = (jobId: string) => dispatch(toggleFavouriteJob(jobId));
+  const handleDeleteJob = useCallback(
+    (jobId: string) => {
+      dispatch(deleteJobRequestAction({ id: jobId, deleted_by: profile?.id }));
+    },
+    [dispatch, profile?.id],
+  );
   const handleJobPress = (jobId: string) => {
     isNavigatingToDetailRef.current = true;
     navigate('JobDetailScreen', { jobId });
@@ -254,6 +261,7 @@ export const useJobsController = () => {
     handleClearSearch,
     handleClearFilters,
     handleToggleFavourite,
+    handleDeleteJob,
     handleJobPress,
   };
 };

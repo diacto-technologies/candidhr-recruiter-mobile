@@ -1,4 +1,4 @@
-import { call, CallEffect, put, PutEffect, takeLatest } from "redux-saga/effects";
+import { call, CallEffect, put, PutEffect, select, takeLatest } from "redux-saga/effects";
 import { JOBS_ACTION_TYPES } from "./constants";
 import {
   getJobsRequest,
@@ -23,8 +23,12 @@ import {
 import { jobsApi } from "./api";
 import { showToastMessage } from "../../utils/toast";
 import { GetJobsRequestActionPayload } from "./actions";
-import { JobNamesListApiResponse, JobsListApiResponse } from "./types";
+import { DeleteJobPayload, JobNamesListApiResponse, JobsListApiResponse } from "./types";
 import { PayloadAction } from "@reduxjs/toolkit";
+import { selectProfile } from "../profile/selectors";
+import { Profile } from "../profile/types";
+import { profileApi } from "../profile/api";
+import { getProfileSuccess } from "../profile/slice";
 
 function* getJobsWorker(
   action: { type: string; payload?: GetJobsRequestActionPayload }
@@ -164,13 +168,35 @@ function* updateJobShareWorker(action: {
   }
 }
 
-function* deleteJobWorker(action: { type: string; payload: string }): Generator<any, void, any> {
+function* deleteJobWorker(action: { type: string; payload: DeleteJobPayload }): Generator<any, void, any> {
+  const jobId = typeof action.payload === "string" ? action.payload : action.payload.id;
   try {
-    yield put(deleteJobRequest(action.payload));
-    yield call(jobsApi.deleteJob, action.payload);
-    yield put(deleteJobSuccess(action.payload));
+    yield put(deleteJobRequest(jobId));
+
+    let deletedBy: string | undefined =
+      typeof action.payload === "object" ? action.payload.deleted_by : undefined;
+
+    if (!deletedBy) {
+      let profile: Profile | null = yield select(selectProfile);
+      if (!profile?.id) {
+        try {
+          profile = yield call(profileApi.getProfile);
+          if (profile) {
+            yield put(getProfileSuccess(profile));
+          }
+        } catch {
+          // ignore profile fetch error
+        }
+      }
+      deletedBy = profile?.id;
+    }
+
+    yield call(jobsApi.deleteJob, jobId, deletedBy);
+    yield put(deleteJobSuccess(jobId));
+    showToastMessage("Job deleted successfully", "success");
   } catch (error: any) {
-    yield put(deleteJobFailure(error.message || "Failed to delete job"));
+    const message = error?.message || "Failed to delete job";
+    yield put(deleteJobFailure(message));
   }
 }
 
