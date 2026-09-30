@@ -8,6 +8,7 @@ export const API_ENDPOINTS = {
     ME: '/auth/me',
     FORGOT_PASSWORD: "/core/send-reset-password-email/",
     RESET_PASSWORD: "/core/user/reset-password/",
+    CHECK_SUBDOMAIN: (subdomain: string) => `/core/check-subdomain/${subdomain}/`,
   },
   // Profile endpoints
   PROFILE: {
@@ -34,7 +35,7 @@ export const API_ENDPOINTS = {
     PATCH: (id: string) => `/job/v1/jobs/${id}/`,
     CREATE: '/jobs',
     UPDATE: (id: string) => `/jobs/${id}`,
-    DELETE: (id: string) => `/jobs/${id}`,
+    DELETE: (id: string) => `/job/v1/jobs/${id}/`,
     APPLY: (id: string) => `/jobs/${id}/apply`,
     JOB_NAME_LIST: "/job/v1/job-names-list/",
     MUST_HAVE_SKILLS: (id: string) => `/job/v1/${id}/must-have-skills/`,

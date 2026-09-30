@@ -90,8 +90,11 @@ export const jobsApi = {
     return res as Job;
   },
 
-  deleteJob: async (id: string): Promise<void> => {
-    return apiClient.delete(API_ENDPOINTS.JOBS.DELETE(id));
+  deleteJob: async (id: string, deleted_by?: string): Promise<Job> => {
+    return apiClient.patch(API_ENDPOINTS.JOBS.PATCH(id), {
+      is_deleted: true,
+      ...(deleted_by ? { deleted_by } : {}),
+    });
   },
 
   getJobNamesList: async (page: number, search: string) => {

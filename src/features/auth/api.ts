@@ -1,7 +1,8 @@
+import { QA_BASE_URL } from "@env";
 import { apiClient } from "../../api/client";
 import { API_ENDPOINTS } from "../../api/endpoints";
 import { config } from "../../config";
-import { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse } from "./types";
+import { CheckSubdomainResponse, LoginRequest, LoginResponse, RegisterRequest, RegisterResponse } from "./types";
 
 export const authApi = {
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
@@ -42,6 +43,36 @@ export const authApi = {
       data
     );
   },  
-  
+
+  checkSubdomain: async (subdomain: string): Promise<CheckSubdomainResponse> => {
+    // If environment is QA, do not call check-subdomain API
+    if (config.api.baseURL === QA_BASE_URL) {
+      return {
+        subdomain,
+        exists: true,
+      };
+    }
+
+    const prodBase = config.api.prodBaseURL || 'https://api.candidhr.ai';
+    const response = await fetch(`${prodBase}${API_ENDPOINTS.AUTH.CHECK_SUBDOMAIN(subdomain)}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      const errorMessage = data?.detail || data?.message || 'No tenant found for this subdomain.';
+      throw new Error(errorMessage);
+    }
+
+    if (data?.exists === false) {
+      throw new Error(data?.detail || 'No tenant found for this subdomain.');
+    }
+
+    return data;
+  },
 };
 

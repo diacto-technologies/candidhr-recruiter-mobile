@@ -23,9 +23,13 @@ import { showToastMessage } from '../../../../utils/toast';
 import { organizationalOrigin } from '../../../../features/auth';
 import { store } from '../../../../store';
 import { shareIcon } from '../../../../assets/svg/share';
+import { deleteIcon } from '../../../../assets/svg/deleteicon';
 import ShareJobModal from '../../shareJobModal';
+import ConfirmModal from '../../confirmmodal';
 import { PERMISSIONS } from '../../../../utils/permission.constants';
 import { usePermission } from '../../../../hooks/usePermission';
+import { useAppDispatch } from '../../../../hooks/useAppDispatch';
+import { deleteJobRequestAction } from '../../../../features/jobs';
 import { JobCardListProps, JobCardRowProps } from './jobcardlist.d';
 
 const IS_TABLET = DeviceInfo.isTablet();
@@ -37,11 +41,14 @@ const JobCardRow: React.FC<JobCardRowProps> = ({
   onJobPress,
   favouriteJobIds,
   onToggleFavourite,
+  onDeleteJob,
 }) => {
+  const dispatch = useAppDispatch();
   const { can } = usePermission();
   const [menuVisible, setMenuVisible] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ left: 0, top: 0 });
   const [shareModalVisible, setShareModalVisible] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const menuTriggerRef = useRef<View | null>(null);
 
   const initialSharedMemberIds = useMemo(
@@ -50,6 +57,19 @@ const JobCardRow: React.FC<JobCardRowProps> = ({
   );
 
 const MENU_WIDTH = 190;
+
+  const handleConfirmDelete = useCallback(() => {
+    setDeleteModalVisible(false);
+    if (onDeleteJob) {
+      onDeleteJob(item.id);
+    } else {
+      dispatch(deleteJobRequestAction(item.id));
+    }
+  }, [dispatch, item.id, onDeleteJob]);
+
+  const handleCancelDelete = useCallback(() => {
+    setDeleteModalVisible(false);
+  }, []);
 
   const handleOpenMenu = () => {
     const trigger = menuTriggerRef.current;
@@ -265,7 +285,32 @@ const MENU_WIDTH = 190;
                   },
                 ]
               : []),
+            {
+              label: 'Delete',
+              icon: deleteIcon,
+              onPress: () => {
+                setMenuVisible(false);
+                setDeleteModalVisible(true);
+              },
+            },
           ]}
+        />
+      )}
+
+      {deleteModalVisible && (
+        <ConfirmModal
+          visible={deleteModalVisible}
+          title="Confirm"
+          message={
+            item?.title
+              ? `Are you sure you want to delete "${item.title}"?`
+              : 'Are you sure you want to delete this job?'
+          }
+          confirmText="Delete"
+          cancelText="Cancel"
+          onConfirm={handleConfirmDelete}
+          onCancel={handleCancelDelete}
+          onClose={handleCancelDelete}
         />
       )}
     </View>
@@ -286,6 +331,7 @@ const JobCardList: React.FC<JobCardListProps> = ({
   onJobPress,
   favouriteJobIds = [],
   onToggleFavourite,
+  onDeleteJob,
 }) => {
   const styles = useStyles();
 
@@ -320,9 +366,10 @@ const JobCardList: React.FC<JobCardListProps> = ({
         onJobPress={onJobPress}
         favouriteJobIds={favouriteJobIds}
         onToggleFavourite={onToggleFavourite}
+        onDeleteJob={onDeleteJob}
       />
     ),
-    [styles, onJobPress, favouriteJobIds, onToggleFavourite],
+    [styles, onJobPress, favouriteJobIds, onToggleFavourite, onDeleteJob],
   );
 
   if (isTabLoading || (loading && jobsList.length === 0)) {

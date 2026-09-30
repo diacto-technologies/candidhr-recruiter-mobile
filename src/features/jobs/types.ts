@@ -316,5 +316,12 @@ export type JobNamesListApiResponse = {
   results: JobNameItem[];
 };
 
+export interface DeleteJobRequest {
+  id: string;
+  deleted_by?: string;
+}
+
+export type DeleteJobPayload = string | DeleteJobRequest;
+
 
 

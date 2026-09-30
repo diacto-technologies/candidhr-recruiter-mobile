@@ -2,7 +2,8 @@ import {QA_BASE_URL,PROD_BASE_URL } from '@env';
 
 export const config = {
   api: {
-    baseURL: QA_BASE_URL,
+    baseURL: PROD_BASE_URL,
+    prodBaseURL: PROD_BASE_URL,
     timeout: 30000,
   },
 };

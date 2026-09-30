@@ -1,75 +1,103 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View } from 'react-native';
-import { useAppDispatch } from '../../../store/hooks';
+import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { Button, Header, TextField, Typography } from '../../../components';
 import { colors } from '../../../theme/colors';
-import { goBack, navigate } from '../../../utils/navigationUtils';
+import { goBack } from '../../../utils/navigationUtils';
 import { useStyles } from './styles';
 import CustomSafeAreaView from '../../../components/atoms/customsafeareaview';
-import { setOrigin } from '../../../features/auth/slice';
+import {
+  checkSubdomainRequestAction,
+  clearSubdomainError,
+  selectCheckSubdomainError,
+  selectCheckSubdomainLoading,
+} from '../../../features/auth';
 import BackgroundPattern from '../../../components/atoms/backgroundpattern';
+import { validateOrganizationName } from '../../../utils/validation';
 
 const OrgnizationalSwitch = () => {
   const styles = useStyles();
   const dispatch = useAppDispatch();
 
+  const isLoading = useAppSelector(selectCheckSubdomainLoading);
+  const subdomainError = useAppSelector(selectCheckSubdomainError);
+
   const [orgName, setOrgName] = useState('');
-  const [error, setError] = useState('');
+  const [validationError, setValidationError] = useState('');
 
-  const handleContinue = () => {
+  useEffect(() => {
+    return () => {
+      dispatch(clearSubdomainError());
+    };
+  }, [dispatch]);
 
-    if (!orgName.trim()) {
-      setError('Please enter your organization name');
+  const handleOrgChange = useCallback(
+    (text: string) => {
+      setOrgName(text);
+      if (validationError) {
+        setValidationError('');
+      }
+      if (subdomainError) {
+        dispatch(clearSubdomainError());
+      }
+    },
+    [validationError, subdomainError, dispatch]
+  );
+
+  const handleContinue = useCallback(() => {
+    const validation = validateOrganizationName(orgName);
+    if (!validation.isValid) {
+      setValidationError(validation.error);
       return;
     }
-    dispatch(setOrigin(`https://${orgName.trim().toLowerCase()}.candidhr.ai`));
-    navigate('LoginScreen');
-  };
+    dispatch(checkSubdomainRequestAction(orgName.trim().toLowerCase()));
+  }, [orgName, dispatch]);
+
+  const displayError = validationError || subdomainError || '';
+  const isButtonDisabled = !orgName.trim() || isLoading;
 
   return (
     <CustomSafeAreaView>
-       <BackgroundPattern>
-      <Header backNavigation={true} onBack={goBack} borderCondition={true} />
-      <View style={styles.inner}>
-
-        <Typography variant="semiBoldDxs" color={colors.gray[900]}>
-          Enter your organization
-        </Typography>
-
-        <View style={styles.label}>
-          <Typography variant="semiBoldTxtsm" color={colors.gray[700]}>
-            Organization Name *
+      <BackgroundPattern>
+        <Header backNavigation={true} onBack={goBack} borderCondition={true} />
+        <View style={styles.inner}>
+          <Typography variant="semiBoldDxs" color={colors.gray[900]}>
+            Enter your organization
           </Typography>
 
-          <TextField
-            placeholder="e.g. diacto"
-            value={orgName}
-            onChangeText={(t) => {
-              setOrgName(t);
-              setError('');
-            }}
-            isError={!!error}
-            error={error}
-            autoCapitalize="none"
-          />
+          <View style={styles.label}>
+            <Typography variant="semiBoldTxtsm" color={colors.gray[700]}>
+              Organization Name *
+            </Typography>
+
+            <TextField
+              placeholder="e.g. diacto"
+              value={orgName}
+              onChangeText={handleOrgChange}
+              isError={!!displayError}
+              error={displayError}
+              autoCapitalize="none"
+              editable={!isLoading}
+            />
+          </View>
+
+          {!!orgName && (
+            <Typography variant="regularTxtsm" color={colors.gray[500]}>
+              https://{orgName?.trim().toLowerCase()}.candidhr.ai
+            </Typography>
+          )}
+
+          <Button
+            variant="contain"
+            onPress={handleContinue}
+            disabled={isButtonDisabled}
+            isLoading={isLoading}
+            borderColor={colors.gray[200]}
+            textColor={isButtonDisabled ? colors.gray[400] : colors.base.white}
+          >
+            Continue
+          </Button>
         </View>
-
-        {!!orgName && (
-          <Typography variant="regularTxtsm" color={colors.gray[500]}>
-            https://{orgName?.toLowerCase()}.candidhr.ai
-          </Typography>
-        )}
-
-        <Button
-          variant="contain"
-          onPress={handleContinue}
-          disabled={!orgName}
-          borderColor={colors.gray[200]}
-          textColor={!orgName ? colors.gray[400]:colors.base.white}
-        >
-          Continue
-        </Button>
-      </View>
       </BackgroundPattern>
     </CustomSafeAreaView>
   );

@@ -17,10 +17,14 @@ import {
   setError,
   forgotPasswordFailure,
   forgotPasswordSuccess,
+  setOrigin,
+  checkSubdomainRequest,
+  checkSubdomainSuccess,
+  checkSubdomainFailure,
 } from "./slice";
 import { authApi } from "./api";
 import { selectIsAuthenticated, selectRefreshToken } from "./selectors";
-import { LoginRequest, LoginResponse, RegisterRequest } from "./types";
+import { CheckSubdomainResponse, LoginRequest, LoginResponse, RegisterRequest } from "./types";
 import { getProfileRequest } from "../profile/slice";
 import { forgotPasswordFailureAction, forgotPasswordSuccessAction, refreshTokenRequestAction, resetPasswordFailureAction, resetPasswordSuccessAction } from "./actions";
 import { navigate } from "../../utils/navigationUtils";
@@ -29,6 +33,8 @@ import { showToastMessage } from "../../utils/toast";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { RESET_APP_STATE } from "../../store/rootReducer";
 import { persistor } from "../../store";
+import { QA_BASE_URL } from "@env";
+import { config } from "../../config";
 
 // Worker sagas
 function* loginWorker(action: { type: string; payload: LoginRequest }): Generator<any, void, any> {
@@ -199,6 +205,34 @@ function* resetPasswordWorker(action: any): Generator<any, void, any> {
   }
 }
 
+function* checkSubdomainWorker(action: { type: string; payload: string }): Generator<any, void, any> {
+  const subdomain = action.payload.trim().toLowerCase();
+  try {
+    yield put(checkSubdomainRequest(subdomain));
+
+    // When baseURL is QA_BASE_URL (QA environment), do not call check-subdomain API
+    if (config.api.baseURL === QA_BASE_URL) {
+      yield put(
+        checkSubdomainSuccess({
+          subdomain,
+          exists: true,
+        })
+      );
+      yield put(setOrigin(`https://${subdomain}.candidhr.ai`));
+      navigate("LoginScreen");
+      return;
+    }
+
+    const response: CheckSubdomainResponse = yield call(authApi.checkSubdomain, subdomain);
+    yield put(checkSubdomainSuccess(response));
+    yield put(setOrigin(`https://${subdomain}.candidhr.ai`));
+    navigate("LoginScreen");
+  } catch (error: any) {
+    const errorMessage = error?.message || "No tenant found for this subdomain.";
+    yield put(checkSubdomainFailure(errorMessage));
+  }
+}
+
 // Watcher saga
 export function* authSaga() {
   yield takeLatest(AUTH_ACTION_TYPES.LOGIN_REQUEST, loginWorker);
@@ -210,5 +244,6 @@ export function* authSaga() {
   // Legacy watcher for backward compatibility
   yield takeLatest(AUTH_ACTION_TYPES.ADD_USER, addUserWorker);
   yield takeLatest(AUTH_ACTION_TYPES.RESET_PASSWORD_REQUEST, resetPasswordWorker);
+  yield takeLatest(AUTH_ACTION_TYPES.CHECK_SUBDOMAIN_REQUEST, checkSubdomainWorker);
 }
 

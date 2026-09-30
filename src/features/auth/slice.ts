@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { AuthState, User, LoginResponse, RegisterResponse } from "./types";
+import { AuthState, User, LoginResponse, RegisterResponse, CheckSubdomainResponse } from "./types";
 
 const initialState: AuthState = {
   user: null,
@@ -18,6 +18,8 @@ const initialState: AuthState = {
   resetPasswordMessage: null,
   resetPasswordError: null,
   origin:"",
+  checkSubdomainLoading: false,
+  checkSubdomainError: null,
 };
 
 const authSlice = createSlice({
@@ -161,6 +163,25 @@ const authSlice = createSlice({
     setOrigin: (state, action: PayloadAction<string>) => {
       state.origin = action.payload;
     },
+
+    checkSubdomainRequest: (state, _action: PayloadAction<string>) => {
+      state.checkSubdomainLoading = true;
+      state.checkSubdomainError = null;
+    },
+
+    checkSubdomainSuccess: (state, _action: PayloadAction<CheckSubdomainResponse>) => {
+      state.checkSubdomainLoading = false;
+      state.checkSubdomainError = null;
+    },
+
+    checkSubdomainFailure: (state, action: PayloadAction<string>) => {
+      state.checkSubdomainLoading = false;
+      state.checkSubdomainError = action.payload;
+    },
+
+    clearSubdomainError: (state) => {
+      state.checkSubdomainError = null;
+    },
   },
 });
 
@@ -189,7 +210,11 @@ export const {
   resetPasswordRequest,
   resetPasswordSuccess,
   resetPasswordFailure,
-  setOrigin
+  setOrigin,
+  checkSubdomainRequest,
+  checkSubdomainSuccess,
+  checkSubdomainFailure,
+  clearSubdomainError,
 } = authSlice.actions;
 
 export default authSlice.reducer;
