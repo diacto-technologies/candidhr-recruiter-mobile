@@ -4,6 +4,7 @@ import { Platform } from "react-native";
 import RNFS from "react-native-fs";
 import Share from "react-native-share";
 import ReactNativeBlobUtil from "react-native-blob-util";
+import Clipboard from "@react-native-clipboard/clipboard";
 import { config } from "../../config";
 import { API_ENDPOINTS } from "../../api/endpoints";
 import { APPLICATIONS_ACTION_TYPES } from "./constants";
@@ -100,9 +101,12 @@ import {
   getApplicationViewersRequest,
   getApplicationViewersSuccess,
   getApplicationViewersFailure,
+  getApplicationShortLinkRequest,
+  getApplicationShortLinkSuccess,
+  getApplicationShortLinkFailure,
 } from "./slice";
 import { applicationsApi } from "./api";
-import { AssessmentDetailedReportApiResponse, AssessmentLog, AssessmentLogApiResponse, AssessmentReportApiResponse, ExportAssessmentReportRequest, GetApplicationResponsesParams, GetApplicationsParams, GetApplicationsSagaAction, PersonalityScreeningResponse, ResumeScreeningApiResponse, ResumeScreeningReportApiResponse, ScreeningAssessment, SessionReviewedResponse, UpdateApplicationShareRequest, EmailTemplate, PreviewEmailTemplateResponse, PersonalityScreeningInterviewOptionsResponse, MustHaveSkillsResponse, ApplicationViewersResponse } from "./types";
+import { AssessmentDetailedReportApiResponse, AssessmentLog, AssessmentLogApiResponse, AssessmentReportApiResponse, ExportAssessmentReportRequest, GetApplicationResponsesParams, GetApplicationsParams, GetApplicationsSagaAction, PersonalityScreeningResponse, ResumeScreeningApiResponse, ResumeScreeningReportApiResponse, ScreeningAssessment, SessionReviewedResponse, UpdateApplicationShareRequest, EmailTemplate, PreviewEmailTemplateResponse, PersonalityScreeningInterviewOptionsResponse, MustHaveSkillsResponse, ApplicationViewersResponse, ApplicationShortLinkResponse, GetApplicationShortLinkPayload } from "./types";
 import { getAssessmentDetailedReportRequestAction, getAssessmentReportRequestAction, getApplicationDetailRequestAction, getApplicationStagesRequestAction, getApplicationReasonsListRequestAction } from "./actions";
 import { showToastMessage } from "../../utils/toast";
 import { selectProfile } from "../profile/selectors";
@@ -1226,6 +1230,59 @@ function* getApplicationViewersWorker(action: PayloadAction<{ applicationId: str
   }
 }
 
+function* getApplicationShortLinkWorker(
+  action: PayloadAction<GetApplicationShortLinkPayload | string>
+): Generator<any, void, any> {
+  const payload = action.payload;
+  const applicationId = typeof payload === "string" ? payload : payload.applicationId;
+  const onSuccess = typeof payload === "object" ? payload.onSuccess : undefined;
+  const onError = typeof payload === "object" ? payload.onError : undefined;
+
+  if (!applicationId) {
+    const errorMsg = "Application ID is missing";
+    showToastMessage(errorMsg, "error");
+    if (onError) onError(errorMsg);
+    return;
+  }
+
+  try {
+    yield put(getApplicationShortLinkRequest());
+    const response: ApplicationShortLinkResponse = yield call(
+      applicationsApi.getShortLink,
+      applicationId
+    );
+    yield put(getApplicationShortLinkSuccess(response));
+
+    let link = response?.path || "";
+    if (link) {
+      if (!link.startsWith("http://") && !link.startsWith("https://")) {
+        const origin: string = yield select(organizationalOrigin);
+        const baseUrl = (origin || "https://app.candidhr.ai").replace(/\/+$/, "");
+        link = `${baseUrl}${link.startsWith("/") ? "" : "/"}${link}`;
+      }
+      Clipboard.setString(link);
+      showToastMessage("Profile link copied to clipboard", "success");
+      if (onSuccess) {
+        onSuccess(link);
+      }
+    } else {
+      const errorMsg = "Profile link not available";
+      showToastMessage(errorMsg, "error");
+      if (onError) {
+        onError(errorMsg);
+      }
+    }
+  } catch (err: any) {
+    const message =
+      err?.response?.data?.message || err?.message || "Failed to copy profile link";
+    yield put(getApplicationShortLinkFailure(message));
+    showToastMessage(message, "error");
+    if (onError) {
+      onError(message);
+    }
+  }
+}
+
 export function* applicationsSaga() {
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_APPLICATIONS_REQUEST, getApplicationsWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.EXPORT_APPLICATIONS_REQUEST, exportApplicationsWorker);
@@ -1261,4 +1318,5 @@ export function* applicationsSaga() {
   yield takeLatest(APPLICATIONS_ACTION_TYPES.SEND_EMAIL_REQUEST, sendEmailWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_MUST_HAVE_SKILLS_REQUEST, getMustHaveSkillsWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_APPLICATION_VIEWERS_REQUEST, getApplicationViewersWorker);
+  yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_APPLICATION_SHORT_LINK_REQUEST, getApplicationShortLinkWorker);
 }
