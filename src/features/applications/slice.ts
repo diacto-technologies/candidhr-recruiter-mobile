@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ApplicationsState, Application, ApplicationsListResponse, ApplicationResponseItem, ResumeScreeningResponseItem, ResumeScreeningReportApiResponse, AssessmentLog, AssessmentReport, AssessmentDetailedReport, ScreeningAssessment, PersonalityScreeningResponsesPayload, ApplicationStage, ReasonCategory, ReasonListItem, PerformanceReportResponse, AssessmentOptionsReportResponse, AssessmentOption, EmailTemplate, PreviewEmailTemplateResponse, ApplicationViewersResponse } from "./types";
+import { ApplicationsState, Application, ApplicationsListResponse, ApplicationResponseItem, ResumeScreeningResponseItem, ResumeScreeningReportApiResponse, AssessmentLog, AssessmentReport, AssessmentDetailedReport, ScreeningAssessment, PersonalityScreeningResponsesPayload, ApplicationStage, ReasonCategory, ReasonListItem, PerformanceReportResponse, AssessmentOptionsReportResponse, AssessmentOption, EmailTemplate, PreviewEmailTemplateResponse, ApplicationViewersResponse, ApplicationShortLinkResponse } from "./types";
 
 const initialState: ApplicationsState = {
   applications: [],
@@ -93,12 +93,29 @@ const initialState: ApplicationsState = {
   viewers: null as ApplicationViewersResponse | null,
   loadingViewers: false,
   viewersError: null as string | null,
+  loadingShortLink: false,
+  shortLinkError: null as string | null,
 };
 
 const applicationsSlice = createSlice({
   name: "applications",
   initialState,
   reducers: {
+    getApplicationShortLinkRequest: (state) => {
+      state.loadingShortLink = true;
+      state.shortLinkError = null;
+    },
+    getApplicationShortLinkSuccess: (
+      state,
+      _action: PayloadAction<ApplicationShortLinkResponse>
+    ) => {
+      state.loadingShortLink = false;
+      state.shortLinkError = null;
+    },
+    getApplicationShortLinkFailure: (state, action: PayloadAction<string>) => {
+      state.loadingShortLink = false;
+      state.shortLinkError = action.payload;
+    },
     getMustHaveSkillsRequest: (state) => {
       state.loadingMustHaveSkills = true;
       state.mustHaveSkillsError = null;
@@ -982,6 +999,9 @@ export const {
   exportAssessmentReportRequest,
   exportAssessmentReportSuccess,
   exportAssessmentReportFailure,
+  getApplicationShortLinkRequest,
+  getApplicationShortLinkSuccess,
+  getApplicationShortLinkFailure,
 } = applicationsSlice.actions;
 
 export default applicationsSlice.reducer;
