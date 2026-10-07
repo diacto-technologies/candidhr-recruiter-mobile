@@ -19,10 +19,14 @@ import { getStatusColor, getStatusLabel } from '../../../constants/applicantStat
 import { PERMISSIONS } from '../../../utils/permission.constants';
 import { usePermission } from '../../../hooks/usePermission';
 import { useStyles } from './styles';
-import { ApplicationProfileDetails } from '../../../features/applications';
+import {
+  ApplicationProfileDetails,
+  getApplicationShortLinkRequestAction,
+} from '../../../features/applications';
 import { openExternalLink } from '../../../utils/urlUtils';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { showToastMessage } from '../../../utils/toast';
+import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { organizationalOrigin } from '../../../features/auth';
 
@@ -84,14 +88,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
 }) => {
   const { can } = usePermission();
   const styles = useStyles();
+  const dispatch = useAppDispatch();
   const origin = useAppSelector(organizationalOrigin);
 
   const handleCopyApplicantLink = () => {
     if (!application?.id) return;
-    const baseUrl = (origin || 'https://app.candidhr.ai').replace(/\/+$/, '');
-    const url = `${baseUrl}/app/user/applicants/${application.id}/profile`;
-    Clipboard.setString(url);
-    showToastMessage('Profile link copied to clipboard', 'success');
+    dispatch(getApplicationShortLinkRequestAction(String(application.id)));
   };
 
   if (loading) {

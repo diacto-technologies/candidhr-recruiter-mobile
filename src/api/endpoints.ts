@@ -54,6 +54,8 @@ export const API_ENDPOINTS = {
     VIEWERS: (id: string, limit = 20) => `/applications/v2/${id}/viewers/?limit=${limit}`,
     /** GET application profile as PDF (server-generated) */
     PROFILE_PDF: (id: string) => `/applications/v1/${id}/profile/pdf/`,
+    /** GET/POST short link for application profile */
+    SHORT_LINK: (id: string) => `/applications/v1/${id}/short-link/`,
     CREATE: '/applications',
     UPDATE: (id: string) => `/applications/${id}`,
     stages: (id: string) => `/applications/v1/stages/?application_id=${id}`,

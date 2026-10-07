@@ -1,6 +1,6 @@
 import { apiClient } from "../../api/client";
 import { API_ENDPOINTS } from "../../api/endpoints";
-import { CreateApplicationRequest, UpdateApplicationStatusRequest, Application, GetApplicationsParams, ApplicationsListResponse, ApplicationDetailResponse, GetApplicationResponsesParams, ApplicationResponsesApiResponse, ResumeScreeningApiResponse, ResumeScreeningReportApiResponse, AssessmentLogApiResponse, AssessmentReportApiResponse, AssessmentDetailedReportApiResponse, ScreeningAssessment, PersonalityScreeningResponse, PersonalityScreeningResponsesPayload, ApplicationStagesResponse, SessionReviewedResponse, ReasonCategory, ReasonListItem, UpdateStageStatusPayload, PerformanceReportResponse, AssessmentOptionsReportResponse, ExportAssessmentReportRequest, EmailTemplate, MustHaveSkillsResponse, ApplicationViewersResponse } from "./types";
+import { CreateApplicationRequest, UpdateApplicationStatusRequest, Application, GetApplicationsParams, ApplicationsListResponse, ApplicationDetailResponse, GetApplicationResponsesParams, ApplicationResponsesApiResponse, ResumeScreeningApiResponse, ResumeScreeningReportApiResponse, AssessmentLogApiResponse, AssessmentReportApiResponse, AssessmentDetailedReportApiResponse, ScreeningAssessment, PersonalityScreeningResponse, PersonalityScreeningResponsesPayload, ApplicationStagesResponse, SessionReviewedResponse, ReasonCategory, ReasonListItem, UpdateStageStatusPayload, PerformanceReportResponse, AssessmentOptionsReportResponse, ExportAssessmentReportRequest, EmailTemplate, MustHaveSkillsResponse, ApplicationViewersResponse, ApplicationShortLinkResponse } from "./types";
 
 export const applicationsApi = {
   // getApplications: async (params?: GetApplicationsParams): Promise<ApplicationsListResponse> => {
@@ -435,6 +435,11 @@ export const applicationsApi = {
     limit = 20
   ): Promise<ApplicationViewersResponse> => {
     const res = await apiClient.get(API_ENDPOINTS.APPLICATIONS.VIEWERS(applicationId, limit));
+    return res?.data ?? res;
+  },
+
+  getShortLink: async (id: string): Promise<ApplicationShortLinkResponse> => {
+    const res = await apiClient.post(API_ENDPOINTS.APPLICATIONS.SHORT_LINK(id), {});
     return res?.data ?? res;
   },
 };

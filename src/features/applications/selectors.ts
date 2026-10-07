@@ -345,4 +345,15 @@ export const selectApplicationViewersError = createSelector(
   (state) => state.viewersError ?? null
 );
 
+export const selectLoadingShortLink = createSelector(
+  selectApplicationsState,
+  (state) => state.loadingShortLink ?? false
+);
+
+export const selectShortLinkError = createSelector(
+  selectApplicationsState,
+  (state) => state.shortLinkError ?? null
+);
+
+
 

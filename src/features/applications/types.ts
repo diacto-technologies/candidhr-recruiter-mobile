@@ -119,7 +119,23 @@ export interface ApplicationsState {
   viewers: ApplicationViewersResponse | null;
   loadingViewers: boolean;
   viewersError: string | null;
+  loadingShortLink: boolean;
+  shortLinkError: string | null;
 }
+
+export interface ApplicationShortLinkResponse {
+  code: string;
+  path: string;
+}
+
+export type GetApplicationShortLinkPayload =
+  | string
+  | {
+      applicationId: string;
+      onSuccess?: (url: string) => void;
+      onError?: (error: string) => void;
+    };
+
 
 export interface ApplicationViewerUser {
   id: string;

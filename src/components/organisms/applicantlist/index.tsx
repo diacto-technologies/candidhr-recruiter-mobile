@@ -41,7 +41,10 @@ import {
   getRapidhireCandidatesSuccessAction,
   sendInterviewLinkRequestAction,
 } from '../../../features/rapidhire/actions';
-import { updateApplicationStatusRequestAction } from '../../../features/applications/actions';
+import {
+  updateApplicationStatusRequestAction,
+  getApplicationShortLinkRequestAction,
+} from '../../../features/applications/actions';
 import { applicantUserIcon } from '../../../assets/svg/applicantUser';
 import { shareIcon } from '../../../assets/svg/share';
 import { copyIcon } from '../../../assets/svg/copy';
@@ -142,10 +145,7 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
       showToastMessage('Profile link not available', 'error');
       return;
     }
-    const baseUrl = (origin).replace(/\/+$/, '');
-    const fullUrl = `${baseUrl}/app/user/applicants/${appId}/profile`;
-    Clipboard.setString(fullUrl);
-    showToastMessage('Profile link copied to clipboard', 'success');
+    dispatch(getApplicationShortLinkRequestAction(String(appId)));
   };
 
   const handleCopyInterviewLink = async () => {

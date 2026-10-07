@@ -17,6 +17,8 @@ import {
   UpdateApplicationShareRequest,
   PerformanceReportResponse,
   AssessmentOptionsReportResponse,
+  ApplicationShortLinkResponse,
+  GetApplicationShortLinkPayload,
 } from "./types";
 
 export const getApplicationsRequestAction = (params?: GetApplicationsParams) => ({
@@ -356,5 +358,25 @@ export const getApplicationViewersRequestAction = (payload: { applicationId: str
   type: APPLICATIONS_ACTION_TYPES.GET_APPLICATION_VIEWERS_REQUEST,
   payload,
 });
+
+export const getApplicationShortLinkRequestAction = (
+  payload: GetApplicationShortLinkPayload | string
+) => ({
+  type: APPLICATIONS_ACTION_TYPES.GET_APPLICATION_SHORT_LINK_REQUEST,
+  payload,
+});
+
+export const getApplicationShortLinkSuccessAction = (
+  payload: ApplicationShortLinkResponse
+) => ({
+  type: APPLICATIONS_ACTION_TYPES.GET_APPLICATION_SHORT_LINK_SUCCESS,
+  payload,
+});
+
+export const getApplicationShortLinkFailureAction = (payload: string) => ({
+  type: APPLICATIONS_ACTION_TYPES.GET_APPLICATION_SHORT_LINK_FAILURE,
+  payload,
+});
+
 
 
