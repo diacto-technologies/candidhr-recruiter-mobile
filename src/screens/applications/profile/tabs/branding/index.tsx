@@ -31,6 +31,7 @@ import {
   selectBrandingUpdateSuccess,
   selectIsBrandingReset,
 } from '../../../../../features/branding/selectors';
+import { selectProfile } from '../../../../../features/profile/selectors';
 import {
   getBrandingRequestAction,
   updateBrandingRequestAction,
@@ -42,6 +43,7 @@ import {
   DEFAULT_PRODUCT_NAME,
   MAX_PRODUCT_NAME_LENGTH,
   isDefaultLogoUrl,
+  isDefaultOrCandidHr,
 } from '../../../../../features/branding/constants';
 import {
   validateHexColor,
@@ -62,14 +64,39 @@ const infoCircleSvg = `<svg width="16" height="16" viewBox="0 0 16 16" fill="non
 <path d="M8 10.6667H8.00667" stroke="#475467" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`;
 
+const candidHrMarkSvg = `<svg width="15" height="18" viewBox="0 0 41 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="candidHrBlueGrad" x1="0" y1="0" x2="31.5" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4F79F6"/>
+      <stop offset="60%" stop-color="#6B90FB"/>
+      <stop offset="100%" stop-color="#557EF5"/>
+    </linearGradient>
+    <linearGradient id="candidHrPurpleGrad" x1="41" y1="0" x2="15" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7660EE"/>
+      <stop offset="60%" stop-color="#9E80FA"/>
+      <stop offset="100%" stop-color="#B393FB"/>
+    </linearGradient>
+    <linearGradient id="candidHrCyanOverlap" x1="15" y1="17" x2="31" y2="27" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#A5EDFD"/>
+      <stop offset="100%" stop-color="#80D8F9"/>
+    </linearGradient>
+  </defs>
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M0 0.767578L0.017692 14.797L13.0961 23.9369L0.017692 33.2743L0 47.9998L31.5046 23.4355L0 0.767578Z" fill="url(#candidHrBlueGrad)"/>
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M40.3175 0L40.3035 11.0318L30.0196 18.2188L40.3035 25.5615L40.3175 37.1404L15.5443 17.8247L40.3175 0Z" fill="url(#candidHrPurpleGrad)"/>
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M27.1204 26.8517L31.4995 23.4374L19.6222 14.8916L15.5443 17.8258L27.1204 26.8517Z" fill="url(#candidHrCyanOverlap)"/>
+</svg>`;
+
 const BrandingScreen = () => {
   const dispatch = useAppDispatch();
 
   const brandingData = useAppSelector(selectBrandingData);
+  const profile = useAppSelector(selectProfile);
   const loading = useAppSelector(selectBrandingLoading);
   const updating = useAppSelector(selectBrandingUpdating);
   const updateSuccess = useAppSelector(selectBrandingUpdateSuccess);
   const isBrandingReset = useAppSelector(selectIsBrandingReset);
+
+  const companyName = profile?.tenant?.org_name?.trim() || '';
 
   useEffect(() => {
     if (updateSuccess) {
@@ -120,12 +147,13 @@ const BrandingScreen = () => {
   const getResolvedSavedProductName = useCallback((data: typeof brandingData): string => {
     if (!data) return '';
     if (isBrandingReset) return '';
+    if (isDefaultOrCandidHr(data.product_name)) return '';
     return data.product_name?.trim() || '';
   }, [isBrandingReset]);
 
   // Sync Form with Fetched Data
   useEffect(() => {
-    if (brandingData) {
+    if (brandingData && !isResetAction) {
       const pName = getResolvedSavedProductName(brandingData);
       const pColor = brandingData.primary_color || DEFAULT_BRAND_COLOR;
       setProductName(pName);
@@ -146,7 +174,7 @@ const BrandingScreen = () => {
         )
       );
     }
-  }, [brandingData, getResolvedSavedProductName]);
+  }, [brandingData, isResetAction, getResolvedSavedProductName]);
 
   // Unsaved Changes Calculation
   const isDirty = useMemo(() => {
@@ -488,8 +516,43 @@ const BrandingScreen = () => {
         : currentSecondaryLogoUrl);
 
   const trimmedProductName = productName.trim();
-  const firstLetter = trimmedProductName ? trimmedProductName[0].toUpperCase() : '';
-  const displayProductName = trimmedProductName;
+  const companyInitials = useMemo(() => {
+    if (!companyName) return '';
+    const words = companyName.split(/\s+/).filter(Boolean);
+    if (words.length >= 2) {
+      return (words[0][0] + words[1][0]).toUpperCase();
+    }
+    return (companyName[0] || '').toUpperCase();
+  }, [companyName]);
+
+  // Fallback to company name when custom product name is empty and user has uploaded/has either compact logo or logo
+  const showCompanyFallback = Boolean(
+    !trimmedProductName &&
+    (currentLogoUrl || currentSecondaryLogoUrl)
+  );
+
+  const displayProductName = trimmedProductName || (showCompanyFallback ? companyName : '');
+  const autoInitials = trimmedProductName
+    ? (trimmedProductName.split(/\s+/).filter(Boolean).length >= 2
+        ? (trimmedProductName.split(/\s+/).filter(Boolean)[0][0] + trimmedProductName.split(/\s+/).filter(Boolean)[1][0]).toUpperCase()
+        : trimmedProductName[0].toUpperCase())
+    : (showCompanyFallback ? companyInitials : '');
+
+  const isAlreadyDefault = useMemo(() => {
+    if (isResetAction) return true;
+    const hasAnyCustomName = Boolean(productName.trim());
+    const hasCustomColor =
+      normalizeHexColor(primaryColor) !== normalizeHexColor(DEFAULT_BRAND_COLOR);
+    const hasAnyLogo = Boolean(currentLogoUrl || currentSecondaryLogoUrl || currentFaviconUrl);
+    return !hasAnyCustomName && !hasCustomColor && !hasAnyLogo;
+  }, [
+    isResetAction,
+    productName,
+    primaryColor,
+    currentLogoUrl,
+    currentSecondaryLogoUrl,
+    currentFaviconUrl,
+  ]);
 
   const renderShimmerLoading = () => (
     <View style={styles.card}>
@@ -530,13 +593,14 @@ const BrandingScreen = () => {
                   size={36}
                   variant="outline"
                   buttonColor={colors.base.white}
-                  textColor={colors.gray[700]}
+                  textColor={isAlreadyDefault ? colors.gray[400] : colors.gray[700]}
                   borderColor={colors.gray[300]}
                   borderWidth={1}
                   borderRadius={8}
                   paddingHorizontal={12}
                   textVariant="mediumTxtxs"
-                  startIcon={<SvgXml xml={resetIcon} width={14} height={14} />}
+                  disabled={isAlreadyDefault || updating}
+                  startIcon={<SvgXml xml={resetIcon} width={14} height={14} opacity={isAlreadyDefault ? 0.4 : 1} />}
                   onPress={handleResetToDefault}
                   style={{alignSelf: 'flex-end'}}
                 >
@@ -574,6 +638,16 @@ const BrandingScreen = () => {
                       {`${productName.length}/${MAX_PRODUCT_NAME_LENGTH}`}
                     </Typography>
                   </View>
+
+                  {showCompanyFallback && Boolean(companyName) && (
+                    <Typography
+                      variant="regularTxtxs"
+                      color={colors.gray[600]}
+                      style={{ marginTop: 6 }}
+                    >
+                      {`Left empty, so your company name \u201c${companyName}\u201d is used.`}
+                    </Typography>
+                  )}
                 </View>
 
                 {/* 2. Logos Section */}
@@ -596,9 +670,11 @@ const BrandingScreen = () => {
                     localFile={logoFile}
                     isAutoBadge={!logoFile && !currentLogoUrl}
                     autoBadgeText="AUTO"
-                    productName={productName}
+                    productName={displayProductName}
+                    fallbackText={autoInitials}
+                    compactLogoUrl={currentSecondaryLogoUrl}
                     brandColor={primaryColor}
-                    autoSubText={trimmedProductName ? 'Auto: compact logo + name' : undefined}
+                    autoSubText={displayProductName ? 'Auto: compact logo + name' : undefined}
                     onReplace={() => handleOpenPickerFor('logo')}
                     onDelete={() => handleDeleteLogo('logo')}
                   />
@@ -612,9 +688,18 @@ const BrandingScreen = () => {
                     localFile={secondaryLogoFile}
                     isAutoBadge={!secondaryLogoFile && !currentSecondaryLogoUrl}
                     autoBadgeText="AUTO"
-                    productName={productName}
+                    productName={displayProductName}
+                    fallbackText={autoInitials}
                     brandColor={primaryColor}
-                    autoSubText={firstLetter ? `Auto: "${firstLetter}" from product name` : undefined}
+                    autoSubText={
+                      autoInitials
+                        ? trimmedProductName
+                          ? `Auto: "${autoInitials}" from product name`
+                          : showCompanyFallback && companyName
+                          ? `Auto: "${autoInitials}" from company name`
+                          : undefined
+                        : undefined
+                    }
                     onReplace={() => handleOpenPickerFor('secondary_logo')}
                     onDelete={() => handleDeleteLogo('secondary_logo')}
                   />
@@ -628,13 +713,18 @@ const BrandingScreen = () => {
                     localFile={faviconFile}
                     isAutoBadge={!hasCustomFavicon && !faviconFile}
                     autoBadgeText="AUTO"
-                    productName={productName}
+                    productName={displayProductName}
+                    fallbackText={autoInitials}
                     brandColor={primaryColor}
                     autoSubText={
                       currentSecondaryLogoUrl
                         ? 'Auto: uses your compact logo'
-                        : firstLetter
-                        ? `Auto: "${firstLetter}" from product name`
+                        : autoInitials
+                        ? trimmedProductName
+                          ? `Auto: "${autoInitials}" from product name`
+                          : showCompanyFallback && companyName
+                          ? `Auto: "${autoInitials}" from company name`
+                          : undefined
                         : undefined
                     }
                     onReplace={() => handleOpenPickerFor('favicon')}
@@ -646,8 +736,12 @@ const BrandingScreen = () => {
                     <View style={styles.infoBanner}>
                       <SvgXml xml={infoCircleSvg} width={16} height={16} />
                       <Typography variant="regularTxtxs" color={colors.gray[600]} style={styles.infoBannerText}>
-                        {firstLetter
-                          ? `Your compact logo and favicon will show "${firstLetter}", the first letter of your product name "${displayProductName}". Upload them to change this.`
+                        {autoInitials
+                          ? trimmedProductName
+                            ? `Your compact logo and favicon will show "${autoInitials}", the first letter of your product name "${trimmedProductName}". Upload them to change this.`
+                            : showCompanyFallback && companyName
+                            ? `Your compact logo and favicon will show "${autoInitials}", the first ${autoInitials.length > 1 ? 'letters' : 'letter'} of your company name "${companyName}". Upload them or add a product name to change this.`
+                            : 'Your compact logo and favicon will show the first letter of your product name. Upload them to change this.'
                           : 'Your compact logo and favicon will show the first letter of your product name. Upload them to change this.'}
                       </Typography>
                     </View>
@@ -730,6 +824,20 @@ const BrandingScreen = () => {
                       backgroundInactive={colors.gray[300]}
                     />
                   </View>
+
+                  {poweredByEnabled && (
+                    <View style={styles.poweredByPreviewWrap}>
+                      <View style={styles.poweredByPill}>
+                        <Typography variant="regularTxtxs" color={colors.gray[700]}>
+                          Powered by
+                        </Typography>
+                        <SvgXml xml={candidHrMarkSvg} width={12} height={14} />
+                        <Typography variant="semiBoldTxtxs" color={colors.gray[800]}>
+                          CandidHR.ai
+                        </Typography>
+                      </View>
+                    </View>
+                  )}
                 </View>
               </>
             )}

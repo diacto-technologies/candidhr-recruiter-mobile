@@ -12,6 +12,12 @@ const uploadSvg = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" x
 <path d="M14 10V12.6667C14 13.0203 13.8595 13.3594 13.6095 13.6095C13.3594 13.8595 13.0203 14 12.6667 14H3.33333C2.97971 14 2.64057 13.8595 2.39052 13.6095C2.14048 13.3594 2 13.0203 2 12.6667V10M11.3333 5.33333L8 2M8 2L4.66667 5.33333M8 2V10" stroke="#535862" stroke-width="1.33" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`;
 
+const imagePlaceholderSvg = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect x="3" y="3" width="18" height="18" rx="4" stroke="#98A2B3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="8.5" cy="8.5" r="1.5" fill="#98A2B3"/>
+<path d="M21 15L16 10L5 21" stroke="#98A2B3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
 export const LogoUploadCard: React.FC<LogoUploadCardProps> = React.memo(({
   type,
   title,
@@ -26,20 +32,28 @@ export const LogoUploadCard: React.FC<LogoUploadCardProps> = React.memo(({
   productName = '',
   brandColor = colors.brand[600],
   autoSubText,
+  fallbackText,
+  compactLogoUrl,
 }) => {
   const styles = React.useMemo(() => useStyles(brandColor), [brandColor]);
   const [loadError, setLoadError] = React.useState(false);
+  const [compactLoadError, setCompactLoadError] = React.useState(false);
 
   const previewUri = localFile?.uri || currentUrl || null;
   const isAuto = Boolean(!previewUri || isAutoBadge);
 
   const trimmedName = productName?.trim() || '';
-  const showContent = Boolean(trimmedName);
-  const firstLetter = showContent ? trimmedName[0].toUpperCase() : '';
+  const displayInitials = fallbackText || (trimmedName ? trimmedName[0].toUpperCase() : '');
+  const showContent = Boolean(displayInitials || trimmedName || compactLogoUrl);
+  const firstLetter = displayInitials;
 
   React.useEffect(() => {
     setLoadError(false);
   }, [previewUri]);
+
+  React.useEffect(() => {
+    setCompactLoadError(false);
+  }, [compactLogoUrl]);
 
   const formattedUri = React.useMemo(() => {
     if (!previewUri) return null;
@@ -55,8 +69,27 @@ export const LogoUploadCard: React.FC<LogoUploadCardProps> = React.memo(({
     return `file://${previewUri}`;
   }, [previewUri]);
 
+  const formattedCompactUri = React.useMemo(() => {
+    if (!compactLogoUrl) return null;
+    if (
+      compactLogoUrl.startsWith('http://') ||
+      compactLogoUrl.startsWith('https://') ||
+      compactLogoUrl.startsWith('file://') ||
+      compactLogoUrl.startsWith('data:') ||
+      compactLogoUrl.startsWith('content://')
+    ) {
+      return compactLogoUrl;
+    }
+    return `file://${compactLogoUrl}`;
+  }, [compactLogoUrl]);
+
   const isSvg = Boolean(
     formattedUri && (formattedUri.endsWith('.svg') || formattedUri.includes('.svg?'))
+  );
+
+  const isCompactSvg = Boolean(
+    formattedCompactUri &&
+      (formattedCompactUri.endsWith('.svg') || formattedCompactUri.includes('.svg?'))
   );
 
   return (
@@ -83,14 +116,31 @@ export const LogoUploadCard: React.FC<LogoUploadCardProps> = React.memo(({
           <View style={styles.previewPlaceholder}>
             {type === 'logo' && showContent && (
               <View style={styles.autoLogoPreviewRow}>
-                <View style={[styles.autoLetterBadge, { backgroundColor: brandColor }]}>
-                  <Typography variant="semiBoldTxtmd" color={colors.base.white}>
-                    {firstLetter}
+                {formattedCompactUri && !compactLoadError ? (
+                  isCompactSvg ? (
+                    <View style={styles.autoLetterBadge}>
+                      <SvgUri uri={formattedCompactUri} width={34} height={34} />
+                    </View>
+                  ) : (
+                    <Image
+                      source={{ uri: formattedCompactUri }}
+                      style={styles.autoLetterBadge}
+                      resizeMode="contain"
+                      onError={() => setCompactLoadError(true)}
+                    />
+                  )
+                ) : (
+                  <View style={[styles.autoLetterBadge, { backgroundColor: brandColor }]}>
+                    <Typography variant="semiBoldTxtmd" color={colors.base.white}>
+                      {firstLetter}
+                    </Typography>
+                  </View>
+                )}
+                {Boolean(trimmedName) && (
+                  <Typography variant="semiBoldTxtlg" color={colors.gray[900]} style={styles.autoLogoText}>
+                    {trimmedName}
                   </Typography>
-                </View>
-                <Typography variant="semiBoldTxtlg" color={colors.gray[900]} style={styles.autoLogoText}>
-                  {trimmedName}
-                </Typography>
+                )}
               </View>
             )}
 
@@ -107,6 +157,12 @@ export const LogoUploadCard: React.FC<LogoUploadCardProps> = React.memo(({
                 <Typography variant="semiBoldTxtmd" color={colors.base.white}>
                   {firstLetter}
                 </Typography>
+              </View>
+            )}
+
+            {!showContent && (
+              <View style={styles.emptyPlaceholderIconWrap}>
+                <SvgXml xml={imagePlaceholderSvg} width={type === 'favicon' ? 24 : 30} height={type === 'favicon' ? 24 : 30} />
               </View>
             )}
           </View>

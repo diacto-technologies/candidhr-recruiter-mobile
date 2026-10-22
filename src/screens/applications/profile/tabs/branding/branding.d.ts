@@ -21,6 +21,8 @@ export interface LogoUploadCardProps {
   productName?: string;
   brandColor?: string;
   autoSubText?: string;
+  fallbackText?: string;
+  compactLogoUrl?: string | null;
 }
 
 export interface ColorSwatchProps {

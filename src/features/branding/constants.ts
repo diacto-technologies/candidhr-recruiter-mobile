@@ -18,7 +18,7 @@ export const BRAND_COLOR_PRESETS: readonly string[] = [
   '#059669',
 ] as const;
 
-export const DEFAULT_BRAND_COLOR = '#2563EB';
+export const DEFAULT_BRAND_COLOR = '#4F46E5';
 export const DEFAULT_PRODUCT_NAME = '';
 export const MAX_PRODUCT_NAME_LENGTH = 30;
 

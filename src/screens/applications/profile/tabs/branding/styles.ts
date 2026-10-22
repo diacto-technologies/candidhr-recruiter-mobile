@@ -118,6 +118,14 @@ export const useStyles = (brandColor: string = colors.brand[600]) => {
       alignItems: 'center',
       justifyContent: 'center',
     },
+    emptyPlaceholderIconWrap: {
+      width: 48,
+      height: 48,
+      borderRadius: 10,
+      backgroundColor: '#F2F4F7',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     autoLogoPreviewRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -290,6 +298,24 @@ export const useStyles = (brandColor: string = colors.brand[600]) => {
     poweredByLeft: {
       flex: 1,
       paddingRight: 16,
+    },
+    poweredByPreviewWrap: {
+      marginTop: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    poweredByPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 5,
+      paddingHorizontal: 12,
+      borderRadius: 9999,
+      borderWidth: 1,
+      borderStyle: 'dashed',
+      borderColor: '#D0D5DD',
+      backgroundColor: '#FAFAFA',
+      gap: 5,
     },
   });
 };
