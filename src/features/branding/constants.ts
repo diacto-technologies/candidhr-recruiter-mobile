@@ -22,6 +22,18 @@ export const DEFAULT_BRAND_COLOR = '#4F46E5';
 export const DEFAULT_PRODUCT_NAME = '';
 export const MAX_PRODUCT_NAME_LENGTH = 30;
 
+export const LOGO_MAX_BYTES = {
+  logo: 2 * 1024 * 1024, // 2 MB
+  secondary_logo: 1 * 1024 * 1024, // 1 MB
+  favicon: 512 * 1024, // 512 KB
+} as const;
+
+export const LOGO_SIZE_ERROR_MESSAGES = {
+  logo: 'File is too large. Max 2 MB.',
+  secondary_logo: 'File is too large. Max 1 MB.',
+  favicon: 'File is too large. Max 512 KB.',
+} as const;
+
 export const isDefaultOrCandidHr = (name: string | null | undefined): boolean => {
   if (!name) return true;
   const clean = name.trim().toLowerCase().replace(/\s+/g, '');
