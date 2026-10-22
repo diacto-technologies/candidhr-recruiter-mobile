@@ -14,7 +14,7 @@ import { UpdateProfilePayload } from "./types";
 
 function* getProfileWorker(): Generator<any, void, any> {
   try {
-    // yield put(getProfileRequest());
+    yield put(getProfileRequest());
     const response = yield call(profileApi.getProfile);
     yield put(getProfileSuccess(response));
   } catch (error: any) {

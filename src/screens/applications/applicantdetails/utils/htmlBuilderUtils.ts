@@ -30,10 +30,16 @@ export const generatePreviewHtmlString = ({
   application,
   stages,
   resumeScreeningReport,
+  brandColor,
+  productName,
+  showPoweredBy,
 }: {
   application: any;
   stages: any[];
   resumeScreeningReport: any;
+  brandColor?: string;
+  productName?: string;
+  showPoweredBy?: boolean;
 }): string => {
   if (!application) {
     throw new Error('Application data is not available yet');
@@ -55,6 +61,9 @@ export const generatePreviewHtmlString = ({
 
   return buildApplicationPdfHtml({
     application,
+    brandColor,
+    productName,
+    showPoweredBy,
     applicant: {
       name: applicant?.name ?? applicant?.name ?? 'Candidate',
       appliedAt,

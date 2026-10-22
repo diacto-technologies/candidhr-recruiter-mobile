@@ -29,6 +29,7 @@ import ConfirmModal from '../../confirmmodal';
 import { PERMISSIONS } from '../../../../utils/permission.constants';
 import { usePermission } from '../../../../hooks/usePermission';
 import { useAppDispatch } from '../../../../hooks/useAppDispatch';
+import { useBrandTheme } from '../../../../hooks/useBrandTheme';
 import { deleteJobRequestAction } from '../../../../features/jobs';
 import { JobCardListProps, JobCardRowProps } from './jobcardlist.d';
 
@@ -43,6 +44,7 @@ const JobCardRow: React.FC<JobCardRowProps> = ({
   onToggleFavourite,
   onDeleteJob,
 }) => {
+  const { brandColors } = useBrandTheme();
   const dispatch = useAppDispatch();
   const { can } = usePermission();
   const [menuVisible, setMenuVisible] = useState(false);
@@ -163,8 +165,8 @@ const MENU_WIDTH = 190;
               )}
 
               {item.rapidhire_enabled ? (
-                <View style={cardStyles.rapidlyBadge}>
-                  <Typography variant="mediumTxtxs" color={colors.brand[700]}>
+                <View style={[cardStyles.rapidlyBadge, { backgroundColor: brandColors[50], borderColor: brandColors[200] }]}>
+                  <Typography variant="mediumTxtxs" color={brandColors[700]}>
                     Rapidly
                   </Typography>
                 </View>
@@ -203,8 +205,8 @@ const MENU_WIDTH = 190;
                   {item.applicants_count ?? ''}
                 </Typography>
                 {Boolean(item.applicants_today_count && item.applicants_today_count > 0) && (
-                  <View style={cardStyles.todayBadge}>
-                    <Typography variant="mediumTxtxs" color={colors.brand[700]}>
+                  <View style={[cardStyles.todayBadge, { backgroundColor: brandColors[50], borderColor: brandColors[200] }]}>
+                    <Typography variant="mediumTxtxs" color={brandColors[700]}>
                       {`+${item.applicants_today_count}`}
                     </Typography>
                   </View>

@@ -10,6 +10,7 @@ import { assessmentsSaga } from '../features/assessments/saga';
 import { personalityScreeningSaga } from '../features/personalityScreening/saga';
 import { commentsSaga } from '../features/comments';
 import { rapidhireSaga } from '../features/rapidhire';
+import { brandingSaga } from '../features/branding/saga';
 
 export default function* rootSaga() {
   yield all([
@@ -23,5 +24,6 @@ export default function* rootSaga() {
     personalityScreeningSaga(),
     commentsSaga(),
     rapidhireSaga(),
+    brandingSaga(),
   ]);
 }

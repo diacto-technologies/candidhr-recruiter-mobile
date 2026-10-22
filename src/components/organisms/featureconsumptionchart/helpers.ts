@@ -20,8 +20,8 @@ export const buildBarData = (
   selectedIndex: number,
   topLabelTextStyle?: StyleProp<TextStyle>
 ): BarItem[] => {
-  const active = colors.gradients.brand.g600_500;
-  const inactive = colors.gradients.brand.g600_500;
+  const active = [colors.brand[600], colors.brand[500]];
+  const inactive = [colors.brand[600], colors.brand[500]];
 
   const rawMax = Math.max(
     featureData?.resume_screening?.total_resumes_parsed ?? 0,

@@ -6,6 +6,8 @@ import { useAppSelector } from '../../../../hooks/useAppSelector';
 import { usePermission } from '../../../../hooks/usePermission';
 import { PERMISSIONS } from '../../../../utils/permission.constants';
 import { showToastMessage } from '../../../../utils/toast';
+import { useBrandTheme } from '../../../../hooks/useBrandTheme';
+import { selectBrandingData } from '../../../../features/branding/selectors';
 import { STAGE_TAB_MAP } from '../config';
 import { generatePreviewHtmlString } from '../utils/htmlBuilderUtils';
 import { exportApplicationPdf } from '../utils/pdfExportUtils';
@@ -46,6 +48,17 @@ export const useApplicantDetailsController = (
 ) => {
   const dispatch = useAppDispatch();
   const { can } = usePermission();
+  const { primaryColor } = useBrandTheme();
+  const brandingData = useAppSelector(selectBrandingData);
+  const productName = brandingData?.product_name || 'CandidHR';
+  const showPoweredBy = useMemo(() => {
+    if (!brandingData) return true;
+    const val = brandingData.powered_by_enabled as unknown;
+    if (val === false || val === 'false' || val === 0 || val === '0') {
+      return false;
+    }
+    return Boolean(val);
+  }, [brandingData]);
 
   const selectedJob = useAppSelector(selectSelectedJob);
   const publishedJobs = useAppSelector(selectPublishedJobs);
@@ -105,7 +118,30 @@ export const useApplicantDetailsController = (
     ];
     stages?.forEach((stage: any) => {
       const config = STAGE_TAB_MAP[stage.stage_type];
-      if (config && !baseTabs.some((t) => t.key === config.key)) {
+      if (!config) return;
+
+      if (
+        stage.stage_type === 'resume_screening' &&
+        !can(PERMISSIONS.VIEW_RESUME_SCREENING_STAGE)
+      ) {
+        return;
+      }
+
+      if (
+        (stage.stage_type === 'assessment' || stage.stage_type === 'assessment_v2') &&
+        !can(PERMISSIONS.VIEW_ASSESSMENT_STAGE)
+      ) {
+        return;
+      }
+
+      if (
+        stage.stage_type === 'automated_video_interview' &&
+        !can(PERMISSIONS.VIEW_AUTOMATED_VIDEO_INTERVIEW_STAGE)
+      ) {
+        return;
+      }
+
+      if (!baseTabs.some((t) => t.key === config.key)) {
         baseTabs.push(config);
       }
     });
@@ -135,7 +171,13 @@ export const useApplicantDetailsController = (
     }
 
     return baseTabs;
-  }, [stages, rapidlyInterviewReport, application, initialTabLabel, activeTab, selectedJob, publishedJobs, job_id]);
+  }, [stages, rapidlyInterviewReport, application, initialTabLabel, activeTab, selectedJob, publishedJobs, job_id, can]);
+
+  useEffect(() => {
+    if (tabs.length > 0 && !tabs.some((t) => t.key === activeTab || t.label === activeTab)) {
+      setActiveTab(tabs[0].key);
+    }
+  }, [tabs, activeTab]);
 
   // Effects
   useEffect(() => {
@@ -213,7 +255,14 @@ export const useApplicantDetailsController = (
 
   const handlePreviewHtml = useCallback(() => {
     try {
-      const html = generatePreviewHtmlString({ application, stages, resumeScreeningReport });
+      const html = generatePreviewHtmlString({
+        application,
+        stages,
+        resumeScreeningReport,
+        brandColor: primaryColor,
+        productName,
+        showPoweredBy,
+      });
       if (!html) return;
       setHtmlPreview(html);
       setHtmlPreviewMountKey((k) => k + 1);
@@ -223,11 +272,18 @@ export const useApplicantDetailsController = (
       const msg = e instanceof Error ? e.message : String(e);
       showToastMessage(`Could not build preview: ${msg}`, 'error');
     }
-  }, [application, stages, resumeScreeningReport]);
+  }, [application, stages, resumeScreeningReport, primaryColor, productName, showPoweredBy]);
 
   const handleDownloadHtmlPreview = useCallback(async () => {
     try {
-      const html = generatePreviewHtmlString({ application, stages, resumeScreeningReport });
+      const html = generatePreviewHtmlString({
+        application,
+        stages,
+        resumeScreeningReport,
+        brandColor: primaryColor,
+        productName,
+        showPoweredBy,
+      });
       if (!html) return;
       await exportApplicationPdf(html, candidateName, application_id);
       if (Platform.OS === 'android') {
@@ -240,7 +296,7 @@ export const useApplicantDetailsController = (
       console.error('PDF export failed', e);
       showToastMessage(`Export failed: ${message}`, 'error');
     }
-  }, [application, stages, resumeScreeningReport, candidateName, application_id]);
+  }, [application, stages, resumeScreeningReport, candidateName, application_id, primaryColor, productName, showPoweredBy]);
 
   const handleCall = useCallback(async (phoneNumber?: string | number) => {
     const targetNumber = phoneNumber || application?.applicant?.contact || (application as any)?.candidate?.contact;

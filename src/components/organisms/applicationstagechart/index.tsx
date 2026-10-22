@@ -9,6 +9,7 @@ import { buildBarData, getMaxValueFromStageData } from './helpers';
 import Shimmer from '../../atoms/shimmer';
 import type { ApplicationStageChartProps, BarItem, stageDataInterface } from './applicationstagechart';
 import { isTablet } from 'react-native-device-info';
+import { useBrandTheme } from '../../../hooks/useBrandTheme';
 
 const CHART_HEIGHT = 184;
 const DUMMY_BAR_HEIGHTS = [85, 130, 95, 60, 75, 50, 40];
@@ -19,6 +20,7 @@ const ApplicationStageChart: React.FC<ApplicationStageChartProps> = ({
   loading,
 }) => {
   const styles = useStyles();
+  const { primaryColor } = useBrandTheme();
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [chartContainerWidth, setChartContainerWidth] = useState<number>(0);
   
@@ -26,7 +28,7 @@ const ApplicationStageChart: React.FC<ApplicationStageChartProps> = ({
   
   const barData = useMemo(() => {
       return buildBarData(stageData, selectedIndex, styles.topLabelText);
-  }, [stageData, selectedIndex, styles.topLabelText]);
+  }, [stageData, selectedIndex, styles.topLabelText, primaryColor]);
 
   const barCount = barData.length;
   const barWidth = IS_TABLET ? 46 : 28;

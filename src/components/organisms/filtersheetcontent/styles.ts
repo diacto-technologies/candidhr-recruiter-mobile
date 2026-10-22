@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
 import { colors } from '../../../theme/colors';
 
-export const styles = StyleSheet.create({
+export const useStyles = () => StyleSheet.create({
   container: {
     flex: 1,
     flexShrink: 1,
@@ -66,7 +66,7 @@ export const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 4,
-    backgroundColor: '#6C4BE7',
+    backgroundColor: colors.brand[600] || '#6C4BE7',
     borderTopRightRadius: 12,
     borderBottomRightRadius: 12,
   },
@@ -80,3 +80,5 @@ export const styles = StyleSheet.create({
     columnGap: 12,
   },
 });
+
+export const styles = useStyles();

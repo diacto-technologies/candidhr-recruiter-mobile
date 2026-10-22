@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ApplicationsState, Application, ApplicationsListResponse, ApplicationResponseItem, ResumeScreeningResponseItem, ResumeScreeningReportApiResponse, AssessmentLog, AssessmentReport, AssessmentDetailedReport, ScreeningAssessment, PersonalityScreeningResponsesPayload, ApplicationStage, ReasonCategory, ReasonListItem, PerformanceReportResponse, AssessmentOptionsReportResponse, AssessmentOption, EmailTemplate, PreviewEmailTemplateResponse, ApplicationViewersResponse, ApplicationShortLinkResponse } from "./types";
+import { APPLICATIONS_ACTION_TYPES } from "./constants";
+import { ApplicationsState, Application, ApplicationsListResponse, ApplicationResponseItem, ResumeScreeningResponseItem, ResumeScreeningReportApiResponse, AssessmentLog, AssessmentReport, AssessmentDetailedReport, ScreeningAssessment, PersonalityScreeningResponsesPayload, ApplicationStage, ReasonCategory, ReasonListItem, PerformanceReportResponse, AssessmentOptionsReportResponse, AssessmentOption, EmailTemplate, PreviewEmailTemplateResponse, ApplicationViewersResponse, ApplicationShortLinkResponse, AssignmentInviteOption, AssignmentReviewReportResponse } from "./types";
 
 const initialState: ApplicationsState = {
   applications: [],
@@ -95,6 +96,13 @@ const initialState: ApplicationsState = {
   viewersError: null as string | null,
   loadingShortLink: false,
   shortLinkError: null as string | null,
+  assignmentInviteOptions: [] as AssignmentInviteOption[],
+  loadingAssignmentInviteOptions: false,
+  assignmentInviteOptionsError: null as string | null,
+  assignmentReviewReport: null as AssignmentReviewReportResponse | null,
+  loadingAssignmentReviewReport: false,
+  assignmentReviewReportError: null as string | null,
+  selectedAssignmentInviteId: null as string | null,
 };
 
 const applicationsSlice = createSlice({
@@ -270,6 +278,25 @@ const applicationsSlice = createSlice({
       state.error = null;
     },
     updateApplicationStatusFailure: (state, action: PayloadAction<string>) => {
+      state.loading = false;
+      state.error = action.payload;
+    },
+    deleteApplicationRequest: (state, _action: PayloadAction<{ id: string; onSuccess?: () => void }>) => {
+      state.loading = true;
+      state.error = null;
+    },
+    deleteApplicationSuccess: (state, action: PayloadAction<string>) => {
+      state.loading = false;
+      state.applications = state.applications.filter((app) => app.id !== action.payload);
+      if (state.pagination.total > 0) {
+        state.pagination.total -= 1;
+      }
+      if (state.selectedApplication?.id === action.payload) {
+        state.selectedApplication = null;
+      }
+      state.error = null;
+    },
+    deleteApplicationFailure: (state, action: PayloadAction<string>) => {
       state.loading = false;
       state.error = action.payload;
     },
@@ -891,10 +918,68 @@ const applicationsSlice = createSlice({
       state.loadingViewers = false;
       state.viewersError = null;
     },
+    getAssignmentInviteOptionsRequest: (state) => {
+      state.loadingAssignmentInviteOptions = true;
+      state.assignmentInviteOptionsError = null;
+    },
+    getAssignmentInviteOptionsSuccess: (
+      state,
+      action: PayloadAction<AssignmentInviteOption[]>
+    ) => {
+      state.loadingAssignmentInviteOptions = false;
+      state.assignmentInviteOptions = action.payload;
+      if (action.payload.length > 0 && !state.selectedAssignmentInviteId) {
+        state.selectedAssignmentInviteId = action.payload[0].id;
+      }
+    },
+    getAssignmentInviteOptionsFailure: (state, action: PayloadAction<string>) => {
+      state.loadingAssignmentInviteOptions = false;
+      state.assignmentInviteOptionsError = action.payload;
+    },
+    getAssignmentReviewReportRequest: (state) => {
+      state.loadingAssignmentReviewReport = true;
+      state.assignmentReviewReportError = null;
+      state.assignmentReviewReport = null;
+    },
+    getAssignmentReviewReportSuccess: (
+      state,
+      action: PayloadAction<AssignmentReviewReportResponse>
+    ) => {
+      state.loadingAssignmentReviewReport = false;
+      state.assignmentReviewReport = action.payload;
+    },
+    getAssignmentReviewReportFailure: (state, action: PayloadAction<string>) => {
+      state.loadingAssignmentReviewReport = false;
+      state.assignmentReviewReportError = action.payload;
+      state.assignmentReviewReport = null;
+    },
+    setSelectedAssignmentInviteId: (
+      state,
+      action: PayloadAction<string | null>
+    ) => {
+      state.selectedAssignmentInviteId = action.payload;
+      state.assignmentReviewReport = null;
+    },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(
+      APPLICATIONS_ACTION_TYPES.SET_SELECTED_ASSIGNMENT_INVITE_ID,
+      (state, action: PayloadAction<string | null>) => {
+        state.selectedAssignmentInviteId = action.payload;
+        state.assignmentReviewReport = null;
+      }
+    );
   },
 });
 
 export const {
+  getAssignmentInviteOptionsRequest,
+  getAssignmentInviteOptionsSuccess,
+  getAssignmentInviteOptionsFailure,
+  getAssignmentReviewReportRequest,
+  getAssignmentReviewReportSuccess,
+  getAssignmentReviewReportFailure,
+  setSelectedAssignmentInviteId,
   getMustHaveSkillsRequest,
   getMustHaveSkillsSuccess,
   getMustHaveSkillsFailure,
@@ -1002,6 +1087,9 @@ export const {
   getApplicationShortLinkRequest,
   getApplicationShortLinkSuccess,
   getApplicationShortLinkFailure,
+  deleteApplicationRequest,
+  deleteApplicationSuccess,
+  deleteApplicationFailure,
 } = applicationsSlice.actions;
 
 export default applicationsSlice.reducer;

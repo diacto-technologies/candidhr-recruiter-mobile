@@ -76,9 +76,12 @@ const buildHeaders = (customHeaders?: Record<string, string>): Record<string, st
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    'Origin': organizationalOrigin(store.getState()),
     ...(customHeaders || {}),
   };
+
+  if (origin) {
+    headers['Origin'] = origin;
+  }
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -354,6 +357,8 @@ const handleApiError = async (response: Response, endpoint?: string): Promise<ne
   throw new Error(errorMessage);
 };
 
+const REQUEST_TIMEOUT_MS = 30000;
+
 async function executeWithRefresh(
   request: () => Promise<Response>,
   endpoint?: string
@@ -361,7 +366,21 @@ async function executeWithRefresh(
   let didRetry = false;
 
   while (true) {
-    const response = await request();
+    let timeoutTimer: ReturnType<typeof setTimeout> | undefined;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutTimer = setTimeout(() => {
+        reject(new Error('Request timed out. Please check your network connection and try again.'));
+      }, REQUEST_TIMEOUT_MS);
+    });
+
+    let response: Response;
+    try {
+      response = await Promise.race([request(), timeoutPromise]);
+    } finally {
+      if (timeoutTimer) {
+        clearTimeout(timeoutTimer);
+      }
+    }
 
     // ✅ Success
     if (response.ok) {
@@ -512,12 +531,19 @@ export const apiClient = {
           const origin = organizationalOrigin(store.getState());
 
           headers = {
-            Origin: origin,
+            Accept: 'application/json',
             ...(customConfig?.headers as Record<string, string> || {}),
           };
 
-          if (token) headers.Authorization = `Bearer ${token}`;
-          if (organizationId) headers['X-Organization-Id'] = organizationId;
+          if (origin) {
+            headers.Origin = origin;
+          }
+          if (token) {
+            headers.Authorization = `Bearer ${token}`;
+          }
+          if (organizationId) {
+            headers['X-Organization-Id'] = organizationId;
+          }
         } else {
           headers = buildHeaders(customConfig?.headers as Record<string, string> | undefined);
         }
@@ -532,7 +558,8 @@ export const apiClient = {
       endpoint
     );
 
-    return response.json();
+    const text = await response.text();
+    return text ? JSON.parse(text) : {};
   },
 
   delete: async (endpoint: string, customConfig?: RequestInit) => {

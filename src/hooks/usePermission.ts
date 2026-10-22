@@ -15,9 +15,6 @@ export const usePermission = () => {
       });
     }
 
-    // 🔥 force enable
-    set.add(PERMISSIONS.UPDATE_APPLICATION_STATUS);
-
     return set;
   }, [JSON.stringify(profile?.role?.permissions)]);
 

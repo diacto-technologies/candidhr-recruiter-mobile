@@ -153,7 +153,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={[colors.brand[100], '#E3E1FF']}
+        colors={[colors.brand[100], colors.brand[50]]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.header}

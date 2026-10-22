@@ -5,6 +5,7 @@ import { colors } from '../../../theme/colors';
 import { SvgXml } from 'react-native-svg';
 import { filterIcon } from '../../../assets/svg/filter';
 import { useStyles } from './styles';
+import { useBrandTheme } from '../../../hooks/useBrandTheme';
 
 import { SortingAndFilterProps } from './sortingandfilter.d';
 
@@ -19,6 +20,7 @@ const SortingAndFilter: FC<SortingAndFilterProps> = ({
   chipStyle,
   activeChipStyle,
 }) => {
+  const { brandColors } = useBrandTheme();
   const styles = useStyles();
 
   return (
@@ -26,8 +28,8 @@ const SortingAndFilter: FC<SortingAndFilterProps> = ({
       {/* Filter Button */}
       <Pressable onPress={onPressFilter} style={[styles.filterButton, filterButtonStyle]}>
         <View style={styles.iconWrapper}>
-          <SvgXml xml={filterIcon} color={colors.brand[500]} />
-          <View style={styles.notificationDot} />
+          <SvgXml xml={filterIcon} color={brandColors[500]} />
+          <View style={[styles.notificationDot, { backgroundColor: brandColors[500] }]} />
         </View>
 
         <Typography variant="H4" style={styles.titleText}>
@@ -46,14 +48,14 @@ const SortingAndFilter: FC<SortingAndFilterProps> = ({
               onPress={() => onItemPress(item)}
               style={[
                 styles.chip,
-                isActive ? styles.chipActive : styles.chipInactive,
+                isActive ? [styles.chipActive, { borderColor: brandColors[200], backgroundColor: brandColors[50] }] : styles.chipInactive,
                 chipStyle,
                 isActive && activeChipStyle,
               ]}
             >
               <Typography
                 variant="P1M"
-                color={isActive ? colors.brand[700] : colors.gray[700]}
+                color={isActive ? brandColors[700] : colors.gray[700]}
               >
                 {item}
               </Typography>

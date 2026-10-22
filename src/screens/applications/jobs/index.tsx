@@ -8,8 +8,10 @@ import { jobFiltersOption, jobTabs } from './config';
 import { colors } from '../../../theme/colors';
 import { screenHeight } from '../../../utils/devicelayout';
 import { useJobsController } from './hooks/useJobsController';
+import { useBrandTheme } from '../../../hooks/useBrandTheme';
 
 const JobsScreen = () => {
+  useBrandTheme();
   const styles = useStyles();
   const ctrl = useJobsController();
 

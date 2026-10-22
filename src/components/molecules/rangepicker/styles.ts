@@ -1,5 +1,6 @@
 import { StyleSheet } from "react-native";
 import { screenWidth } from "../../../utils/devicelayout";
+import { colors } from "../../../theme/colors";
 
 export const useStyles = () => {
   return StyleSheet.create({
@@ -30,7 +31,7 @@ export const useStyles = () => {
 
     singleBox: {
       borderWidth: 1,
-      borderColor: "#6C4BE7",
+      borderColor: colors.brand[600] || "#6C4BE7",
       paddingVertical: 10,
       paddingHorizontal: 14,
       borderRadius: 10,
@@ -57,7 +58,7 @@ export const useStyles = () => {
     },
 
     presetText: {
-      color: "#6C4BE7",
+      color: colors.brand[600] || "#6C4BE7",
       fontWeight: "600",
     },
 
@@ -89,7 +90,7 @@ export const useStyles = () => {
 
     apply: {
       flex: 1,
-      backgroundColor: "#6C4BE7",
+      backgroundColor: colors.brand[600] || "#6C4BE7",
       borderRadius: 10,
       padding: 12,
       alignItems: "center",

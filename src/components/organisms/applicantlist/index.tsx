@@ -23,9 +23,11 @@ import { horizontalThreedotIcon } from '../../../assets/svg/horizontalthreedotic
 import { DropdownMenu } from '../../molecules/dropdownmenu';
 import ChangeStatusModal from '../changeStatusModal';
 import ShareApplicationModal from '../shareApplicationModal';
+import ConfirmModal from '../confirmmodal';
 import { userIcon } from '../../../assets/svg/usericon';
 import { exportIcon } from '../../../assets/svg/export';
 import { editIcon } from '../../../assets/svg/edit';
+import { trashIcon } from '../../../assets/svg/trash';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { organizationalOrigin } from '../../../features/auth';
@@ -44,6 +46,7 @@ import {
 import {
   updateApplicationStatusRequestAction,
   getApplicationShortLinkRequestAction,
+  deleteApplicationRequestAction,
 } from '../../../features/applications/actions';
 import { applicantUserIcon } from '../../../assets/svg/applicantUser';
 import { shareIcon } from '../../../assets/svg/share';
@@ -137,6 +140,7 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
   const [changeStatusVisible, setChangeStatusVisible] = useState(false);
   const [shareModalVisible, setShareModalVisible] = useState(false);
   const [sendEmailVisible, setSendEmailVisible] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
 
   const handleCopyProfileLink = () => {
     setMenuVisible(false);
@@ -476,6 +480,18 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
         },
       ]
       : []),
+    ...(can(PERMISSIONS.DELETE_APPLICATION)
+      ? [
+        {
+          label: 'Delete',
+          icon: trashIcon,
+          onPress: () => {
+            setMenuVisible(false);
+            setDeleteModalVisible(true);
+          },
+        },
+      ]
+      : []),
   ];
 
   const menuItems = isRapidlyCandidate
@@ -625,6 +641,23 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({ item = null, loading = fa
           candidateEmail={item?.candidate_email || item?.email || item?.candidate?.email || ''}
           jobTitle={jobTitle !== '_' ? jobTitle : undefined}
           status={statusLabel || undefined}
+        />
+      )}
+      {item && (
+        <ConfirmModal
+          visible={deleteModalVisible}
+          title="Delete Application"
+          message={`Are you sure you want to delete application for ${candidateName}?`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          onConfirm={() => {
+            setDeleteModalVisible(false);
+            if (appId) {
+              dispatch(deleteApplicationRequestAction({ id: appId }));
+            }
+          }}
+          onCancel={() => setDeleteModalVisible(false)}
+          onClose={() => setDeleteModalVisible(false)}
         />
       )}
     </Pressable>

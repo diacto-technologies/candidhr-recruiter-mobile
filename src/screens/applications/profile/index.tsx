@@ -32,6 +32,8 @@ import { ThemeMode } from '../../../features/theme/types';
 import { getProfileMenuSections } from './profileMenu.config';
 import { MenuItem, MenuSection } from './profile';
 import { selectSavedEmail, selectSavedPassword, selectSavedRemember } from '../../../features/auth/selectors';
+import { usePermission } from '../../../hooks/usePermission';
+import { PERMISSIONS } from '../../../utils/permission.constants';
 
 const Profile = () => {
   const dispatch = useAppDispatch();
@@ -94,10 +96,19 @@ const Profile = () => {
     [dispatch]
   );
 
+  const { can } = usePermission();
+  const hasBrandingPermission = can(PERMISSIONS.BRANDING) || profile?.is_admin || profile?.is_superadmin;
+
+  const handleBrandingPress = useCallback(() => {
+    navigate('BrandingScreen');
+  }, []);
+
   const menuSections = getProfileMenuSections({
     t,
     handleUsersPress,
     handleCompanyInfoPress,
+    handleBrandingPress,
+    showBranding: Boolean(hasBrandingPermission),
     handleLogout,
   });
 
