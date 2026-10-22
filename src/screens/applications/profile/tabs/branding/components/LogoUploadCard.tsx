@@ -34,10 +34,13 @@ export const LogoUploadCard: React.FC<LogoUploadCardProps> = React.memo(({
   autoSubText,
   fallbackText,
   compactLogoUrl,
+  errorMessage,
+  recommendedResolution,
 }) => {
   const styles = React.useMemo(() => useStyles(brandColor), [brandColor]);
   const [loadError, setLoadError] = React.useState(false);
   const [compactLoadError, setCompactLoadError] = React.useState(false);
+  const [detectedResolution, setDetectedResolution] = React.useState<string | null>(null);
 
   const previewUri = localFile?.uri || currentUrl || null;
   const isAuto = Boolean(!previewUri || isAutoBadge);
@@ -54,6 +57,36 @@ export const LogoUploadCard: React.FC<LogoUploadCardProps> = React.memo(({
   React.useEffect(() => {
     setCompactLoadError(false);
   }, [compactLogoUrl]);
+
+  // Resolution detection: priority to localFile.width/height, then Image.getSize
+  React.useEffect(() => {
+    if (localFile?.width && localFile?.height) {
+      setDetectedResolution(`${Math.round(localFile.width)} × ${Math.round(localFile.height)} px`);
+      return;
+    }
+    if (previewUri && !previewUri.endsWith('.svg') && !previewUri.includes('.svg?')) {
+      const uriToInspect =
+        previewUri.startsWith('http://') ||
+        previewUri.startsWith('https://') ||
+        previewUri.startsWith('file://') ||
+        previewUri.startsWith('content://') ||
+        previewUri.startsWith('data:')
+          ? previewUri
+          : `file://${previewUri}`;
+
+      Image.getSize(
+        uriToInspect,
+        (w, h) => {
+          setDetectedResolution(`${Math.round(w)} × ${Math.round(h)} px`);
+        },
+        () => {
+          setDetectedResolution(null);
+        }
+      );
+    } else {
+      setDetectedResolution(null);
+    }
+  }, [localFile?.width, localFile?.height, previewUri]);
 
   const formattedUri = React.useMemo(() => {
     if (!previewUri) return null;
@@ -94,7 +127,7 @@ export const LogoUploadCard: React.FC<LogoUploadCardProps> = React.memo(({
 
   return (
     <View style={styles.logoCard}>
-      <View style={styles.previewContainer}>
+      <View style={[styles.previewContainer, errorMessage ? styles.previewContainerError : null]}>
         {formattedUri && !loadError ? (
           isSvg ? (
             <View style={styles.previewSvg}>
@@ -188,8 +221,21 @@ export const LogoUploadCard: React.FC<LogoUploadCardProps> = React.memo(({
             </Typography>
           )}
           <Typography variant="regularTxtxs" color={colors.gray[500]} style={styles.specsText}>
-            {specs}
+            {detectedResolution && previewUri
+              ? `${detectedResolution}\n${specs}`
+              : recommendedResolution
+              ? `${recommendedResolution}\n${specs}`
+              : specs}
           </Typography>
+          {Boolean(errorMessage) && (
+            <Typography
+              variant="regularTxtxs"
+              color={colors.error[600]}
+              style={styles.cardErrorMessage}
+            >
+              {errorMessage}
+            </Typography>
+          )}
         </View>
 
         <View style={styles.logoActions}>

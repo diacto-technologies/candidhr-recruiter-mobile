@@ -10,11 +10,12 @@ import {
 } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import ImageCropPicker from 'react-native-image-crop-picker';
+import { launchImageLibrary } from 'react-native-image-picker';
+import RNFS from 'react-native-fs';
 import { Button, Header, Shimmer } from '../../../../../components';
 import CustomSafeAreaView from '../../../../../components/atoms/customsafeareaview';
 import Typography from '../../../../../components/atoms/typography';
 import CustomSwitch from '../../../../../components/atoms/switchbutton';
-import { SetProfilePhotoModal } from '../../../../../components/organisms/SetProfilePhotoModal';
 import { goBack } from '../../../../../utils/navigationUtils';
 import { showToastMessage } from '../../../../../utils/toast';
 import { colors, setBrandColor } from '../../../../../theme/colors';
@@ -42,6 +43,8 @@ import {
   DEFAULT_BRAND_COLOR,
   DEFAULT_PRODUCT_NAME,
   MAX_PRODUCT_NAME_LENGTH,
+  LOGO_MAX_BYTES,
+  LOGO_SIZE_ERROR_MESSAGES,
   isDefaultLogoUrl,
   isDefaultOrCandidHr,
 } from '../../../../../features/branding/constants';
@@ -55,8 +58,6 @@ import { ImageFileAsset, LogoCardType } from './branding.d';
 import { ColorSwatch } from './components/ColorSwatch';
 import { LogoUploadCard } from './components/LogoUploadCard';
 import { useStyles } from './styles';
-
-type PendingPickerAction = 'gallery' | 'camera';
 
 const infoCircleSvg = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M8 14.6667C11.6819 14.6667 14.6667 11.6819 14.6667 8C14.6667 4.3181 11.6819 1.33333 8 1.33333C4.3181 1.33333 1.33333 4.3181 1.33333 8C1.33333 11.6819 4.3181 14.6667 8 14.6667Z" stroke="#475467" stroke-width="1.33" stroke-linecap="round" stroke-linejoin="round"/>
@@ -101,6 +102,7 @@ const BrandingScreen = () => {
   useEffect(() => {
     if (updateSuccess) {
       setIsResetAction(false);
+      initialLoadedRef.current = false;
     }
   }, [updateSuccess]);
 
@@ -125,14 +127,14 @@ const BrandingScreen = () => {
   // Tracks if the user explicitly uploaded a custom favicon
   const [hasCustomFavicon, setHasCustomFavicon] = useState(false);
 
+  // Logo file validation errors
+  const [logoErrors, setLogoErrors] = useState<{ [K in LogoCardType]?: string | null }>({});
+
   // Input focus
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [isResetAction, setIsResetAction] = useState(false);
 
-  // Picker Modal State
-  const [showPickerModal, setShowPickerModal] = useState(false);
-  const [activePickingType, setActivePickingType] = useState<LogoCardType | null>(null);
-  const pendingPickerRef = useRef<PendingPickerAction | null>(null);
+  // Picker Busy Flag
   const pickerBusyRef = useRef(false);
 
   // Initial Fetch & unmount cleanup
@@ -151,28 +153,33 @@ const BrandingScreen = () => {
     return data.product_name?.trim() || '';
   }, [isBrandingReset]);
 
+  const initialLoadedRef = useRef(false);
+
   // Sync Form with Fetched Data
   useEffect(() => {
-    if (brandingData && !isResetAction) {
-      const pName = getResolvedSavedProductName(brandingData);
-      const pColor = brandingData.primary_color || DEFAULT_BRAND_COLOR;
-      setProductName(pName);
-      setPrimaryColor(pColor);
-      setCustomHexInput(pColor.replace('#', ''));
-      setPoweredByEnabled(brandingData.powered_by_enabled !== false);
-      setLogoFile(null);
-      setSecondaryLogoFile(null);
-      setFaviconFile(null);
-      setLogoDeleted(false);
-      setSecondaryLogoDeleted(false);
-      setFaviconDeleted(false);
-      setHasCustomFavicon(
-        Boolean(
-          brandingData.favicon &&
-          brandingData.secondary_logo &&
-          brandingData.favicon !== brandingData.secondary_logo
-        )
-      );
+    if (brandingData) {
+      if (!initialLoadedRef.current || isResetAction) {
+        initialLoadedRef.current = true;
+        const pName = getResolvedSavedProductName(brandingData);
+        const pColor = brandingData.primary_color || DEFAULT_BRAND_COLOR;
+        setProductName(pName);
+        setPrimaryColor(pColor);
+        setCustomHexInput(pColor.replace('#', ''));
+        setPoweredByEnabled(brandingData.powered_by_enabled !== false);
+        setLogoFile(null);
+        setSecondaryLogoFile(null);
+        setFaviconFile(null);
+        setLogoDeleted(false);
+        setSecondaryLogoDeleted(false);
+        setFaviconDeleted(false);
+        setHasCustomFavicon(
+          Boolean(
+            brandingData.favicon &&
+            brandingData.secondary_logo &&
+            brandingData.favicon !== brandingData.secondary_logo
+          )
+        );
+      }
     }
   }, [brandingData, isResetAction, getResolvedSavedProductName]);
 
@@ -238,7 +245,7 @@ const BrandingScreen = () => {
     setProductName('');
     setPrimaryColor(DEFAULT_BRAND_COLOR);
     setCustomHexInput(DEFAULT_BRAND_COLOR.replace('#', ''));
-    setPoweredByEnabled(false);
+    setPoweredByEnabled(true);
     setLogoFile(null);
     setSecondaryLogoFile(null);
     setFaviconFile(null);
@@ -246,6 +253,7 @@ const BrandingScreen = () => {
     setSecondaryLogoDeleted(true);
     setFaviconDeleted(true);
     setHasCustomFavicon(false);
+    setLogoErrors({});
     setBrandColor(DEFAULT_BRAND_COLOR);
     setIsResetAction(true);
     dispatch(setBrandingReset(true));
@@ -255,6 +263,7 @@ const BrandingScreen = () => {
   // Discard Action
   const handleDiscard = useCallback(() => {
     setIsResetAction(false);
+    setLogoErrors({});
     if (brandingData) {
       const pName = getResolvedSavedProductName(brandingData);
       const pColor = brandingData.primary_color || DEFAULT_BRAND_COLOR;
@@ -300,18 +309,21 @@ const BrandingScreen = () => {
         !logoFile &&
         !secondaryLogoFile &&
         !faviconFile &&
-        (logoDeleted || !brandingData?.logo) &&
-        (secondaryLogoDeleted || !brandingData?.secondary_logo));
-
-    setIsResetAction(false);
+        logoDeleted &&
+        secondaryLogoDeleted &&
+        faviconDeleted);
 
     const shouldUseFormData = Boolean(
       logoFile ||
       secondaryLogoFile ||
-      faviconFile
+      faviconFile ||
+      isResetting ||
+      logoDeleted ||
+      secondaryLogoDeleted ||
+      faviconDeleted
     );
 
-    // Build payload: if binary files exist or files are being deleted, use FormData
+    // Build payload: if binary files exist or files are being deleted/reset, use FormData
     if (shouldUseFormData) {
       const formData = new FormData();
       formData.append('product_name', productName.trim());
@@ -327,7 +339,7 @@ const BrandingScreen = () => {
           type: logoFile.type || 'image/jpeg',
           name: logoFile.name || 'logo.jpg',
         } as unknown as Blob);
-      } else if (logoDeleted) {
+      } else if (logoDeleted || isResetting) {
         formData.append('logo', '');
       }
 
@@ -337,14 +349,14 @@ const BrandingScreen = () => {
           type: secondaryLogoFile.type || 'image/jpeg',
           name: secondaryLogoFile.name || 'secondary_logo.jpg',
         } as unknown as Blob);
-      } else if (secondaryLogoDeleted) {
+      } else if (secondaryLogoDeleted || isResetting) {
         formData.append('secondary_logo', '');
       }
 
       // Favicon handling: upload explicit faviconFile or auto-use compact logo if not customized
       const effectiveFavicon =
         faviconFile ||
-        (!hasCustomFavicon && !faviconDeleted && secondaryLogoFile ? secondaryLogoFile : null);
+        (!hasCustomFavicon && !faviconDeleted && !isResetting && secondaryLogoFile ? secondaryLogoFile : null);
 
       if (effectiveFavicon) {
         formData.append('favicon', {
@@ -352,7 +364,7 @@ const BrandingScreen = () => {
           type: effectiveFavicon.type || 'image/x-icon',
           name: effectiveFavicon.name || 'favicon.ico',
         } as unknown as Blob);
-      } else if (faviconDeleted) {
+      } else if (faviconDeleted || isResetting) {
         formData.append('favicon', '');
       }
 
@@ -365,13 +377,13 @@ const BrandingScreen = () => {
         powered_by_enabled: poweredByEnabled,
       };
 
-      if (logoDeleted) {
+      if (logoDeleted || isResetting) {
         jsonPayload.logo = null;
       }
-      if (secondaryLogoDeleted) {
+      if (secondaryLogoDeleted || isResetting) {
         jsonPayload.secondary_logo = null;
       }
-      if (faviconDeleted) {
+      if (faviconDeleted || isResetting) {
         jsonPayload.favicon = null;
       }
 
@@ -393,13 +405,8 @@ const BrandingScreen = () => {
     hasCustomFavicon,
   ]);
 
-  // Image Picker Logic
-  const handleOpenPickerFor = useCallback((type: LogoCardType) => {
-    setActivePickingType(type);
-    setShowPickerModal(true);
-  }, []);
-
   const handleDeleteLogo = useCallback((type: LogoCardType) => {
+    setLogoErrors((prev) => ({ ...prev, [type]: null }));
     if (type === 'logo') {
       setLogoFile(null);
       setLogoDeleted(true);
@@ -409,6 +416,7 @@ const BrandingScreen = () => {
       if (!hasCustomFavicon) {
         setFaviconFile(null);
         setFaviconDeleted(true);
+        setLogoErrors((prev) => ({ ...prev, favicon: null }));
       }
     } else if (type === 'favicon') {
       setFaviconFile(null);
@@ -417,82 +425,119 @@ const BrandingScreen = () => {
     }
   }, [hasCustomFavicon]);
 
-  const applyPickerResult = useCallback(
-    (result: { path: string; mime?: string; size?: number }) => {
-      const fileName = result.path.split('/').pop() || `${activePickingType || 'image'}_${Date.now()}.jpg`;
-      const normalizedUri = result.path.startsWith('file://') ? result.path : `file://${result.path}`;
-      const fileAsset: ImageFileAsset = {
-        uri: normalizedUri,
-        name: fileName,
-        type: result.mime || 'image/jpeg',
-        size: result.size,
-      };
+  // Image Picker Logic - Directly open phone gallery
+  const handleOpenPickerFor = useCallback(
+    async (type: LogoCardType) => {
+      if (pickerBusyRef.current) return;
+      pickerBusyRef.current = true;
+      try {
+        let normalizedUri = '';
+        let fileName = '';
+        let mimeType = 'image/jpeg';
+        let fileSize: number | undefined;
+        let imageWidth: number | undefined;
+        let imageHeight: number | undefined;
 
-      if (activePickingType === 'logo') {
-        setLogoFile(fileAsset);
-        setLogoDeleted(false);
-      } else if (activePickingType === 'secondary_logo') {
-        setSecondaryLogoFile(fileAsset);
-        setSecondaryLogoDeleted(false);
-        // Automatically set favicon to compact logo if no custom favicon exists
-        if (!hasCustomFavicon) {
-          const autoFaviconAsset: ImageFileAsset = {
-            ...fileAsset,
-            name: fileAsset.name || 'favicon.jpg',
-          };
-          setFaviconFile(autoFaviconAsset);
-          setFaviconDeleted(false);
+        if (Platform.OS === 'ios') {
+          const response = await launchImageLibrary({
+            mediaType: 'photo',
+            selectionLimit: 1,
+            quality: 1,
+          });
+
+          if (response.didCancel) return;
+          if (response.errorMessage) {
+            showToastMessage(response.errorMessage, 'error');
+            return;
+          }
+
+          const asset = response.assets?.[0];
+          if (!asset?.uri) return;
+
+          normalizedUri = asset.uri.startsWith('file://') ? asset.uri : `file://${asset.uri}`;
+          fileName = asset.fileName || `${type}_${Date.now()}.jpg`;
+          mimeType = asset.type || 'image/jpeg';
+          fileSize = asset.fileSize;
+          imageWidth = asset.width;
+          imageHeight = asset.height;
+        } else {
+          const result = await ImageCropPicker.openPicker({
+            mediaType: 'photo',
+            cropping: false,
+          });
+
+          normalizedUri = result.path.startsWith('file://') ? result.path : `file://${result.path}`;
+          fileName = result.path.split('/').pop() || `${type}_${Date.now()}.jpg`;
+          mimeType = result.mime || 'image/jpeg';
+          fileSize = result.size;
+          imageWidth = result.width;
+          imageHeight = result.height;
         }
-      } else if (activePickingType === 'favicon') {
-        setFaviconFile(fileAsset);
-        setFaviconDeleted(false);
-        setHasCustomFavicon(true);
+
+        const fileAsset: ImageFileAsset = {
+          uri: normalizedUri,
+          name: fileName,
+          type: mimeType,
+          size: fileSize,
+          width: imageWidth,
+          height: imageHeight,
+        };
+
+        // Determine actual file size in bytes
+        let finalSize = fileSize;
+        if ((finalSize === undefined || finalSize === 0) && normalizedUri) {
+          try {
+            const fsPath = normalizedUri.replace('file://', '');
+            const stat = await RNFS.stat(fsPath);
+            finalSize = Number(stat.size);
+          } catch {
+            // Ignore stat error if not readable
+          }
+        }
+
+        const maxAllowedBytes = LOGO_MAX_BYTES[type];
+        if (finalSize && finalSize > maxAllowedBytes) {
+          const errMsg = LOGO_SIZE_ERROR_MESSAGES[type];
+          setLogoErrors((prev) => ({ ...prev, [type]: errMsg }));
+          showToastMessage(errMsg, 'error');
+          return;
+        }
+
+        // Valid file: clear any error for this type
+        setLogoErrors((prev) => ({ ...prev, [type]: null }));
+
+        if (type === 'logo') {
+          setLogoFile(fileAsset);
+          setLogoDeleted(false);
+        } else if (type === 'secondary_logo') {
+          setSecondaryLogoFile(fileAsset);
+          setSecondaryLogoDeleted(false);
+          // Automatically set favicon to compact logo if no custom favicon exists
+          if (!hasCustomFavicon) {
+            const autoFaviconAsset: ImageFileAsset = {
+              ...fileAsset,
+              name: fileAsset.name || 'favicon.jpg',
+            };
+            setFaviconFile(autoFaviconAsset);
+            setFaviconDeleted(false);
+            setLogoErrors((prev) => ({ ...prev, favicon: null }));
+          }
+        } else if (type === 'favicon') {
+          setFaviconFile(fileAsset);
+          setFaviconDeleted(false);
+          setHasCustomFavicon(true);
+        }
+      } catch (error: unknown) {
+        const err = error as { code?: string; message?: string };
+        if (err?.code !== 'E_PICKER_CANCELLED') {
+          showToastMessage(err?.message || 'Failed to select image', 'error');
+        }
+      } finally {
+        pickerBusyRef.current = false;
       }
     },
-    [activePickingType, hasCustomFavicon]
+    [hasCustomFavicon]
   );
-
-  const runPendingPicker = useCallback(async () => {
-    const action = pendingPickerRef.current;
-    pendingPickerRef.current = null;
-
-    if (!action || pickerBusyRef.current) return;
-
-    pickerBusyRef.current = true;
-    try {
-      if (action === 'gallery') {
-        const result = await ImageCropPicker.openPicker({
-          mediaType: 'photo',
-          cropping: false,
-        });
-        applyPickerResult(result);
-      } else {
-        const result = await ImageCropPicker.openCamera({
-          mediaType: 'photo',
-          cropping: false,
-        });
-        applyPickerResult(result);
-      }
-    } catch (error: unknown) {
-      const err = error as { code?: string; message?: string };
-      if (err?.code !== 'E_PICKER_CANCELLED') {
-        showToastMessage(err?.message || 'Failed to select image', 'error');
-      }
-    } finally {
-      pickerBusyRef.current = false;
-    }
-  }, [applyPickerResult]);
-
-  const handleProfilePhotoModalDismissed = useCallback(() => {
-    void runPendingPicker();
-  }, [runPendingPicker]);
-
-  useEffect(() => {
-    if (Platform.OS === 'ios' || showPickerModal) return;
-    if (pendingPickerRef.current) {
-      void runPendingPicker();
-    }
-  }, [showPickerModal, runPendingPicker]);
 
   const isPresetSelected = useCallback(
     (hex: string) => normalizeHexColor(primaryColor) === normalizeHexColor(hex),
@@ -544,7 +589,8 @@ const BrandingScreen = () => {
     const hasCustomColor =
       normalizeHexColor(primaryColor) !== normalizeHexColor(DEFAULT_BRAND_COLOR);
     const hasAnyLogo = Boolean(currentLogoUrl || currentSecondaryLogoUrl || currentFaviconUrl);
-    return !hasAnyCustomName && !hasCustomColor && !hasAnyLogo;
+    const isPoweredByDefault = poweredByEnabled === true;
+    return !hasAnyCustomName && !hasCustomColor && !hasAnyLogo && isPoweredByDefault;
   }, [
     isResetAction,
     productName,
@@ -552,6 +598,7 @@ const BrandingScreen = () => {
     currentLogoUrl,
     currentSecondaryLogoUrl,
     currentFaviconUrl,
+    poweredByEnabled,
   ]);
 
   const renderShimmerLoading = () => (
@@ -665,7 +712,9 @@ const BrandingScreen = () => {
                   <LogoUploadCard
                     type="logo"
                     title="Logo"
+                    recommendedResolution="480 × 120 px recommended"
                     specs="PNG, SVG, JPG · max 2 MB"
+                    errorMessage={logoErrors.logo}
                     currentUrl={currentLogoUrl}
                     localFile={logoFile}
                     isAutoBadge={!logoFile && !currentLogoUrl}
@@ -683,7 +732,9 @@ const BrandingScreen = () => {
                   <LogoUploadCard
                     type="secondary_logo"
                     title="Compact logo"
+                    recommendedResolution="256 × 256 px recommended"
                     specs="PNG, SVG, JPG · max 1 MB"
+                    errorMessage={logoErrors.secondary_logo}
                     currentUrl={currentSecondaryLogoUrl}
                     localFile={secondaryLogoFile}
                     isAutoBadge={!secondaryLogoFile && !currentSecondaryLogoUrl}
@@ -708,7 +759,9 @@ const BrandingScreen = () => {
                   <LogoUploadCard
                     type="favicon"
                     title="Favicon"
+                    recommendedResolution="64 × 64 px recommended"
                     specs="PNG, SVG, ICO · max 512 KB"
+                    errorMessage={logoErrors.favicon}
                     currentUrl={currentFaviconUrl}
                     localFile={faviconFile}
                     isAutoBadge={!hasCustomFavicon && !faviconFile}
@@ -874,24 +927,6 @@ const BrandingScreen = () => {
             }}
           />
         </KeyboardAvoidingView>
-
-        {/* Image Picker Modal */}
-        <SetProfilePhotoModal
-          visible={showPickerModal}
-          onClose={() => {
-            pendingPickerRef.current = null;
-            setShowPickerModal(false);
-          }}
-          onDismiss={handleProfilePhotoModalDismissed}
-          onSelectGallery={() => {
-            pendingPickerRef.current = 'gallery';
-            setShowPickerModal(false);
-          }}
-          onSelectCamera={() => {
-            pendingPickerRef.current = 'camera';
-            setShowPickerModal(false);
-          }}
-        />
       </CustomSafeAreaView>
     </Fragment>
   );

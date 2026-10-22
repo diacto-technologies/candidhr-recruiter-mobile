@@ -102,6 +102,11 @@ export const useStyles = (brandColor: string = colors.brand[600]) => {
       marginBottom: 10,
       padding: 8,
     },
+    previewContainerError: {
+      borderColor: '#FDA29B',
+      borderStyle: 'dashed',
+      backgroundColor: '#FEF3F2',
+    },
     previewImage: {
       width: '100%',
       height: 80,
@@ -223,6 +228,13 @@ export const useStyles = (brandColor: string = colors.brand[600]) => {
     },
     specsText: {
       marginTop: 2,
+      lineHeight: 16,
+    },
+    cardErrorMessage: {
+      marginTop: 4,
+      fontSize: 12,
+      lineHeight: 16,
+      color: colors.error[600],
     },
     // Swatch styles
     colorPresetsRow: {
