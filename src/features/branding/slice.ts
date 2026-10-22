@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { BrandingData, BrandingState } from './types';
 import { setBrandColor } from '../../theme/colors';
-import { isDefaultLogoUrl, isDefaultOrCandidHr } from './constants';
+
 
 const initialState: BrandingState = {
   data: null,
@@ -9,7 +9,7 @@ const initialState: BrandingState = {
   updating: false,
   error: null,
   updateSuccess: false,
-  isReset: true,
+  isReset: false,
 };
 
 const brandingSlice = createSlice({
@@ -26,27 +26,8 @@ const brandingSlice = createSlice({
       state.data = action.payload;
       state.error = null;
 
-      const hasCustomLogo = Boolean(
-        (action.payload?.logo && !isDefaultLogoUrl(action.payload.logo)) ||
-        (action.payload?.secondary_logo && !isDefaultLogoUrl(action.payload.secondary_logo))
-      );
-      const isCustomName = Boolean(
-        action.payload?.product_name &&
-        !isDefaultOrCandidHr(action.payload.product_name)
-      );
-
-      if (hasCustomLogo || isCustomName) {
-        state.isReset = false;
-      }
-
-      if (state.isReset && !hasCustomLogo && isDefaultOrCandidHr(action.payload?.product_name)) {
-        if (state.data) {
-          state.data = {
-            ...state.data,
-            product_name: '',
-          };
-        }
-      }
+      // After fetching, do not override isReset if it was explicitly set to true by a reset action
+      // (isReset stays false for normal fetches; only setBrandingReset can set it to true)
 
       if (action.payload?.primary_color) {
         setBrandColor(action.payload.primary_color);
@@ -66,20 +47,23 @@ const brandingSlice = createSlice({
     },
     updateBrandingSuccess: (state, action: PayloadAction<BrandingData>) => {
       state.updating = false;
-      state.data = action.payload;
       state.updateSuccess = true;
       state.error = null;
 
       if (state.isReset) {
-        if (state.data) {
-          state.data = {
-            ...state.data,
-            product_name: '',
-            logo: null,
-            secondary_logo: null,
-            favicon: null,
-          };
-        }
+        // Reset action: clear logos and name from local state regardless of server response
+        state.data = {
+          ...(action.payload ?? {}),
+          product_name: '',
+          logo: null,
+          secondary_logo: null,
+          favicon: null,
+        } as BrandingData;
+        // Keep isReset = true until user makes changes
+      } else {
+        // Normal save: trust the server response entirely
+        state.data = action.payload;
+        state.isReset = false;
       }
 
       if (action.payload?.primary_color) {

@@ -102,6 +102,7 @@ const BrandingScreen = () => {
   useEffect(() => {
     if (updateSuccess) {
       setIsResetAction(false);
+      // Reset the load guard so form re-syncs from the newly saved brandingData
       initialLoadedRef.current = false;
     }
   }, [updateSuccess]);
@@ -148,8 +149,9 @@ const BrandingScreen = () => {
 
   const getResolvedSavedProductName = useCallback((data: typeof brandingData): string => {
     if (!data) return '';
+    // If the branding is in reset state, show empty
     if (isBrandingReset) return '';
-    if (isDefaultOrCandidHr(data.product_name)) return '';
+    // Return the saved product name as-is (including "CandidHR" if user intentionally saved it)
     return data.product_name?.trim() || '';
   }, [isBrandingReset]);
 
@@ -158,7 +160,8 @@ const BrandingScreen = () => {
   // Sync Form with Fetched Data
   useEffect(() => {
     if (brandingData) {
-      if (!initialLoadedRef.current || isResetAction) {
+      if (!initialLoadedRef.current) {
+        // Initial load: sync from saved brandingData
         initialLoadedRef.current = true;
         const pName = getResolvedSavedProductName(brandingData);
         const pColor = brandingData.primary_color || DEFAULT_BRAND_COLOR;
@@ -180,8 +183,10 @@ const BrandingScreen = () => {
           )
         );
       }
+      // Note: isResetAction=true case is handled entirely inside handleResetToDefault.
+      // We must NOT re-sync from brandingData on reset — it would overwrite the default values.
     }
-  }, [brandingData, isResetAction, getResolvedSavedProductName]);
+  }, [brandingData, getResolvedSavedProductName]);
 
   // Unsaved Changes Calculation
   const isDirty = useMemo(() => {
