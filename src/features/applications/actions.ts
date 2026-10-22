@@ -378,5 +378,29 @@ export const getApplicationShortLinkFailureAction = (payload: string) => ({
   payload,
 });
 
+export const getAssignmentInviteOptionsRequestAction = (application_id: string) => ({
+  type: APPLICATIONS_ACTION_TYPES.GET_ASSIGNMENT_INVITE_OPTIONS_REQUEST,
+  payload: application_id,
+});
+
+export const getAssignmentReviewReportRequestAction = (invite_id: string) => ({
+  type: APPLICATIONS_ACTION_TYPES.GET_ASSIGNMENT_REVIEW_REPORT_REQUEST,
+  payload: invite_id,
+});
+
+import { setSelectedAssignmentInviteId } from "./slice";
+
+export const setSelectedAssignmentInviteIdAction = (invite_id: string | null) =>
+  setSelectedAssignmentInviteId(invite_id);
+
+export const deleteApplicationRequestAction = (payload: {
+  id: string;
+  onSuccess?: () => void;
+}) => ({
+  type: APPLICATIONS_ACTION_TYPES.DELETE_APPLICATION_REQUEST,
+  payload,
+});
+
+
 
 

@@ -16,6 +16,7 @@ import { useStyles } from "./styles";
 import { expandarrowsIcon } from "../../../assets/svg/expandarrows";
 import Shimmer from "../../atoms/shimmer";
 import { CandidateAssignmentsTableProps, CandidateAssignmentRow } from "./candidateassignmentstable";
+import { useBrandTheme } from "../../../hooks/useBrandTheme";
 import {
     ASSIGNMENTS_STAGE_OVERVIEW_COLUMNS,
     ASSIGNMENT_STATUS_FILTER_OPTIONS,
@@ -106,6 +107,7 @@ const CandidateAssignmentsTable: React.FC<CandidateAssignmentsTableProps> = ({
     const assignmentsListSearchText = useSelector(selectAssignmentsListSearchText);
     const assignmentTableSelectedIds = useSelector(selectAssignmentTableSelectedIds);
     const assignmentExportLoading = useSelector(selectAssignmentExportLoading);
+    const { brandColors } = useBrandTheme();
 
     const styles = useStyles();
     const scrollX = useRef(new Animated.Value(0)).current;
@@ -479,7 +481,7 @@ const CandidateAssignmentsTable: React.FC<CandidateAssignmentsTableProps> = ({
                 </ScrollView>
                 <View style={styles.paginationContainer}>
                     <TouchableOpacity onPress={onViewMore}>
-                        <Typography variant="semiBoldTxtsm" color={colors.brand[700]}>
+                        <Typography variant="semiBoldTxtsm" color={brandColors[700]}>
                             View more
                         </Typography>
                     </TouchableOpacity>

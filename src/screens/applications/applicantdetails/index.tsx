@@ -35,6 +35,7 @@ import { HtmlPreviewModal } from './components/HtmlPreviewModal';
 // Tabs
 import Assessment from './tabs/assessment';
 import AssessmentV2 from './tabs/assessmentv2';
+import AssignmentTab from './tabs/assignment';
 import ProfileInfo from './tabs/profileinfo';
 import ResumeScreening from './tabs/resumescreening';
 import VideoInterview from './tabs/videointerview';
@@ -66,6 +67,9 @@ export default function ApplicantDetails() {
       case 'resume_screening':
       case 'Resume Screening':
         return <ResumeScreening />;
+      case 'assignment':
+      case 'Assignment':
+        return <AssignmentTab applicationId={application_id} />;
       case 'assessment':
       case 'Assessments':
       case 'Assessment':

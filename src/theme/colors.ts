@@ -314,3 +314,63 @@ export const colors: IColors = {
     },
   },  
 };
+
+/**
+ * Dynamically updates the brand palette and main color tokens
+ * based on the workspace's primary_color (e.g. #0F766E).
+ */
+export const setBrandColor = (primaryHex: string): void => {
+  if (!primaryHex) return;
+  const clean = primaryHex.trim();
+  const hex = clean.startsWith('#') ? clean : `#${clean}`;
+  if (!/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(hex)) return;
+
+  const fullHex =
+    hex.length === 4
+      ? `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`
+      : hex;
+
+  const r = parseInt(fullHex.slice(1, 3), 16);
+  const g = parseInt(fullHex.slice(3, 5), 16);
+  const b = parseInt(fullHex.slice(5, 7), 16);
+
+  const tint = (factor: number): string => {
+    const tr = Math.round(r + (255 - r) * factor);
+    const tg = Math.round(g + (255 - g) * factor);
+    const tb = Math.round(b + (255 - b) * factor);
+    return `#${tr.toString(16).padStart(2, '0')}${tg.toString(16).padStart(2, '0')}${tb.toString(16).padStart(2, '0')}`.toUpperCase();
+  };
+
+  const shade = (factor: number): string => {
+    const sr = Math.round(r * (1 - factor));
+    const sg = Math.round(g * (1 - factor));
+    const sb = Math.round(b * (1 - factor));
+    return `#${sr.toString(16).padStart(2, '0')}${sg.toString(16).padStart(2, '0')}${sb.toString(16).padStart(2, '0')}`.toUpperCase();
+  };
+
+  const upper = fullHex.toUpperCase();
+
+  colors.brand[25] = tint(0.96);
+  colors.brand[50] = tint(0.92);
+  colors.brand[100] = tint(0.80);
+  colors.brand[200] = tint(0.60);
+  colors.brand[300] = tint(0.40);
+  colors.brand[400] = tint(0.20);
+  colors.brand[500] = tint(0.10);
+  colors.brand[600] = upper;
+  colors.brand[700] = shade(0.15);
+  colors.brand[800] = shade(0.30);
+  colors.brand[900] = shade(0.45);
+
+  colors.mainColors.main = upper;
+  colors.mainColors.slateBlue = upper;
+  colors.mainColors.primary = upper;
+
+  colors.gradients.brand.g600_500 = [upper, colors.brand[500]];
+  colors.gradients.brand.g600_700 = [colors.brand[500], upper];
+  colors.gradients.brand.g700_600 = [colors.brand[700], upper];
+  colors.gradients.brand.g800_600 = [colors.brand[800], upper];
+  colors.gradients.brand.g800_700 = [colors.brand[800], colors.brand[700]];
+  colors.gradients.brand.g900_700 = [colors.brand[900], colors.brand[700]];
+};
+

@@ -25,7 +25,7 @@ const jobsTransform = createTransform<JobsState, JobsState>(
 const persistConfig = {
   key: "root",
   storage: AsyncStorage,
-  whitelist: ["auth", "language", "theme", "profile", "jobs"], // Persist auth, language, theme, profile (for permissions), and jobs (for favourites)
+  whitelist: ["auth", "language", "theme", "profile", "jobs", "branding"], // Persist auth, language, theme, profile, jobs, and branding
   transforms: [jobsTransform],
   blacklist: [], // Add slices you don't want to persist
 };
@@ -39,7 +39,14 @@ export const store = configureStore({
     getDefaultMiddleware({
       thunk: false,
       serializableCheck: {
-        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE', 'persist/PURGE'],
+        ignoredActions: [
+          'persist/PERSIST',
+          'persist/REHYDRATE',
+          'persist/PURGE',
+          'branding/UPDATE_BRANDING_REQUEST',
+          'profile/UPDATE_PROFILE_REQUEST',
+        ],
+        ignoredActionPaths: ['payload'],
       },
     }).concat(sagaMiddleware),
   devTools: __DEV__,

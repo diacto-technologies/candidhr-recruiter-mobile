@@ -9,7 +9,8 @@ import DropdownFilter from '../../molecules/dropdownfilter';
 import SortByPanel from '../../molecules/sortbypanel';
 import { FilterConfig } from './types';
 import { LABEL_MAP } from './config';
-import { styles } from './styles';
+import { useStyles } from './styles';
+import { useBrandTheme } from '../../../hooks/useBrandTheme';
 
 interface Props {
   onCancel: () => void;
@@ -43,6 +44,8 @@ const BaseFilterSheetContent: React.FC<Props> = ({
   onFilterChange,
   onSortChange
 }) => {
+  const { brandColors, primaryColor } = useBrandTheme();
+  const styles = useStyles();
   const slideAnim = useRef(new Animated.Value(0)).current;
   const indicatorY = useRef(new Animated.Value(0)).current;
 
@@ -146,7 +149,7 @@ const BaseFilterSheetContent: React.FC<Props> = ({
                     <Animated.View
                       style={[
                         styles.activeIndicator,
-                        // { transform: [{ translateY: indicatorY }] } // Removing indicator animation for now because original was 0 and broken
+                        { backgroundColor: brandColors[600] },
                       ]}
                     />
                   )}
@@ -221,9 +224,9 @@ const BaseFilterSheetContent: React.FC<Props> = ({
 
           <View style={{ flex: 1 }}>
             <Button
-              buttonColor={colors.mainColors.slateBlue}
+              buttonColor={primaryColor || brandColors[600]}
               textColor={colors.common.white}
-              borderColor={colors.mainColors.borderColor}
+              borderColor={primaryColor || brandColors[600]}
               borderRadius={8}
               borderWidth={1}
               onPress={onApply}

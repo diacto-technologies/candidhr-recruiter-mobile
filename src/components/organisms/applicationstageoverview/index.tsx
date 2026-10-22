@@ -13,6 +13,7 @@ import { expandarrowsIcon } from "../../../assets/svg/expandarrows";
 import Shimmer from "../../atoms/shimmer";
 import { ApplicationStageOverviewProps, TableRow } from "./applicationstage";
 import { APPLICATION_STAGE_OVERVIEW_COLUMNS, SHIMMER_ROWS } from "./constants";
+import { useBrandTheme } from "../../../hooks/useBrandTheme";
 
 const MAX_VISIBLE_ROWS = 6;
 
@@ -67,6 +68,7 @@ const ApplicationStageOverview: React.FC<ApplicationStageOverviewProps> = ({
   loading,
   onViewMore,
 }) => {
+  const { brandColors } = useBrandTheme();
   const styles = useStyles();
   const scrollX = useRef(new Animated.Value(0)).current;
   const data: TableRow[] = overview?.results ?? [];
@@ -204,7 +206,7 @@ const ApplicationStageOverview: React.FC<ApplicationStageOverviewProps> = ({
       </ScrollView>
       <View style={styles.paginationContainer}>
         <TouchableOpacity onPress={onViewMore}>
-          <Typography variant="semiBoldTxtsm" color={colors.brand[700]}>
+          <Typography variant="semiBoldTxtsm" color={brandColors[700]}>
             View more
           </Typography>
         </TouchableOpacity>

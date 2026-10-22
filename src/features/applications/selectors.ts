@@ -355,5 +355,41 @@ export const selectShortLinkError = createSelector(
   (state) => state.shortLinkError ?? null
 );
 
+export const selectAssignmentInviteOptions = createSelector(
+  selectApplicationsState,
+  (state) => state.assignmentInviteOptions ?? []
+);
+
+export const selectLoadingAssignmentInviteOptions = createSelector(
+  selectApplicationsState,
+  (state) => state.loadingAssignmentInviteOptions ?? false
+);
+
+export const selectAssignmentInviteOptionsError = createSelector(
+  selectApplicationsState,
+  (state) => state.assignmentInviteOptionsError ?? null
+);
+
+export const selectAssignmentReviewReport = createSelector(
+  selectApplicationsState,
+  (state) => state.assignmentReviewReport ?? null
+);
+
+export const selectLoadingAssignmentReviewReport = createSelector(
+  selectApplicationsState,
+  (state) => state.loadingAssignmentReviewReport ?? false
+);
+
+export const selectAssignmentReviewReportError = createSelector(
+  selectApplicationsState,
+  (state) => state.assignmentReviewReportError ?? null
+);
+
+export const selectSelectedAssignmentInviteId = createSelector(
+  selectApplicationsState,
+  (state) => state.selectedAssignmentInviteId ?? null
+);
+
+
 
 

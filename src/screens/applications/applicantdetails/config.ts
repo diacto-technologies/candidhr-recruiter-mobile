@@ -15,6 +15,7 @@ export interface StageTabConfig {
 
 export const STAGE_TAB_MAP: Record<string, StageTabConfig> = {
   resume_screening: { key: 'resume_screening', label: 'Resume Screening' },
+  assignment: { key: 'assignment', label: 'Assignment' },
   assessment: { key: 'assessment', label: 'Assessment' },
   assessment_v2: { key: 'assessment_v2', label: 'Assessment' },
   automated_video_interview: { key: 'automated_video_interview', label: 'Automated Video Interview' },

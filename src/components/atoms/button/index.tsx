@@ -1,6 +1,5 @@
-// components/Button/Button.tsx
 import React from 'react';
-import { Pressable, View, ActivityIndicator } from 'react-native';
+import { Pressable, View, ActivityIndicator, StyleProp, ViewStyle } from 'react-native';
 import Typography from '../typography';
 import { useStyles } from './styles';
 import { renderNode } from '../../../utils/renderNode';
@@ -13,7 +12,7 @@ const Button: React.FC<IButton> = (props) => {
 
   const getTextColor = () => {
     if (props.textColor) return props.textColor;
-    if (props.variant === 'text' || props.variant === 'outline') return props.buttonColor || colors.mainColors.main;
+    if (props.variant === 'text' || props.variant === 'outline') return props.buttonColor || colors.brand[600] || colors.mainColors.main;
     return colors.common.white;
   };
 
@@ -26,17 +25,21 @@ const Button: React.FC<IButton> = (props) => {
       {...props}
       // onPressIn={() => setPressed(true)}
       // onPressOut={() => setPressed(false)}
-      style={styles.container}
+      style={props.style ? ([styles.container, props.style] as StyleProp<ViewStyle>) : styles.container}
       disabled={props.disabled || props.isLoading}
     >
-      {/* Gradient Border */}
-      <View style={styles.borderGradient} pointerEvents="none" />
-      <View style={styles.innerShadow} pointerEvents="none" />
+      {/* Gradient Border for contain variant */}
+      {props.variant !== 'outline' && props.variant !== 'text' && (
+        <>
+          <View style={styles.borderGradient} pointerEvents="none" />
+          <View style={styles.innerShadow} pointerEvents="none" />
+        </>
+      )}
 
       {props.isLoading ? (
         <ActivityIndicator color={getLoaderColor()} size="small" />
       ) : (
-        <View style={styles.content}>
+        <View style={styles.content} pointerEvents="none">
           {renderNode(props.startIcon)}
           {props.children && (
             <Typography

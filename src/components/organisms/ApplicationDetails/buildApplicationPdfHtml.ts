@@ -1,3 +1,5 @@
+import { colors } from '../../../theme/colors';
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 type BuildApplicationPdfHtmlParams = {
   application: any;
@@ -32,36 +34,73 @@ type BuildApplicationPdfHtmlParams = {
   };
   /** When set (e.g. from resume screening report), mirrors `ApplicantPdfForm` data + layout. */
   scorecardV3?: any | null;
+  brandColor?: string;
+  productName?: string;
+  showPoweredBy?: boolean;
 };
 
-/** Aligns with `ApplicantPdfForm` (react-pdf) — slate + indigo system. */
-const C = {
-  indigo600: "#6366f1",
-  indigo700: "#4338ca",
-  indigo50: "#eef2ff",
-  indigo100: "#e0e7ff",
-  indigoBorder: "#c7d2fe",
-  slate50: "#f8fafc",
-  slate200: "#e2e8f0",
-  slate400: "#94a3b8",
-  slate500: "#64748b",
-  slate600: "#475569",
-  slate700: "#334155",
-  slate800: "#1e293b",
-  slate900: "#0f172a",
-  greenBadgeBg: "#d1fae5",
-  greenBadgeText: "#065f46",
-  blueBadgeBg: "#dbeafe",
-  blueBadgeText: "#1d4ed8",
-  purplePillBg: "#ede9fe",
-  purplePillText: "#5b21b6",
-  red50: "#fef2f2",
-  red600: "#dc2626",
-  red700: "#b91c1c",
-  white: "#ffffff",
+/** Generates dynamic report palette aligned with active brand color */
+export const getReportPalette = (brandPrimary?: string) => {
+  const primary = (brandPrimary || colors.brand[600] || '#6366f1').trim();
+  const clean = primary.startsWith('#') ? primary : `#${primary}`;
+  const hex = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(clean) ? clean : '#6366f1';
+  const fullHex =
+    hex.length === 4
+      ? `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`
+      : hex;
+  const r = parseInt(fullHex.slice(1, 3), 16) || 99;
+  const g = parseInt(fullHex.slice(3, 5), 16) || 102;
+  const b = parseInt(fullHex.slice(5, 7), 16) || 241;
+
+  const tint = (factor: number): string => {
+    const tr = Math.round(r + (255 - r) * factor);
+    const tg = Math.round(g + (255 - g) * factor);
+    const tb = Math.round(b + (255 - b) * factor);
+    return `#${tr.toString(16).padStart(2, '0')}${tg.toString(16).padStart(2, '0')}${tb.toString(16).padStart(2, '0')}`;
+  };
+
+  const shade = (factor: number): string => {
+    const sr = Math.round(r * (1 - factor));
+    const sg = Math.round(g * (1 - factor));
+    const sb = Math.round(b * (1 - factor));
+    return `#${sr.toString(16).padStart(2, '0')}${sg.toString(16).padStart(2, '0')}${sb.toString(16).padStart(2, '0')}`;
+  };
+
+  return {
+    indigo600: fullHex,
+    indigo700: shade(0.20),
+    indigo50: tint(0.92),
+    indigo100: tint(0.82),
+    indigoBorder: tint(0.60),
+    slate50: "#f8fafc",
+    slate200: "#e2e8f0",
+    slate400: "#94a3b8",
+    slate500: "#64748b",
+    slate600: "#475569",
+    slate700: "#334155",
+    slate800: "#1e293b",
+    slate900: "#0f172a",
+    greenBadgeBg: "#d1fae5",
+    greenBadgeText: "#065f46",
+    blueBadgeBg: "#dbeafe",
+    blueBadgeText: "#1d4ed8",
+    purplePillBg: "#ede9fe",
+    purplePillText: "#5b21b6",
+    red50: "#fef2f2",
+    red600: "#dc2626",
+    red700: "#b91c1c",
+    white: "#ffffff",
+  };
 };
 
-const BAR_COLORS = ["#6366f1", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b"];
+const C = getReportPalette();
+
+const getIcons = (c: ReturnType<typeof getReportPalette>) => ({
+  iconMail: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="${c.indigo600}" stroke-width="1.8" style="vertical-align:middle;flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>`,
+  iconPhone: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="${c.indigo600}" stroke-width="1.8" style="vertical-align:middle;flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg>`,
+  iconLocation: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="${c.indigo600}" stroke-width="1.8" style="vertical-align:middle;flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>`,
+  iconBriefcase: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="${c.indigo600}" stroke-width="1.8" style="vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.073a2.25 2.25 0 01-2.25 2.25h-12a2.25 2.25 0 01-2.25-2.25V6a2.25 2.25 0 012.25-2.25h4.5a2.25 2.25 0 012.25 2.25v.75"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 3.75h-6a.75.75 0 00-.75.75v.75h7.5v-.75A.75.75 0 0015 3.75z"/></svg>`,
+});
 
 const STAGE_STATUS: Record<string, { label: string; bg: string; text: string }> = {
   approval_pending: { label: "Pending Review", bg: "#fef3c7", text: "#b45309" },
@@ -144,25 +183,25 @@ const skillMatchLabel = (skill: any): "matched" | "relevant" | "none" => {
   return "none";
 };
 
-const skillReqMatchCellHtml = (skill: any): string => {
+const skillReqMatchCellHtml = (skill: any, c = C): string => {
   const m = skillMatchLabel(skill);
   if (m === "matched") {
-    return `<span style="display:inline-block;padding:2px 7px;border-radius:100px;font-size:11px;font-weight:600;background:${C.greenBadgeBg};color:${C.greenBadgeText};">Matched</span>`;
+    return `<span style="display:inline-block;padding:2px 7px;border-radius:100px;font-size:11px;font-weight:600;background:${c.greenBadgeBg};color:${c.greenBadgeText};">Matched</span>`;
   }
   if (m === "relevant") {
-    return `<span style="display:inline-block;padding:2px 7px;border-radius:100px;font-size:11px;font-weight:600;background:${C.blueBadgeBg};color:${C.blueBadgeText};">Relevant</span>`;
+    return `<span style="display:inline-block;padding:2px 7px;border-radius:100px;font-size:11px;font-weight:600;background:${c.blueBadgeBg};color:${c.blueBadgeText};">Relevant</span>`;
   }
-  return `<span style="font-size:11px;color:${C.slate400};">—</span>`;
+  return `<span style="font-size:11px;color:${c.slate400};">—</span>`;
 };
 
 /** Timeline relevance — mirrors `RelevancePill` in ApplicantPdfForm */
-const timelineRelevanceHtml = (relevance: unknown): string => {
+const timelineRelevanceHtml = (relevance: unknown, c = C): string => {
   const r = String(relevance ?? "").toLowerCase();
   if (r === "high") {
-    return `<span style="display:inline-block;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:600;background:${C.purplePillBg};color:${C.purplePillText};">Highly Relevant</span>`;
+    return `<span style="display:inline-block;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:600;background:${c.purplePillBg};color:${c.purplePillText};">Highly Relevant</span>`;
   }
   if (r === "medium") {
-    return `<span style="display:inline-block;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:600;background:${C.blueBadgeBg};color:${C.blueBadgeText};">Relevant</span>`;
+    return `<span style="display:inline-block;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:600;background:${c.blueBadgeBg};color:${c.blueBadgeText};">Relevant</span>`;
   }
   return "";
 };
@@ -202,20 +241,9 @@ const stagePillStyle = (statusText: string, raw?: string): { label: string; bg: 
   return { label: escapeHtml(statusText), bg: "#f1f5f9", text: "#475569" };
 };
 
-const iconMail = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="${C.indigo600}" stroke-width="1.8" style="vertical-align:middle;flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>`;
-const iconPhone = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="${C.indigo600}" stroke-width="1.8" style="vertical-align:middle;flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg>`;
-const iconLocation = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="${C.indigo600}" stroke-width="1.8" style="vertical-align:middle;flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>`;
-const iconBriefcase = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="${C.indigo600}" stroke-width="1.8" style="vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.073a2.25 2.25 0 01-2.25 2.25h-12a2.25 2.25 0 01-2.25-2.25V6a2.25 2.25 0 012.25-2.25h4.5a2.25 2.25 0 012.25 2.25v.75"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 3.75h-6a.75.75 0 00-.75.75v.75h7.5v-.75A.75.75 0 0015 3.75z"/></svg>`;
+const dividerHtml = `<div style="height:1px;background:#e2e8f0;margin-top:12px;margin-bottom:4px;"></div>`;
 
-const secHtml = (label: string) =>
-  `<div style="display:flex;align-items:center;margin-top:14px;margin-bottom:8px;">
-    <div style="width:5px;height:5px;border-radius:3px;background:${C.indigo600};margin-right:6px;flex-shrink:0;"></div>
-    <span style="font-size:10px;font-weight:700;color:${C.indigo600};letter-spacing:0.9px;text-transform:uppercase;">${escapeHtml(label)}</span>
-  </div>`;
-
-const dividerHtml = `<div style="height:1px;background:${C.slate200};margin-top:12px;margin-bottom:4px;"></div>`;
-
-const progressBarHtml = (value: number, color: string, track = C.slate200, h = 5) =>
+const progressBarHtml = (value: number, color: string, track = "#e2e8f0", h = 5) =>
   `<div style="height:${h}px;border-radius:3px;background:${track};overflow:hidden;flex:1;min-width:0;margin-right:8px;">
     <div style="height:100%;width:${clamp(value)}%;background:${color};border-radius:3px;"></div>
   </div>`;
@@ -233,48 +261,15 @@ const workDescFromParts = (desc: string): string => {
     .map((s) => s.trim())
     .filter(Boolean);
   if (parts.length <= 1) {
-    return `<div style="font-size:11px;color:${C.slate600};line-height:1.55;">${escapeHtml(String(desc))}</div>`;
+    return `<div style="font-size:11px;color:#475569;line-height:1.55;">${escapeHtml(String(desc))}</div>`;
   }
-  return `<div style="font-size:11px;color:${C.slate600};line-height:1.55;">${parts
+  return `<div style="font-size:11px;color:#475569;line-height:1.55;">${parts
     .map((part) => {
       const end = /[.!?]$/.test(part) ? "" : ".";
       return `<p style="margin:0 0 4px 0;">${escapeHtml(part)}${end}</p>`;
     })
     .join("")}</div>`;
 };
-
-const timelineCardHtml = (opts: {
-  title: string;
-  sub?: string;
-  meta?: string;
-  relevance?: unknown;
-  body?: string;
-}): string => {
-  const rel = timelineRelevanceHtml(opts.relevance);
-  return `<div style="display:flex;margin-bottom:10px;align-items:flex-start;">
-    <div style="width:10px;margin-right:10px;flex-shrink:0;padding-top:4px;">
-      <div style="width:8px;height:8px;border-radius:4px;background:${C.indigo600};"></div>
-    </div>
-    <div style="flex:1;background:${C.slate50};border:1px solid ${C.slate200};border-radius:8px;padding:9px 11px;">
-      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:2px;">
-        <span style="font-size:12px;font-weight:700;color:${C.slate800};">${escapeHtml(opts.title)}</span>
-        ${rel}
-      </div>
-      ${opts.sub ? `<div style="font-size:11px;font-weight:600;color:${C.indigo600};margin-bottom:2px;">${escapeHtml(opts.sub)}</div>` : ""}
-      ${opts.meta ? `<div style="font-size:10px;color:${C.slate500};margin-bottom:4px;">${escapeHtml(opts.meta)}</div>` : ""}
-      ${opts.body || ""}
-    </div>
-  </div>`;
-};
-
-const footerBarHtml = (name: string) =>
-  `<div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid ${C.slate200};padding-top:10px;margin-top:20px;">
-    <span style="font-size:10px;color:${C.slate400};">CandidHR</span>
-    <div style="text-align:right;">
-      <div style="font-size:10px;color:${C.slate400};">${escapeHtml(name)}</div>
-      <div style="font-size:10px;color:${C.slate400};margin-top:1px;">Applicant Profile</div>
-    </div>
-  </div>`;
 
 export const buildApplicationPdfHtml = ({
   application,
@@ -283,7 +278,66 @@ export const buildApplicationPdfHtml = ({
   stages,
   aiSummary,
   scorecardV3: scorecardV3Param,
+  brandColor,
+  productName,
+  showPoweredBy = true,
 }: BuildApplicationPdfHtmlParams): string => {
+  const C = getReportPalette(brandColor);
+  const BAR_COLORS = [C.indigo600, "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b"];
+  const { iconMail, iconPhone, iconLocation, iconBriefcase } = getIcons(C);
+
+  const footerCreditHtml = (() => {
+    const customBrand = productName && productName !== "CandidHR" ? productName : "";
+    if (showPoweredBy) {
+      if (customBrand) {
+        return `${escapeHtml(customBrand)} · Powered by CandidHR`;
+      }
+      return "CandidHR";
+    }
+    if (customBrand) {
+      return escapeHtml(customBrand);
+    }
+    return "";
+  })();
+
+  const secHtml = (label: string) =>
+    `<div style="display:flex;align-items:center;margin-top:14px;margin-bottom:8px;">
+      <div style="width:5px;height:5px;border-radius:3px;background:${C.indigo600};margin-right:6px;flex-shrink:0;"></div>
+      <span style="font-size:10px;font-weight:700;color:${C.indigo600};letter-spacing:0.9px;text-transform:uppercase;">${escapeHtml(label)}</span>
+    </div>`;
+
+  const timelineCardHtml = (opts: {
+    title: string;
+    sub?: string;
+    meta?: string;
+    relevance?: unknown;
+    body?: string;
+  }): string => {
+    const rel = timelineRelevanceHtml(opts.relevance, C);
+    return `<div style="display:flex;margin-bottom:10px;align-items:flex-start;">
+      <div style="width:10px;margin-right:10px;flex-shrink:0;padding-top:4px;">
+        <div style="width:8px;height:8px;border-radius:4px;background:${C.indigo600};"></div>
+      </div>
+      <div style="flex:1;background:${C.slate50};border:1px solid ${C.slate200};border-radius:8px;padding:9px 11px;">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:2px;">
+          <span style="font-size:12px;font-weight:700;color:${C.slate800};">${escapeHtml(opts.title)}</span>
+          ${rel}
+        </div>
+        ${opts.sub ? `<div style="font-size:11px;font-weight:600;color:${C.indigo600};margin-bottom:2px;">${escapeHtml(opts.sub)}</div>` : ""}
+        ${opts.meta ? `<div style="font-size:10px;color:${C.slate500};margin-bottom:4px;">${escapeHtml(opts.meta)}</div>` : ""}
+        ${opts.body || ""}
+      </div>
+    </div>`;
+  };
+
+  const footerBarHtml = (name: string) =>
+    `<div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid ${C.slate200};padding-top:10px;margin-top:20px;">
+      <span style="font-size:10px;color:${C.slate400};">${footerCreditHtml}</span>
+      <div style="text-align:right;">
+        <div style="font-size:10px;color:${C.slate400};">${escapeHtml(name)}</div>
+        <div style="font-size:10px;color:${C.slate400};margin-top:1px;">Applicant Profile</div>
+      </div>
+    </div>`;
   const scorecardV3 = scorecardV3Param ?? application?.scorecard_v3 ?? null;
   const rawComponents = Array.isArray(scorecardV3?.components) ? scorecardV3.components : [];
   const sortedComponents = [...rawComponents].sort((a, b) => {
@@ -543,7 +597,7 @@ export const buildApplicationPdfHtml = ({
             (sk: any, i: number) => `
         <tr style="background:${i % 2 !== 0 ? C.slate50 : C.white};">
           <td style="padding:8px 10px;border-top:1px solid ${C.slate200};font-size:11px;color:${C.slate700};font-weight:600;">${escapeHtml(sk?.name ?? "—")}</td>
-          <td style="padding:8px 10px;border-top:1px solid ${C.slate200};text-align:right;">${skillReqMatchCellHtml(sk)}</td>
+          <td style="padding:8px 10px;border-top:1px solid ${C.slate200};text-align:right;">${skillReqMatchCellHtml(sk, C)}</td>
         </tr>`
           )
           .join("")

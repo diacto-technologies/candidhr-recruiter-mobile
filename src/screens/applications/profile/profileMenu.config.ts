@@ -1,41 +1,61 @@
 import {
-    usersIcon,
-    manageRolesIcon,
-    companyInfoIcon,
-    templatesIcon,
-    privacyPolicyIcon,
-    termsConditionsIcon,
-    logoutIcon,
-  } from '../../../assets/svg/settingsIcons';
-  
-  export const getProfileMenuSections = ({
-    t,
-    handleUsersPress,
-    handleCompanyInfoPress,
-    handleLogout,
-  }: any) => [
-    // {
-    //   id: 'section1',
-    //   items: [
-    //     { id: 'users', title: t('screens.profile.users'), icon: usersIcon, onPress: handleUsersPress },
-    //     { id: 'roles', title: t('screens.profile.manageRoles'), icon: manageRolesIcon },
-    //     { id: 'company', title: t('screens.profile.companyInfo'), icon: companyInfoIcon, onPress: handleCompanyInfoPress },
-    //   ],
-    // },
-    {
-      id: 'section2',
+  usersIcon,
+  manageRolesIcon,
+  companyInfoIcon,
+  templatesIcon,
+  privacyPolicyIcon,
+  termsConditionsIcon,
+  logoutIcon,
+  brandingIcon,
+} from '../../../assets/svg/settingsIcons';
+import { MenuSection } from './profile';
+
+interface ProfileMenuParams {
+  t: (key: string) => string;
+  handleUsersPress: () => void;
+  handleCompanyInfoPress: () => void;
+  handleBrandingPress?: () => void;
+  showBranding?: boolean;
+  handleLogout: () => void;
+}
+
+export const getProfileMenuSections = ({
+  t,
+  handleUsersPress,
+  handleCompanyInfoPress,
+  handleBrandingPress,
+  showBranding = false,
+  handleLogout,
+}: ProfileMenuParams): MenuSection[] => {
+  const sections: MenuSection[] = [];
+
+  if (showBranding && handleBrandingPress) {
+    sections.push({
+      id: 'brandingSection',
       items: [
-        // { id: 'templates', title: t('screens.profile.templates'), icon: templatesIcon },
-        // { id: 'privacy', title: t('screens.profile.privacyPolicy'), icon: privacyPolicyIcon },
-        // { id: 'terms', title: t('screens.profile.termsConditions'), icon: termsConditionsIcon },
         {
-          id: 'logout',
-          title: t('screens.profile.logout'),
-          icon: logoutIcon,
-          onPress: handleLogout,
-          isLogout: true,
+          id: 'branding',
+          title: t('screens.profile.branding') || 'Branding',
+          icon: brandingIcon,
+          onPress: handleBrandingPress,
         },
       ],
-    },
-  ];
+    });
+  }
+
+  sections.push({
+    id: 'section2',
+    items: [
+      {
+        id: 'logout',
+        title: t('screens.profile.logout'),
+        icon: logoutIcon,
+        onPress: handleLogout,
+        isLogout: true,
+      },
+    ],
+  });
+
+  return sections;
+};
   

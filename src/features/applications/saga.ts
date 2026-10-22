@@ -104,9 +104,19 @@ import {
   getApplicationShortLinkRequest,
   getApplicationShortLinkSuccess,
   getApplicationShortLinkFailure,
+  getAssignmentInviteOptionsRequest,
+  getAssignmentInviteOptionsSuccess,
+  getAssignmentInviteOptionsFailure,
+  getAssignmentReviewReportRequest,
+  getAssignmentReviewReportSuccess,
+  getAssignmentReviewReportFailure,
+  setSelectedAssignmentInviteId,
+  deleteApplicationRequest,
+  deleteApplicationSuccess,
+  deleteApplicationFailure,
 } from "./slice";
 import { applicationsApi } from "./api";
-import { AssessmentDetailedReportApiResponse, AssessmentLog, AssessmentLogApiResponse, AssessmentReportApiResponse, ExportAssessmentReportRequest, GetApplicationResponsesParams, GetApplicationsParams, GetApplicationsSagaAction, PersonalityScreeningResponse, ResumeScreeningApiResponse, ResumeScreeningReportApiResponse, ScreeningAssessment, SessionReviewedResponse, UpdateApplicationShareRequest, EmailTemplate, PreviewEmailTemplateResponse, PersonalityScreeningInterviewOptionsResponse, MustHaveSkillsResponse, ApplicationViewersResponse, ApplicationShortLinkResponse, GetApplicationShortLinkPayload } from "./types";
+import { AssessmentDetailedReportApiResponse, AssessmentLog, AssessmentLogApiResponse, AssessmentReportApiResponse, ExportAssessmentReportRequest, GetApplicationResponsesParams, GetApplicationsParams, GetApplicationsSagaAction, PersonalityScreeningResponse, ResumeScreeningApiResponse, ResumeScreeningReportApiResponse, ScreeningAssessment, SessionReviewedResponse, UpdateApplicationShareRequest, EmailTemplate, PreviewEmailTemplateResponse, PersonalityScreeningInterviewOptionsResponse, MustHaveSkillsResponse, ApplicationViewersResponse, ApplicationShortLinkResponse, GetApplicationShortLinkPayload, AssignmentInviteOptionsResponse, AssignmentReviewReportResponse } from "./types";
 import { getAssessmentDetailedReportRequestAction, getAssessmentReportRequestAction, getApplicationDetailRequestAction, getApplicationStagesRequestAction, getApplicationReasonsListRequestAction } from "./actions";
 import { showToastMessage } from "../../utils/toast";
 import { selectProfile } from "../profile/selectors";
@@ -1283,6 +1293,83 @@ function* getApplicationShortLinkWorker(
   }
 }
 
+function* getAssignmentInviteOptionsWorker(action: {
+  type: string;
+  payload: string;
+}): Generator<any, void, any> {
+  try {
+    const applicationId = action.payload;
+    yield put(getAssignmentInviteOptionsRequest());
+    const res: AssignmentInviteOptionsResponse = yield call(
+      applicationsApi.getAssignmentInviteOptions,
+      applicationId
+    );
+    const results = res?.results ?? [];
+    yield put(getAssignmentInviteOptionsSuccess(results));
+    if (results.length > 0) {
+      const currentSelected: string | null = yield select(
+        (state: any) => state.applications?.selectedAssignmentInviteId
+      );
+      const targetInviteId =
+        currentSelected && results.some((r) => r.id === currentSelected)
+          ? currentSelected
+          : results[0].id;
+      yield put(setSelectedAssignmentInviteId(targetInviteId));
+      yield put({
+        type: APPLICATIONS_ACTION_TYPES.GET_ASSIGNMENT_REVIEW_REPORT_REQUEST,
+        payload: targetInviteId,
+      });
+    }
+  } catch (err: any) {
+    yield put(
+      getAssignmentInviteOptionsFailure(
+        err?.message || "Failed to fetch assignment invites"
+      )
+    );
+  }
+}
+
+function* getAssignmentReviewReportWorker(action: {
+  type: string;
+  payload: string;
+}): Generator<any, void, any> {
+  try {
+    const inviteId = action.payload;
+    yield put(getAssignmentReviewReportRequest());
+    const res: AssignmentReviewReportResponse = yield call(
+      applicationsApi.getAssignmentReviewReport,
+      inviteId
+    );
+    yield put(getAssignmentReviewReportSuccess(res));
+  } catch (err: any) {
+    yield put(
+      getAssignmentReviewReportFailure(
+        err?.message || "Failed to fetch assignment review report"
+      )
+    );
+  }
+}
+
+function* deleteApplicationWorker(action: {
+  type: string;
+  payload: { id: string; onSuccess?: () => void };
+}): Generator<any, void, any> {
+  const { id, onSuccess } = action.payload;
+  try {
+    yield put(deleteApplicationRequest(action.payload));
+    const res = yield call(applicationsApi.deleteApplication, id);
+    yield put(deleteApplicationSuccess(id));
+    showToastMessage(res?.detail || "Application deleted successfully", "success");
+    if (typeof onSuccess === 'function') {
+      onSuccess();
+    }
+  } catch (err: any) {
+    const errorMsg = err?.data?.detail || err?.response?.data?.detail || err?.message || "Failed to delete application";
+    yield put(deleteApplicationFailure(errorMsg));
+    showToastMessage(errorMsg, "error");
+  }
+}
+
 export function* applicationsSaga() {
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_APPLICATIONS_REQUEST, getApplicationsWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.EXPORT_APPLICATIONS_REQUEST, exportApplicationsWorker);
@@ -1319,4 +1406,7 @@ export function* applicationsSaga() {
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_MUST_HAVE_SKILLS_REQUEST, getMustHaveSkillsWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_APPLICATION_VIEWERS_REQUEST, getApplicationViewersWorker);
   yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_APPLICATION_SHORT_LINK_REQUEST, getApplicationShortLinkWorker);
+  yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_ASSIGNMENT_INVITE_OPTIONS_REQUEST, getAssignmentInviteOptionsWorker);
+  yield takeLatest(APPLICATIONS_ACTION_TYPES.GET_ASSIGNMENT_REVIEW_REPORT_REQUEST, getAssignmentReviewReportWorker);
+  yield takeLatest(APPLICATIONS_ACTION_TYPES.DELETE_APPLICATION_REQUEST, deleteApplicationWorker);
 }

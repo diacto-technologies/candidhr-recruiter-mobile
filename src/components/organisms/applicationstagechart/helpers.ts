@@ -20,11 +20,11 @@ export const buildBarData = (
   selectedIndex: number,
   topLabelTextStyle?: StyleProp<TextStyle>
 ): BarItem[] => {
-  const defaultFront = colors.gradients.brand.g600_500[1];
-  const defaultGradient = colors.gradients.brand.g600_500[0];
+  const defaultFront = colors.brand[500] || colors.gradients.brand.g600_500[1];
+  const defaultGradient = colors.brand[600] || colors.gradients.brand.g600_500[0];
 
-  const activeFront = colors.gradients.brand.g600_500[1];
-  const activeGradient = colors.gradients.brand.g600_500[0];
+  const activeFront = colors.brand[500] || colors.gradients.brand.g600_500[1];
+  const activeGradient = colors.brand[600] || colors.gradients.brand.g600_500[0];
 
   const rawMax = Math.max(
     stageData?.resume_screening ?? 0,

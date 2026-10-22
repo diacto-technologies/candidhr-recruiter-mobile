@@ -1,6 +1,6 @@
 import { apiClient } from "../../api/client";
 import { API_ENDPOINTS } from "../../api/endpoints";
-import { CreateApplicationRequest, UpdateApplicationStatusRequest, Application, GetApplicationsParams, ApplicationsListResponse, ApplicationDetailResponse, GetApplicationResponsesParams, ApplicationResponsesApiResponse, ResumeScreeningApiResponse, ResumeScreeningReportApiResponse, AssessmentLogApiResponse, AssessmentReportApiResponse, AssessmentDetailedReportApiResponse, ScreeningAssessment, PersonalityScreeningResponse, PersonalityScreeningResponsesPayload, ApplicationStagesResponse, SessionReviewedResponse, ReasonCategory, ReasonListItem, UpdateStageStatusPayload, PerformanceReportResponse, AssessmentOptionsReportResponse, ExportAssessmentReportRequest, EmailTemplate, MustHaveSkillsResponse, ApplicationViewersResponse, ApplicationShortLinkResponse } from "./types";
+import { CreateApplicationRequest, UpdateApplicationStatusRequest, Application, GetApplicationsParams, ApplicationsListResponse, ApplicationDetailResponse, GetApplicationResponsesParams, ApplicationResponsesApiResponse, ResumeScreeningApiResponse, ResumeScreeningReportApiResponse, AssessmentLogApiResponse, AssessmentReportApiResponse, AssessmentDetailedReportApiResponse, ScreeningAssessment, PersonalityScreeningResponse, PersonalityScreeningResponsesPayload, ApplicationStagesResponse, SessionReviewedResponse, ReasonCategory, ReasonListItem, UpdateStageStatusPayload, PerformanceReportResponse, AssessmentOptionsReportResponse, ExportAssessmentReportRequest, EmailTemplate, MustHaveSkillsResponse, ApplicationViewersResponse, ApplicationShortLinkResponse, AssignmentInviteOptionsResponse, AssignmentReviewReportResponse } from "./types";
 
 export const applicationsApi = {
   // getApplications: async (params?: GetApplicationsParams): Promise<ApplicationsListResponse> => {
@@ -440,6 +440,29 @@ export const applicationsApi = {
 
   getShortLink: async (id: string): Promise<ApplicationShortLinkResponse> => {
     const res = await apiClient.post(API_ENDPOINTS.APPLICATIONS.SHORT_LINK(id), {});
+    return res?.data ?? res;
+  },
+
+  getAssignmentInviteOptions: async (
+    applicationId: string
+  ): Promise<AssignmentInviteOptionsResponse> => {
+    const res = await apiClient.get(
+      API_ENDPOINTS.APPLICATIONS.ASSIGNMENT_INVITE_OPTIONS(applicationId)
+    );
+    return res?.data ?? res;
+  },
+
+  getAssignmentReviewReport: async (
+    inviteId: string
+  ): Promise<AssignmentReviewReportResponse> => {
+    const res = await apiClient.get(
+      API_ENDPOINTS.APPLICATIONS.ASSIGNMENT_REVIEW_REPORT(inviteId)
+    );
+    return res?.data ?? res;
+  },
+
+  deleteApplication: async (id: string): Promise<{ detail: string }> => {
+    const res = await apiClient.delete(API_ENDPOINTS.APPLICATIONS.DELETE(id));
     return res?.data ?? res;
   },
 };

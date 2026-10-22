@@ -2,13 +2,14 @@ import React, { useEffect, useRef, useState } from "react";
 import { Animated, TouchableWithoutFeedback } from "react-native";
 import { SwitchProps } from "./switchbutton.d";
 import { useStyles } from "./styles";
+import { colors } from "../../../theme/colors";
 
 const CustomSwitch: React.FC<SwitchProps> = ({
   onValueChange = () => {},
   value = false,
   activeText = "",
   inActiveText = "",
-  backgroundActive = "#645CE7",
+  backgroundActive = colors.brand[600] || "#645CE7",
   backgroundInactive = "gray",
   circleActiveColor = "white",
   circleInActiveColor = "white",

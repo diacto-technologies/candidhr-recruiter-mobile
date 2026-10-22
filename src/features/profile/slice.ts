@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { ProfileState, Profile, Role } from "./types";
+import { setBrandColor } from "../../theme/colors";
 
 const initialState: ProfileState = {
   profile: null,
@@ -19,6 +20,9 @@ const profileSlice = createSlice({
       state.loading = false;
       state.profile = action.payload;
       state.error = null;
+      if (action.payload?.tenant?.primary_color) {
+        setBrandColor(action.payload.tenant.primary_color);
+      }
     },
     getProfileFailure: (state, action: PayloadAction<string>) => {
       state.loading = false;
@@ -52,6 +56,10 @@ const profileSlice = createSlice({
         };
       } else {
         state.profile = action.payload;
+      }
+      const updatedColor = state.profile?.tenant?.primary_color;
+      if (updatedColor) {
+        setBrandColor(updatedColor);
       }
       state.error = null;
     },
