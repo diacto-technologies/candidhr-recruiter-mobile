@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { colors } from '../../../theme/colors';
 
 export const useStyles = () => {
   return StyleSheet.create({
@@ -21,8 +22,8 @@ export const useStyles = () => {
       borderRadius: 4,
     },
     checkedBox: {
-      backgroundColor: '#6C4BE7',
-      borderColor: '#6C4BE7',
+      backgroundColor: colors.brand[600] || '#6C4BE7',
+      borderColor: colors.brand[600] || '#6C4BE7',
     },
     badge: {
       paddingHorizontal: 10,

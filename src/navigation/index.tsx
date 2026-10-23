@@ -1,9 +1,13 @@
-import { View, Text, Linking } from 'react-native'
+import { View, Text, Linking, AppState, type AppStateStatus } from 'react-native'
 import React, { FC, useEffect } from 'react'
 import { useTokenRefresh } from '../hooks/useTokenRefresh'
 import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { navigationRef } from '../utils/navigationUtils'
+import { useAppDispatch, useAppSelector } from '../store/hooks'
+import { selectIsAuthenticated } from '../features/auth/selectors'
+import { getProfileRequestAction } from '../features/profile/actions'
+import { getBrandingRequestAction } from '../features/branding/actions'
 import LoginScreen from '../screens/auth/loginscreen'
 import SplashScreen from '../screens/auth/splashscreen'
 import UserBottomTab from './bottomtabs'
@@ -16,9 +20,11 @@ import CreateNewPasswordScreen from '../screens/auth/createnewpassword'
 import AccountInfo from '../screens/applications/profile/tabs/accountinfo';
 import CompanyInfo from '../screens/applications/profile/tabs/companyinfo';
 import Users from '../screens/applications/profile/tabs/users';
+import BrandingScreen from '../screens/applications/profile/tabs/branding';
 import linking from './linking'
 import OrgnizationalSwitch from '../screens/auth/orgnizationalswitch'
 import { useTheme } from '../hooks/useTheme'
+import { useBrandTheme } from '../hooks/useBrandTheme'
 import JobDetailScreen from '../screens/applications/jobdetails'
 import ApplicationStageOverview from '../components/organisms/applicationstageoverview'
 import ApplicationOverviewDetails from '../components/organisms/ApplicationStageOverviewDetails';
@@ -33,7 +39,11 @@ import CandidateAssignmentsDeatilsTable from '../components/organisms/CandidateA
 
 const Stack = createNativeStackNavigator()
 const Navigation: FC = () => {
+  const dispatch = useAppDispatch();
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+
   useTokenRefresh();
+  useBrandTheme();
   const theme = useTheme();
   const isDarkMode = theme === 'dark';
 
@@ -47,6 +57,27 @@ const Navigation: FC = () => {
       },
     }
     : DefaultTheme;
+
+  // Fetch profile and branding when app starts or reloads while authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(getProfileRequestAction());
+      dispatch(getBrandingRequestAction());
+    }
+  }, [isAuthenticated, dispatch]);
+
+  // Re-fetch profile and branding when app returns to foreground
+  useEffect(() => {
+    const onAppStateChange = (nextState: AppStateStatus) => {
+      if (nextState === 'active' && isAuthenticated) {
+        dispatch(getProfileRequestAction());
+        dispatch(getBrandingRequestAction());
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', onAppStateChange);
+    return () => subscription.remove();
+  }, [isAuthenticated, dispatch]);
 
   useEffect(() => {
     Linking.getInitialURL().then(url => {
@@ -89,6 +120,7 @@ const Navigation: FC = () => {
         <Stack.Screen name='AccountInfo' component={AccountInfo} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
         <Stack.Screen name='CompanyInfo' component={CompanyInfo} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
         <Stack.Screen name='Users' component={Users} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
+        <Stack.Screen name='BrandingScreen' component={BrandingScreen} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
         <Stack.Screen name='AssessmentScreen' component={AssessmentScreen} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
         <Stack.Screen name='VideoInterviewScreen' component={VideoInterviewScreen} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
         <Stack.Screen name="OldAssessmentList" component={OldAssessmentList}/>

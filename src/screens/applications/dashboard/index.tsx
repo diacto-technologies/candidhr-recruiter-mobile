@@ -13,8 +13,10 @@ import { STATS_CONFIG } from './constants';
 import { useDashboardAccess } from './hooks/useDashboardAccess';
 import { useDashboardData } from './hooks/useDashboardData';
 import { useJobSearch } from './hooks/useJobSearch';
+import { useBrandTheme } from '../../../hooks/useBrandTheme';
 
 const Dashboard = () => {
+    useBrandTheme();
     const styles = useStyles();
 
     const { dashboardAccessLoading, hasDashboardAccess } = useDashboardAccess();

@@ -121,6 +121,13 @@ export interface ApplicationsState {
   viewersError: string | null;
   loadingShortLink: boolean;
   shortLinkError: string | null;
+  assignmentInviteOptions: AssignmentInviteOption[];
+  loadingAssignmentInviteOptions: boolean;
+  assignmentInviteOptionsError: string | null;
+  assignmentReviewReport: AssignmentReviewReportResponse | null;
+  loadingAssignmentReviewReport: boolean;
+  assignmentReviewReportError: string | null;
+  selectedAssignmentInviteId: string | null;
 }
 
 export interface ApplicationShortLinkResponse {
@@ -1738,3 +1745,111 @@ export interface PreviewEmailTemplateResponse {
     status: string;
   };
 }
+
+export interface AssignmentInviteOption {
+  id: string;
+  assignment_id: string;
+  assignment_title: string;
+  status: string;
+  sent_at: string;
+  sent_by: {
+    id: string;
+    name: string;
+    email: string;
+    profile_pic: string | null;
+  } | null;
+  started_at: string | null;
+  completed_at: string | null;
+  deadline_at: string | null;
+}
+
+export interface AssignmentInviteOptionsResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: AssignmentInviteOption[];
+}
+
+export interface AssignmentRubricCriterion {
+  id: string;
+  name: string;
+  description: string;
+  weight: number;
+  max_score: number;
+  order: number;
+}
+
+export interface AssignmentDeliverable {
+  id: string;
+  type: string;
+  label: string;
+  required: boolean;
+  allowed_file_types?: string[];
+}
+
+export interface AssignmentDeliverableSubmission {
+  id: string;
+  deliverable: string;
+  deliverable_type: string;
+  text: string | null;
+  url: string | null;
+  label: string | null;
+  download_url: string | null;
+  original_filename: string | null;
+}
+
+export interface AssignmentSubmission {
+  id: string;
+  status: string;
+  started_at: string | null;
+  submitted_at: string | null;
+  submission_timing: string;
+  is_late: boolean;
+  late_by: string | null;
+  candidate_comments: string | null;
+  time_spent_seconds: number | null;
+  deliverable_submissions: AssignmentDeliverableSubmission[];
+}
+
+export interface AssignmentActivity {
+  milestone: string;
+  timestamp: string;
+}
+
+export interface AssignmentCriterionScore {
+  criterion_id: string;
+  name: string;
+  weight: number;
+  score: number;
+}
+
+export interface AssignmentReviewer {
+  reviewer_name: string;
+  status: string;
+  submitted_at: string;
+  overall_score: number;
+  overall_feedback: string;
+  criterion_scores: AssignmentCriterionScore[];
+}
+
+export interface AssignmentReviewReportResponse {
+  candidate: {
+    name: string;
+    email: string;
+    blind_hidden?: boolean;
+  };
+  blind_scoring?: boolean;
+  assignment: {
+    id: string;
+    title: string;
+    assignment_type: string;
+    description: string;
+  };
+  rubric_criteria: AssignmentRubricCriterion[];
+  deliverables: AssignmentDeliverable[];
+  submission: AssignmentSubmission | null;
+  activity: AssignmentActivity[];
+  final_score: number | null;
+  reviewers: AssignmentReviewer[];
+}
+

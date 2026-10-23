@@ -4,6 +4,7 @@ import { Calendar } from "react-native-calendars";
 import dayjs from "dayjs";
 import { useStyles } from "./styles";
 import { RangePickerProps } from "./rangepicker.d";
+import { colors } from "../../../theme/colors";
 
 // -------- FORMAT HELPERS --------
 const displayFormat = (d?: string) =>
@@ -223,14 +224,14 @@ export default function DateRangePicker({
       // For single date selection, use simple marking type
       marked[startDate] = {
         selected: true,
-        selectedColor: "#6C4BE7",
+        selectedColor: colors.brand[600] || "#6C4BE7",
         selectedTextColor: "white",
       };
       return marked;
     }
 
     // For period marking, all dates must use the same color
-    const periodColor = "#6C4BE7";
+    const periodColor = colors.brand[600] || "#6C4BE7";
     
     marked[startDate] = {
       startingDay: true,
@@ -406,8 +407,8 @@ export default function DateRangePicker({
             setCurrentMonth(month.dateString);
           }}
           theme={{
-            arrowColor: "#6C4BE7",
-            todayTextColor: "#6C4BE7",
+            arrowColor: colors.brand[600] || "#6C4BE7",
+            todayTextColor: colors.brand[600] || "#6C4BE7",
           }}
           style={styles.calendar}
         />

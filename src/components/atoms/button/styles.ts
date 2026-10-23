@@ -16,8 +16,8 @@ export const useStyles = (props: IButton & { pressed?: boolean }) => {
   const radius = props.borderRadius ?? 8;
 
   // Customizable values with smart fallbacks
-  const bgColor = props.buttonColor || '#645CE7';
-  const shadowColor = props.shadowColor ||  colors.brand[600];
+  const bgColor = props.buttonColor || colors.brand[600] || '#645CE7';
+  const shadowColor = props.shadowColor || colors.brand[600];
   const lightOpacity = props.shadowOpacityLight ?? 0.05;
   const darkOpacity = props.shadowOpacityDark ?? 0.18;
   const gradientOpacity = props.borderGradientOpacity ?? 0.12;
@@ -25,11 +25,12 @@ export const useStyles = (props: IButton & { pressed?: boolean }) => {
   return StyleSheet.create({
     container: {
       height,
-      //minWidth: 140,
-      //paddingHorizontal: props.paddingHorizontal ?? 32,
+      paddingHorizontal: props.paddingHorizontal,
       borderRadius: radius,
-      backgroundColor: props.disabled ? colors.gray[50] : bgColor,
-      // opacity: props.disabled ? 0.7 : 1,
+      backgroundColor: props.disabled ? (props.buttonColor ? bgColor : colors.gray[50]) : bgColor,
+      borderWidth: props.borderWidth,
+      borderColor: props.borderColor,
+      opacity: props.disabled ? 0.6 : 1,
       overflow: 'hidden',
       justifyContent: 'center',
       alignItems: 'center',

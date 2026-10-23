@@ -9,6 +9,7 @@ import { buildBarData } from './helpers';
 import Shimmer from '../../atoms/shimmer';
 import { BarItem, FeatureConsumptionChartProps, featureData } from './featureconsumptionchart';
 import { isTablet } from 'react-native-device-info';
+import { useBrandTheme } from '../../../hooks/useBrandTheme';
 
 const CHART_HEIGHT = 164;
 const SCREEN_PADDING = 32;
@@ -20,11 +21,12 @@ const FeatureConsumptionChart: React.FC<FeatureConsumptionChartProps> = ({
     loading,
 }) => {
     const styles = useStyles();
+    const { primaryColor } = useBrandTheme();
     const [selectedIndex, setSelectedIndex] = useState<number>(-1);
 
     const barData = useMemo(() => {
         return buildBarData(featureData, selectedIndex, styles.topLabelText);
-    }, [featureData, selectedIndex, styles.topLabelText]);
+    }, [featureData, selectedIndex, styles.topLabelText, primaryColor]);
 
     const maxValue = useMemo(() => {
         const maxVal = Math.max(...barData.map(b => b.value), 0);

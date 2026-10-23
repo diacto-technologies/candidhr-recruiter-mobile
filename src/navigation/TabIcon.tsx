@@ -5,11 +5,12 @@ import React from "react";
 import { Colors } from "../utils/constants";
 import { Typography } from "../components";
 import { SvgXml } from "react-native-svg";
-import { dashboardIcon, focusedDashboardIcon } from "../assets/svg/dashboardicon";
-import { focusedUserApplicationIcon, userApplicationIcon } from "../assets/svg/userapplicationicon";
-import { focusedJobIcon, jobIcon } from "../assets/svg/jobicon";
+import { dashboardIcon, getFocusedDashboardIcon } from "../assets/svg/dashboardicon";
+import { getFocusedUserApplicationIcon, userApplicationIcon } from "../assets/svg/userapplicationicon";
+import { getFocusedJobIcon, jobIcon } from "../assets/svg/jobicon";
 import { horizontalThreedotIcon } from "../assets/svg/horizontalthreedoticon";
-import { settingIcon } from "../assets/svg/settingicon";
+import { getFocusedSettingIcon, settingIcon } from "../assets/svg/settingicon";
+import { useBrandTheme } from "../hooks/useBrandTheme";
 
 interface TabProps {
     name: string;
@@ -52,13 +53,14 @@ const TabIcon: FC<TabProps> = memo(({ name }) => {
 });
 
 const TabIconFocused: FC<TabProps> = memo(({ name }) => {
+    const { primaryColor } = useBrandTheme();
+
     return (
         <View style={tabStyle}>
-
-            {name === "Dashboard" ? <SvgXml xml={focusedDashboardIcon} height={24} width={24} /> :
-                name === "JobsScreen" ? <SvgXml xml={focusedJobIcon} height={24} width={24} /> :
-                    name === "ApplicantScreen" ? <SvgXml xml={focusedUserApplicationIcon} height={24} width={24} /> :
-                        <SvgXml xml={settingIcon} height={24} width={24} />}
+            {name === "Dashboard" ? <SvgXml xml={getFocusedDashboardIcon(primaryColor)} height={24} width={24} /> :
+                name === "JobsScreen" ? <SvgXml xml={getFocusedJobIcon(primaryColor)} height={24} width={24} /> :
+                    name === "ApplicantScreen" ? <SvgXml xml={getFocusedUserApplicationIcon(primaryColor)} height={24} width={24} /> :
+                        <SvgXml xml={getFocusedSettingIcon(primaryColor)} height={24} width={24} />}
         </View>
     );
 });

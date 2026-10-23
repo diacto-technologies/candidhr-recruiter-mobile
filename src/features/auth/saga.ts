@@ -25,7 +25,8 @@ import {
 import { authApi } from "./api";
 import { selectIsAuthenticated, selectRefreshToken } from "./selectors";
 import { CheckSubdomainResponse, LoginRequest, LoginResponse, RegisterRequest } from "./types";
-import { getProfileRequest } from "../profile/slice";
+import { getProfileRequestAction } from "../profile/actions";
+import { getBrandingRequestAction } from "../branding/actions";
 import { forgotPasswordFailureAction, forgotPasswordSuccessAction, refreshTokenRequestAction, resetPasswordFailureAction, resetPasswordSuccessAction } from "./actions";
 import { navigate } from "../../utils/navigationUtils";
 import { ToastAndroid } from "react-native";
@@ -55,7 +56,8 @@ function* loginWorker(action: { type: string; payload: LoginRequest }): Generato
     yield call([AsyncStorage, 'setItem'], 'accessToken', mapped.token);
     yield call([AsyncStorage, 'setItem'], 'refreshToken', mapped.refreshToken);
     yield put(loginSuccess(mapped));
-    yield put(getProfileRequest(response.user_id));
+    yield put(getProfileRequestAction());
+    yield put(getBrandingRequestAction());
   } catch (error: any) {
     // Log detailed error for debugging
     if (__DEV__) {

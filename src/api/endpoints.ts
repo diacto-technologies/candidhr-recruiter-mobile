@@ -16,6 +16,11 @@ export const API_ENDPOINTS = {
     UPDATE: '/core/v2/me/',
     AVATAR: '/profile/avatar',
   },
+  // Branding endpoints
+  BRANDING: {
+    GET: '/white-labeling/branding/',
+    PATCH: '/white-labeling/branding/',
+  },
   USERS: {
     // Used for dropdowns / selectors and users management screens
     // Backed by: GET /core/users/options/?page=1
@@ -58,6 +63,7 @@ export const API_ENDPOINTS = {
     SHORT_LINK: (id: string) => `/applications/v1/${id}/short-link/`,
     CREATE: '/applications',
     UPDATE: (id: string) => `/applications/${id}`,
+    DELETE: (id: string) => `/applications/v1/${id}/delete/`,
     stages: (id: string) => `/applications/v1/stages/?application_id=${id}`,
     STATUS: (id: string) => `/applications/${id}/status`,
     /** PATCH application status: /applications/v1/status-update/{id}/?status=... */
@@ -93,6 +99,10 @@ export const API_ENDPOINTS = {
     PREVIEW_EMAIL_TEMPLATE: (id: string) => `/email-templates/${id}/preview/`,
     /** PATCH share users with an application: /applications/v1/{id}/share/ */
     SHARE: (id: string) => `/applications/v1/${id}/share/`,
+    /** GET assignment invite options by application_id */
+    ASSIGNMENT_INVITE_OPTIONS: (application_id: string) => `/assignments/invites/options/?application_id=${application_id}`,
+    /** GET assignment review report by invite_id */
+    ASSIGNMENT_REVIEW_REPORT: (invite_id: string) => `/assignments/reviews/${invite_id}/report/`,
   },
   ASSESSMENTS: {
     LIST: "/assessments/v1/list/",

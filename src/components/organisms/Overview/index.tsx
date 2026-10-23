@@ -7,9 +7,8 @@ import Typography from "../../../components/atoms/typography";
 import VideoPlayerBox from "../../../components/molecules/videoplayer";
 import { SvgXml } from "react-native-svg";
 import { phoneIcon } from "../../../assets/svg/phone";
-import CopyText from "../../../components/molecules/copyText";
-import { copyIcon } from "../../../assets/svg/copy";
 import { emailIcon } from "../../../assets/svg/email";
+import InfoRow from "../../../components/molecules/inforow";
 import { colors } from "../../../theme/colors";
 import { walletIcon } from "../../../assets/svg/wallet";
 import { currencyRuppeIcon } from "../../../assets/svg/currencyruppe";
@@ -17,6 +16,8 @@ import { calenderIcon } from "../../../assets/svg/calender";
 import Icon from "../../../components/atoms/vectoricon";
 import { useStyles } from "./styles";
 import { ApplicationContext, OverviewApplication } from "./overView";
+import { PERMISSIONS } from "../../../utils/permission.constants";
+import PermissionGate from "../../molecules/permissiongate";
 const fallbackContext: ApplicationContext = {};
 
 const OverviewCardShimmer = () => {
@@ -40,40 +41,6 @@ const OverviewCardShimmer = () => {
   );
 };
 
-const InfoRow = ({
-  icon,
-  title,
-  value,
-  copyText,
-  styles
-}: {
-  icon: string;
-  title: string;
-  value: string;
-  copyText?: string;
-  styles: any;
-}) => (
-  <View style={styles.row}>
-    <View style={styles.iconBox}>
-      <SvgXml xml={icon} height={20} width={20} />
-    </View>
-
-    <View style={styles.textBox}>
-      <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>
-        {value || "Not provided"}
-      </Typography>
-      <Typography variant="regularTxtsm" color={colors.gray[600]}>
-        {title}
-      </Typography>
-    </View>
-
-    {!!copyText && (
-      <CopyText text={copyText} message={`${title} copied`}>
-        <SvgXml xml={copyIcon} height={20} width={20} />
-      </CopyText>
-    )}
-  </View>
-);
 
 const OverviewCard = () => {
   const styles = useStyles();
@@ -128,83 +95,86 @@ const OverviewCard = () => {
         }
       </View>
       <View style={{ gap: 12 }}>
-        <InfoRow
-          icon={phoneIcon}
-          title="Phone number"
-          value={data.contact}
-          copyText={data.contact || undefined}
-          styles={styles}
-        />
-
+        <PermissionGate permission={PERMISSIONS.view_applicant_mobile_number}>
+          <InfoRow
+            icon={phoneIcon}
+            title="Phone number"
+            value={data.contact}
+            copyText={data.contact || undefined}
+          />
+        </PermissionGate>
         {/* Email */}
         <InfoRow
           icon={emailIcon}
           title="Email address"
           value={data.email}
           copyText={data.email || undefined}
-          styles={styles}
         />
       </View>
       <View style={styles.divider} />
 
       {/* Current Salary */}
-      <View style={styles.row}>
-        <View style={styles.iconBox}>
-          <SvgXml xml={walletIcon} height={20} width={20} />
+      <PermissionGate permission={PERMISSIONS.View_Current_Salary}>
+        <View style={styles.row}>
+          <View style={styles.iconBox}>
+            <SvgXml xml={walletIcon} height={20} width={20} />
+          </View>
+          <View style={styles.textBox}>
+            <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>
+              ₹ {Number(data?.currentCtc || 0).toLocaleString('en-IN')}
+            </Typography>
+            <Typography variant="regularTxtsm" color={colors.gray[600]}>
+              Current salary
+            </Typography>
+          </View>
         </View>
-
-        <View style={styles.textBox}>
-          <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>
-            ₹ {Number(data.currentCtc || 0).toLocaleString('en-IN')}
-          </Typography>
-          <Typography variant="regularTxtsm" color={colors.gray[600]}>
-            Current salary
-          </Typography>
-        </View>
-      </View>
+      </PermissionGate>
 
       {/* Expected Salary */}
-      <View style={styles.row}>
-        <View style={styles.iconBox}>
-          <SvgXml xml={currencyRuppeIcon} height={20} width={20} />
-        </View>
-
-        <View style={styles.textBox}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>
-              ₹ {Number(data.expectedCtc || 0).toLocaleString('en-IN')}
-            </Typography>
-            {percentageChange !== null && (
-              <View
-                style={[
-                  styles.percentageBadge,
-                  {
-                    backgroundColor: isPositive ? colors.success[50] : colors.error[50],
-                    borderColor: isPositive ? colors.success[200] : colors.error[200],
-                  },
-                ]}
-              >
-                <Icon
-                  name={isPositive ? "trending-up" : "trending-down"}
-                  iconFamily="Feather"
-                  size={12}
-                  color={isPositive ? colors.success[700] : colors.error[700]}
-                />
-                <Typography
-                  variant="mediumTxtxs"
-                  color={isPositive ? colors.success[700] : colors.error[700]}
-                >
-                  {percentageChange}%
-                </Typography>
-              </View>
-            )}
+      <PermissionGate permission={PERMISSIONS.View_Expected_Salary}>
+        <View style={styles.row}>
+          <View style={styles.iconBox}>
+            <SvgXml xml={currencyRuppeIcon} height={20} width={20} />
           </View>
-          <Typography variant="regularTxtsm" color={colors.gray[600]}>
-            Expected salary
-          </Typography>
+
+          <View style={styles.textBox}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>
+                ₹ {Number(data.expectedCtc || 0).toLocaleString('en-IN')}
+              </Typography>
+              {percentageChange !== null && (
+                <View
+                  style={[
+                    styles.percentageBadge,
+                    {
+                      backgroundColor: isPositive ? colors.success[50] : colors.error[50],
+                      borderColor: isPositive ? colors.success[200] : colors.error[200],
+                    },
+                  ]}
+                >
+                  <Icon
+                    name={isPositive ? "trending-up" : "trending-down"}
+                    iconFamily="Feather"
+                    size={12}
+                    color={isPositive ? colors.success[700] : colors.error[700]}
+                  />
+                  <Typography
+                    variant="mediumTxtxs"
+                    color={isPositive ? colors.success[700] : colors.error[700]}
+                  >
+                    {percentageChange}%
+                  </Typography>
+                </View>
+              )}
+            </View>
+            <Typography variant="regularTxtsm" color={colors.gray[600]}>
+              Expected salary
+            </Typography>
+          </View>
         </View>
-      </View>
+      </PermissionGate>
       {/* Notice Period */}
+
       <View style={styles.row}>
         <View style={styles.iconBox}>
           <SvgXml xml={calenderIcon} height={20} width={20} />

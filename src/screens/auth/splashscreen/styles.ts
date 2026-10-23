@@ -27,8 +27,41 @@ export const useStyles = () => {
     centerBox: {
       flexDirection: 'row',
       alignItems: 'center',
+      justifyContent: 'center',
       gap: 12,
-      marginLeft: width / 10
+    },
+
+    customLogo: {
+      width: 52,
+      height: 52,
+      borderRadius: 8,
+    },
+
+    autoLetterBadge: {
+      width: 44,
+      height: 44,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 3,
+      elevation: 2,
+    },
+
+    autoLetterText: {
+      fontSize: 22,
+      fontWeight: '700',
+      color: 'white',
+      lineHeight: 26,
+    },
+
+    customTitle: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: 'white',
+      letterSpacing: 0.3,
     },
 
     title: {

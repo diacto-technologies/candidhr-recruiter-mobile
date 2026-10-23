@@ -2,15 +2,16 @@ import React, { useRef, useEffect } from "react";
 import {
   View,
   TouchableOpacity,
+  ScrollView,
   StyleSheet,
   Animated,
   LayoutChangeEvent,
 } from "react-native";
 import { Typography } from "../../atoms";
 import { colors } from "../../../theme/colors";
-import { ScrollView } from "react-native-gesture-handler";
 import { Props, TabLayout } from "./slideanimatedtab";
 import { useStyles } from "./styles";
+import { useBrandTheme } from "../../../hooks/useBrandTheme";
 
 const getTabKey = (item: any, index: number): string => {
   if (typeof item === 'string') return item;
@@ -28,6 +29,7 @@ const SlideAnimatedTab: React.FC<Props> = ({
   onChangeTab,
   counts = {},
 }) => {
+  const { brandColors } = useBrandTheme();
   const underlineX = useRef(new Animated.Value(0)).current;
   const underlineWidth = useRef(new Animated.Value(0)).current;
   const styles = useStyles();
@@ -111,7 +113,7 @@ const SlideAnimatedTab: React.FC<Props> = ({
               <View style={styles.tabInner}>
                 <Typography
                   variant="semiBoldTxtsm"
-                  color={isActive ? colors.brand[700] : colors.gray[500]}
+                  color={isActive ? brandColors[700] : colors.gray[500]}
                 >
                   {itemLabel}
                 </Typography>
@@ -119,12 +121,14 @@ const SlideAnimatedTab: React.FC<Props> = ({
                   <View
                     style={[
                       styles.countBadge,
-                      isActive ? styles.countActive : styles.countInactive,
+                      isActive
+                        ? [styles.countActive, { backgroundColor: brandColors[50], borderColor: brandColors[200] }]
+                        : styles.countInactive,
                     ]}
                   >
                     <Typography
                       variant="mediumTxtxs"
-                      color={isActive ? colors.brand[700] : colors.gray[700]}
+                      color={isActive ? brandColors[700] : colors.gray[700]}
                     >
                       {count}
                     </Typography>
@@ -140,6 +144,7 @@ const SlideAnimatedTab: React.FC<Props> = ({
           style={[
             styles.underline,
             {
+              backgroundColor: brandColors[700],
               transform: [{ translateX: underlineX }],
               width: underlineWidth,
             },

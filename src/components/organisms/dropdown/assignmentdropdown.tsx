@@ -32,6 +32,22 @@ const formatStatusLabel = (status?: string) => {
         .join(" ");
 };
 
+export const getAssignmentStatusColor = (status?: string) => {
+    if (!status) return colors.gray[500];
+    const s = status.trim().toLowerCase().replace(/_/g, " ");
+
+    switch (s) {
+        case "reviewed":
+            return colors.success[600];
+        case "invited":
+            return colors.warning[600];
+        case "submitted":
+            return colors.blue[600];
+        default:
+            return getStatusColor(status);
+    }
+};
+
 const AssignmentDropdown: React.FC<Props> = ({
     data,
     selectedId,
@@ -74,7 +90,7 @@ const AssignmentDropdown: React.FC<Props> = ({
                                 <View
                                     style={[
                                         dropdownStyles.statusDot,
-                                        { backgroundColor: getStatusColor(selectedItem.status) },
+                                        { backgroundColor: getAssignmentStatusColor(selectedItem.status) },
                                     ]}
                                 />
                                 <Typography style={dropdownStyles.statusText} numberOfLines={1}>
@@ -128,7 +144,7 @@ const AssignmentDropdown: React.FC<Props> = ({
                                                     <View
                                                         style={[
                                                             dropdownStyles.statusDot,
-                                                            { backgroundColor: getStatusColor(item.status) },
+                                                            { backgroundColor: getAssignmentStatusColor(item.status) },
                                                         ]}
                                                     />
                                                     <Typography style={dropdownStyles.statusText} numberOfLines={1}>

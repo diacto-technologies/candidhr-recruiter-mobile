@@ -1,10 +1,11 @@
-import React, { Fragment } from "react";
+import React, { Fragment, useState } from "react";
 import {
   View,
   ImageBackground,
   StyleSheet,
   StatusBar,
   TouchableOpacity,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useStyles } from "./styles";
@@ -14,10 +15,34 @@ import { candidHrLogo } from "../../../../assets/svg/candidhrlogo";
 import { Button, Typography } from "../../../../components";
 import { navigate } from "../../../../utils/navigationUtils";
 import { colors } from "../../../../theme/colors";
+import { useAppSelector } from "../../../../store/hooks";
+import { selectBrandingData } from "../../../../features/branding/selectors";
+import { selectProfile } from "../../../../features/profile/selectors";
 
 const GetStartedScreen = () => {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
+  const brandingData = useAppSelector(selectBrandingData);
+  const profile = useAppSelector(selectProfile);
+  const [imageError, setImageError] = useState(false);
+
+  const productName = brandingData?.product_name || profile?.tenant?.org_name;
+  const isCustomProduct = Boolean(
+    productName && productName.trim().toLowerCase() !== "candidhr"
+  );
+
+  const brandColor = brandingData?.primary_color || colors.brand[600];
+  const firstLetter = (productName?.trim()[0] || "C").toUpperCase();
+
+  const tenantLogo = profile?.tenant?.logo || profile?.tenant?.secondary_logo;
+  const isDefaultCandidHrLogo = Boolean(tenantLogo && tenantLogo.includes("candidhr-logo"));
+
+  const customUploadedLogo = isCustomProduct
+    ? (brandingData?.logo ||
+       brandingData?.secondary_logo ||
+       (!isDefaultCandidHrLogo ? tenantLogo : null))
+    : null;
+
   return (
     <Fragment>
       {/* <StatusBar translucent backgroundColor="transparent" barStyle="light-content" /> */}
@@ -27,19 +52,51 @@ const GetStartedScreen = () => {
         resizeMode="stretch"
       >
         {/* HEADER LOGO */}
-        <View style={[styles.headerLogo,{marginTop: insets.top+10,}]}>
+        <View style={[styles.headerLogo, { marginTop: insets.top + 10 }]}>
           <View style={styles.logoWrapper}>
-            <SvgXml xml={logoXML} width={30} height={36}/>
+            {isCustomProduct ? (
+              customUploadedLogo && !imageError ? (
+                <Image
+                  source={{ uri: customUploadedLogo }}
+                  style={{ width: 30, height: 36, borderRadius: 4 }}
+                  resizeMode="contain"
+                  onError={() => setImageError(true)}
+                />
+              ) : (
+                <View
+                  style={{
+                    width: 30,
+                    height: 30,
+                    borderRadius: 6,
+                    backgroundColor: brandColor,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Typography variant="semiBoldTxtsm" color={colors.base.white}>
+                    {firstLetter}
+                  </Typography>
+                </View>
+              )
+            ) : (
+              <SvgXml xml={logoXML} width={30} height={36} />
+            )}
           </View>
           <View>
-            <SvgXml xml={candidHrLogo} fill={colors.base.white} width={107} height={17}/>
+            {isCustomProduct ? (
+              <Typography variant="semiBoldTxtlg" color={colors.base.white}>
+                {productName}
+              </Typography>
+            ) : (
+              <SvgXml xml={candidHrLogo} fill={colors.base.white} width={107} height={17} />
+            )}
           </View>
         </View>
 
         {/* CONTENT */}
         <View style={styles.content}>
           <Typography variant="semiBoldDmd" color={colors.gray[200]}>
-            Welcome to the CandidHR
+            {`Welcome to ${productName || "CandidHR"}`}
           </Typography>
 
           <Typography

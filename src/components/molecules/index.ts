@@ -6,6 +6,8 @@ export { default as ThreeDotDropdown } from './threedotdropdown';
 export { default as TagList } from './taglist';
 export { DropdownMenu } from './dropdownmenu';
 export type { DropdownMenuItem, DropdownMenuProps } from './dropdownmenu';
+export { default as InfoRow } from './inforow';
+export type { InfoRowProps } from './inforow';
 
 // Export types
 export type { StatCardProps } from './statcard/statcard';

@@ -3,20 +3,24 @@ import {
   Modal,
   View,
   ActivityIndicator,
-  Alert,
   Platform,
-  PermissionsAndroid,
   TouchableOpacity,
 } from 'react-native';
 
 import Pdf from 'react-native-pdf';
 import RNFS from 'react-native-fs';
 import Share from 'react-native-share';
+import ReactNativeBlobUtil from 'react-native-blob-util';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { SvgXml } from 'react-native-svg';
 
 import Typography from '../../atoms/typography';
 import Button from '../../atoms/button';
 import { colors } from '../../../theme/colors';
+import { downloadIcon } from '../../../assets/svg/download';
+import { showToastMessage } from '../../../utils/toast';
+import { usePermission } from '../../../hooks/usePermission';
+import { PERMISSIONS } from '../../../utils/permission.constants';
 import { ResumeModalProps } from './resumemodal.d';
 import { useStyles } from './styles';
 
@@ -26,6 +30,8 @@ const ResumeModal: React.FC<ResumeModalProps> = ({
   onClose,
   candidateName = 'Candidate',
 }) => {
+  const { can } = usePermission();
+  const canDownloadResume = can(PERMISSIONS.DOWNLOAD_RESUME_FILE);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pdfPath, setPdfPath] = useState<string | null>(null);
@@ -63,38 +69,53 @@ const ResumeModal: React.FC<ResumeModalProps> = ({
     }
   };
 
-  // 📥 Download to device + Share
+  // 📥 Download to device's Download folder
   const handleDownload = async () => {
-    if (!resumeUrl) return;
+    if (!resumeUrl && !pdfPath) return;
 
     try {
       setDownloading(true);
 
-      if (Platform.OS === 'android') {
-        await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE
-        );
+      const safeCandidateName = (candidateName || 'Candidate')
+        .trim()
+        .replace(/[^a-z0-9-_ ]/gi, '')
+        .replace(/\s+/g, '_');
+      const fileName = `Resume_${safeCandidateName}_${Date.now()}.pdf`;
+
+      const sourcePath = pdfPath || `${RNFS.CachesDirectoryPath}/resume.pdf`;
+      const exists = await RNFS.exists(sourcePath);
+
+      if (!exists && resumeUrl) {
+        await RNFS.downloadFile({
+          fromUrl: resumeUrl,
+          toFile: sourcePath,
+        }).promise;
       }
 
-      const downloadPath =
-        Platform.OS === 'ios'
-          ? `${RNFS.DocumentDirectoryPath}/resume.pdf`
-          : `${RNFS.DownloadDirectoryPath}/resume.pdf`;
-
-      await RNFS.downloadFile({
-        fromUrl: resumeUrl,
-        toFile: downloadPath,
-      }).promise;
-
-      await Share.open({
-        url: `file://${downloadPath}`,
-        type: 'application/pdf',
-        showAppsToView: true,
-      });
-
-      Alert.alert('Success', 'Resume downloaded successfully');
-    } catch (err) {
-      Alert.alert('Download Failed', 'Unable to download resume.');
+      if (Platform.OS === 'android') {
+        await ReactNativeBlobUtil.MediaCollection.copyToMediaStore(
+          {
+            name: fileName,
+            parentFolder: 'Download',
+            mimeType: 'application/pdf',
+          },
+          'Download',
+          sourcePath
+        );
+        showToastMessage('Resume saved to Downloads', 'success');
+      } else {
+        const fileUrl = sourcePath.startsWith('file://') ? sourcePath : `file://${sourcePath}`;
+        await Share.open({
+          urls: [fileUrl],
+          type: 'application/pdf',
+          saveToFiles: true,
+          failOnCancel: false,
+        });
+      }
+    } catch (err: any) {
+      if (err?.message !== 'User did not share') {
+        showToastMessage('Unable to download resume', 'error');
+      }
     } finally {
       setDownloading(false);
     }
@@ -124,8 +145,27 @@ const ResumeModal: React.FC<ResumeModalProps> = ({
             </View>
 
             <View style={styles.headerRight}>
-              <TouchableOpacity onPress={onClose}>
-                <Ionicons name="close-outline" size={26} />
+              {canDownloadResume && (
+                <TouchableOpacity
+                  onPress={handleDownload}
+                  disabled={downloading}
+                  style={{ padding: 6, marginRight: 8 }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  {downloading ? (
+                    <ActivityIndicator size="small" color={colors.brand[600]} />
+                  ) : (
+                    <SvgXml
+                      xml={downloadIcon}
+                      width={22}
+                      height={22}
+                      color={colors.gray[700]}
+                    />
+                  )}
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="close-outline" size={26} color={colors.gray[700]} />
               </TouchableOpacity>
             </View>
           </View>
