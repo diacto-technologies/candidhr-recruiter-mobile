@@ -3,6 +3,8 @@ import { BrandingData, BrandingState } from './types';
 import { setBrandColor } from '../../theme/colors';
 
 
+import { isDefaultOrCandidHr } from './constants';
+
 const initialState: BrandingState = {
   data: null,
   loading: false,
@@ -10,6 +12,7 @@ const initialState: BrandingState = {
   error: null,
   updateSuccess: false,
   isReset: false,
+  hasCustomProductName: false,
 };
 
 const brandingSlice = createSlice({
@@ -23,11 +26,31 @@ const brandingSlice = createSlice({
     },
     getBrandingSuccess: (state, action: PayloadAction<BrandingData>) => {
       state.loading = false;
-      state.data = action.payload;
       state.error = null;
 
-      // After fetching, do not override isReset if it was explicitly set to true by a reset action
-      // (isReset stays false for normal fetches; only setBrandingReset can set it to true)
+      const serverData = action.payload;
+      if (!serverData) {
+        state.data = null;
+        return;
+      }
+
+      const serverProductName = serverData.product_name?.trim() || '';
+      const isDefaultName = isDefaultOrCandidHr(serverProductName);
+
+      let resolvedProductName = serverProductName;
+      if (isDefaultName) {
+        // If server returns CandidHR/default:
+        // Only keep CandidHR if the user has previously explicitly saved a custom product name.
+        // Otherwise (first load or user saved empty or reset), treat as empty.
+        resolvedProductName = state.hasCustomProductName && !state.isReset ? (state.data?.product_name || serverProductName) : '';
+      } else {
+        state.hasCustomProductName = true;
+      }
+
+      state.data = {
+        ...serverData,
+        product_name: resolvedProductName,
+      };
 
       if (action.payload?.primary_color) {
         setBrandColor(action.payload.primary_color);
@@ -45,29 +68,56 @@ const brandingSlice = createSlice({
         state.isReset = action.payload.isReset;
       }
     },
-    updateBrandingSuccess: (state, action: PayloadAction<BrandingData>) => {
+    updateBrandingSuccess: (
+      state,
+      action: PayloadAction<{ data: BrandingData; submittedProductName?: string } | BrandingData>
+    ) => {
       state.updating = false;
       state.updateSuccess = true;
       state.error = null;
 
+      const payloadData = 'data' in action.payload ? action.payload.data : action.payload;
+      const submittedProductName =
+        'submittedProductName' in action.payload ? action.payload.submittedProductName : undefined;
+
       if (state.isReset) {
-        // Reset action: clear logos and name from local state regardless of server response
+        state.hasCustomProductName = false;
         state.data = {
-          ...(action.payload ?? {}),
+          ...(payloadData ?? {}),
           product_name: '',
           logo: null,
           secondary_logo: null,
           favicon: null,
         } as BrandingData;
-        // Keep isReset = true until user makes changes
       } else {
-        // Normal save: trust the server response entirely
-        state.data = action.payload;
+        let finalProductName = payloadData?.product_name?.trim() || '';
+
+        if (submittedProductName !== undefined) {
+          const trimmedSubmitted = submittedProductName.trim();
+          if (trimmedSubmitted === '') {
+            state.hasCustomProductName = false;
+            finalProductName = '';
+          } else {
+            state.hasCustomProductName = true;
+            finalProductName = trimmedSubmitted;
+          }
+        } else {
+          if (isDefaultOrCandidHr(finalProductName)) {
+            finalProductName = state.hasCustomProductName ? finalProductName : '';
+          } else {
+            state.hasCustomProductName = true;
+          }
+        }
+
+        state.data = {
+          ...(payloadData ?? {}),
+          product_name: finalProductName,
+        } as BrandingData;
         state.isReset = false;
       }
 
-      if (action.payload?.primary_color) {
-        setBrandColor(action.payload.primary_color);
+      if (payloadData?.primary_color) {
+        setBrandColor(payloadData.primary_color);
       }
     },
     updateBrandingFailure: (state, action: PayloadAction<string>) => {
@@ -77,14 +127,17 @@ const brandingSlice = createSlice({
     },
     setBrandingReset: (state, action: PayloadAction<boolean>) => {
       state.isReset = action.payload;
-      if (action.payload && state.data) {
-        state.data = {
-          ...state.data,
-          product_name: '',
-          logo: null,
-          secondary_logo: null,
-          favicon: null,
-        };
+      if (action.payload) {
+        state.hasCustomProductName = false;
+        if (state.data) {
+          state.data = {
+            ...state.data,
+            product_name: '',
+            logo: null,
+            secondary_logo: null,
+            favicon: null,
+          };
+        }
       }
     },
     resetUpdateStatus: (state) => {
