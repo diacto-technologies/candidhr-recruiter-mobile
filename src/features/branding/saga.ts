@@ -29,13 +29,14 @@ function* getBrandingWorker(): Generator<unknown, void, BrandingData> {
 function* updateBrandingWorker(action: {
   type: string;
   payload: UpdateBrandingPayload;
-  meta?: { isReset?: boolean };
+  meta?: { isReset?: boolean; submittedProductName?: string };
 }): Generator<unknown, void, BrandingData> {
   try {
     const isReset = action.meta?.isReset ?? false;
+    const submittedProductName = action.meta?.submittedProductName;
     yield put(updateBrandingRequest({ isReset }));
     const response = yield call(brandingApi.updateBranding, action.payload);
-    yield put(updateBrandingSuccess(response));
+    yield put(updateBrandingSuccess({ data: response, submittedProductName }));
     showToastMessage('Branding updated successfully', 'success');
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to update branding';

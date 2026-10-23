@@ -7,9 +7,10 @@ export const getBrandingRequestAction = () => ({
 
 export const updateBrandingRequestAction = (
   payload: UpdateBrandingPayload,
-  isReset?: boolean
+  isReset?: boolean,
+  submittedProductName?: string
 ) => ({
   type: BRANDING_ACTION_TYPES.UPDATE_BRANDING_REQUEST,
   payload,
-  meta: { isReset },
+  meta: { isReset, submittedProductName },
 });

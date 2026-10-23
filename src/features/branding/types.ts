@@ -32,4 +32,5 @@ export interface BrandingState {
   error: string | null;
   updateSuccess: boolean;
   isReset: boolean;
+  hasCustomProductName?: boolean;
 }

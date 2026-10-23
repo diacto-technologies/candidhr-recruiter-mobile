@@ -16,7 +16,7 @@ import { selectBrandingData, selectIsBrandingReset } from "../../../features/bra
 import { selectProfile } from "../../../features/profile/selectors";
 import { useBrandTheme } from "../../../hooks/useBrandTheme";
 import StatusBarBackground from "../../../components/atoms/statusbar";
-import { isDefaultLogoUrl, isDefaultOrCandidHr } from "../../../features/branding/constants";
+import { isDefaultLogoUrl } from "../../../features/branding/constants";
 
 const SplashScreen = () => {
   const { width } = useWindowDimensions();
@@ -43,34 +43,34 @@ const SplashScreen = () => {
 
   const companyName = profile?.tenant?.org_name?.trim() || '';
   const rawProductName = brandingData?.product_name?.trim() || '';
-  const customProductName =
-    !isBrandingReset && !isDefaultOrCandidHr(rawProductName) ? rawProductName : '';
 
-  const customUploadedLogo =
+  // Only exact 'CandidHR' (or empty) is considered the default name
+  const isExactDefaultCandidHr = rawProductName === 'CandidHR' || rawProductName === '';
+  const customProductName =
+    !isBrandingReset && !isExactDefaultCandidHr ? rawProductName : '';
+
+  const uploadedLogoCandidate =
     !isBrandingReset
       ? brandingData?.secondary_logo || brandingData?.favicon || brandingData?.logo || null
       : null;
-  const hasCustomUploadedLogo = Boolean(customUploadedLogo && !isDefaultLogoUrl(customUploadedLogo));
+  const customUploadedLogo =
+    uploadedLogoCandidate && !isDefaultLogoUrl(uploadedLogoCandidate)
+      ? uploadedLogoCandidate
+      : null;
+  const hasCustomUploadedLogo = Boolean(customUploadedLogo);
 
-  // Custom product is active when branding is NOT reset AND has custom product name, custom logo, or company name fallback
+  // Custom product is active when branding is NOT reset AND has custom product name or custom uploaded logo
   const isCustomProduct = Boolean(
-    !isBrandingReset &&
-    (customProductName || hasCustomUploadedLogo || (companyName && (brandingData?.logo || brandingData?.secondary_logo)))
+    !isBrandingReset && (customProductName || hasCustomUploadedLogo)
   );
 
-  const productName = customProductName || (isCustomProduct && companyName ? companyName : 'CandidHR');
+  const productName = customProductName || (hasCustomUploadedLogo && companyName ? companyName : 'CandidHR');
   const brandColor = brandingData?.primary_color || colors.brand[600];
 
-  const companyInitials = React.useMemo(() => {
-    if (!productName || productName === 'CandidHR') return 'C';
-    const words = productName.split(/\s+/).filter(Boolean);
-    if (words.length >= 2) {
-      return (words[0][0] + words[1][0]).toUpperCase();
-    }
-    return (productName[0] || 'C').toUpperCase();
+  const firstLetter = React.useMemo(() => {
+    if (!productName) return 'C';
+    return (productName.trim()[0] || 'C').toUpperCase();
   }, [productName]);
-
-  const firstLetter = companyInitials;
 
   const isSvgLogo = Boolean(
     customUploadedLogo &&

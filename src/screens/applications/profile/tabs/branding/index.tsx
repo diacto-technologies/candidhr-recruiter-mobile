@@ -30,6 +30,7 @@ import {
   selectBrandingLoading,
   selectBrandingUpdating,
   selectBrandingUpdateSuccess,
+  selectBrandingError,
   selectIsBrandingReset,
 } from '../../../../../features/branding/selectors';
 import { selectProfile } from '../../../../../features/profile/selectors';
@@ -46,7 +47,6 @@ import {
   LOGO_MAX_BYTES,
   LOGO_SIZE_ERROR_MESSAGES,
   isDefaultLogoUrl,
-  isDefaultOrCandidHr,
 } from '../../../../../features/branding/constants';
 import {
   validateHexColor,
@@ -99,13 +99,26 @@ const BrandingScreen = () => {
 
   const companyName = profile?.tenant?.org_name?.trim() || '';
 
+  const updateError = useAppSelector(selectBrandingError);
+
   useEffect(() => {
     if (updateSuccess) {
       setIsResetAction(false);
-      // Reset the load guard so form re-syncs from the newly saved brandingData
-      initialLoadedRef.current = false;
+      if (brandingData) {
+        setProductName(brandingData.product_name || '');
+        const pColor = brandingData.primary_color || DEFAULT_BRAND_COLOR;
+        setPrimaryColor(pColor);
+        setCustomHexInput(pColor.replace('#', ''));
+        setPoweredByEnabled(brandingData.powered_by_enabled !== false);
+        setLogoFile(null);
+        setSecondaryLogoFile(null);
+        setFaviconFile(null);
+        setLogoDeleted(false);
+        setSecondaryLogoDeleted(false);
+        setFaviconDeleted(false);
+      }
     }
-  }, [updateSuccess]);
+  }, [updateSuccess, brandingData]);
 
   // Form State
   const [productName, setProductName] = useState(DEFAULT_PRODUCT_NAME);
@@ -147,44 +160,40 @@ const BrandingScreen = () => {
     };
   }, [dispatch]);
 
-  const getResolvedSavedProductName = useCallback((data: typeof brandingData): string => {
-    if (!data) return '';
-    // If the branding is in reset state, show empty
-    if (isBrandingReset) return '';
-    // Return the saved product name as-is (including "CandidHR" if user intentionally saved it)
-    return data.product_name?.trim() || '';
-  }, [isBrandingReset]);
+  const getResolvedSavedProductName = useCallback(
+    (data: typeof brandingData): string => {
+      if (!data) return '';
+      if (isBrandingReset) return '';
+      return data.product_name?.trim() || '';
+    },
+    [isBrandingReset]
+  );
 
   const initialLoadedRef = useRef(false);
 
-  // Sync Form with Fetched Data
+  // Sync Form with Initial Fetched Data
   useEffect(() => {
-    if (brandingData) {
-      if (!initialLoadedRef.current) {
-        // Initial load: sync from saved brandingData
-        initialLoadedRef.current = true;
-        const pName = getResolvedSavedProductName(brandingData);
-        const pColor = brandingData.primary_color || DEFAULT_BRAND_COLOR;
-        setProductName(pName);
-        setPrimaryColor(pColor);
-        setCustomHexInput(pColor.replace('#', ''));
-        setPoweredByEnabled(brandingData.powered_by_enabled !== false);
-        setLogoFile(null);
-        setSecondaryLogoFile(null);
-        setFaviconFile(null);
-        setLogoDeleted(false);
-        setSecondaryLogoDeleted(false);
-        setFaviconDeleted(false);
-        setHasCustomFavicon(
-          Boolean(
-            brandingData.favicon &&
-            brandingData.secondary_logo &&
-            brandingData.favicon !== brandingData.secondary_logo
-          )
-        );
-      }
-      // Note: isResetAction=true case is handled entirely inside handleResetToDefault.
-      // We must NOT re-sync from brandingData on reset — it would overwrite the default values.
+    if (brandingData && !initialLoadedRef.current) {
+      initialLoadedRef.current = true;
+      const pName = getResolvedSavedProductName(brandingData);
+      const pColor = brandingData.primary_color || DEFAULT_BRAND_COLOR;
+      setProductName(pName);
+      setPrimaryColor(pColor);
+      setCustomHexInput(pColor.replace('#', ''));
+      setPoweredByEnabled(brandingData.powered_by_enabled !== false);
+      setLogoFile(null);
+      setSecondaryLogoFile(null);
+      setFaviconFile(null);
+      setLogoDeleted(false);
+      setSecondaryLogoDeleted(false);
+      setFaviconDeleted(false);
+      setHasCustomFavicon(
+        Boolean(
+          brandingData.favicon &&
+          brandingData.secondary_logo &&
+          brandingData.favicon !== brandingData.secondary_logo
+        )
+      );
     }
   }, [brandingData, getResolvedSavedProductName]);
 
@@ -308,6 +317,7 @@ const BrandingScreen = () => {
     }
 
     const normalizedColor = normalizeHexColor(primaryColor);
+
     const isResetting =
       isResetAction ||
       (!productName.trim() &&
@@ -373,7 +383,7 @@ const BrandingScreen = () => {
         formData.append('favicon', '');
       }
 
-      dispatch(updateBrandingRequestAction(formData, isResetting));
+      dispatch(updateBrandingRequestAction(formData, isResetting, productName.trim()));
     } else {
       // Send regular JSON payload
       const jsonPayload: Record<string, unknown> = {
@@ -392,7 +402,7 @@ const BrandingScreen = () => {
         jsonPayload.favicon = null;
       }
 
-      dispatch(updateBrandingRequestAction(jsonPayload as unknown as UpdateBrandingRequest, isResetting));
+      dispatch(updateBrandingRequestAction(jsonPayload as unknown as UpdateBrandingRequest, isResetting, productName.trim()));
     }
   }, [
     dispatch,

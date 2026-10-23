@@ -58,3 +58,115 @@ describe('Branding Validation', () => {
   });
 });
 
+import brandingReducer, {
+  getBrandingSuccess,
+  updateBrandingSuccess,
+  setBrandingReset,
+} from '../slice';
+import { BrandingData, BrandingState } from '../types';
+
+describe('brandingSlice product name resolution', () => {
+  const initialBaseState: BrandingState = {
+    data: null,
+    loading: false,
+    updating: false,
+    error: null,
+    updateSuccess: false,
+    isReset: false,
+    hasCustomProductName: false,
+  };
+
+  const mockServerResponse: BrandingData = {
+    product_name: 'CandidHR', // Backend always returns default "CandidHR"
+    logo: null,
+    secondary_logo: null,
+    favicon: null,
+    primary_color: '#4F46E5',
+    powered_by_enabled: true,
+  };
+
+  it('keeps product name empty when user saves with empty product name', () => {
+    const nextState = brandingReducer(
+      initialBaseState,
+      updateBrandingSuccess({
+        data: mockServerResponse,
+        submittedProductName: '',
+      })
+    );
+
+    expect(nextState.hasCustomProductName).toBe(false);
+    expect(nextState.data?.product_name).toBe('');
+  });
+
+  it('preserves product name CandidHR when user intentionally types CandidHR', () => {
+    const nextState = brandingReducer(
+      initialBaseState,
+      updateBrandingSuccess({
+        data: mockServerResponse,
+        submittedProductName: 'CandidHr',
+      })
+    );
+
+    expect(nextState.hasCustomProductName).toBe(true);
+    expect(nextState.data?.product_name).toBe('CandidHr');
+  });
+
+  it('preserves product name when user types candidHR with different casing', () => {
+    const nextState = brandingReducer(
+      initialBaseState,
+      updateBrandingSuccess({
+        data: mockServerResponse,
+        submittedProductName: 'candidHR',
+      })
+    );
+
+    expect(nextState.hasCustomProductName).toBe(true);
+    expect(nextState.data?.product_name).toBe('candidHR');
+  });
+
+  it('on initial fetch (getBrandingSuccess), defaults CandidHR to empty if user never set custom name', () => {
+    const stateAfterFetch = brandingReducer(
+      initialBaseState,
+      getBrandingSuccess(mockServerResponse)
+    );
+
+    expect(stateAfterFetch.hasCustomProductName).toBe(false);
+    expect(stateAfterFetch.data?.product_name).toBe('');
+  });
+
+  it('on initial fetch (getBrandingSuccess), retains custom CandidHR if user previously saved it', () => {
+    const stateWithCustom: BrandingState = {
+      ...initialBaseState,
+      hasCustomProductName: true,
+      data: {
+        ...mockServerResponse,
+        product_name: 'CandidHR',
+      },
+    };
+
+    const stateAfterFetch = brandingReducer(
+      stateWithCustom,
+      getBrandingSuccess(mockServerResponse)
+    );
+
+    expect(stateAfterFetch.hasCustomProductName).toBe(true);
+    expect(stateAfterFetch.data?.product_name).toBe('CandidHR');
+  });
+
+  it('on reset to default, clears product name and marks custom name as false', () => {
+    const stateWithCustom: BrandingState = {
+      ...initialBaseState,
+      hasCustomProductName: true,
+      data: {
+        ...mockServerResponse,
+        product_name: 'CandidHR',
+      },
+    };
+
+    const stateAfterReset = brandingReducer(stateWithCustom, setBrandingReset(true));
+
+    expect(stateAfterReset.hasCustomProductName).toBe(false);
+    expect(stateAfterReset.data?.product_name).toBe('');
+  });
+});
+
