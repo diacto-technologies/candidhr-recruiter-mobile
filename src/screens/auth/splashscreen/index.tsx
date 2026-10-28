@@ -1,12 +1,13 @@
 import React, { Fragment, useEffect, useState } from "react";
-import { View, useWindowDimensions, Image } from "react-native";
+import { View, useWindowDimensions, Image, Linking, BackHandler } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
 import { SvgXml, SvgUri } from "react-native-svg";
 import { colors } from "../../../theme/colors";
 import { candidHrLogo, candidHrTxt } from "../../../assets/svg/candidhrlogo";
 import { Typography } from "../../../components";
 import { logoXML } from "../../../assets/svg/logoxml";
-import { navigate } from "../../../utils/navigationUtils";
+import { navigate, navigationRef, resetAndNavigate, resetToDeepLink } from "../../../utils/navigationUtils";
+import { parseDeepLinkUrl } from "../../../navigation/linking";
 import { useStyles } from "./styles";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import { selectIsAuthenticated } from "../../../features/auth/selectors";
@@ -79,17 +80,44 @@ const SplashScreen = () => {
 
   const showPoweredBy = Boolean(isCustomProduct && brandingData?.powered_by_enabled);
 
+  // Exit app if hardware back is pressed on splash screen
+  useEffect(() => {
+    const onBackPress = () => {
+      BackHandler.exitApp();
+      return true;
+    };
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => subscription.remove();
+  }, []);
+
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout>;
     if (isAuthenticated) {
       dispatch(getProfileRequestAction());
       dispatch(getBrandingRequestAction());
-      timeoutId = setTimeout(() => {
-        navigate('UserBottomTab');
+      timeoutId = setTimeout(async () => {
+        try {
+          const currentRoute = navigationRef.getCurrentRoute()?.name;
+          if (currentRoute === 'JobDetailScreen' || currentRoute === 'ApplicantDetails') {
+            const currentParams = navigationRef.getCurrentRoute()?.params;
+            resetToDeepLink(currentRoute, currentParams);
+            return;
+          }
+
+          const initialUrl = await Linking.getInitialURL();
+          const target = parseDeepLinkUrl(initialUrl);
+          if (target) {
+            resetToDeepLink(target.name, target.params);
+            return;
+          }
+        } catch {
+          // Fallback to default
+        }
+        resetAndNavigate('UserBottomTab');
       }, 1500);
     } else {
       timeoutId = setTimeout(() => {
-        navigate('GetStartedScreen');
+        resetAndNavigate('GetStartedScreen');
       }, 1500);
     }
     return () => clearTimeout(timeoutId);

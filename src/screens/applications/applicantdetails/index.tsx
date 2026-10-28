@@ -111,7 +111,7 @@ export default function ApplicantDetails() {
       <CustomSafeAreaView>
         <AppHeader
           left={
-            <Pressable onPress={goBack} style={{ padding: 8, marginLeft: -8 }}>
+            <Pressable onPress={() => goBack('ApplicantScreen')} style={{ padding: 8, marginLeft: -8 }}>
               <SvgXml xml={backButtonIcon} />
             </Pressable>
           }

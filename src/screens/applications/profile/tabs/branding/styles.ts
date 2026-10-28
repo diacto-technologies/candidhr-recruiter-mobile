@@ -45,6 +45,13 @@ export const useStyles = (brandColor: string = colors.brand[600]) => {
     headerSubtitle: {
       marginTop: 2,
     },
+    topBarActionsRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      gap: 8,
+      marginTop: 10,
+    },
     card: {
       backgroundColor: colors.base.white,
       borderRadius: 16,
@@ -55,6 +62,23 @@ export const useStyles = (brandColor: string = colors.brand[600]) => {
     },
     cardHeader: {
       marginBottom: 12,
+    },
+    cardHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      marginBottom: 12,
+    },
+    livePreviewBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: `${activeColor}40`,
+      backgroundColor: `${activeColor}10`,
     },
     cardSubtitle: {
       marginTop: 2,
@@ -214,6 +238,13 @@ export const useStyles = (brandColor: string = colors.brand[600]) => {
       borderWidth: 1,
       borderColor: colors.gray[200],
       backgroundColor: colors.base.white,
+    },
+    actionDeleteBtn: {
+      padding: 6,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: colors.error[200],
+      backgroundColor: colors.error[50],
     },
     uploadTextBtn: {
       flexDirection: 'row',

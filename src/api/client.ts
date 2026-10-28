@@ -13,7 +13,7 @@ import { showToastMessage } from '../utils/toast';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_ENDPOINTS } from './endpoints';
 
-const API_BASE_URL = config.api.baseURL;
+export const API_BASE_URL = config.api.baseURL;
 
 /** Result of a refresh token attempt — drives retry vs logout decisions. */
 enum RefreshResult {
@@ -69,7 +69,7 @@ const getOrganizationId = (): string | null => {
 };
 
 // Helper function to build headers with auth token and organization
-const buildHeaders = (customHeaders?: Record<string, string>): Record<string, string> => {
+export const buildHeaders = (customHeaders?: Record<string, string>): Record<string, string> => {
   const token = getAuthToken();
   const organizationId = getOrganizationId();
   const origin = organizationalOrigin(store.getState());
@@ -443,9 +443,9 @@ export const apiClient = {
     return await executeWithRefresh(
       () =>
         fetch(`${API_BASE_URL}${endpoint}`, {
+          ...customConfig,
           method: 'GET',
           headers: buildHeaders(customConfig?.headers as Record<string, string> | undefined),
-          ...customConfig,
         }),
       endpoint
     );
@@ -468,10 +468,10 @@ export const apiClient = {
     const response = await executeWithRefresh(
       () =>
         fetch(`${API_BASE_URL}${endpoint}`, {
+          ...customConfig,
           method: 'POST',
           headers: buildHeaders(customConfig?.headers as Record<string, string> | undefined),
           body: JSON.stringify(data),
-          ...customConfig,
         }),
       endpoint
     );
@@ -494,10 +494,10 @@ export const apiClient = {
     return await executeWithRefresh(
       () =>
         fetch(`${API_BASE_URL}${endpoint}`, {
+          ...customConfig,
           method: 'POST',
           headers: buildHeaders(customConfig?.headers as Record<string, string> | undefined),
           body: JSON.stringify(data),
-          ...customConfig,
         }),
       endpoint
     );
@@ -507,10 +507,10 @@ export const apiClient = {
     const response = await executeWithRefresh(
       () =>
         fetch(`${API_BASE_URL}${endpoint}`, {
+          ...customConfig,
           method: 'PUT',
           headers: buildHeaders(customConfig?.headers as Record<string, string> | undefined),
           body: JSON.stringify(data),
-          ...customConfig,
         }),
       endpoint
     );
@@ -549,10 +549,10 @@ export const apiClient = {
         }
 
         return fetch(`${API_BASE_URL}${endpoint}`, {
+          ...customConfig,
           method: 'PATCH',
           headers,
           body: isFormData ? data : JSON.stringify(data),
-          ...customConfig,
         });
       },
       endpoint
@@ -566,9 +566,9 @@ export const apiClient = {
     const response = await executeWithRefresh(
       () =>
         fetch(`${API_BASE_URL}${endpoint}`, {
+          ...customConfig,
           method: 'DELETE',
           headers: buildHeaders(customConfig?.headers as Record<string, string> | undefined),
-          ...customConfig,
         }),
       endpoint
     );
