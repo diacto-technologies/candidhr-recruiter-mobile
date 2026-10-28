@@ -14,6 +14,7 @@ import personalityScreeningReducer from "../features/personalityScreening/slice"
 import { commentsReducer } from "../features/comments";
 import { rapidhireReducer } from "../features/rapidhire";
 import brandingReducer from "../features/branding/slice";
+import copilotReducer from "../features/copilot/slice";
 
 const appReducer = combineReducers({
   auth: authReducer,
@@ -29,6 +30,7 @@ const appReducer = combineReducers({
   comments: commentsReducer,
   rapidhire: rapidhireReducer,
   branding: brandingReducer,
+  copilot: copilotReducer,
 });
 
 export const RESET_APP_STATE = "app/RESET_APP_STATE" as const;

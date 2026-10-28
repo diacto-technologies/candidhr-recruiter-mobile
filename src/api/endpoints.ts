@@ -152,5 +152,15 @@ export const API_ENDPOINTS = {
     /** DELETE: /comments/v1/comments/{commentId}/ */
     DELETE: (commentId: string) => `/comments/v1/comments/${commentId}/`,
   },
+  COPILOT: {
+    /** GET /api/v1/copilot/sessions/ */
+    SESSIONS: '/api/v1/copilot/sessions/',
+    /** GET /api/v1/copilot/sessions/{id}/ */
+    SESSION_DETAIL: (id: string) => `/api/v1/copilot/sessions/${id}/`,
+    /** GET /api/v1/copilot/suggestions/ */
+    SUGGESTIONS: '/api/v1/copilot/suggestions/',
+    /** POST /api/v1/copilot/chat/stream/ */
+    CHAT_STREAM: '/api/v1/copilot/chat/stream/',
+  },
 } as const;
 

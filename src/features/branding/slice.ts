@@ -3,7 +3,7 @@ import { BrandingData, BrandingState } from './types';
 import { setBrandColor } from '../../theme/colors';
 
 
-import { isDefaultOrCandidHr } from './constants';
+import { isDefaultOrCandidHr, DEFAULT_BRAND_COLOR } from './constants';
 
 const initialState: BrandingState = {
   data: null,
@@ -82,13 +82,20 @@ const brandingSlice = createSlice({
 
       if (state.isReset) {
         state.hasCustomProductName = false;
+        const resolvedPoweredBy =
+          payloadData?.powered_by_enabled !== undefined
+            ? Boolean(payloadData.powered_by_enabled)
+            : true;
         state.data = {
           ...(payloadData ?? {}),
           product_name: '',
           logo: null,
           secondary_logo: null,
           favicon: null,
+          primary_color: DEFAULT_BRAND_COLOR,
+          powered_by_enabled: resolvedPoweredBy,
         } as BrandingData;
+        setBrandColor(DEFAULT_BRAND_COLOR);
       } else {
         let finalProductName = payloadData?.product_name?.trim() || '';
 
@@ -114,10 +121,10 @@ const brandingSlice = createSlice({
           product_name: finalProductName,
         } as BrandingData;
         state.isReset = false;
-      }
 
-      if (payloadData?.primary_color) {
-        setBrandColor(payloadData.primary_color);
+        if (payloadData?.primary_color) {
+          setBrandColor(payloadData.primary_color);
+        }
       }
     },
     updateBrandingFailure: (state, action: PayloadAction<string>) => {
@@ -129,6 +136,7 @@ const brandingSlice = createSlice({
       state.isReset = action.payload;
       if (action.payload) {
         state.hasCustomProductName = false;
+        setBrandColor(DEFAULT_BRAND_COLOR);
         if (state.data) {
           state.data = {
             ...state.data,
@@ -136,6 +144,8 @@ const brandingSlice = createSlice({
             logo: null,
             secondary_logo: null,
             favicon: null,
+            primary_color: DEFAULT_BRAND_COLOR,
+            powered_by_enabled: true,
           };
         }
       }

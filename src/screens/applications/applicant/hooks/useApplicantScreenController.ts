@@ -22,6 +22,7 @@ import {
   getApplicationsRequestAction 
 } from '../../../../features/applications/actions';
 import { setApplicationsFilters, setSort } from '../../../../features/applications/slice';
+import { navigate } from '../../../../utils/navigationUtils';
 
 export const SKELETON_ROWS = 10;
 export type RowItem = Application | { __skeleton: true; __id: string };
@@ -50,6 +51,7 @@ export const useApplicantScreenController = () => {
   const [isFilterSheetVisible, setIsFilterSheetVisible] = useState(false);
   const [selectedTab, setSelectedTab] = useState('Name');
   const [threeDotOpen, setThreeDotOpen] = useState(false);
+  const [isTalentSearchOpen, setIsTalentSearchOpen] = useState(false);
   
   const applications = useAppSelector(selectApplications);
   const pagination = useAppSelector(selectApplicationsPagination);
@@ -147,7 +149,38 @@ export const useApplicantScreenController = () => {
     return applications as RowItem[];
   }, [loading, applications]);
 
+  const handleTalentSearch = useCallback((searchQuery: string) => {
+    const trimmed = searchQuery.trim();
+    if (!trimmed) return;
+
+    const lower = trimmed.toLowerCase();
+    if (lower.includes('recent') || lower.includes('latest')) {
+      dispatch(setSort({ sortBy: 'Applied', sortDir: 'desc' }));
+      dispatch(getApplicationsRequestAction({
+        page: 1,
+        limit: pagination.limit,
+        sort: '-applied_at',
+      }));
+      return;
+    }
+
+    dispatch(setApplicationsFilters({
+      name: trimmed,
+    }));
+    dispatch(getApplicationsRequestAction({
+      page: 1,
+      limit: pagination.limit,
+      applicantName: trimmed,
+    }));
+  }, [dispatch, pagination.limit]);
+
   const threeDotMenuItems = useMemo(() => [
+    // {
+    //   name: 'Talent Search',
+    //   onPress: () => {
+    //     navigate('TalentSearchScreen');
+    //   },
+    // },
     {
       name: 'Export to CSV',
       onPress: () => {
@@ -180,6 +213,8 @@ export const useApplicantScreenController = () => {
     setSelectedTab,
     threeDotOpen,
     setThreeDotOpen,
+    isTalentSearchOpen,
+    setIsTalentSearchOpen,
     
     // Derived Layout & Auth Data
     numColumns,
@@ -196,6 +231,7 @@ export const useApplicantScreenController = () => {
     handleApplyFilters,
     handleClearAllFilters,
     handleSort,
+    handleTalentSearch,
     handleEndReached,
     handleMomentumScrollBegin,
   };
