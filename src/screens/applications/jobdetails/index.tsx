@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Pressable } from "react-native";
 import { AppHeader } from "../../../components";
-import { goBack } from "../../../utils/navigationUtils";
+import { goBack, navigate } from "../../../utils/navigationUtils";
 import SortingAndFilter from "../../../components/organisms/sortingandfilter";
 import { applicantFiltersOption } from "../../../utils/dummaydata";
 import { BottomSheet, StatusBar, Typography } from "../../../components";
@@ -32,7 +32,7 @@ const JobDetailScreen: React.FC = () => {
     <CustomSafeAreaView>
       <AppHeader 
         left={
-          <Pressable onPress={goBack} style={{ padding: 8, marginLeft: -8 }}>
+          <Pressable onPress={() => goBack('JobsScreen')} style={{ padding: 8, marginLeft: -8 }}>
             <SvgXml xml={backButtonIcon} />
           </Pressable>
         } 

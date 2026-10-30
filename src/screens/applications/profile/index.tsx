@@ -170,7 +170,7 @@ const Profile = () => {
   return (
     <Fragment>
       <CustomSafeAreaView>
-        <Header title={t('screens.profile.setting')} backNavigation={true} onBack={() => goBack()} />
+        <Header title={t('screens.profile.setting')} backNavigation={true} onBack={() => goBack('Dashboard')} />
 
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false} bounces={false}>
           {/* ✅ Profile Card */}

@@ -11,6 +11,7 @@ import { personalityScreeningSaga } from '../features/personalityScreening/saga'
 import { commentsSaga } from '../features/comments';
 import { rapidhireSaga } from '../features/rapidhire';
 import { brandingSaga } from '../features/branding/saga';
+import { copilotSaga } from '../features/copilot/saga';
 
 export default function* rootSaga() {
   yield all([
@@ -25,5 +26,6 @@ export default function* rootSaga() {
     commentsSaga(),
     rapidhireSaga(),
     brandingSaga(),
+    copilotSaga(),
   ]);
 }

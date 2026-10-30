@@ -4,7 +4,7 @@ import { SvgXml, SvgUri } from 'react-native-svg';
 import Typography from '../../../../../../components/atoms/typography';
 import { colors } from '../../../../../../theme/colors';
 import { pageReloadIcon } from '../../../../../../assets/svg/pageReload';
-import { deleteIcon } from '../../../../../../assets/svg/deleteicon';
+import { getDeleteIcon } from '../../../../../../assets/svg/deleteicon';
 import { LogoUploadCardProps } from '../branding.d';
 import { useStyles } from '../styles';
 
@@ -264,13 +264,13 @@ export const LogoUploadCard: React.FC<LogoUploadCardProps> = React.memo(({
               </Pressable>
 
               <Pressable
-                style={styles.actionIconBtn}
+                style={styles.actionDeleteBtn}
                 onPress={onDelete}
                 disabled={disabled}
                 hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 accessibilityLabel={`Delete ${title}`}
               >
-                <SvgXml xml={deleteIcon} width={16} height={16} />
+                <SvgXml xml={getDeleteIcon(colors.error[600])} width={16} height={16} />
               </Pressable>
             </>
           )}

@@ -18,5 +18,15 @@ export const useStyles = () => {
         emptyStateContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 },
         emptyStateContent: { alignItems: 'center', marginBottom: 10, zIndex: 10 },
         emptyStateSubtext: { textAlign: 'center' },
+        headerRightContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 4,
+            marginRight: -8,
+        },
+        headerIconButton: {
+            padding: 8,
+            borderRadius: 8,
+        },
     });
 };

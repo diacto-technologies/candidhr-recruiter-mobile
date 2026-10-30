@@ -3,7 +3,7 @@ import React, { FC, useEffect } from 'react'
 import { useTokenRefresh } from '../hooks/useTokenRefresh'
 import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
-import { navigationRef } from '../utils/navigationUtils'
+import { navigationRef, navigate } from '../utils/navigationUtils'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import { selectIsAuthenticated } from '../features/auth/selectors'
 import { getProfileRequestAction } from '../features/profile/actions'
@@ -21,7 +21,7 @@ import AccountInfo from '../screens/applications/profile/tabs/accountinfo';
 import CompanyInfo from '../screens/applications/profile/tabs/companyinfo';
 import Users from '../screens/applications/profile/tabs/users';
 import BrandingScreen from '../screens/applications/profile/tabs/branding';
-import linking from './linking'
+import linking, { parseDeepLinkUrl } from './linking'
 import OrgnizationalSwitch from '../screens/auth/orgnizationalswitch'
 import { useTheme } from '../hooks/useTheme'
 import { useBrandTheme } from '../hooks/useBrandTheme'
@@ -36,6 +36,7 @@ import AssessmentTestList from '../screens/applications/services/assessment/asse
 import AssessmentList from '../screens/applications/services/assessment/assessmentList'
 import AssessmentOverView from '../screens/applications/services/assessment/assessmentoverview'
 import CandidateAssignmentsDeatilsTable from '../components/organisms/CandidateAssignmentsDetailsTable';
+import TalentSearchScreen from '../screens/applications/talentsearch';
 
 const Stack = createNativeStackNavigator()
 const Navigation: FC = () => {
@@ -80,16 +81,23 @@ const Navigation: FC = () => {
   }, [isAuthenticated, dispatch]);
 
   useEffect(() => {
-    Linking.getInitialURL().then(url => {
-      console.log('Initial URL:', url);
-    });
+    const handleIncomingUrl = (url: string | null) => {
+      if (!url) return;
+      console.log('Incoming deep link URL:', url);
+      const target = parseDeepLinkUrl(url);
+      if (target && isAuthenticated) {
+        navigate(target.name, target.params);
+      }
+    };
+
+    Linking.getInitialURL().then(handleIncomingUrl);
 
     const sub = Linking.addEventListener('url', ({ url }) => {
-      console.log('Incoming URL:', url);
+      handleIncomingUrl(url);
     });
 
     return () => sub.remove();
-  }, []);
+  }, [isAuthenticated]);
 
 
   return (
@@ -99,12 +107,12 @@ const Navigation: FC = () => {
       theme={navigationTheme}
     >
       <Stack.Navigator initialRouteName='SplashScreen' screenOptions={{ headerShown: false }}>
-        <Stack.Screen name='SplashScreen' component={SplashScreen} />
+        <Stack.Screen name='SplashScreen' component={SplashScreen} options={{ gestureEnabled: false }} />
         <Stack.Screen name='OrgnizationalSwitch' component={OrgnizationalSwitch} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
         <Stack.Screen name='LoginScreen' component={LoginScreen} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
         <Stack.Screen name='ForgetPasswordScreen' component={ForgetPasswordScreen} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
         <Stack.Screen name='JobDetailScreen' component={JobDetailScreen} options={{ animation: 'fade' }} />
-        <Stack.Screen name='UserBottomTab' component={UserBottomTab} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
+        <Stack.Screen name='UserBottomTab' component={UserBottomTab} options={{ animation: 'fade', statusBarStyle: 'dark', gestureEnabled: false }} />
         <Stack.Screen name='ApplicantDetails' component={ApplicantDetails} options={{ animation: 'fade' }} />
         <Stack.Screen name='Comments' component={CommentsScreen} options={{ animation: 'fade' }} />
         <Stack.Screen name='GetStartedScreen' component={GetStartedScreen} options={{
@@ -128,6 +136,7 @@ const Navigation: FC = () => {
          <Stack.Screen name="AssessmentList" component={AssessmentList}/>
          <Stack.Screen name="AssessmentOverView" component={AssessmentOverView}/>
         <Stack.Screen name="CandidateAssignmentsDeatilsTable" component={CandidateAssignmentsDeatilsTable}/>
+        <Stack.Screen name="TalentSearchScreen" component={TalentSearchScreen} options={{ animation: 'fade', statusBarStyle: 'dark' }} />
       </Stack.Navigator>
     </NavigationContainer>
   )

@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { View, FlatList } from 'react-native';
+import { View, FlatList, Pressable } from 'react-native';
 import {
   AppHeader,
   SortingAndFilter,
@@ -18,6 +18,8 @@ import { Illustrations } from '../../../assets/svg/illustrations';
 import { SvgXml } from 'react-native-svg';
 import { screenHeight } from '../../../utils/devicelayout';
 import { horizontalThreedotIcon } from '../../../assets/svg/horizontalthreedoticon';
+import { searchIcon } from '../../../assets/svg/search';
+import { navigate } from '../../../utils/navigationUtils';
 import { useStyles } from './styles';
 import { Application } from '../../../features/applications/types';
 import { useApplicantScreenController, RowItem } from './hooks/useApplicantScreenController';
@@ -62,14 +64,26 @@ const ApplicantScreen = () => {
         title="Applicants"
         badgeCount={ctrl.loading && ctrl.totalCount === 0 ? undefined : ctrl.totalCount}
         right={
-          ctrl.canExport ? (
-            <React.Fragment>
-              {/* Using a standard Pressable for right side icon */}
-              <View style={{ padding: 8, marginRight: -8 }} onTouchEnd={() => ctrl.setThreeDotOpen(true)}>
+          <View style={styles.headerRightContainer}>
+            <Pressable
+              onPress={() => navigate('TalentSearchScreen')}
+              style={styles.headerIconButton}
+              accessibilityRole="button"
+              accessibilityLabel="Talent Search"
+            >
+              <SvgXml xml={searchIcon} width={20} height={20} />
+            </Pressable>
+            {ctrl.canExport && (
+              <Pressable
+                onPress={() => ctrl.setThreeDotOpen(true)}
+                style={styles.headerIconButton}
+                accessibilityRole="button"
+                accessibilityLabel="More options"
+              >
                 <SvgXml xml={horizontalThreedotIcon} />
-              </View>
-            </React.Fragment>
-          ) : null
+              </Pressable>
+            )}
+          </View>
         }
       />
 

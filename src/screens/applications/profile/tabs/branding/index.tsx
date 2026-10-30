@@ -21,6 +21,7 @@ import { showToastMessage } from '../../../../../utils/toast';
 import { colors, setBrandColor } from '../../../../../theme/colors';
 import { checkMarkIcon } from '../../../../../assets/svg/checkmark';
 import { closeIconSm } from '../../../../../assets/svg/closeicon';
+import { eyeVisibleIcon } from '../../../../../assets/svg/eyevisible';
 import { resetIcon } from '../../../../../assets/svg/settingsIcons';
 import FooterButtons from '../../../../../components/molecules/footerbuttons';
 import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
@@ -38,7 +39,7 @@ import {
   getBrandingRequestAction,
   updateBrandingRequestAction,
 } from '../../../../../features/branding/actions';
-import { resetUpdateStatus, setBrandingReset } from '../../../../../features/branding/slice';
+import { resetUpdateStatus } from '../../../../../features/branding/slice';
 import {
   BRAND_COLOR_PRESETS,
   DEFAULT_BRAND_COLOR,
@@ -57,6 +58,7 @@ import { UpdateBrandingRequest } from '../../../../../features/branding/types';
 import { ImageFileAsset, LogoCardType } from './branding.d';
 import { ColorSwatch } from './components/ColorSwatch';
 import { LogoUploadCard } from './components/LogoUploadCard';
+import { BrandingPreviewModal } from './components/BrandingPreviewModal';
 import { useStyles } from './styles';
 
 const infoCircleSvg = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -103,6 +105,7 @@ const BrandingScreen = () => {
 
   useEffect(() => {
     if (updateSuccess) {
+      dispatch(resetUpdateStatus());
       setIsResetAction(false);
       if (brandingData) {
         setProductName(brandingData.product_name || '');
@@ -118,7 +121,7 @@ const BrandingScreen = () => {
         setFaviconDeleted(false);
       }
     }
-  }, [updateSuccess, brandingData]);
+  }, [updateSuccess, brandingData, dispatch]);
 
   // Form State
   const [productName, setProductName] = useState(DEFAULT_PRODUCT_NAME);
@@ -147,6 +150,7 @@ const BrandingScreen = () => {
   // Input focus
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [isResetAction, setIsResetAction] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   // Picker Busy Flag
   const pickerBusyRef = useRef(false);
@@ -242,6 +246,7 @@ const BrandingScreen = () => {
   const handleSelectPresetColor = useCallback((color: string) => {
     setPrimaryColor(color);
     setCustomHexInput(color.replace('#', ''));
+    setIsResetAction(false);
   }, []);
 
   // Custom Hex Input Handler
@@ -251,11 +256,13 @@ const BrandingScreen = () => {
 
     if (sanitized.length === 6 || sanitized.length === 3) {
       setPrimaryColor(`#${sanitized.toUpperCase()}`);
+      setIsResetAction(false);
     }
   }, []);
 
   // Reset to Default Action
   const handleResetToDefault = useCallback(() => {
+    dispatch(resetUpdateStatus());
     setProductName('');
     setPrimaryColor(DEFAULT_BRAND_COLOR);
     setCustomHexInput(DEFAULT_BRAND_COLOR.replace('#', ''));
@@ -270,7 +277,6 @@ const BrandingScreen = () => {
     setLogoErrors({});
     setBrandColor(DEFAULT_BRAND_COLOR);
     setIsResetAction(true);
-    dispatch(setBrandingReset(true));
     showToastMessage('Reset to default values', 'info');
   }, [dispatch]);
 
@@ -291,6 +297,7 @@ const BrandingScreen = () => {
       setLogoDeleted(false);
       setSecondaryLogoDeleted(false);
       setFaviconDeleted(false);
+      setBrandColor(pColor);
       setHasCustomFavicon(
         Boolean(
           brandingData.favicon &&
@@ -318,28 +325,23 @@ const BrandingScreen = () => {
 
     const normalizedColor = normalizeHexColor(primaryColor);
 
-    const isResetting =
-      isResetAction ||
-      (!productName.trim() &&
-        !logoFile &&
-        !secondaryLogoFile &&
-        !faviconFile &&
-        logoDeleted &&
-        secondaryLogoDeleted &&
-        faviconDeleted);
+    const isPureReset =
+      !productName.trim() &&
+      !logoFile &&
+      !secondaryLogoFile &&
+      !faviconFile &&
+      (logoDeleted || !brandingData?.logo) &&
+      (secondaryLogoDeleted || !brandingData?.secondary_logo) &&
+      (faviconDeleted || !brandingData?.favicon) &&
+      normalizedColor === normalizeHexColor(DEFAULT_BRAND_COLOR) &&
+      poweredByEnabled === true;
 
-    const shouldUseFormData = Boolean(
-      logoFile ||
-      secondaryLogoFile ||
-      faviconFile ||
-      isResetting ||
-      logoDeleted ||
-      secondaryLogoDeleted ||
-      faviconDeleted
-    );
+    const isResetting = isResetAction && isPureReset;
 
-    // Build payload: if binary files exist or files are being deleted/reset, use FormData
-    if (shouldUseFormData) {
+    // Only use FormData if there are actual binary files to upload
+    const hasBinaryFiles = Boolean(logoFile || secondaryLogoFile || faviconFile);
+
+    if (hasBinaryFiles) {
       const formData = new FormData();
       formData.append('product_name', productName.trim());
       formData.append('primary_color', normalizedColor);
@@ -409,7 +411,6 @@ const BrandingScreen = () => {
     productName,
     primaryColor,
     isResetAction,
-    brandingData,
     poweredByEnabled,
     logoFile,
     secondaryLogoFile,
@@ -599,13 +600,17 @@ const BrandingScreen = () => {
     : (showCompanyFallback ? companyInitials : '');
 
   const isAlreadyDefault = useMemo(() => {
-    if (isResetAction) return true;
+    const isPoweredByDefault = poweredByEnabled === true;
     const hasAnyCustomName = Boolean(productName.trim());
     const hasCustomColor =
       normalizeHexColor(primaryColor) !== normalizeHexColor(DEFAULT_BRAND_COLOR);
     const hasAnyLogo = Boolean(currentLogoUrl || currentSecondaryLogoUrl || currentFaviconUrl);
-    const isPoweredByDefault = poweredByEnabled === true;
-    return !hasAnyCustomName && !hasCustomColor && !hasAnyLogo && isPoweredByDefault;
+
+    if (!isPoweredByDefault || hasCustomColor || hasAnyCustomName || hasAnyLogo) {
+      return false;
+    }
+    if (isResetAction) return true;
+    return true;
   }, [
     isResetAction,
     productName,
@@ -648,9 +653,25 @@ const BrandingScreen = () => {
           >
             {/* Top Bar with Status & Action Buttons */}
             <View style={styles.topBar}>
-                <Typography variant="regularTxtsm" color={colors.gray[500]} style={styles.headerSubtitle}>
-                  Your name, logos and colour, across the app and every candidate page.
-                </Typography>
+              <Typography variant="regularTxtsm" color={colors.gray[500]} style={styles.headerSubtitle}>
+                Your name, logos and colour, across the app and every candidate page.
+              </Typography>
+              <View style={styles.topBarActionsRow}>
+                <Button
+                  size={36}
+                  variant="outline"
+                  buttonColor={colors.base.white}
+                  textColor={colors.gray[700]}
+                  borderColor={colors.gray[300]}
+                  borderWidth={1}
+                  borderRadius={8}
+                  paddingHorizontal={12}
+                  textVariant="mediumTxtxs"
+                  startIcon={<SvgXml xml={eyeVisibleIcon} width={14} height={14} />}
+                  onPress={() => setShowPreviewModal(true)}
+                >
+                  Preview
+                </Button>
                 <Button
                   size={36}
                   variant="outline"
@@ -664,10 +685,10 @@ const BrandingScreen = () => {
                   disabled={isAlreadyDefault || updating}
                   startIcon={<SvgXml xml={resetIcon} width={14} height={14} opacity={isAlreadyDefault ? 0.4 : 1} />}
                   onPress={handleResetToDefault}
-                  style={{alignSelf: 'flex-end'}}
                 >
                   Reset to default
                 </Button>
+              </View>
             </View>
 
             {loading && !brandingData ? (
@@ -689,7 +710,10 @@ const BrandingScreen = () => {
                     <TextInput
                       style={styles.textInput}
                       value={productName}
-                      onChangeText={(val) => setProductName(val.slice(0, MAX_PRODUCT_NAME_LENGTH))}
+                      onChangeText={(val) => {
+                        setProductName(val.slice(0, MAX_PRODUCT_NAME_LENGTH));
+                        setIsResetAction(false);
+                      }}
                       placeholder="e.g. Acme Careers"
                       placeholderTextColor={colors.gray[400]}
                       maxLength={MAX_PRODUCT_NAME_LENGTH}
@@ -818,13 +842,15 @@ const BrandingScreen = () => {
 
                 {/* 3. Brand Color Section */}
                 <View style={styles.card}>
-                  <View style={styles.cardHeader}>
-                    <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
-                      Brand color
-                    </Typography>
-                    <Typography variant="regularTxtsm" color={colors.gray[500]} style={styles.cardSubtitle}>
-                      Select or customize your brand color.
-                    </Typography>
+                  <View style={styles.cardHeaderRow}>
+                    <View>
+                      <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
+                        Brand color
+                      </Typography>
+                      <Typography variant="regularTxtsm" color={colors.gray[500]} style={styles.cardSubtitle}>
+                        Select or customize your brand color.
+                      </Typography>
+                    </View>
                   </View>
 
                   {/* 7 Preset Color Swatches */}
@@ -887,7 +913,12 @@ const BrandingScreen = () => {
 
                     <CustomSwitch
                       value={poweredByEnabled}
-                      onValueChange={setPoweredByEnabled}
+                      onValueChange={(val) => {
+                        setPoweredByEnabled(val);
+                        if (!val) {
+                          setIsResetAction(false);
+                        }
+                      }}
                       backgroundActive={primaryColor}
                       backgroundInactive={colors.gray[300]}
                     />
@@ -942,6 +973,18 @@ const BrandingScreen = () => {
             }}
           />
         </KeyboardAvoidingView>
+
+        {/* Real-time Workspace Preview Modal */}
+        <BrandingPreviewModal
+          visible={showPreviewModal}
+          onClose={() => setShowPreviewModal(false)}
+          primaryColor={primaryColor}
+          productName={displayProductName}
+          logoUrl={currentLogoUrl}
+          secondaryLogoUrl={currentSecondaryLogoUrl}
+          autoInitials={autoInitials}
+          poweredByEnabled={poweredByEnabled}
+        />
       </CustomSafeAreaView>
     </Fragment>
   );

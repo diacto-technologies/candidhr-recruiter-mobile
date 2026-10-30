@@ -153,13 +153,15 @@ describe('brandingSlice product name resolution', () => {
     expect(stateAfterFetch.data?.product_name).toBe('CandidHR');
   });
 
-  it('on reset to default, clears product name and marks custom name as false', () => {
+  it('on reset to default, clears product name, restores default color and powered_by, and marks custom name as false', () => {
     const stateWithCustom: BrandingState = {
       ...initialBaseState,
       hasCustomProductName: true,
       data: {
         ...mockServerResponse,
         product_name: 'CandidHR',
+        primary_color: '#2563EB',
+        powered_by_enabled: false,
       },
     };
 
@@ -167,6 +169,8 @@ describe('brandingSlice product name resolution', () => {
 
     expect(stateAfterReset.hasCustomProductName).toBe(false);
     expect(stateAfterReset.data?.product_name).toBe('');
+    expect(stateAfterReset.data?.primary_color).toBe('#4F46E5');
+    expect(stateAfterReset.data?.powered_by_enabled).toBe(true);
   });
 });
 
