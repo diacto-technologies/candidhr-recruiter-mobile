@@ -7,7 +7,7 @@ import { candidHrLogo, candidHrTxt } from "../../../assets/svg/candidhrlogo";
 import { Typography } from "../../../components";
 import { logoXML } from "../../../assets/svg/logoxml";
 import { navigate, navigationRef, resetAndNavigate, resetToDeepLink } from "../../../utils/navigationUtils";
-import { parseDeepLinkUrl } from "../../../navigation/linking";
+import { resolveDeepLinkUrl } from "../../../navigation/linking";
 import { useStyles } from "./styles";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import { selectIsAuthenticated } from "../../../features/auth/selectors";
@@ -105,7 +105,7 @@ const SplashScreen = () => {
           }
 
           const initialUrl = await Linking.getInitialURL();
-          const target = parseDeepLinkUrl(initialUrl);
+          const target = await resolveDeepLinkUrl(initialUrl);
           if (target) {
             resetToDeepLink(target.name, target.params);
             return;

@@ -21,6 +21,7 @@ import AccountInfo from '../screens/applications/profile/tabs/accountinfo';
 import CompanyInfo from '../screens/applications/profile/tabs/companyinfo';
 import Users from '../screens/applications/profile/tabs/users';
 import BrandingScreen from '../screens/applications/profile/tabs/branding';
+import linking, { resolveDeepLinkUrl } from './linking'
 import linking, { parseDeepLinkUrl } from './linking'
 import OrgnizationalSwitch from '../screens/auth/orgnizationalswitch'
 import { useTheme } from '../hooks/useTheme'
@@ -81,10 +82,10 @@ const Navigation: FC = () => {
   }, [isAuthenticated, dispatch]);
 
   useEffect(() => {
-    const handleIncomingUrl = (url: string | null) => {
+    const handleIncomingUrl = async (url: string | null) => {
       if (!url) return;
       console.log('Incoming deep link URL:', url);
-      const target = parseDeepLinkUrl(url);
+      const target = await resolveDeepLinkUrl(url);
       if (target && isAuthenticated) {
         navigate(target.name, target.params);
       }

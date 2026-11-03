@@ -1,7 +1,53 @@
+import { applicationsApi } from '../features/applications/api';
+
 export interface DeepLinkTarget {
   name: 'JobDetailScreen' | 'ApplicantDetails';
   params: Record<string, any>;
 }
+
+/**
+ * Extracts the code from a short applicant profile link: /profile/<shortCode>
+ */
+const getProfileShortCode = (url: string): string | null => {
+  const pathPart = url
+    .trim()
+    .replace(/^(candidhr:\/\/|https?:\/\/[^/]+)/i, '')
+    .replace(/^\/+/, '');
+  const match = pathPart.match(/^profile\/([^/?#]+)/i);
+  return match ? decodeURIComponent(match[1]) : null;
+};
+
+/**
+ * Like parseDeepLinkUrl, but also resolves short profile links (/profile/<shortCode>)
+ * to the applicant profile via the short-links API.
+ */
+export const resolveDeepLinkUrl = async (
+  url: string | null | undefined
+): Promise<DeepLinkTarget | null> => {
+  if (!url) return null;
+
+  const shortCode = getProfileShortCode(url);
+  if (!shortCode) return parseDeepLinkUrl(url);
+
+  // Short codes are scoped to the org that owns the link's domain
+  const linkOrigin = url.trim().match(/^https?:\/\/[^/?#]+/i)?.[0];
+  if (!linkOrigin) return null;
+
+  try {
+    const { application_id } = await applicationsApi.resolveShortLink(shortCode, linkOrigin);
+    if (!application_id) return null;
+    return {
+      name: 'ApplicantDetails',
+      params: {
+        applicantId: application_id,
+        application_id,
+        job_id: '',
+      },
+    };
+  } catch {
+    return null;
+  }
+};
 
 /**
  * Parses deep link URLs (both custom scheme candidhr:// and https:// web URLs)
