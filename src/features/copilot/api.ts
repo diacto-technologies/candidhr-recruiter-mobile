@@ -3,8 +3,10 @@ import { API_ENDPOINTS } from '../../api/endpoints';
 import {
   CopilotSessionsResponse,
   CopilotSessionDetailResponse,
+  CopilotSessionItem,
   CopilotSuggestionsResponse,
   CopilotChatStreamPayload,
+  CopilotRenameSessionPayload,
   CopilotStreamEvent,
 } from './types';
 import { createSseParser } from './sseParser';
@@ -21,6 +23,27 @@ export const copilotApi = {
       API_ENDPOINTS.COPILOT.SESSION_DETAIL(sessionId)
     )) as CopilotSessionDetailResponse;
     console.log('[copilotApi.getSessionDetail] Response:', res);
+    return res;
+  },
+
+  renameSession: async (payload: CopilotRenameSessionPayload): Promise<CopilotSessionItem> => {
+    const res = (await apiClient.patch(
+      API_ENDPOINTS.COPILOT.SESSION_DETAIL(payload.id),
+      { id: payload.id, title: payload.title }
+    )) as CopilotSessionItem;
+    console.log('[copilotApi.renameSession] Response:', res);
+    return res;
+  },
+
+  deleteSession: async (sessionId: string): Promise<unknown> => {
+    const res = await apiClient.delete(API_ENDPOINTS.COPILOT.SESSION_DETAIL(sessionId));
+    console.log('[copilotApi.deleteSession] Response:', res);
+    return res;
+  },
+
+  clearAllSessions: async (): Promise<{ deleted: number }> => {
+    const res = (await apiClient.delete(API_ENDPOINTS.COPILOT.SESSIONS)) as { deleted: number };
+    console.log('[copilotApi.clearAllSessions] Response:', res);
     return res;
   },
 

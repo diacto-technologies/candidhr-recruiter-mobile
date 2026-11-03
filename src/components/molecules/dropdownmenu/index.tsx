@@ -62,35 +62,37 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
             <View>{renderContent()}</View>
           ) : (
             items.map((item, index) => (
-              <Pressable
-                key={index}
-                style={[dropdownMenuStyles.dropdownItem, itemStyle]} // external item style
-                onPress={() => {
-                  item.onPress();
-                  if (item.closeOnPress !== false) {
-                    onClose();
-                  }
-                }}
-              >
-                <SvgXml
-                  xml={
-                    (item.iconColor ?? iconColor)
-                      ? applySvgColor(item.icon, item.iconColor ?? iconColor!)
-                      : item.icon
-                  }
-                  style={[dropdownMenuStyles.dropdownItemIcon, iconStyle]} // external icon style
-                  width={iconWidth}
-                  height={iconHight}
-                />
-
-                <Typography
-                  variant="semiBoldTxtsm"
-                  color={colors.gray[700]}
-                  style={textStyle} // external text style
+              <React.Fragment key={index}>
+                {item.showDividerAbove && <View style={dropdownMenuStyles.divider} />}
+                <Pressable
+                  style={[dropdownMenuStyles.dropdownItem, itemStyle]} // external item style
+                  onPress={() => {
+                    item.onPress();
+                    if (item.closeOnPress !== false) {
+                      onClose();
+                    }
+                  }}
                 >
-                  {item.label}
-                </Typography>
-              </Pressable>
+                  <SvgXml
+                    xml={
+                      (item.iconColor ?? iconColor)
+                        ? applySvgColor(item.icon, item.iconColor ?? iconColor!)
+                        : item.icon
+                    }
+                    style={[dropdownMenuStyles.dropdownItemIcon, iconStyle]} // external icon style
+                    width={iconWidth}
+                    height={iconHight}
+                  />
+
+                  <Typography
+                    variant="semiBoldTxtsm"
+                    color={item.textColor ?? colors.gray[700]}
+                    style={textStyle} // external text style
+                  >
+                    {item.label}
+                  </Typography>
+                </Pressable>
+              </React.Fragment>
             ))
           )}
         </Pressable>
@@ -99,4 +101,5 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
   );
 };
 
+export type { DropdownMenuItem, DropdownMenuProps } from './dropdownmenu.d';
 export default DropdownMenu;

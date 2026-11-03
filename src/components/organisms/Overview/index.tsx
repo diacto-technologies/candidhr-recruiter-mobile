@@ -1,5 +1,5 @@
-import React from "react";
-import { View, StyleSheet } from "react-native";
+import React, { useState } from "react";
+import { View, StyleSheet, Pressable } from "react-native";
 import { useAppSelector } from "../../../hooks/useAppSelector";
 import { selectApplicationsDetailLoading, selectSelectedApplication } from "../../../features/applications/selectors";
 import Shimmer from "../../../components/atoms/shimmer";
@@ -13,10 +13,14 @@ import { colors } from "../../../theme/colors";
 import { walletIcon } from "../../../assets/svg/wallet";
 import { currencyRuppeIcon } from "../../../assets/svg/currencyruppe";
 import { calenderIcon } from "../../../assets/svg/calender";
+import { lockIcon } from "../../../assets/svg/lock";
+import { eyeVisibleIcon } from "../../../assets/svg/eyevisible";
+import { eyeHiddenIcon } from "../../../assets/svg/eyehiddenicon";
 import Icon from "../../../components/atoms/vectoricon";
 import { useStyles } from "./styles";
 import { ApplicationContext, OverviewApplication } from "./overView";
 import { PERMISSIONS } from "../../../utils/permission.constants";
+import { usePermission } from "../../../hooks/usePermission";
 import PermissionGate from "../../molecules/permissiongate";
 const fallbackContext: ApplicationContext = {};
 
@@ -46,6 +50,10 @@ const OverviewCard = () => {
   const styles = useStyles();
   const application = useAppSelector(selectSelectedApplication) as OverviewApplication | null;
   const loading = useAppSelector(selectApplicationsDetailLoading);
+  const { can } = usePermission();
+  const [isCurrentSalaryVisible, setIsCurrentSalaryVisible] = useState(false);
+  const [isExpectedSalaryVisible, setIsExpectedSalaryVisible] = useState(false);
+
   if (loading) {
     return <OverviewCardShimmer />;
   }
@@ -77,11 +85,24 @@ const OverviewCard = () => {
 
   const currentCtcNum = Number(data.currentCtc) || 0;
   const expectedCtcNum = Number(data.expectedCtc) || 0;
+  const noticePeriodNum = Number(data.noticePeriodDays) || 0;
+  const relevantExpNum = Number(data.relevantExpMonths) || 0;
+
   const hasBothCtc = currentCtcNum > 0 && expectedCtcNum > 0;
   const percentageChange = hasBothCtc
     ? Math.round((Math.abs(expectedCtcNum - currentCtcNum) / currentCtcNum) * 100)
     : null;
   const isPositive = expectedCtcNum >= currentCtcNum;
+
+  const hasCurrentSalaryPermission = can(PERMISSIONS.View_Current_Salary);
+  const hasExpectedSalaryPermission = can(PERMISSIONS.View_Expected_Salary);
+
+  const showPercentageBadge =
+    hasExpectedSalaryPermission &&
+    isExpectedSalaryVisible &&
+    hasCurrentSalaryPermission &&
+    isCurrentSalaryVisible &&
+    percentageChange !== null;
 
   return (
     <View style={styles.card}>
@@ -114,65 +135,129 @@ const OverviewCard = () => {
       <View style={styles.divider} />
 
       {/* Current Salary */}
-      <PermissionGate permission={PERMISSIONS.View_Current_Salary}>
-        <View style={styles.row}>
-          <View style={styles.iconBox}>
-            <SvgXml xml={walletIcon} height={20} width={20} />
-          </View>
-          <View style={styles.textBox}>
-            <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>
-              ₹ {Number(data?.currentCtc || 0).toLocaleString('en-IN')}
-            </Typography>
-            <Typography variant="regularTxtsm" color={colors.gray[600]}>
-              Current salary
-            </Typography>
-          </View>
+      <View style={styles.row}>
+        <View style={styles.iconBox}>
+          <SvgXml xml={walletIcon} height={20} width={20} />
         </View>
-      </PermissionGate>
+        <View style={styles.textBox}>
+          <Typography
+            variant="semiBoldTxtsm"
+            color={colors.gray[800]}
+            style={
+              !hasCurrentSalaryPermission || (currentCtcNum > 0 && !isCurrentSalaryVisible)
+                ? styles.maskedText
+                : undefined
+            }
+          >
+            {!hasCurrentSalaryPermission
+              ? '* * * * * * *'
+              : currentCtcNum > 0
+              ? isCurrentSalaryVisible
+                ? `₹ ${currentCtcNum.toLocaleString('en-IN')}`
+                : '* * * * * * *'
+              : 'Not provided'}
+          </Typography>
+          <Typography variant="regularTxtsm" color={colors.gray[600]}>
+            Current salary
+          </Typography>
+        </View>
+
+        {!hasCurrentSalaryPermission ? (
+          <View style={styles.actionIconBox}>
+            <SvgXml xml={lockIcon} width={18} height={18} />
+          </View>
+        ) : currentCtcNum > 0 ? (
+          <Pressable
+            onPress={() => setIsCurrentSalaryVisible((prev) => !prev)}
+            hitSlop={8}
+            style={styles.actionIconBox}
+            accessibilityRole="button"
+            accessibilityLabel={isCurrentSalaryVisible ? 'Hide current salary' : 'Show current salary'}
+          >
+            <SvgXml
+              xml={isCurrentSalaryVisible ? eyeVisibleIcon : eyeHiddenIcon}
+              width={18}
+              height={18}
+            />
+          </Pressable>
+        ) : null}
+      </View>
 
       {/* Expected Salary */}
-      <PermissionGate permission={PERMISSIONS.View_Expected_Salary}>
-        <View style={styles.row}>
-          <View style={styles.iconBox}>
-            <SvgXml xml={currencyRuppeIcon} height={20} width={20} />
-          </View>
-
-          <View style={styles.textBox}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>
-                ₹ {Number(data.expectedCtc || 0).toLocaleString('en-IN')}
-              </Typography>
-              {percentageChange !== null && (
-                <View
-                  style={[
-                    styles.percentageBadge,
-                    {
-                      backgroundColor: isPositive ? colors.success[50] : colors.error[50],
-                      borderColor: isPositive ? colors.success[200] : colors.error[200],
-                    },
-                  ]}
-                >
-                  <Icon
-                    name={isPositive ? "trending-up" : "trending-down"}
-                    iconFamily="Feather"
-                    size={12}
-                    color={isPositive ? colors.success[700] : colors.error[700]}
-                  />
-                  <Typography
-                    variant="mediumTxtxs"
-                    color={isPositive ? colors.success[700] : colors.error[700]}
-                  >
-                    {percentageChange}%
-                  </Typography>
-                </View>
-              )}
-            </View>
-            <Typography variant="regularTxtsm" color={colors.gray[600]}>
-              Expected salary
-            </Typography>
-          </View>
+      <View style={styles.row}>
+        <View style={styles.iconBox}>
+          <SvgXml xml={currencyRuppeIcon} height={20} width={20} />
         </View>
-      </PermissionGate>
+
+        <View style={styles.textBox}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Typography
+              variant="semiBoldTxtsm"
+              color={colors.gray[800]}
+              style={
+                !hasExpectedSalaryPermission || (expectedCtcNum > 0 && !isExpectedSalaryVisible)
+                  ? styles.maskedText
+                  : undefined
+              }
+            >
+              {!hasExpectedSalaryPermission
+                ? '* * * * * * *'
+                : expectedCtcNum > 0
+                ? isExpectedSalaryVisible
+                  ? `₹ ${expectedCtcNum.toLocaleString('en-IN')}`
+                  : '* * * * * * *'
+                : 'Not provided'}
+            </Typography>
+            {showPercentageBadge && (
+              <View
+                style={[
+                  styles.percentageBadge,
+                  {
+                    backgroundColor: isPositive ? colors.success[50] : colors.error[50],
+                    borderColor: isPositive ? colors.success[200] : colors.error[200],
+                  },
+                ]}
+              >
+                <Icon
+                  name={isPositive ? "trending-up" : "trending-down"}
+                  iconFamily="Feather"
+                  size={12}
+                  color={isPositive ? colors.success[700] : colors.error[700]}
+                />
+                <Typography
+                  variant="mediumTxtxs"
+                  color={isPositive ? colors.success[700] : colors.error[700]}
+                >
+                  {percentageChange}%
+                </Typography>
+              </View>
+            )}
+          </View>
+          <Typography variant="regularTxtsm" color={colors.gray[600]}>
+            Expected salary
+          </Typography>
+        </View>
+
+        {!hasExpectedSalaryPermission ? (
+          <View style={styles.actionIconBox}>
+            <SvgXml xml={lockIcon} width={18} height={18} />
+          </View>
+        ) : expectedCtcNum > 0 ? (
+          <Pressable
+            onPress={() => setIsExpectedSalaryVisible((prev) => !prev)}
+            hitSlop={8}
+            style={styles.actionIconBox}
+            accessibilityRole="button"
+            accessibilityLabel={isExpectedSalaryVisible ? 'Hide expected salary' : 'Show expected salary'}
+          >
+            <SvgXml
+              xml={isExpectedSalaryVisible ? eyeVisibleIcon : eyeHiddenIcon}
+              width={18}
+              height={18}
+            />
+          </Pressable>
+        ) : null}
+      </View>
       {/* Notice Period */}
 
       <View style={styles.row}>
@@ -182,7 +267,9 @@ const OverviewCard = () => {
 
         <View style={styles.textBox}>
           <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>
-            {data.noticePeriodDays || 0} {data.noticePeriodDays === 1 ? "day" : "days"}
+            {noticePeriodNum > 0
+              ? `${noticePeriodNum} ${noticePeriodNum === 1 ? 'day' : 'days'}`
+              : 'Not provided'}
           </Typography>
           <Typography variant="regularTxtsm" color={colors.gray[600]}>
             Notice period
@@ -196,7 +283,9 @@ const OverviewCard = () => {
 
         <View style={styles.textBox}>
           <Typography variant="semiBoldTxtsm" color={colors.gray[800]}>
-            {data.relevantExpMonths || 0} months
+            {relevantExpNum > 0
+              ? `${relevantExpNum} ${relevantExpNum === 1 ? 'month' : 'months'}`
+              : 'Not provided'}
           </Typography>
           <Typography variant="regularTxtsm" color={colors.gray[600]}>
             Relevant Experience

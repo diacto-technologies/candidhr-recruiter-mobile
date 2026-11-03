@@ -1,5 +1,5 @@
 import { COPILOT_ACTION_TYPES } from './constants';
-import { CopilotChatStreamPayload } from './types';
+import { CopilotChatStreamPayload, CopilotRenameSessionPayload } from './types';
 
 export const getCopilotSessionsRequestAction = () => ({
   type: COPILOT_ACTION_TYPES.GET_SESSIONS_REQUEST,
@@ -25,6 +25,20 @@ export const chatStreamResetAction = () => ({
 export const getCopilotSessionDetailRequestAction = (sessionId: string) => ({
   type: COPILOT_ACTION_TYPES.GET_SESSION_DETAIL_REQUEST,
   payload: { sessionId },
+});
+
+export const renameSessionRequestAction = (payload: CopilotRenameSessionPayload) => ({
+  type: COPILOT_ACTION_TYPES.RENAME_SESSION_REQUEST,
+  payload,
+});
+
+export const deleteCopilotSessionRequestAction = (sessionId: string) => ({
+  type: COPILOT_ACTION_TYPES.DELETE_SESSION_REQUEST,
+  payload: { sessionId },
+});
+
+export const clearAllSessionsRequestAction = () => ({
+  type: COPILOT_ACTION_TYPES.CLEAR_ALL_SESSIONS_REQUEST,
 });
 
 export const clearCopilotSessionDetailAction = () => ({

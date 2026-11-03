@@ -55,3 +55,11 @@ export const getStatusColor = (status?: string) => {
       return colors.gray[500];
   }
 };
+
+export const formatStatus = (str?: string) => {
+  if (!str) return '_';
+  return str
+    .split(/[_\s]+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};

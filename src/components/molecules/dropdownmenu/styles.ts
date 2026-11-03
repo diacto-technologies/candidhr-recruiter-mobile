@@ -29,4 +29,9 @@ export const dropdownMenuStyles = StyleSheet.create({
   customContent: {
     padding: 12,
   },
+  divider: {
+    height: 1,
+    backgroundColor: colors.gray[200],
+    marginVertical: 4,
+  },
 });
