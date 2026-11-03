@@ -5,6 +5,10 @@ export interface CopilotSessionItem {
   name?: string;
   created_at?: string;
   updated_at?: string;
+  last_active_at?: string;
+  message_count?: number;
+  is_pinned?: boolean;
+  pinned?: boolean;
   [key: string]: unknown;
 }
 
@@ -22,6 +26,15 @@ export interface CopilotSuggestionsResponse {
 export interface CopilotChatStreamPayload {
   query: string;
   session_id?: string;
+}
+
+export interface CopilotRenameSessionPayload {
+  id: string;
+  title: string;
+}
+
+export interface CopilotDeleteSessionPayload {
+  sessionId: string;
 }
 
 export interface CopilotCandidateResult {

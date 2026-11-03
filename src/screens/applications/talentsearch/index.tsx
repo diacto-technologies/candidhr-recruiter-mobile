@@ -22,6 +22,9 @@ import {
   chatStreamRequestAction,
   chatStreamResetAction,
   getCopilotSessionDetailRequestAction,
+  renameSessionRequestAction,
+  deleteCopilotSessionRequestAction,
+  clearAllSessionsRequestAction,
   clearCopilotSessionDetailAction,
 } from '../../../features/copilot/actions';
 import {
@@ -31,6 +34,7 @@ import {
   selectCopilotStreamStatusMessage,
   selectCopilotStreamResult,
   selectCopilotStreamCandidates,
+  selectCopilotStreamSessionId,
   selectCopilotStreamError,
   selectCopilotCurrentSession,
   selectCopilotCurrentSessionLoading,
@@ -49,6 +53,8 @@ import {
   plusIconSvg,
 } from '../applicant/components/talentSearchIcons';
 import TalentSearchDrawer from '../applicant/components/TalentSearchDrawer';
+import { getStatusColor, formatStatus } from '../../../components/organisms/applicantlist/helper';
+import { useRNSafeAreaInsets } from '../../../hooks/useRNSafeAreaInsets';
 import { useStyles } from './styles';
 
 interface SuggestionCardItem {
@@ -61,6 +67,7 @@ const TalentSearchScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const { brandColors, primaryColor } = useBrandTheme();
   const styles = useStyles(brandColors);
+  const { insetsTop } = useRNSafeAreaInsets();
 
   const [query, setQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
@@ -74,6 +81,7 @@ const TalentSearchScreen: React.FC = () => {
   const streamStatusMessage = useAppSelector(selectCopilotStreamStatusMessage);
   const streamResult = useAppSelector(selectCopilotStreamResult);
   const candidates = useAppSelector(selectCopilotStreamCandidates);
+  const streamSessionId = useAppSelector(selectCopilotStreamSessionId);
   const streamError = useAppSelector(selectCopilotStreamError);
 
   const currentSession = useAppSelector(selectCopilotCurrentSession);
@@ -130,7 +138,9 @@ const TalentSearchScreen: React.FC = () => {
       if (!trimmed) return;
 
       const activeSessionId =
-        sessionId || (currentSession ? String(currentSession.id) : undefined);
+        sessionId ||
+        (currentSession ? String(currentSession.id) : undefined) ||
+        (streamSessionId ? String(streamSessionId) : undefined);
 
       setSubmittedQuery(trimmed);
       setQuery('');
@@ -139,7 +149,7 @@ const TalentSearchScreen: React.FC = () => {
       // Trigger chat stream saga
       dispatch(chatStreamRequestAction({ query: trimmed, session_id: activeSessionId }));
     },
-    [currentSession, dispatch]
+    [currentSession, streamSessionId, dispatch]
   );
 
   // New Search reset
@@ -183,13 +193,92 @@ const TalentSearchScreen: React.FC = () => {
     [apiSessions, dispatch, handleExecuteSearch]
   );
 
-  const handleRemoveHistoryItem = useCallback((itemText: string) => {
-    setHistoryList((prev) => prev.filter((item) => item !== itemText));
-  }, []);
+  const handleRemoveHistoryItem = useCallback(
+    (itemText: string, sessionId?: string) => {
+      console.log('[handleRemoveHistoryItem] Removing session:', { itemText, sessionId });
+      let targetId = sessionId;
+
+      if (!targetId && itemText) {
+        const matched = apiSessions.find(
+          (s) =>
+            (s.title || s.query || s.name || '').trim().toLowerCase() ===
+            itemText.trim().toLowerCase()
+        );
+        if (matched) {
+          targetId = String(matched.id);
+        }
+      }
+
+      if (!targetId && currentSession?.id) {
+        targetId = String(currentSession.id);
+      }
+
+      if (targetId) {
+        console.log('[handleRemoveHistoryItem] Dispatching delete session action for ID:', targetId);
+        dispatch(deleteCopilotSessionRequestAction(targetId));
+      } else {
+        console.warn('[handleRemoveHistoryItem] No sessionId could be resolved for deletion');
+      }
+
+      setHistoryList((prev) => prev.filter((item) => item !== itemText));
+      if (
+        (targetId && currentSession && String(currentSession.id) === String(targetId)) ||
+        (targetId && streamSessionId && String(streamSessionId) === String(targetId))
+      ) {
+        handleNewSearch();
+      }
+    },
+    [apiSessions, currentSession, streamSessionId, dispatch, handleNewSearch]
+  );
+
+  const handleRenameSession = useCallback(
+    (newTitle: string, sessionId?: string, oldTitle?: string) => {
+      console.log('[handleRenameSession] Renaming chat:', { newTitle, sessionId, oldTitle });
+      let targetId = sessionId;
+
+      if (!targetId && oldTitle) {
+        const found = apiSessions.find(
+          (s) =>
+            (s.title || s.query || s.name || '').trim().toLowerCase() ===
+            oldTitle.trim().toLowerCase()
+        );
+        if (found) {
+          targetId = String(found.id);
+        }
+      }
+
+      if (!targetId && currentSession?.id) {
+        targetId = String(currentSession.id);
+      }
+
+      if (!targetId && streamSessionId) {
+        targetId = String(streamSessionId);
+      }
+
+      if (targetId) {
+        console.log('[handleRenameSession] Dispatching rename action with targetId:', targetId);
+        dispatch(renameSessionRequestAction({ id: targetId, title: newTitle }));
+      } else {
+        console.warn('[handleRenameSession] No sessionId could be resolved for rename');
+      }
+
+      setHistoryList((prev) =>
+        prev.map((item) => (oldTitle && item === oldTitle ? newTitle : item))
+      );
+    },
+    [dispatch, apiSessions, currentSession, streamSessionId]
+  );
+
+  const handleTogglePinSession = useCallback((_sessionId?: string, _isPinned?: boolean) => {
+    // Call GET /api/v1/copilot/sessions/ when pin and unpin is done
+    dispatch(getCopilotSessionsRequestAction());
+  }, [dispatch]);
 
   const handleClearAllHistory = useCallback(() => {
+    dispatch(clearAllSessionsRequestAction());
     setHistoryList([]);
-  }, []);
+    handleNewSearch();
+  }, [dispatch, handleNewSearch]);
 
   const handleSelectCandidate = useCallback((candidate: CopilotCandidateResult) => {
     if (candidate.application_id) {
@@ -290,7 +379,7 @@ const TalentSearchScreen: React.FC = () => {
 
                   return (
                     <Pressable
-                      key={cand.candidate_id || `${keyPrefix}-cand-${idx}`}
+                      key={`${keyPrefix}-cand-${cand.application_id || cand.candidate_id || 'item'}-${idx}`}
                       style={[styles.tableRow, isAlt && styles.tableRowAlt]}
                       onPress={() => handleSelectCandidate(cand)}
                       accessibilityRole="button"
@@ -305,7 +394,7 @@ const TalentSearchScreen: React.FC = () => {
                           />
                         ) : (
                           <View style={styles.avatarCircle}>
-                            <Typography variant="semiBoldTxtxs" color={activeBrandColor}>
+                            <Typography variant="semiBoldTxtxs" color={brandColors[700] || activeBrandColor}>
                               {initial}
                             </Typography>
                           </View>
@@ -355,14 +444,23 @@ const TalentSearchScreen: React.FC = () => {
 
                       {/* SUMMARY */}
                       <View style={styles.colSummary}>
-                        <Typography variant="regularTxtsm" color={colors.gray[500]}>
+                        <Typography
+                          variant="regularTxtsm"
+                          color={colors.gray[500]}
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                        >
                           {cand.ai_summary || '—'}
                         </Typography>
                       </View>
 
                       {/* RESUME */}
                       <View style={styles.colResume}>
-                        <Typography variant="regularTxtsm" color={colors.gray[500]}>
+                        <Typography
+                          variant="regularTxtsm"
+                          color={colors.gray[500]}
+                          numberOfLines={1}
+                        >
                           {cand.resume_score ? String(cand.resume_score) : '—'}
                         </Typography>
                       </View>
@@ -370,9 +468,14 @@ const TalentSearchScreen: React.FC = () => {
                       {/* STATUS */}
                       <View style={styles.colStatus}>
                         <View style={styles.statusBadge}>
-                          <View style={styles.statusDot} />
+                          <View
+                            style={[
+                              styles.statusDot,
+                              { backgroundColor: getStatusColor(cand.application_status || 'applied') },
+                            ]}
+                          />
                           <Typography variant="mediumTxtxs" color={colors.gray[700]}>
-                            {cand.application_status || 'under review'}
+                            {formatStatus(cand.application_status || 'applied')}
                           </Typography>
                         </View>
                       </View>
@@ -431,23 +534,20 @@ const TalentSearchScreen: React.FC = () => {
             </Typography>
           </View>
 
-          {isSearchActive ? (
-            <Pressable
-              onPress={handleNewSearch}
-              style={styles.headerIconButton}
-              accessibilityRole="button"
-              accessibilityLabel="Start a new search"
-            >
-              <SvgXml xml={plusIconSvg(activeBrandColor)} width={20} height={20} />
-            </Pressable>
-          ) : (
-            <View style={styles.headerIconButton} />
-          )}
+          <Pressable
+            onPress={handleNewSearch}
+            style={styles.headerIconButton}
+            accessibilityRole="button"
+            accessibilityLabel="Start a new search"
+          >
+            <SvgXml xml={plusIconSvg(activeBrandColor)} width={20} height={20} />
+          </Pressable>
         </View>
 
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.contentScroll}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? insetsTop : 0}
+          style={styles.keyboardAvoidingView}
         >
           {/* Scrollable Content */}
           <ScrollView
@@ -455,6 +555,7 @@ const TalentSearchScreen: React.FC = () => {
             contentContainerStyle={styles.contentScrollContainer}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
           >
             {isSearchActive ? (
               // Active Search Results / Selected Session View
@@ -489,7 +590,7 @@ const TalentSearchScreen: React.FC = () => {
                       if (msg.role === 'user') {
                         return (
                           <View
-                            key={msg.id || `user-msg-${index}`}
+                            key={msg.id ? `user-msg-${msg.id}-${index}` : `user-msg-${index}`}
                             style={styles.userBubbleContainer}
                           >
                             <View style={styles.userBubble}>
@@ -504,7 +605,7 @@ const TalentSearchScreen: React.FC = () => {
                       if (msg.role === 'assistant') {
                         const assistantCandidates = msg.results || [];
                         return (
-                          <View key={msg.id || `asst-msg-${index}`}>
+                          <View key={msg.id ? `asst-msg-${msg.id}-${index}` : `asst-msg-${index}`}>
                             {renderCandidateTableCard(
                               assistantCandidates,
                               msg.content,
@@ -520,11 +621,13 @@ const TalentSearchScreen: React.FC = () => {
                   </View>
                 ) : null}
 
-                {/* Active live stream section (renders user query bubble, progressive status, and results) */}
-                {(submittedQuery || isStreaming || candidates.length > 0 || streamError) ? (
+                {/* Active live stream section (renders in-flight user prompt and progressive status) */}
+                {isStreaming || streamError ? (
                   <View>
-                    {/* User Prompt Message Bubble (Top Right) */}
-                    {submittedQuery ? (
+                    {/* User Prompt Message Bubble (Top Right) - only shown while streaming if not yet in currentSession */}
+                    {submittedQuery &&
+                    (!currentSession?.messages?.length ||
+                      currentSession.messages[currentSession.messages.length - 1].content !== submittedQuery) ? (
                       <View style={styles.userBubbleContainer}>
                         <View style={styles.userBubble}>
                           <Typography variant="semiBoldTxtsm" color={colors.gray[900]}>
@@ -549,26 +652,37 @@ const TalentSearchScreen: React.FC = () => {
                     ) : null}
 
                     {/* Error Banner */}
-                    {streamError && !isStreaming ? (
+                    {streamError ? (
                       <View style={[styles.streamingStatusBox, { borderColor: colors.error[300] }]}>
                         <Typography variant="regularTxtsm" color={colors.error[600]}>
                           {streamError}
                         </Typography>
                       </View>
                     ) : null}
-
-                    {/* Candidates Table / Results Card */}
-                    {candidates.length > 0
-                      ? renderCandidateTableCard(
-                          candidates,
-                          streamResult?.message ||
-                            `Showing 1–${candidates.length} of ${streamResult?.result_total ?? candidates.length} candidates.`,
-                          streamResult?.result_total ?? candidates.length,
-                          'stream'
-                        )
-                      : null}
                   </View>
-                ) : null}
+                ) : (
+                  /* Fallback if currentSession is not loaded yet, but live stream produced candidates */
+                  (!currentSession?.messages || currentSession.messages.length === 0) && candidates.length > 0 ? (
+                    <View>
+                      {submittedQuery ? (
+                        <View style={styles.userBubbleContainer}>
+                          <View style={styles.userBubble}>
+                            <Typography variant="semiBoldTxtsm" color={colors.gray[900]}>
+                              {submittedQuery}
+                            </Typography>
+                          </View>
+                        </View>
+                      ) : null}
+                      {renderCandidateTableCard(
+                        candidates,
+                        streamResult?.message ||
+                          `Showing 1–${candidates.length} of ${streamResult?.result_total ?? candidates.length} candidates.`,
+                        streamResult?.result_total ?? candidates.length,
+                        'stream'
+                      )}
+                    </View>
+                  ) : null
+                )}
               </View>
             ) : (
               // Initial State: Hero + "Try Asking" Cards from API
@@ -646,7 +760,12 @@ const TalentSearchScreen: React.FC = () => {
               <Pressable
                 style={[
                   styles.sendButton,
-                  { backgroundColor: activeBrandColor, opacity: query.trim().length > 0 ? 1 : 0.65 },
+                  {
+                    backgroundColor:
+                      query.trim().length > 0
+                        ? activeBrandColor
+                        : brandColors[300] || colors.brand[300],
+                  },
                 ]}
                 onPress={() => handleExecuteSearch(query)}
                 accessibilityRole="button"
@@ -668,6 +787,8 @@ const TalentSearchScreen: React.FC = () => {
           onRemoveHistoryItem={handleRemoveHistoryItem}
           onClearAllHistory={handleClearAllHistory}
           onNewSearch={handleNewSearch}
+          onRenameSession={handleRenameSession}
+          onTogglePinSession={handleTogglePinSession}
         />
       </View>
     </CustomSafeAreaView>

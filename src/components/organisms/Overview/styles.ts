@@ -43,6 +43,15 @@ export const useStyles = () => {
             flex: 1,
             marginLeft: 14,
         },
+        actionIconBox: {
+            padding: 4,
+            marginLeft: 8,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        maskedText: {
+            letterSpacing: 2,
+        },
 
         divider: {
             height: 1,

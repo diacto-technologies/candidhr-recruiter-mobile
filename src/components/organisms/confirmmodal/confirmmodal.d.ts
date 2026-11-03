@@ -23,5 +23,8 @@ export interface IConfirmModal {
   /** Optional: override icons */
   headerIconName?: string; // Ionicons name
   confirmIconName?: string; // Ionicons name
+  customHeaderIcon?: ReactNode;
+  headerIconBgColor?: string;
+  reverseButtonOrder?: boolean;
 }
 

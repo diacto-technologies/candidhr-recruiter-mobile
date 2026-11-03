@@ -36,6 +36,9 @@ export const useStyles = (brandColors = colors.brand) => {
     },
 
     // Content Scroll
+    keyboardAvoidingView: {
+      flex: 1,
+    },
     contentScroll: {
       flex: 1,
     },
@@ -187,13 +190,13 @@ export const useStyles = (brandColors = colors.brand) => {
       marginBottom: 20,
     },
     userBubble: {
-      backgroundColor: brandColors[50] || '#F4F3FF',
+      backgroundColor: brandColors[50] || colors.brand[50],
       paddingHorizontal: 16,
       paddingVertical: 10,
       borderRadius: 16,
       maxWidth: '85%',
       borderWidth: 1,
-      borderColor: brandColors[100] || '#E0E7FF',
+      borderColor: brandColors[200] || colors.brand[200],
     },
 
     // Streaming Status Indicator
@@ -222,10 +225,12 @@ export const useStyles = (brandColors = colors.brand) => {
       paddingHorizontal: 4,
     },
     searchIconBadge: {
-      width: 30,
-      height: 30,
-      borderRadius: 15,
-      backgroundColor: brandColors[50] || '#F4F3FF',
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: brandColors[50] || colors.brand[50],
+      borderWidth: 1,
+      borderColor: brandColors[200] || colors.brand[200],
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -265,7 +270,7 @@ export const useStyles = (brandColors = colors.brand) => {
       backgroundColor: colors.base.white,
     },
     tableRowAlt: {
-      backgroundColor: '#F9F8FF',
+      backgroundColor: brandColors[25] || colors.brand[25],
     },
 
     // Table Columns
@@ -290,7 +295,7 @@ export const useStyles = (brandColors = colors.brand) => {
       paddingRight: 10,
     },
     colSummary: {
-      width: 100,
+      width: 180,
       paddingRight: 10,
     },
     colResume: {
@@ -306,7 +311,9 @@ export const useStyles = (brandColors = colors.brand) => {
       width: 34,
       height: 34,
       borderRadius: 17,
-      backgroundColor: brandColors[100] || '#E0E7FF',
+      backgroundColor: brandColors[100] || colors.brand[100],
+      borderWidth: 1,
+      borderColor: brandColors[200] || colors.brand[200],
       alignItems: 'center',
       justifyContent: 'center',
     },

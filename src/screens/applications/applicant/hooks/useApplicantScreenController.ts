@@ -175,12 +175,12 @@ export const useApplicantScreenController = () => {
   }, [dispatch, pagination.limit]);
 
   const threeDotMenuItems = useMemo(() => [
-    // {
-    //   name: 'Talent Search',
-    //   onPress: () => {
-    //     navigate('TalentSearchScreen');
-    //   },
-    // },
+    {
+      name: 'Talent Search',
+      onPress: () => {
+        navigate('TalentSearchScreen');
+      },
+    },
     {
       name: 'Export to CSV',
       onPress: () => {

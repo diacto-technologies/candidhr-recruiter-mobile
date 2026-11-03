@@ -48,3 +48,21 @@ export const pinIconSvg = (color: string = '#717680') => `<svg width="14" height
   <circle cx="12" cy="10" r="3"/>
 </svg>`;
 
+export const pencilEditIcon = (color: string = '#344054') => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+</svg>`;
+
+export const bookmarkPinIcon = (color: string = '#344054') => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+</svg>`;
+
+export const trashOutlineIcon = (color: string = '#F04438') => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <polyline points="3 6 5 6 21 6"/>
+  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+</svg>`;
+
+export const checkOutlineIcon = (color: string = '#F04438') => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+  <polyline points="20 6 9 17 4 12"/>
+</svg>`;
+
+

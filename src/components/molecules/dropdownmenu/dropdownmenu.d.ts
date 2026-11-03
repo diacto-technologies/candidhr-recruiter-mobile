@@ -7,6 +7,10 @@ export interface DropdownMenuItem {
   closeOnPress?: boolean;
   /** Optional icon color for this item (overrides iconColor from props) */
   iconColor?: string;
+  /** Optional text color for this item (e.g. red for destructive actions) */
+  textColor?: string;
+  /** Optional divider rendered above this item */
+  showDividerAbove?: boolean;
 }
 
 export interface DropdownMenuProps {
