@@ -22,6 +22,7 @@ import CompanyInfo from '../screens/applications/profile/tabs/companyinfo';
 import Users from '../screens/applications/profile/tabs/users';
 import BrandingScreen from '../screens/applications/profile/tabs/branding';
 import linking, { resolveDeepLinkUrl } from './linking'
+import linking, { parseDeepLinkUrl } from './linking'
 import OrgnizationalSwitch from '../screens/auth/orgnizationalswitch'
 import { useTheme } from '../hooks/useTheme'
 import { useBrandTheme } from '../hooks/useBrandTheme'
