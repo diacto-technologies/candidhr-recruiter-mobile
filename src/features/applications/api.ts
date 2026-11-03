@@ -1,4 +1,4 @@
-import { apiClient } from "../../api/client";
+import { apiClient, API_BASE_URL } from "../../api/client";
 import { API_ENDPOINTS } from "../../api/endpoints";
 import { CreateApplicationRequest, UpdateApplicationStatusRequest, Application, GetApplicationsParams, ApplicationsListResponse, ApplicationDetailResponse, GetApplicationResponsesParams, ApplicationResponsesApiResponse, ResumeScreeningApiResponse, ResumeScreeningReportApiResponse, AssessmentLogApiResponse, AssessmentReportApiResponse, AssessmentDetailedReportApiResponse, ScreeningAssessment, PersonalityScreeningResponse, PersonalityScreeningResponsesPayload, ApplicationStagesResponse, SessionReviewedResponse, ReasonCategory, ReasonListItem, UpdateStageStatusPayload, PerformanceReportResponse, AssessmentOptionsReportResponse, ExportAssessmentReportRequest, EmailTemplate, MustHaveSkillsResponse, ApplicationViewersResponse, ApplicationShortLinkResponse, AssignmentInviteOptionsResponse, AssignmentReviewReportResponse } from "./types";
 
@@ -440,6 +440,21 @@ export const applicationsApi = {
 
   getShortLink: async (id: string): Promise<ApplicationShortLinkResponse> => {
     const res = await apiClient.post(API_ENDPOINTS.APPLICATIONS.SHORT_LINK(id), {});
+    return res?.data ?? res;
+  },
+
+  /**
+   * Public endpoint. Short codes are scoped to the org that owns the link's domain,
+   * so `origin` must be the link's origin (e.g. https://hiring.diacto.com), not the
+   * logged-in org's origin that apiClient sends.
+   */
+  resolveShortLink: async (code: string, origin: string): Promise<{ application_id?: string }> => {
+    const response = await fetch(
+      `${API_BASE_URL}${API_ENDPOINTS.APPLICATIONS.RESOLVE_SHORT_LINK(code)}`,
+      { method: 'GET', headers: { 'Content-Type': 'application/json', Origin: origin } }
+    );
+    if (!response.ok) return {};
+    const res = await response.json();
     return res?.data ?? res;
   },
 

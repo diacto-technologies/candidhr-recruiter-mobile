@@ -61,6 +61,8 @@ export const API_ENDPOINTS = {
     PROFILE_PDF: (id: string) => `/applications/v1/${id}/profile/pdf/`,
     /** GET/POST short link for application profile */
     SHORT_LINK: (id: string) => `/applications/v1/${id}/short-link/`,
+    /** GET resolve a short profile link code (/profile/<code>) to its application */
+    RESOLVE_SHORT_LINK: (code: string) => `/short-links/${encodeURIComponent(code)}/`,
     CREATE: '/applications',
     UPDATE: (id: string) => `/applications/${id}`,
     DELETE: (id: string) => `/applications/v1/${id}/delete/`,
