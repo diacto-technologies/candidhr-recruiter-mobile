@@ -48,6 +48,7 @@ export default function VideoPlayerBox({
   fullscreen: externalFullscreen,
   resizeMode = "contain",
   showMuteButton = false,
+  poster,
 }: VideoPlayerBoxProps) {
   const videoRef = useRef<React.ElementRef<typeof Video>>(null);
   const insets = useSafeAreaInsets();
@@ -61,6 +62,27 @@ export default function VideoPlayerBox({
   const [currentRelativeTime, setCurrentRelativeTime] = useState(0);
   const [sliderWidth, setSliderWidth] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isBuffering, setIsBuffering] = useState(false);
+
+  const bufferConfig = useMemo(
+    () => ({
+      minBufferMs: 2500,
+      maxBufferMs: 5000,
+      bufferForPlaybackMs: 500,
+      bufferForPlaybackAfterRebufferMs: 1000,
+      cacheSizeMB: 200,
+    }),
+    []
+  );
+
+  const videoSource = useMemo(() => {
+    if (!source) return undefined;
+    return {
+      uri: source,
+      shouldCache: true,
+      bufferConfig,
+    };
+  }, [source, bufferConfig]);
 
   const isSlidingRef = useRef(false);
   const sliderRef = useRef<View>(null);
@@ -299,6 +321,7 @@ export default function VideoPlayerBox({
       onDurationLoaded?.(dur);
     }
     setLoading(false);
+    setIsBuffering(false);
 
     // Restore playback position ONLY when returning from fullscreen
     if (needRestoreRef.current && savedTimeRef.current > 0) {
@@ -331,6 +354,20 @@ export default function VideoPlayerBox({
 
   const onReadyForDisplay = () => {
     setLoading(false);
+    setIsBuffering(false);
+  };
+
+  const onBuffer = ({ isBuffering: buffering }: { isBuffering: boolean }) => {
+    setIsBuffering(buffering);
+    if (!buffering && loading) {
+      setLoading(false);
+    }
+  };
+
+  const onError = (error: any) => {
+    console.warn("VideoPlayerBox error:", error);
+    setLoading(false);
+    setIsBuffering(false);
   };
 
   const onSeek = (_data: OnSeekData) => {
@@ -416,7 +453,7 @@ export default function VideoPlayerBox({
         <>
           <Video
             ref={videoRef}
-            source={{ uri: source }}
+            source={videoSource}
             style={[styles.video, fullscreen && styles.videoFullscreen]}
             paused={isPaused}
             muted={isMuted}
@@ -424,8 +461,17 @@ export default function VideoPlayerBox({
             fullscreen={false}
             fullscreenAutorotate={false}
             fullscreenOrientation="landscape"
+            bufferConfig={bufferConfig}
+            automaticallyWaitsToMinimizeStalling={false}
+            preferredForwardBufferDuration={2}
+            preventsDisplaySleepDuringVideoPlayback={true}
+            shutterColor="transparent"
+            poster={poster}
+            posterResizeMode={resizeMode}
             onLoad={onLoad}
             onReadyForDisplay={onReadyForDisplay}
+            onBuffer={onBuffer}
+            onError={onError}
             onProgress={handleProgress}
             onSeek={onSeek}
             onEnd={onEnd}
@@ -435,7 +481,7 @@ export default function VideoPlayerBox({
             playWhenInactive={false}
           />
 
-          {loading && (
+          {(loading || (isBuffering && !isPaused)) && (
             <ActivityIndicator size="large" color="#fff" style={styles.loader} />
           )}
 

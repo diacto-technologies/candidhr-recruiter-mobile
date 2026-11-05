@@ -57,5 +57,19 @@ target 'candidhr' do
       patched = contents.gsub(/^\s*CLANG_CXX_LANGUAGE_STANDARD\s*=\s*.*$/, 'CLANG_CXX_LANGUAGE_STANDARD = c++17')
       File.write(xcconfig_path, patched) if patched != contents
     end
+
+    # Fix rsync "unlinkat: Directory not empty" failure on QBImagePicker.bundle during Copy Pods Resources
+    resources_script = File.join(installer.sandbox.root, 'Target Support Files', 'Pods-candidhr', 'Pods-candidhr-resources.sh')
+    if File.exist?(resources_script)
+      contents = File.read(resources_script)
+      snippet = 'rm -rf "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/QBImagePicker.bundle"'
+      unless contents.include?(snippet)
+        patched = contents.gsub(
+          'mkdir -p "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}"',
+          "mkdir -p \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\n#{snippet}"
+        )
+        File.write(resources_script, patched) if patched != contents
+      end
+    end
   end
 end

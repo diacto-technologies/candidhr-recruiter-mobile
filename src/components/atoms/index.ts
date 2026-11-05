@@ -14,6 +14,7 @@ export { UrlInputField } from './urlinputfield';
 export { default as ApplicantTabStatus } from './applicanttabstatus';
 export { CustomAvatar } from './avatar';
 export { default as Divider } from './divider';
+export { default as ResumeScoreBadge } from './resumescorebadge';
 
 // Export types
 export type { IButton } from './button/button';
@@ -25,3 +26,8 @@ export type { UrlInputFieldProps } from './urlinputfield/urlinputfield.d';
 export type { CompanyLogoAvatarProps } from './companylogoavatar/companylogoavatar.d';
 export type { ApplicantTabStatusProps } from './applicanttabstatus';
 export type { AvatarProps } from './avatar/avatar.d';
+export type {
+  ResumeScoreBadgeProps,
+  ResumeScoreBadgeSize,
+  ResumeScoreBadgeCandidate,
+} from './resumescorebadge/resumescorebadge.d';

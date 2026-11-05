@@ -34,6 +34,10 @@ export const plusIconSvg = (color: string = '#717680') => `<svg width="20" heigh
   <path d="M12 5v14M5 12h14"/>
 </svg>`;
 
+export const closeIconSvg = (color: string = '#181D27') => `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M18 6L6 18M6 6L18 18" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
 export const sendIconSvg = (color: string = '#FFFFFF') => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
   <line x1="22" y1="2" x2="11" y2="13"/>
   <polygon points="22 2 15 22 11 13 2 9 22 2"/>
@@ -63,6 +67,15 @@ export const trashOutlineIcon = (color: string = '#F04438') => `<svg width="20" 
 
 export const checkOutlineIcon = (color: string = '#F04438') => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
   <polyline points="20 6 9 17 4 12"/>
+</svg>`;
+
+export const slidersIconSvg = (color: string = '#645CE7') => `<svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M3 6h7m4 0h3M3 14h3m4 0h7M10 4v4M6 12v4" stroke="${color}" stroke-width="1.67" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+export const briefcaseIconSvg = (color: string = '#645CE7') => `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
 </svg>`;
 
 

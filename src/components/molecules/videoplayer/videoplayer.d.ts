@@ -5,6 +5,7 @@ export interface VideoChapter {
 
 export interface VideoPlayerBoxProps {
   source: string;
+  poster?: string;
   startTime?: number;
   duration?: number;
   initialTime?: number;
