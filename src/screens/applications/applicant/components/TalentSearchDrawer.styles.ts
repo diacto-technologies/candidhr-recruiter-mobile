@@ -117,6 +117,7 @@ export const useStyles = (brandColors = colors.brand) => {
     },
     historyScrollContent: {
       paddingVertical: 4,
+      paddingBottom: 48,
     },
     historyItem: {
       flexDirection: 'row',

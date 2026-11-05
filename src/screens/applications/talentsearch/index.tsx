@@ -8,9 +8,12 @@ import {
   Platform,
   ActivityIndicator,
   Image,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import CustomSafeAreaView from '../../../components/atoms/customsafeareaview';
 import Typography from '../../../components/atoms/typography';
+import { ResumeScoreBadge } from '../../../components/atoms';
 import { SvgXml } from 'react-native-svg';
 import { colors } from '../../../theme/colors';
 import { useBrandTheme } from '../../../hooks/useBrandTheme';
@@ -40,8 +43,8 @@ import {
   selectCopilotCurrentSessionLoading,
   selectCopilotCurrentSessionError,
 } from '../../../features/copilot/selectors';
-import { CopilotCandidateResult } from '../../../features/copilot/types';
-import { navigate } from '../../../utils/navigationUtils';
+import { CopilotCandidateResult, CopilotSessionMessage } from '../../../features/copilot/types';
+import { navigate, goBack } from '../../../utils/navigationUtils';
 import {
   searchIconSvg,
   clockOutlineIcon,
@@ -49,13 +52,306 @@ import {
   chevronRightIconSvg,
   sendIconSvg,
   hamburgerIconSvg,
-  pinIconSvg,
   plusIconSvg,
+  closeIconSvg,
+  pinIconSvg,
+  briefcaseIconSvg,
 } from '../applicant/components/talentSearchIcons';
 import TalentSearchDrawer from '../applicant/components/TalentSearchDrawer';
 import { getStatusColor, formatStatus } from '../../../components/organisms/applicantlist/helper';
 import { useRNSafeAreaInsets } from '../../../hooks/useRNSafeAreaInsets';
 import { useStyles } from './styles';
+
+const getLocationText = (cand: CopilotCandidateResult): string | null => {
+  if (cand.city && typeof cand.city === 'string' && cand.city.trim()) {
+    return cand.city.trim();
+  }
+  const rawLoc = (cand as Record<string, unknown>).location;
+  if (typeof rawLoc === 'string' && rawLoc.trim()) {
+    return rawLoc.trim();
+  }
+  if (rawLoc && typeof rawLoc === 'object') {
+    const locObj = rawLoc as { city?: string; state?: string; country?: string };
+    const parts = [locObj.city, locObj.state, locObj.country].filter(Boolean);
+    if (parts.length > 0) {
+      return parts.join(', ');
+    }
+  }
+  return null;
+};
+
+interface ParsedCandidateMessage {
+  start: number;
+  end: number;
+  total: number;
+  hasMore: boolean;
+  cleanMessage: string;
+  isRangeMessage: boolean;
+}
+
+const parseCandidateMessageInfo = (
+  messageText: string | undefined,
+  candidatesCount: number,
+  fallbackTotal?: number
+): ParsedCandidateMessage => {
+  if (!messageText) {
+    const total = fallbackTotal ?? candidatesCount;
+    const hasMore = candidatesCount < total;
+    const clean =
+      total === 0
+        ? ''
+        : total === 1
+        ? 'Showing 1 candidate.'
+        : `Showing top 1–${candidatesCount} of ${total} candidates.`;
+    return {
+      start: 1,
+      end: candidatesCount,
+      total,
+      hasMore,
+      cleanMessage: clean,
+      isRangeMessage: false,
+    };
+  }
+
+  let clean = messageText
+    .replace(/Showing\s+top\s+Showing/gi, 'Showing top')
+    .replace(/Showing\s+Showing/gi, 'Showing')
+    .replace(/(\d+)candidates/gi, '$1 candidates')
+    .replace(/\s*Say\s+['"][^'"]*['"]\s*.*$/i, '')
+    .trim();
+
+  // Normalize all unicode dashes and 'to' to standard '-'
+  const normalized = clean.replace(/[\u2010-\u2015\u2212]/g, '-').replace(/\s+to\s+/i, '-');
+
+  // Pattern 1: "Showing top 1–50 of 312 candidates..." or "Showing 1-50 of 111 candidates..." or "Showing top 51–68 of 68 candidates."
+  const rangeMatch = normalized.match(
+    /Showing\s+(?:top\s+)?(?:Showing\s+)?(\d+)\s*-\s*(\d+)\s+of\s+(\d+)/i
+  );
+
+  if (rangeMatch) {
+    const parsedStart = parseInt(rangeMatch[1], 10);
+    const parsedEnd = parseInt(rangeMatch[2], 10);
+    const total = parseInt(rangeMatch[3], 10);
+    const end = Math.min(total, Math.max(parsedEnd, candidatesCount));
+    const hasMore = candidatesCount < total && end < total;
+
+    // The container displays candidates accumulated from 1 up to end (or candidatesCount)
+    clean =
+      total === 1
+        ? 'Showing 1 candidate.'
+        : `Showing top 1–${end} of ${total} candidates.`;
+
+    return {
+      start: parsedStart,
+      end,
+      total,
+      hasMore,
+      cleanMessage: clean,
+      isRangeMessage: true,
+    };
+  }
+
+  // Pattern 2: "Showing top 50 of 312 candidates..." or "Showing 17 of 17" or "Showing 172 of 172 candidates"
+  const countOfMatch = normalized.match(
+    /Showing\s+(?:top\s+)?(?:Showing\s+)?(\d+)\s+of\s+(\d+)/i
+  );
+
+  if (countOfMatch) {
+    const matchedCount = parseInt(countOfMatch[1], 10);
+    const total = parseInt(countOfMatch[2], 10);
+    const end = Math.min(total, Math.max(matchedCount, candidatesCount));
+    const hasMore = candidatesCount < total && end < total;
+
+    clean =
+      total === 1
+        ? 'Showing 1 candidate.'
+        : `Showing top 1–${end} of ${total} candidates.`;
+
+    return {
+      start: 1,
+      end,
+      total,
+      hasMore,
+      cleanMessage: clean,
+      isRangeMessage: true,
+    };
+  }
+
+  // Pattern 3: "No more candidates — that's all 68."
+  const allDoneMatch = normalized.match(/(?:that's|thats)\s+all\s+(\d+)/i);
+  if (allDoneMatch) {
+    const total = parseInt(allDoneMatch[1], 10);
+    const end = Math.min(total, Math.max(total, candidatesCount));
+    return {
+      start: 1,
+      end,
+      total,
+      hasMore: false,
+      cleanMessage:
+        total === 1
+          ? 'Showing 1 candidate.'
+          : `Showing top 1–${end} of ${total} candidates.`,
+      isRangeMessage: true,
+    };
+  }
+
+  // Fallback: Conversational explanation, guidance, or unsupported response
+  const total = fallbackTotal ?? candidatesCount;
+  const hasMore = candidatesCount < total;
+
+  return {
+    start: 1,
+    end: candidatesCount,
+    total,
+    hasMore,
+    cleanMessage: clean,
+    isRangeMessage: false,
+  };
+};
+
+export interface ConversationSearchBlock {
+  id: string;
+  userQuery: string;
+  assistantCandidates: CopilotCandidateResult[];
+  latestMessage?: string;
+  totalCount?: number;
+  hasMore: boolean;
+  sessionId?: string;
+}
+
+const isPaginationQuery = (text?: string): boolean => {
+  if (!text) return false;
+  const normalized = text.trim().toLowerCase().replace(/[.!?,]/g, '');
+  return (
+    normalized === 'show more' ||
+    normalized === 'more' ||
+    normalized === 'next' ||
+    normalized === 'next page' ||
+    normalized === 'load more' ||
+    normalized === 'more candidates' ||
+    normalized === 'show more candidates' ||
+    normalized === 'load more candidates' ||
+    normalized.startsWith('show more') ||
+    normalized.startsWith('load more') ||
+    normalized.startsWith('next page')
+  );
+};
+
+const isContinuationAssistantMessage = (content?: string): boolean => {
+  if (!content) return false;
+  const normalized = content.replace(/[\u2010-\u2015\u2212]/g, '-').replace(/\s+to\s+/i, '-');
+  const rangeMatch = normalized.match(/Showing\s+(?:top\s+)?(\d+)\s*-\s*(\d+)\s+of\s+(\d+)/i);
+  if (rangeMatch) {
+    const start = parseInt(rangeMatch[1], 10);
+    return start > 1;
+  }
+  if (/no\s+more\s+candidates/i.test(normalized)) {
+    return true;
+  }
+  return false;
+};
+
+const getCandidateUniqueKey = (cand: CopilotCandidateResult): string | null => {
+  if (cand.application_id != null && String(cand.application_id).trim() !== '') {
+    return `app-${String(cand.application_id).trim()}`;
+  }
+  if (cand.candidate_id != null && String(cand.candidate_id).trim() !== '') {
+    return `cand-${String(cand.candidate_id).trim()}`;
+  }
+  return null;
+};
+
+const groupSessionIntoSearchBlocks = (
+  messages: CopilotSessionMessage[],
+  fallbackSessionId?: string
+): ConversationSearchBlock[] => {
+  const blocks: ConversationSearchBlock[] = [];
+  let currentBlock: ConversationSearchBlock | null = null;
+
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i];
+    const role = (msg.role || '').toLowerCase().trim();
+
+    if (role === 'user' || role === 'human') {
+      if (isPaginationQuery(msg.content)) {
+        // Pagination command - belongs to the current block, do not create a new block
+        continue;
+      }
+
+      // If the NEXT message is an assistant continuation message (start > 1 or no more candidates),
+      // this user message was asking for pagination/more results, so do not create a new block
+      const nextMsg = messages[i + 1];
+      if (
+        nextMsg &&
+        (nextMsg.role || '').toLowerCase().trim() === 'assistant' &&
+        isContinuationAssistantMessage(nextMsg.content) &&
+        blocks.length > 0
+      ) {
+        continue;
+      }
+
+      currentBlock = {
+        id: msg.id || `query-${i}`,
+        userQuery: msg.content,
+        assistantCandidates: [],
+        latestMessage: undefined,
+        totalCount: undefined,
+        hasMore: false,
+        sessionId: fallbackSessionId,
+      };
+      blocks.push(currentBlock);
+    } else if (role === 'assistant' || role === 'ai' || role === 'bot') {
+      const incomingCandidates = msg.results || [];
+      const parsedInfo = parseCandidateMessageInfo(
+        msg.content,
+        incomingCandidates.length
+      );
+
+      // If this assistant message indicates pagination continuation (start > 1 or no more candidates) and a block exists,
+      // attach it to the preceding search block
+      if (
+        (parsedInfo.start > 1 || isContinuationAssistantMessage(msg.content)) &&
+        blocks.length > 0
+      ) {
+        currentBlock = blocks[blocks.length - 1];
+      } else if (!currentBlock) {
+        currentBlock = {
+          id: msg.id || `asst-block-${i}`,
+          userQuery: '',
+          assistantCandidates: [],
+          latestMessage: undefined,
+          totalCount: undefined,
+          hasMore: false,
+          sessionId: fallbackSessionId,
+        };
+        blocks.push(currentBlock);
+      }
+
+      if (incomingCandidates.length > 0) {
+        currentBlock.assistantCandidates.push(...incomingCandidates);
+      }
+
+      const total = Math.max(
+        parsedInfo.total,
+        currentBlock.totalCount || 0,
+        currentBlock.assistantCandidates.length
+      );
+      const count = currentBlock.assistantCandidates.length;
+      currentBlock.totalCount = total;
+      if (parsedInfo.isRangeMessage || count > 0) {
+        currentBlock.latestMessage =
+          total === 1
+            ? 'Showing 1 candidate.'
+            : `Showing top 1–${count} of ${total} candidates.`;
+      } else {
+        currentBlock.latestMessage = parsedInfo.cleanMessage;
+      }
+      currentBlock.hasMore = parsedInfo.hasMore && count < total;
+    }
+  }
+
+  return blocks;
+};
 
 interface SuggestionCardItem {
   id: string;
@@ -73,6 +369,8 @@ const TalentSearchScreen: React.FC = () => {
   const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [historyList, setHistoryList] = useState<string[]>([]);
+  const [isPaginating, setIsPaginating] = useState(false);
+  const [liveAccumulatedCandidates, setLiveAccumulatedCandidates] = useState<CopilotCandidateResult[]>([]);
 
   // Copilot Redux Selectors
   const apiSuggestions = useAppSelector(selectCopilotSuggestions);
@@ -131,17 +429,36 @@ const TalentSearchScreen: React.FC = () => {
     return [];
   }, [apiSuggestions]);
 
+  // Auto-reset paginating status when streaming finishes
+  useEffect(() => {
+    if (!isStreaming) {
+      setIsPaginating(false);
+    }
+  }, [isStreaming]);
+
+  // Accumulate live streaming candidates across pagination calls into one list
+  useEffect(() => {
+    if (candidates && candidates.length > 0) {
+      setLiveAccumulatedCandidates((prev) => {
+        if (prev.length === 0) return [...candidates];
+        return [...prev, ...candidates];
+      });
+    }
+  }, [candidates]);
+
   // Execute Copilot Chat Stream search
   const handleExecuteSearch = useCallback(
     (searchQuery: string, sessionId?: string) => {
       const trimmed = searchQuery.trim();
-      if (!trimmed) return;
+      if (!trimmed || isStreaming) return;
 
       const activeSessionId =
         sessionId ||
         (currentSession ? String(currentSession.id) : undefined) ||
         (streamSessionId ? String(streamSessionId) : undefined);
 
+      setIsPaginating(false);
+      setLiveAccumulatedCandidates([]);
       setSubmittedQuery(trimmed);
       setQuery('');
       setIsHistoryOpen(false);
@@ -149,17 +466,47 @@ const TalentSearchScreen: React.FC = () => {
       // Trigger chat stream saga
       dispatch(chatStreamRequestAction({ query: trimmed, session_id: activeSessionId }));
     },
-    [currentSession, streamSessionId, dispatch]
+    [isStreaming, currentSession, streamSessionId, dispatch]
+  );
+
+  // Trigger pagination / load more candidates into the SAME container
+  const handleLoadMore = useCallback(
+    (sessionId?: string | number) => {
+      const targetSessionId =
+        sessionId ||
+        (currentSession ? String(currentSession.id) : undefined) ||
+        (streamSessionId ? String(streamSessionId) : undefined);
+
+      if (!targetSessionId || isStreaming || isPaginating) {
+        return;
+      }
+
+      setIsPaginating(true);
+      dispatch(
+        chatStreamRequestAction({
+          query: 'show more',
+          session_id: String(targetSessionId),
+        })
+      );
+    },
+    [currentSession, streamSessionId, isStreaming, isPaginating, dispatch]
   );
 
   // New Search reset
   const handleNewSearch = useCallback(() => {
+    setIsPaginating(false);
+    setLiveAccumulatedCandidates([]);
     setSubmittedQuery(null);
     setQuery('');
     dispatch(chatStreamResetAction());
     dispatch(clearCopilotSessionDetailAction());
     setIsHistoryOpen(false);
   }, [dispatch]);
+
+  // Close talent search and go back
+  const handleClose = useCallback(() => {
+    goBack();
+  }, []);
 
   const handleCardPress = useCallback(
     (itemText: string) => {
@@ -180,6 +527,8 @@ const TalentSearchScreen: React.FC = () => {
         }
       }
 
+      setIsPaginating(false);
+      setLiveAccumulatedCandidates([]);
       if (targetSessionId) {
         setSubmittedQuery(null);
         setQuery('');
@@ -309,209 +658,256 @@ const TalentSearchScreen: React.FC = () => {
       candList: CopilotCandidateResult[],
       messageText?: string,
       totalCount?: number,
-      keyPrefix = 'stream'
+      keyPrefix = 'stream',
+      hasMore = false,
+      isLoadingMore = false,
+      onLoadMore?: () => void
     ) => {
       const hasCandidates = Boolean(candList && candList.length > 0);
       if (!hasCandidates && !messageText) return null;
 
+      const parsedInfo = parseCandidateMessageInfo(messageText, candList.length, totalCount);
+      const displayTotal = totalCount || parsedInfo.total || candList.length;
+
+      const displayText =
+        hasCandidates && parsedInfo.isRangeMessage
+          ? parsedInfo.cleanMessage
+          : messageText || parsedInfo.cleanMessage;
+
       return (
         <View key={`${keyPrefix}-card-wrap`}>
           {/* Results Header with Search Badge */}
-          {messageText ? (
+          {displayText ? (
             <View style={styles.resultHeaderRow}>
               <View style={styles.searchIconBadge}>
                 <SvgXml xml={searchIconSvg(activeBrandColor)} width={16} height={16} />
               </View>
               <Typography
-                variant="semiBoldTxtsm"
+                variant="regularTxtsm"
                 color={colors.gray[900]}
                 style={styles.resultHeaderText}
               >
-                {messageText}
+                {displayText}
               </Typography>
             </View>
           ) : null}
 
-          {/* Table Card (rendered only when candidates exist) */}
+          {/* Candidate Cards Container matching 3rd screenshot style */}
           {hasCandidates ? (
-            <View style={styles.resultsCard}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={styles.tableInner}>
-                {/* Table Header Row */}
-                <View style={styles.tableHeaderRow}>
-                  <View style={styles.colCandidate}>
-                    <Typography variant="semiBoldTxtxs" color={colors.gray[500]}>
-                      CANDIDATE
-                    </Typography>
-                  </View>
-                  <View style={styles.colJob}>
-                    <Typography variant="semiBoldTxtxs" color={colors.gray[500]}>
-                      JOB
-                    </Typography>
-                  </View>
-                  <View style={styles.colCity}>
-                    <Typography variant="semiBoldTxtxs" color={colors.gray[500]}>
-                      CITY
-                    </Typography>
-                  </View>
-                  <View style={styles.colSummary}>
-                    <Typography variant="semiBoldTxtxs" color={colors.gray[500]}>
-                      SUMMARY
-                    </Typography>
-                  </View>
-                  <View style={styles.colResume}>
-                    <Typography variant="semiBoldTxtxs" color={colors.gray[500]}>
-                      RESUME...
-                    </Typography>
-                  </View>
-                  <View style={styles.colStatus}>
-                    <Typography variant="semiBoldTxtxs" color={colors.gray[500]}>
-                      STATUS
-                    </Typography>
-                  </View>
-                </View>
-
-                {/* Candidate Rows */}
+            <View
+              style={[
+                styles.resultsCard,
+                candList.length === 1 && styles.resultsCardSingle,
+                candList.length === 2 && styles.resultsCardDouble,
+              ]}
+            >
+              <ScrollView
+                nestedScrollEnabled={true}
+                showsVerticalScrollIndicator={true}
+                style={styles.resultsScroll}
+                contentContainerStyle={styles.resultsScrollContent}
+                scrollEventThrottle={16}
+                onScroll={(e: NativeSyntheticEvent<NativeScrollEvent>) => {
+                  if (!hasMore || isLoadingMore || !onLoadMore) return;
+                  const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+                  const isCloseToBottom =
+                    layoutMeasurement.height + contentOffset.y >= contentSize.height - 40;
+                  if (isCloseToBottom) {
+                    onLoadMore();
+                  }
+                }}
+              >
                 {candList.map((cand, idx) => {
-                  const initial = cand.name ? cand.name.charAt(0).toUpperCase() : '?';
-                  const hasProfilePic = Boolean(cand.profile_pic);
-                  const isAlt = idx % 2 === 1;
+                  const jobTitle =
+                    cand.applied_job_title ||
+                    (typeof cand.job_title === 'string' ? cand.job_title : null) ||
+                    'Software Engineer';
+                  const locationText = getLocationText(cand);
 
                   return (
                     <Pressable
                       key={`${keyPrefix}-cand-${cand.application_id || cand.candidate_id || 'item'}-${idx}`}
-                      style={[styles.tableRow, isAlt && styles.tableRowAlt]}
+                      style={styles.candidateCard}
                       onPress={() => handleSelectCandidate(cand)}
                       accessibilityRole="button"
                       accessibilityLabel={`View candidate ${cand.name}`}
                     >
-                      {/* CANDIDATE */}
-                      <View style={styles.colCandidate}>
-                        {hasProfilePic ? (
-                          <Image
-                            source={{ uri: cand.profile_pic as string }}
-                            style={styles.avatarImg}
-                          />
-                        ) : (
-                          <View style={styles.avatarCircle}>
-                            <Typography variant="semiBoldTxtxs" color={brandColors[700] || activeBrandColor}>
-                              {initial}
+                      <View style={styles.candidateCardLeft}>
+                        <Typography
+                          variant="semiBoldTxtmd"
+                          color={colors.gray[900]}
+                          numberOfLines={1}
+                          style={styles.candidateName}
+                        >
+                          {cand.name || 'Unknown'}
+                        </Typography>
+
+                        {cand.email ? (
+                          <Typography
+                            variant="regularTxtxs"
+                            color={colors.gray[500]}
+                            numberOfLines={1}
+                            style={styles.candidateEmail}
+                          >
+                            {cand.email}
+                          </Typography>
+                        ) : null}
+
+                        <View style={styles.candidateMetaWrap}>
+                          <View style={styles.candidateJobRow}>
+                            <SvgXml xml={briefcaseIconSvg(activeBrandColor)} width={14} height={14} />
+                            <Typography
+                              variant="regularTxtsm"
+                              color={colors.gray[700]}
+                              numberOfLines={1}
+                              style={styles.candidateJobText}
+                            >
+                              {jobTitle}
                             </Typography>
                           </View>
-                        )}
-                        <View style={styles.candidateInfo}>
-                          <Typography
-                            variant="semiBoldTxtsm"
-                            color={colors.gray[900]}
-                            numberOfLines={1}
-                          >
-                            {cand.name || 'Unknown'}
-                          </Typography>
-                          {cand.email ? (
-                            <Typography
-                              variant="regularTxtxs"
-                              color={colors.gray[500]}
-                              numberOfLines={1}
-                            >
-                              {cand.email}
-                            </Typography>
+
+                          {locationText ? (
+                            <View style={styles.candidateLocationRow}>
+                              <SvgXml xml={pinIconSvg(colors.gray[500])} width={13} height={13} />
+                              <Typography
+                                variant="regularTxtsm"
+                                color={colors.gray[600]}
+                                numberOfLines={1}
+                                style={styles.candidateLocationText}
+                              >
+                                {locationText}
+                              </Typography>
+                            </View>
                           ) : null}
                         </View>
                       </View>
 
-                      {/* JOB */}
-                      <View style={styles.colJob}>
-                        <Typography
-                          variant="regularTxtsm"
-                          color={colors.gray[700]}
-                          numberOfLines={1}
-                        >
-                          {cand.applied_job_title || 'Software Engineer'}
-                        </Typography>
-                      </View>
-
-                      {/* CITY */}
-                      <View style={styles.colCity}>
-                        <SvgXml xml={pinIconSvg(colors.gray[500])} width={13} height={13} />
-                        <Typography
-                          variant="regularTxtsm"
-                          color={colors.gray[600]}
-                          numberOfLines={1}
-                        >
-                          {cand.city || '—'}
-                        </Typography>
-                      </View>
-
-                      {/* SUMMARY */}
-                      <View style={styles.colSummary}>
-                        <Typography
-                          variant="regularTxtsm"
-                          color={colors.gray[500]}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                        >
-                          {cand.ai_summary || '—'}
-                        </Typography>
-                      </View>
-
-                      {/* RESUME */}
-                      <View style={styles.colResume}>
-                        <Typography
-                          variant="regularTxtsm"
-                          color={colors.gray[500]}
-                          numberOfLines={1}
-                        >
-                          {cand.resume_score ? String(cand.resume_score) : '—'}
-                        </Typography>
-                      </View>
-
-                      {/* STATUS */}
-                      <View style={styles.colStatus}>
-                        <View style={styles.statusBadge}>
-                          <View
-                            style={[
-                              styles.statusDot,
-                              { backgroundColor: getStatusColor(cand.application_status || 'applied') },
-                            ]}
-                          />
-                          <Typography variant="mediumTxtxs" color={colors.gray[700]}>
-                            {formatStatus(cand.application_status || 'applied')}
-                          </Typography>
-                        </View>
-                      </View>
+                      <ResumeScoreBadge candidate={cand} />
                     </Pressable>
                   );
                 })}
-              </View>
-            </ScrollView>
+              </ScrollView>
 
-            {/* Footer */}
-            <View style={styles.tableFooter}>
-              <Typography variant="regularTxtxs" color={colors.gray[500]}>
-                Showing{' '}
-                <Typography variant="semiBoldTxtxs" color={colors.gray[700]}>
-                  {candList.length}
-                </Typography>{' '}
-                of{' '}
-                <Typography variant="semiBoldTxtxs" color={colors.gray[700]}>
-                  {totalCount ?? candList.length}
+              {/* Container Footer with Pagination Count and Actions */}
+              <View style={styles.tableFooter}>
+                <Typography variant="regularTxtxs" color={colors.gray[500]}>
+                  Showing{' '}
+                  <Typography variant="semiBoldTxtxs" color={colors.gray[800]}>
+                    {candList.length}
+                  </Typography>{' '}
+                  of{' '}
+                  <Typography variant="semiBoldTxtxs" color={colors.gray[800]}>
+                    {displayTotal}
+                  </Typography>
                 </Typography>
-              </Typography>
+
+                {isLoadingMore ? (
+                  <View style={styles.paginationLoadingRow}>
+                    <ActivityIndicator size="small" color={activeBrandColor} />
+                    <Typography variant="mediumTxtxs" color={activeBrandColor}>
+                      Loading more candidates...
+                    </Typography>
+                  </View>
+                ) : hasMore && onLoadMore ? (
+                  <Pressable
+                    style={styles.loadMoreButton}
+                    onPress={onLoadMore}
+                    accessibilityRole="button"
+                    accessibilityLabel="Load more candidates"
+                  >
+                    <Typography variant="semiBoldTxtxs" color={activeBrandColor}>
+                      Load more candidates ({Math.min(50, displayTotal - candList.length)} more)
+                    </Typography>
+                  </Pressable>
+                ) : null}
+              </View>
             </View>
-          </View>
-        ) : null}
-      </View>
-    );
+          ) : null}
+        </View>
+      );
     },
-    [activeBrandColor, handleSelectCandidate, styles]
+    [activeBrandColor, brandColors, handleSelectCandidate, styles]
   );
+
+  const activeSearchBlocks = useMemo(() => {
+    const rawMessages = currentSession?.messages || [];
+    const sessionIdStr = currentSession?.id ? String(currentSession.id) : undefined;
+    const blocks = groupSessionIntoSearchBlocks(rawMessages, sessionIdStr);
+
+    if (blocks.length > 0) {
+      if (isPaginating && candidates.length > 0) {
+        const lastBlock = blocks[blocks.length - 1];
+        if (lastBlock.assistantCandidates.length < (lastBlock.totalCount || 0)) {
+          lastBlock.assistantCandidates = [
+            ...lastBlock.assistantCandidates,
+            ...candidates,
+          ];
+        }
+
+        const total = Math.max(lastBlock.totalCount || 0, lastBlock.assistantCandidates.length);
+        const count = lastBlock.assistantCandidates.length;
+        lastBlock.totalCount = total;
+        lastBlock.latestMessage =
+          total === 1
+            ? 'Showing 1 candidate.'
+            : `Showing top 1–${count} of ${total} candidates.`;
+        lastBlock.hasMore = count < total;
+      }
+      return blocks;
+    }
+
+    const streamList =
+      liveAccumulatedCandidates.length > 0 ? liveAccumulatedCandidates : candidates;
+
+    if (
+      streamList.length > 0 ||
+      (submittedQuery && isStreaming) ||
+      (submittedQuery && Boolean(streamResult?.message)) ||
+      Boolean(streamResult?.message)
+    ) {
+      const parsedInfo = parseCandidateMessageInfo(
+        streamResult?.message,
+        streamList.length,
+        streamResult?.result_total
+      );
+      const latestMsg =
+        streamList.length > 0 && parsedInfo.isRangeMessage
+          ? parsedInfo.cleanMessage
+          : streamResult?.message || parsedInfo.cleanMessage;
+
+      return [
+        {
+          id: 'live-stream-block',
+          userQuery: submittedQuery || '',
+          assistantCandidates: streamList,
+          latestMessage: latestMsg,
+          totalCount: parsedInfo.total,
+          hasMore: parsedInfo.hasMore && streamList.length < parsedInfo.total,
+          sessionId: streamSessionId || undefined,
+        },
+      ];
+    }
+
+    return [];
+  }, [
+    currentSession,
+    isPaginating,
+    candidates,
+    liveAccumulatedCandidates,
+    submittedQuery,
+    isStreaming,
+    streamResult,
+    streamSessionId,
+  ]);
 
   const isSearchActive = Boolean(
     submittedQuery ||
     isStreaming ||
     candidates.length > 0 ||
     currentSession ||
-    currentSessionLoading
+    currentSessionLoading ||
+    streamResult?.message ||
+    activeSearchBlocks.length > 0
   );
 
   return (
@@ -535,12 +931,12 @@ const TalentSearchScreen: React.FC = () => {
           </View>
 
           <Pressable
-            onPress={handleNewSearch}
+            onPress={handleClose}
             style={styles.headerIconButton}
             accessibilityRole="button"
-            accessibilityLabel="Start a new search"
+            accessibilityLabel="Close talent search"
           >
-            <SvgXml xml={plusIconSvg(activeBrandColor)} width={20} height={20} />
+            <SvgXml xml={closeIconSvg(colors.gray[800])} width={20} height={20} />
           </Pressable>
         </View>
 
@@ -561,7 +957,7 @@ const TalentSearchScreen: React.FC = () => {
               // Active Search Results / Selected Session View
               <View>
                 {/* Session Loading Spinner */}
-                {currentSessionLoading && (
+                {currentSessionLoading && !activeSearchBlocks.length && (
                   <View style={styles.streamingStatusBox}>
                     <ActivityIndicator size="small" color={activeBrandColor} />
                     <Typography
@@ -576,113 +972,81 @@ const TalentSearchScreen: React.FC = () => {
 
                 {/* Session Error Banner */}
                 {currentSessionError && !currentSessionLoading && (
-                  <View style={[styles.streamingStatusBox, { borderColor: colors.error[300] }]}>
+                  <View style={styles.streamingStatusErrorBox}>
                     <Typography variant="regularTxtsm" color={colors.error[600]}>
                       {currentSessionError}
                     </Typography>
                   </View>
                 )}
 
-                {/* If currentSession is loaded, render its conversation messages */}
-                {currentSession && currentSession.messages && currentSession.messages.length > 0 ? (
-                  <View>
-                    {currentSession.messages.map((msg, index) => {
-                      if (msg.role === 'user') {
-                        return (
-                          <View
-                            key={msg.id ? `user-msg-${msg.id}-${index}` : `user-msg-${index}`}
-                            style={styles.userBubbleContainer}
-                          >
-                            <View style={styles.userBubble}>
-                              <Typography variant="semiBoldTxtsm" color={colors.gray[900]}>
-                                {msg.content}
-                              </Typography>
-                            </View>
+                {/* Render Grouped Search Blocks (All Candidates in ONE Container per Search) */}
+                {activeSearchBlocks.map((block, blockIndex) => {
+                  const isLastBlock = blockIndex === activeSearchBlocks.length - 1;
+                  const isBlockPaginating = isLastBlock && isPaginating && isStreaming;
+
+                  return (
+                    <View key={block.id || `search-block-${blockIndex}`}>
+                      {/* User Query Bubble */}
+                      {block.userQuery ? (
+                        <View style={styles.userBubbleContainer}>
+                          <View style={styles.userBubble}>
+                            <Typography variant="mediumTxtsm" color={colors.gray[900]}>
+                              {block.userQuery}
+                            </Typography>
                           </View>
-                        );
-                      }
+                        </View>
+                      ) : null}
 
-                      if (msg.role === 'assistant') {
-                        const assistantCandidates = msg.results || [];
-                        return (
-                          <View key={msg.id ? `asst-msg-${msg.id}-${index}` : `asst-msg-${index}`}>
-                            {renderCandidateTableCard(
-                              assistantCandidates,
-                              msg.content,
-                              assistantCandidates.length,
-                              msg.id || `sess-${index}`
-                            )}
-                          </View>
-                        );
-                      }
+                      {/* Single Table Container with All Candidates & Pagination */}
+                      {renderCandidateTableCard(
+                        block.assistantCandidates,
+                        block.latestMessage,
+                        block.totalCount,
+                        block.id,
+                        block.hasMore,
+                        isBlockPaginating,
+                        isLastBlock ? () => handleLoadMore(block.sessionId) : undefined
+                      )}
+                    </View>
+                  );
+                })}
 
-                      return null;
-                    })}
-                  </View>
-                ) : null}
-
-                {/* Active live stream section (renders in-flight user prompt and progressive status) */}
-                {isStreaming || streamError ? (
+                {/* Progressive Streaming Status Indicator (Initial query or follow-up query) */}
+                {isStreaming && !isPaginating ? (
                   <View>
-                    {/* User Prompt Message Bubble (Top Right) - only shown while streaming if not yet in currentSession */}
                     {submittedQuery &&
-                    (!currentSession?.messages?.length ||
-                      currentSession.messages[currentSession.messages.length - 1].content !== submittedQuery) ? (
+                    (!activeSearchBlocks.length ||
+                      activeSearchBlocks[activeSearchBlocks.length - 1]?.userQuery !==
+                        submittedQuery) ? (
                       <View style={styles.userBubbleContainer}>
                         <View style={styles.userBubble}>
-                          <Typography variant="semiBoldTxtsm" color={colors.gray[900]}>
+                          <Typography variant="mediumTxtsm" color={colors.gray[900]}>
                             {submittedQuery}
                           </Typography>
                         </View>
                       </View>
                     ) : null}
-
-                    {/* Progressive Streaming Status Indicator */}
-                    {isStreaming ? (
-                      <View style={styles.streamingStatusBox}>
-                        <ActivityIndicator size="small" color={activeBrandColor} />
-                        <Typography
-                          variant="mediumTxtsm"
-                          color={colors.gray[700]}
-                          style={styles.streamingText}
-                        >
-                          {streamStatusMessage || 'Searching candidates...'}
-                        </Typography>
-                      </View>
-                    ) : null}
-
-                    {/* Error Banner */}
-                    {streamError ? (
-                      <View style={[styles.streamingStatusBox, { borderColor: colors.error[300] }]}>
-                        <Typography variant="regularTxtsm" color={colors.error[600]}>
-                          {streamError}
-                        </Typography>
-                      </View>
-                    ) : null}
-                  </View>
-                ) : (
-                  /* Fallback if currentSession is not loaded yet, but live stream produced candidates */
-                  (!currentSession?.messages || currentSession.messages.length === 0) && candidates.length > 0 ? (
-                    <View>
-                      {submittedQuery ? (
-                        <View style={styles.userBubbleContainer}>
-                          <View style={styles.userBubble}>
-                            <Typography variant="semiBoldTxtsm" color={colors.gray[900]}>
-                              {submittedQuery}
-                            </Typography>
-                          </View>
-                        </View>
-                      ) : null}
-                      {renderCandidateTableCard(
-                        candidates,
-                        streamResult?.message ||
-                          `Showing 1–${candidates.length} of ${streamResult?.result_total ?? candidates.length} candidates.`,
-                        streamResult?.result_total ?? candidates.length,
-                        'stream'
-                      )}
+                    <View style={styles.streamingStatusBox}>
+                      <ActivityIndicator size="small" color={activeBrandColor} />
+                      <Typography
+                        variant="mediumTxtsm"
+                        color={colors.gray[700]}
+                        style={styles.streamingText}
+                      >
+                        {streamStatusMessage || 'Understanding your query…'}
+                      </Typography>
                     </View>
-                  ) : null
-                )}
+                  </View>
+                ) : null}
+
+                {/* Error Banner */}
+                {streamError ? (
+                  <View style={styles.streamingStatusErrorBox}>
+                    <Typography variant="regularTxtsm" color={colors.error[600]}>
+                      {streamError}
+                    </Typography>
+                  </View>
+                ) : null}
               </View>
             ) : (
               // Initial State: Hero + "Try Asking" Cards from API

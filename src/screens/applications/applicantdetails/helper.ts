@@ -1,5 +1,13 @@
 import { colors } from "../../../theme/colors";
 
+export {
+  getResumeScoreColorInfo,
+  getCandidateResumeScoreInfo,
+  RESUME_SCORE_TIERS,
+  type ResumeScoreTier,
+  type ResumeScoreColorInfo,
+} from '../../../utils/resumeScore';
+
 export const formatPercentage = (value: string | number) => {
     const num = Number(value);
     if (isNaN(num)) return "_";

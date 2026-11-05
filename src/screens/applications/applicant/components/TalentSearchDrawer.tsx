@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
+  Dimensions,
   Easing,
   Modal,
   Pressable,
@@ -12,6 +13,7 @@ import Typography from '../../../../components/atoms/typography';
 import { SvgXml } from 'react-native-svg';
 import { colors } from '../../../../theme/colors';
 import { useBrandTheme } from '../../../../hooks/useBrandTheme';
+import { useRNSafeAreaInsets } from '../../../../hooks/useRNSafeAreaInsets';
 import { modalCloseIcon, closeIconSm } from '../../../../assets/svg/closeicon';
 import { trashIcon } from '../../../../assets/svg/trash';
 import { horizontalThreedotIcon } from '../../../../assets/svg/horizontalthreedoticon';
@@ -64,6 +66,7 @@ const TalentSearchDrawer: React.FC<TalentSearchDrawerProps> = ({
 }) => {
   const { brandColors } = useBrandTheme();
   const styles = useStyles(brandColors);
+  const { insetsTop, insetsBottom } = useRNSafeAreaInsets();
   const animVal = useRef(new Animated.Value(0)).current;
   const [isMounted, setIsMounted] = useState(visible);
 
@@ -138,10 +141,23 @@ const TalentSearchDrawer: React.FC<TalentSearchDrawerProps> = ({
     if (triggerNode && 'measureInWindow' in triggerNode) {
       (triggerNode as any).measureInWindow(
         (x: number, y: number, width: number, height: number) => {
-          setDropdownPosition({
-            left: Math.max(8, x + width - 160),
-            top: y + height + 4,
-          });
+          const { height: windowHeight, width: windowWidth } = Dimensions.get('window');
+          const DROPDOWN_MENU_HEIGHT = 145;
+          const DROPDOWN_WIDTH = 160;
+
+          const spaceBelow = windowHeight - insetsBottom - (y + height + 4);
+          const shouldOpenAbove = spaceBelow < DROPDOWN_MENU_HEIGHT + 16;
+
+          const top = shouldOpenAbove
+            ? Math.max(insetsTop + 8, y - DROPDOWN_MENU_HEIGHT - 4)
+            : y + height + 4;
+
+          const left = Math.min(
+            Math.max(8, x + width - DROPDOWN_WIDTH),
+            windowWidth - DROPDOWN_WIDTH - 8
+          );
+
+          setDropdownPosition({ left, top });
           setDropdownVisible(true);
         }
       );

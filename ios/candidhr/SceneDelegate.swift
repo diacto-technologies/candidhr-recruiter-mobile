@@ -45,12 +45,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     guard let url = URLContexts.first?.url else {
       return
     }
-    RCTLinkingManager.application(UIApplication.shared, open: url, options: [:])
+    _ = RCTLinkingManager.application(UIApplication.shared, open: url, options: [:])
   }
 
   // Universal links (https://...) while the app is running or in background
   func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
-    RCTLinkingManager.application(
+    _ = RCTLinkingManager.application(
       UIApplication.shared,
       continue: userActivity,
       restorationHandler: { _ in }

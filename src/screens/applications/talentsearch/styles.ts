@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import { colors } from '../../../theme/colors';
 import { shadowStyles } from '../../../theme/shadowcolor';
 import { useRNSafeAreaInsets } from '../../../hooks/useRNSafeAreaInsets';
@@ -211,102 +211,242 @@ export const useStyles = (brandColors = colors.brand) => {
       borderWidth: 1,
       borderColor: colors.gray[200],
     },
+    streamingStatusErrorBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      backgroundColor: colors.gray[50],
+      borderRadius: 12,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.error[300],
+    },
     streamingText: {
       marginLeft: 10,
       flex: 1,
     },
 
-    // Results Header
+    // Results Header matching screenshot
     resultHeaderRow: {
       flexDirection: 'row',
-      alignItems: 'center',
-      gap: 10,
-      marginBottom: 14,
-      paddingHorizontal: 4,
+      alignItems: 'flex-start',
+      gap: 12,
+      marginBottom: 16,
+      paddingHorizontal: 2,
     },
     searchIconBadge: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: brandColors[50] || colors.brand[50],
+      width: 28,
+      height: 28,
+      borderRadius: 14,
       borderWidth: 1,
-      borderColor: brandColors[200] || colors.brand[200],
+      borderColor: brandColors[200] || colors.brand[200] || '#D0D5DD',
+      backgroundColor: brandColors[50] || colors.brand[50] || '#F9F5FF',
       alignItems: 'center',
       justifyContent: 'center',
+      marginTop: 0,
     },
     resultHeaderText: {
       flex: 1,
+      fontSize: 14,
+      lineHeight: 22,
+      color: colors.gray[800],
     },
-
-    // Candidates Table Card
     resultsCard: {
       backgroundColor: colors.base.white,
       borderWidth: 1,
       borderColor: colors.gray[200],
-      borderRadius: 12,
+      borderRadius: 16,
+      height: 540,
       overflow: 'hidden',
-      marginBottom: 24,
-      ...shadowStyles.shadow_sm,
+      marginBottom: 20,
+      ...shadowStyles.shadow_xs,
     },
+    resultsCardSingle: {
+      height: 165,
+    },
+    resultsCardDouble: {
+      height: 275,
+    },
+    resultsScroll: {
+      flex: 1,
+      backgroundColor: colors.base.white,
+    },
+    resultsScrollContent: {
+      padding: 12,
+      gap: 10,
+    },
+    tableFooter: {
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      borderTopWidth: 1,
+      borderTopColor: colors.gray[200],
+      alignItems: 'center',
+      backgroundColor: colors.base.white,
+    },
+    paginationLoadingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      marginTop: 6,
+    },
+    loadMoreButton: {
+      marginTop: 6,
+      paddingVertical: 6,
+      paddingHorizontal: 14,
+      borderRadius: 8,
+      backgroundColor: brandColors[50] || colors.brand[50] || '#EEF0FF',
+      borderWidth: 1,
+      borderColor: brandColors[200] || colors.brand[200] || '#E0E2EC',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+
+    // Table Structure
     tableInner: {
-      minWidth: 700,
+      minWidth: 890,
+      flex: 1,
     },
     tableHeaderRow: {
       flexDirection: 'row',
       alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
       backgroundColor: colors.gray[50],
       borderBottomWidth: 1,
       borderBottomColor: colors.gray[200],
-      paddingVertical: 12,
-      paddingHorizontal: 16,
+    },
+    tableVerticalScroll: {
+      flex: 1,
     },
     tableRow: {
       flexDirection: 'row',
       alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
       borderBottomWidth: 1,
       borderBottomColor: colors.gray[100],
-      paddingVertical: 14,
-      paddingHorizontal: 16,
       backgroundColor: colors.base.white,
     },
     tableRowAlt: {
-      backgroundColor: brandColors[25] || colors.brand[25],
+      backgroundColor: colors.gray[25] || '#FCFCFD',
     },
-
-    // Table Columns
     colCandidate: {
-      width: 220,
+      width: 210,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
+      paddingRight: 12,
     },
     candidateInfo: {
       flex: 1,
+      justifyContent: 'center',
     },
     colJob: {
-      width: 150,
-      paddingRight: 10,
+      width: 170,
+      paddingRight: 12,
+      justifyContent: 'center',
     },
     colCity: {
       width: 120,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 4,
-      paddingRight: 10,
+      gap: 5,
+      paddingRight: 12,
     },
     colSummary: {
-      width: 180,
-      paddingRight: 10,
+      width: 190,
+      paddingRight: 12,
+      justifyContent: 'center',
     },
     colResume: {
-      width: 100,
-      paddingRight: 10,
+      width: 80,
+      paddingRight: 12,
+      justifyContent: 'center',
     },
     colStatus: {
-      width: 140,
+      width: 120,
+      justifyContent: 'center',
     },
 
-    // Candidate Avatar & Status Badges
+    // Candidates Mobile Card List
+    candidateCardsContainer: {
+      gap: 12,
+      marginBottom: 24,
+    },
+    candidateCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.base.white,
+      borderWidth: 1,
+      borderColor: colors.gray[200],
+      borderRadius: 16,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      ...shadowStyles.shadow_xs,
+    },
+    candidateCardLeft: {
+      flex: 1,
+      marginRight: 12,
+    },
+    candidateName: {
+      fontSize: 16,
+      lineHeight: 22,
+      fontWeight: '700',
+      color: colors.gray[900],
+    },
+    candidateEmail: {
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.gray[500],
+      marginTop: 2,
+    },
+    candidateMetaWrap: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      columnGap: 12,
+      rowGap: 4,
+      marginTop: 8,
+    },
+    candidateJobRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    candidateJobText: {
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.gray[700],
+      flexShrink: 1,
+    },
+    candidateLocationRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    candidateLocationText: {
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.gray[600],
+      flexShrink: 1,
+    },
+    scoreBadge: {
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 5,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minWidth: 44,
+    },
+    scoreText: {
+      fontSize: 14,
+      lineHeight: 20,
+      fontWeight: '700',
+    },
+
+    // Candidate Avatar & Status Badges (retained if needed)
     avatarCircle: {
       width: 34,
       height: 34,
@@ -339,14 +479,6 @@ export const useStyles = (brandColors = colors.brand) => {
       height: 6,
       borderRadius: 3,
       backgroundColor: colors.gray[700],
-    },
-    tableFooter: {
-      paddingVertical: 10,
-      paddingHorizontal: 16,
-      borderTopWidth: 1,
-      borderTopColor: colors.gray[100],
-      alignItems: 'center',
-      backgroundColor: colors.gray[50],
     },
   });
 };
