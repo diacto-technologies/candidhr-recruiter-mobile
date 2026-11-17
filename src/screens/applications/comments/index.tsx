@@ -20,6 +20,9 @@ import { DropdownMenu } from '../../../components/molecules/dropdownmenu';
 import { deleteIcon } from '../../../assets/svg/deleteicon';
 import { editAvatarIcon } from '../../../assets/svg/editavatar';
 import { ConfirmModal } from '../../../components';
+import { permissionDeniedIcon } from '../../../assets/svg/permissionDenied';
+import { usePermission } from '../../../hooks/usePermission';
+import { PERMISSIONS } from '../../../utils/permission.constants';
 import {
   selectSelectedApplication,
   selectApplicationReasonsList,
@@ -119,6 +122,10 @@ export default function CommentsScreen() {
   const styles = useStyles();
   const dispatch = useAppDispatch();
   const route = useRoute<RouteProp<{ params: CommentsRouteParams }, 'params'>>();
+  const { can } = usePermission();
+  const canViewComment = can(PERMISSIONS.VIEW_COMMENT) || can(PERMISSIONS.VIEW_COMMENTS);
+  const canAddComment = can(PERMISSIONS.ADD_COMMENT);
+
   const application = useAppSelector(selectSelectedApplication);
 
   const applicationId = route.params?.application_id ?? application?.id ?? '';
@@ -163,16 +170,18 @@ export default function CommentsScreen() {
   const menuTriggerRefs = useRef<Record<string, View | null>>({});
 
   useEffect(() => {
-    if (applicationId) {
+    if (applicationId && canViewComment) {
       dispatch(getApplicationReasonsListRequestAction());
       dispatch(getCommentsRequestAction({ application_id: applicationId, ...(jobId && { job_id: jobId }) }));
     }
-  }, [dispatch, applicationId, jobId]);
+  }, [dispatch, applicationId, jobId, canViewComment]);
 
   useEffect(() => {
-    dispatch(getReasonCategoryListRequestAction());
-    dispatch(getReasonListRequestAction(1));
-  }, [dispatch]);
+    if (canViewComment) {
+      dispatch(getReasonCategoryListRequestAction());
+      dispatch(getReasonListRequestAction(1));
+    }
+  }, [dispatch, canViewComment]);
 
   useEffect(() => {
     if (!activeCommentId) {
@@ -190,6 +199,7 @@ export default function CommentsScreen() {
   }, [activeCommentId]);
 
   const handleSend = () => {
+    if (!canAddComment) return;
     const text = commentText.trim();
     if (!text || !applicationId) return;
 
@@ -316,6 +326,22 @@ export default function CommentsScreen() {
       ))}
     </View>
   );
+
+  if (!canViewComment) {
+    return (
+      <CustomSafeAreaView>
+        <View style={styles.container}>
+          <Header title="Comments" backNavigation onBack={goBack} />
+          <View style={styles.errorContainer}>
+            <SvgXml xml={permissionDeniedIcon} style={styles.errorIcon} color={colors.brand[600]} />
+            <Typography variant="semiBoldTxtsm" color={colors.gray[600]} style={styles.errorText}>
+              You don't have access to view comments.
+            </Typography>
+          </View>
+        </View>
+      </CustomSafeAreaView>
+    );
+  }
 
   return (
     <CustomSafeAreaView>
@@ -491,29 +517,33 @@ export default function CommentsScreen() {
             </ScrollView>
           </View>
 
-          <Typography variant="regularTxtxs" color={colors.gray[800]} style={styles.hintText}>
-            Share your thoughts about this profile with your team.
-          </Typography>
-          <View style={styles.commentContainer}>
-            <View style={{ flex: 1 }}>
-              <TextField
-                placeholder="Write your comment here..."
-                size="Medium"
-                value={commentText}
-                onChangeText={setCommentText}
-              />
-            </View>
-            <View style={styles.buttonRow}>
-              <FloatingActionButton
-                value={sendButton}
-                backgroundColor={colors.brand[600]}
-                iconColor={colors.base.white}
-                size={40}
-                onPress={handleSend}
-                disabled={createLoading || !commentText.trim()}
-              />
-            </View>
-          </View>
+          {canAddComment && (
+            <>
+              <Typography variant="regularTxtxs" color={colors.gray[800]} style={styles.hintText}>
+                Share your thoughts about this profile with your team.
+              </Typography>
+              <View style={styles.commentContainer}>
+                <View style={{ flex: 1 }}>
+                  <TextField
+                    placeholder="Write your comment here..."
+                    size="Medium"
+                    value={commentText}
+                    onChangeText={setCommentText}
+                  />
+                </View>
+                <View style={styles.buttonRow}>
+                  <FloatingActionButton
+                    value={sendButton}
+                    backgroundColor={colors.brand[600]}
+                    iconColor={colors.base.white}
+                    size={40}
+                    onPress={handleSend}
+                    disabled={createLoading || !commentText.trim()}
+                  />
+                </View>
+              </View>
+            </>
+          )}
         </View>
 
         <DropdownMenu
@@ -532,27 +562,31 @@ export default function CommentsScreen() {
           items={
             activeComment
               ? [
-                {
-                  label: 'Edit',
-                  icon: editAvatarIcon,
-                  onPress: () => {
-                    if (activeComment.kind === 'comment') {
-                      // Edit uses the existing bottom input field.
-                      const initial = (activeComment.text ?? '').trim();
-                      setEditingCommentId(activeComment.id);
-                      setEditingOriginalText(initial);
-                      setCommentText(initial);
-                      return;
-                    }
+                ...(canAddComment
+                  ? [
+                    {
+                      label: 'Edit',
+                      icon: editAvatarIcon,
+                      onPress: () => {
+                        if (activeComment.kind === 'comment') {
+                          // Edit uses the existing bottom input field.
+                          const initial = (activeComment.text ?? '').trim();
+                          setEditingCommentId(activeComment.id);
+                          setEditingOriginalText(initial);
+                          setCommentText(initial);
+                          return;
+                        }
 
-                    const reasonItem = applicationReasonsList.find((x: any) => x?.id === activeComment.id) as any;
-                    const reasonIds =
-                      Array.isArray(reasonItem?.reason) ? reasonItem.reason.map((r: any) => r?.id).filter(Boolean) : [];
-                    setEditingReasonId(activeComment.id);
-                    setEditingReasonObjectId(reasonItem?.object_id ?? reasonItem?.id ?? null);
-                    setSelectedReasonIds(reasonIds);
-                  },
-                },
+                        const reasonItem = applicationReasonsList.find((x: any) => x?.id === activeComment.id) as any;
+                        const reasonIds =
+                          Array.isArray(reasonItem?.reason) ? reasonItem.reason.map((r: any) => r?.id).filter(Boolean) : [];
+                        setEditingReasonId(activeComment.id);
+                        setEditingReasonObjectId(reasonItem?.object_id ?? reasonItem?.id ?? null);
+                        setSelectedReasonIds(reasonIds);
+                      },
+                    },
+                  ]
+                  : []),
                 {
                   label: 'Delete',
                   icon: deleteIcon,

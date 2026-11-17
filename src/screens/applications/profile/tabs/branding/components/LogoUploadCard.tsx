@@ -241,36 +241,36 @@ export const LogoUploadCard: React.FC<LogoUploadCardProps> = React.memo(({
         <View style={styles.logoActions}>
           {isAuto ? (
             <Pressable
-              style={styles.uploadTextBtn}
+              style={[styles.uploadTextBtn, disabled && styles.btnDisabled]}
               onPress={onReplace}
               disabled={disabled}
               hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
             >
-              <SvgXml xml={uploadSvg} width={14} height={14} />
-              <Typography variant="mediumTxtxs" color={colors.gray[700]}>
+              <SvgXml xml={uploadSvg} width={14} height={14} opacity={disabled ? 0.4 : 1} />
+              <Typography variant="mediumTxtxs" color={disabled ? colors.gray[400] : colors.gray[700]}>
                 Upload
               </Typography>
             </Pressable>
           ) : (
             <>
               <Pressable
-                style={styles.actionIconBtn}
+                style={[styles.actionIconBtn, disabled && styles.btnDisabled]}
                 onPress={onReplace}
                 disabled={disabled}
                 hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 accessibilityLabel={`Replace ${title}`}
               >
-                <SvgXml xml={pageReloadIcon(colors.gray[500])} width={16} height={16} />
+                <SvgXml xml={pageReloadIcon(disabled ? colors.gray[300] : colors.gray[500])} width={16} height={16} />
               </Pressable>
 
               <Pressable
-                style={styles.actionDeleteBtn}
+                style={[styles.actionDeleteBtn, disabled && styles.btnDisabled]}
                 onPress={onDelete}
                 disabled={disabled}
                 hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 accessibilityLabel={`Delete ${title}`}
               >
-                <SvgXml xml={getDeleteIcon(colors.error[600])} width={16} height={16} />
+                <SvgXml xml={getDeleteIcon(disabled ? colors.gray[300] : colors.error[600])} width={16} height={16} />
               </Pressable>
             </>
           )}

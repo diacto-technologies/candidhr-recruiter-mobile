@@ -350,7 +350,19 @@ const handleApiError = async (response: Response, endpoint?: string): Promise<ne
   const isPublicAuth = isPublicAuthEndpoint(endpoint);
   const isAuthErrorDuringLogout = response.status === 401 && !isAuthenticated && !isPublicAuth;
 
-  if (!isEmptyState404 && !isAssessmentsV2Endpoint && !isLogoutEndpoint && !isAuthErrorDuringLogout) {
+  // For application viewers endpoint, a 403 or non-admin error is expected when user is not a workspace admin.
+  // Silence toast so "Only workspace admins can see who viewed an application." is not shown on screen.
+  const isViewersForbiddenOrError =
+    (typeof endpoint === "string" && (endpoint.includes("/viewers/") || endpoint.includes("/viewers"))) ||
+    normalizedErrorMessage.includes("only workspace admins can see who viewed");
+
+  if (
+    !isEmptyState404 &&
+    !isAssessmentsV2Endpoint &&
+    !isLogoutEndpoint &&
+    !isAuthErrorDuringLogout &&
+    !isViewersForbiddenOrError
+  ) {
     showToastMessage(errorMessage, 'error');
   }
 

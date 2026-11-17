@@ -46,7 +46,7 @@ const JobsScreen = () => {
             onJobPress={ctrl.handleJobPress}
             favouriteJobIds={ctrl.favouriteJobIds}
             onToggleFavourite={ctrl.handleToggleFavourite}
-            onDeleteJob={ctrl.handleDeleteJob}
+            onDeleteJob={ctrl.canDeleteJob ? ctrl.handleDeleteJob : undefined}
           />
         </View>
       ) : (

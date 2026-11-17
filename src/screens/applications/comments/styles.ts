@@ -27,8 +27,19 @@ export const useStyles = () => {
             alignItems: 'center',
             justifyContent: 'center',
         },
+        errorContainer: {
+            alignSelf: 'center',
+            justifyContent: 'center',
+            flex: 1,
+            paddingBottom: '30%',
+            paddingHorizontal: 24,
+        },
+        errorIcon: {
+            alignSelf: 'center',
+        },
         errorText: {
             padding: 16,
+            textAlign: 'center',
         },
         emptyText: {
             padding: 16,

@@ -76,6 +76,7 @@ export const PERMISSIONS = {
   VIEW_DASHBOARD: 'view_dashboard',
 
   ADD_COMMENT: 'add_comment',
+  VIEW_COMMENT: 'view_comment',
   VIEW_COMMENTS: 'view_comments',
 
   CREATE_REASON: 'create_reason',

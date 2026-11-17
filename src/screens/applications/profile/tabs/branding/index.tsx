@@ -23,6 +23,7 @@ import { checkMarkIcon } from '../../../../../assets/svg/checkmark';
 import { closeIconSm } from '../../../../../assets/svg/closeicon';
 import { eyeVisibleIcon } from '../../../../../assets/svg/eyevisible';
 import { resetIcon } from '../../../../../assets/svg/settingsIcons';
+import { alertTriangleIcon } from '../../../../../assets/svg/alertTriangle';
 import FooterButtons from '../../../../../components/molecules/footerbuttons';
 import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../../../hooks/useAppSelector';
@@ -94,6 +95,11 @@ const BrandingScreen = () => {
 
   const brandingData = useAppSelector(selectBrandingData);
   const profile = useAppSelector(selectProfile);
+  const isAdmin = Boolean(
+    profile?.is_admin ||
+    profile?.is_superadmin ||
+    profile?.role?.name?.trim().toLowerCase() === 'admin'
+  );
   const loading = useAppSelector(selectBrandingLoading);
   const updating = useAppSelector(selectBrandingUpdating);
   const updateSuccess = useAppSelector(selectBrandingUpdateSuccess);
@@ -244,13 +250,15 @@ const BrandingScreen = () => {
 
   // Color Swatch Selection Handler
   const handleSelectPresetColor = useCallback((color: string) => {
+    if (!isAdmin) return;
     setPrimaryColor(color);
     setCustomHexInput(color.replace('#', ''));
     setIsResetAction(false);
-  }, []);
+  }, [isAdmin]);
 
   // Custom Hex Input Handler
   const handleCustomHexChange = useCallback((text: string) => {
+    if (!isAdmin) return;
     const sanitized = text.replace(/[^0-9A-Fa-f]/g, '').slice(0, 6);
     setCustomHexInput(sanitized);
 
@@ -258,10 +266,11 @@ const BrandingScreen = () => {
       setPrimaryColor(`#${sanitized.toUpperCase()}`);
       setIsResetAction(false);
     }
-  }, []);
+  }, [isAdmin]);
 
   // Reset to Default Action
   const handleResetToDefault = useCallback(() => {
+    if (!isAdmin) return;
     dispatch(resetUpdateStatus());
     setProductName('');
     setPrimaryColor(DEFAULT_BRAND_COLOR);
@@ -278,10 +287,11 @@ const BrandingScreen = () => {
     setBrandColor(DEFAULT_BRAND_COLOR);
     setIsResetAction(true);
     showToastMessage('Reset to default values', 'info');
-  }, [dispatch]);
+  }, [dispatch, isAdmin]);
 
   // Discard Action
   const handleDiscard = useCallback(() => {
+    if (!isAdmin) return;
     setIsResetAction(false);
     setLogoErrors({});
     if (brandingData) {
@@ -306,10 +316,11 @@ const BrandingScreen = () => {
         )
       );
     }
-  }, [brandingData, getResolvedSavedProductName]);
+  }, [brandingData, getResolvedSavedProductName, isAdmin]);
 
   // Save Branding Action
   const handleSave = useCallback(() => {
+    if (!isAdmin) return;
     if (productName.trim()) {
       const nameValidation = validateProductName(productName);
       if (!nameValidation.isValid) {
@@ -408,6 +419,7 @@ const BrandingScreen = () => {
     }
   }, [
     dispatch,
+    isAdmin,
     productName,
     primaryColor,
     isResetAction,
@@ -422,6 +434,7 @@ const BrandingScreen = () => {
   ]);
 
   const handleDeleteLogo = useCallback((type: LogoCardType) => {
+    if (!isAdmin) return;
     setLogoErrors((prev) => ({ ...prev, [type]: null }));
     if (type === 'logo') {
       setLogoFile(null);
@@ -439,11 +452,12 @@ const BrandingScreen = () => {
       setFaviconDeleted(true);
       setHasCustomFavicon(false);
     }
-  }, [hasCustomFavicon]);
+  }, [hasCustomFavicon, isAdmin]);
 
   // Image Picker Logic - Directly open phone gallery
   const handleOpenPickerFor = useCallback(
     async (type: LogoCardType) => {
+      if (!isAdmin) return;
       if (pickerBusyRef.current) return;
       pickerBusyRef.current = true;
       try {
@@ -552,7 +566,7 @@ const BrandingScreen = () => {
         pickerBusyRef.current = false;
       }
     },
-    [hasCustomFavicon]
+    [hasCustomFavicon, isAdmin]
   );
 
   const isPresetSelected = useCallback(
@@ -651,6 +665,20 @@ const BrandingScreen = () => {
             bounces={false}
             contentContainerStyle={styles.scrollContent}
           >
+            {/* Non-Admin Notice Banner */}
+            {!isAdmin && (
+              <View style={styles.adminNoticeBanner}>
+                <SvgXml xml={alertTriangleIcon(colors.warning[700])} width={18} height={18} />
+                <Typography
+                  variant="mediumTxtsm"
+                  color={colors.warning[800]}
+                  style={styles.adminNoticeText}
+                >
+                  Only workspace admins can change branding.
+                </Typography>
+              </View>
+            )}
+
             {/* Top Bar with Status & Action Buttons */}
             <View style={styles.topBar}>
               <Typography variant="regularTxtsm" color={colors.gray[500]} style={styles.headerSubtitle}>
@@ -676,14 +704,14 @@ const BrandingScreen = () => {
                   size={36}
                   variant="outline"
                   buttonColor={colors.base.white}
-                  textColor={isAlreadyDefault ? colors.gray[400] : colors.gray[700]}
+                  textColor={(!isAdmin || isAlreadyDefault) ? colors.gray[400] : colors.gray[700]}
                   borderColor={colors.gray[300]}
                   borderWidth={1}
                   borderRadius={8}
                   paddingHorizontal={12}
                   textVariant="mediumTxtxs"
-                  disabled={isAlreadyDefault || updating}
-                  startIcon={<SvgXml xml={resetIcon} width={14} height={14} opacity={isAlreadyDefault ? 0.4 : 1} />}
+                  disabled={!isAdmin || isAlreadyDefault || updating}
+                  startIcon={<SvgXml xml={resetIcon} width={14} height={14} opacity={(!isAdmin || isAlreadyDefault) ? 0.4 : 1} />}
                   onPress={handleResetToDefault}
                 >
                   Reset to default
@@ -706,18 +734,26 @@ const BrandingScreen = () => {
                     </Typography>
                   </View>
 
-                  <View style={[styles.inputWrap, isInputFocused && styles.inputWrapFocused]}>
+                  <View
+                    style={[
+                      styles.inputWrap,
+                      isInputFocused && styles.inputWrapFocused,
+                      !isAdmin && styles.inputWrapDisabled,
+                    ]}
+                  >
                     <TextInput
-                      style={styles.textInput}
+                      style={[styles.textInput, !isAdmin && styles.textInputDisabled]}
                       value={productName}
                       onChangeText={(val) => {
+                        if (!isAdmin) return;
                         setProductName(val.slice(0, MAX_PRODUCT_NAME_LENGTH));
                         setIsResetAction(false);
                       }}
+                      editable={isAdmin}
                       placeholder="e.g. Acme Careers"
                       placeholderTextColor={colors.gray[400]}
                       maxLength={MAX_PRODUCT_NAME_LENGTH}
-                      onFocus={() => setIsInputFocused(true)}
+                      onFocus={() => isAdmin && setIsInputFocused(true)}
                       onBlur={() => setIsInputFocused(false)}
                     />
                     <Typography variant="regularTxtxs" color={colors.gray[400]} style={styles.charCounter}>
@@ -758,6 +794,7 @@ const BrandingScreen = () => {
                     localFile={logoFile}
                     isAutoBadge={!logoFile && !currentLogoUrl}
                     autoBadgeText="AUTO"
+                    disabled={!isAdmin}
                     productName={displayProductName}
                     fallbackText={autoInitials}
                     compactLogoUrl={currentSecondaryLogoUrl}
@@ -778,6 +815,7 @@ const BrandingScreen = () => {
                     localFile={secondaryLogoFile}
                     isAutoBadge={!secondaryLogoFile && !currentSecondaryLogoUrl}
                     autoBadgeText="AUTO"
+                    disabled={!isAdmin}
                     productName={displayProductName}
                     fallbackText={autoInitials}
                     brandColor={primaryColor}
@@ -805,6 +843,7 @@ const BrandingScreen = () => {
                     localFile={faviconFile}
                     isAutoBadge={!hasCustomFavicon && !faviconFile}
                     autoBadgeText="AUTO"
+                    disabled={!isAdmin}
                     productName={displayProductName}
                     fallbackText={autoInitials}
                     brandColor={primaryColor}
@@ -861,6 +900,7 @@ const BrandingScreen = () => {
                         color={color}
                         isSelected={isPresetSelected(color)}
                         onSelect={handleSelectPresetColor}
+                        disabled={!isAdmin}
                       />
                     ))}
                   </View>
@@ -871,17 +911,18 @@ const BrandingScreen = () => {
                       <Typography variant="mediumTxtsm" color={colors.gray[700]}>
                         Custom color:
                       </Typography>
-                      <View style={styles.customColorInputWrap}>
+                      <View style={[styles.customColorInputWrap, !isAdmin && styles.inputWrapDisabled]}>
                         <Typography variant="mediumTxtsm" color={colors.gray[500]} style={styles.hashPrefix}>
                           #
                         </Typography>
                         <TextInput
-                          style={styles.customColorInput}
+                          style={[styles.customColorInput, !isAdmin && styles.textInputDisabled]}
                           value={customHexInput}
                           onChangeText={handleCustomHexChange}
                           placeholder="2563EB"
                           placeholderTextColor={colors.gray[400]}
                           maxLength={6}
+                          editable={isAdmin}
                           autoCapitalize="characters"
                         />
                       </View>
@@ -914,11 +955,13 @@ const BrandingScreen = () => {
                     <CustomSwitch
                       value={poweredByEnabled}
                       onValueChange={(val) => {
+                        if (!isAdmin) return;
                         setPoweredByEnabled(val);
                         if (!val) {
                           setIsResetAction(false);
                         }
                       }}
+                      disabled={!isAdmin}
                       backgroundActive={primaryColor}
                       backgroundInactive={colors.gray[300]}
                     />
@@ -948,27 +991,27 @@ const BrandingScreen = () => {
               children: 'Discard',
               variant: 'outline',
               buttonColor: colors.base.white,
-              textColor: colors.gray[700],
+              textColor: (!isAdmin || !isDirty || updating) ? colors.gray[400] : colors.gray[700],
               borderColor: colors.gray[300],
               borderWidth: 1,
               borderRadius: 8,
               size: 40,
               textVariant: 'mediumTxtxs',
-              startIcon: <SvgXml xml={closeIconSm(colors.gray[700])} width={16} height={16} />,
-              disabled: !isDirty || updating,
+              startIcon: <SvgXml xml={closeIconSm((!isAdmin || !isDirty || updating) ? colors.gray[400] : colors.gray[700])} width={16} height={16} />,
+              disabled: !isAdmin || !isDirty || updating,
               onPress: handleDiscard,
             }}
             rightButtonProps={{
               children: 'Save branding',
               variant: 'contain',
-              buttonColor: primaryColor || colors.brand[600],
-              textColor: colors.base.white,
+              buttonColor: (!isAdmin || !isDirty || updating) ? colors.gray[200] : (primaryColor || colors.brand[600]),
+              textColor: (!isAdmin || !isDirty || updating) ? colors.gray[400] : colors.base.white,
               borderRadius: 8,
               size: 40,
               textVariant: 'semiBoldTxtxs',
-              startIcon: <SvgXml xml={checkMarkIcon} width={14} height={14} />,
+              startIcon: <SvgXml xml={checkMarkIcon} width={14} height={14} opacity={(!isAdmin || !isDirty || updating) ? 0.5 : 1} />,
               isLoading: updating,
-              disabled: !isDirty || updating,
+              disabled: !isAdmin || !isDirty || updating,
               onPress: handleSave,
             }}
           />

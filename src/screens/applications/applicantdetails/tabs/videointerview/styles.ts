@@ -320,6 +320,23 @@ export const useStyles = () => {
         shimmerContainer: {
             gap: 14, 
             paddingVertical: 18
+        },
+        noAccessContainer: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingVertical: 64,
+            paddingHorizontal: 24,
+            backgroundColor: colors.common.white,
+            marginHorizontal: -16,
+            marginTop: -16,
+            marginBottom: -16,
+            minHeight: 300,
+        },
+        noAccessText: {
+            textAlign: 'center',
+            maxWidth: 300,
+            fontWeight: '700',
         }
     });
 };

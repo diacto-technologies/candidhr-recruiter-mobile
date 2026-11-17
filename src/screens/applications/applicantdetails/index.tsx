@@ -178,18 +178,20 @@ export default function ApplicantDetails() {
               </View>
             </ScrollView>
 
-            <View style={styles.floatingButton}>
-              <FloatingActionButton
-                value={commentIcon}
-                backgroundColor={colors.brand[600]}
-                iconColor={colors.base.white}
-                size={50}
-                badgeCount={ctrl.application?.total_comments}
-                onPress={() => {
-                  navigate('Comments', { application_id, job_id });
-                }}
-              />
-            </View>
+            {ctrl.canViewComment && (
+              <View style={styles.floatingButton}>
+                <FloatingActionButton
+                  value={commentIcon}
+                  backgroundColor={colors.brand[600]}
+                  iconColor={colors.base.white}
+                  size={50}
+                  badgeCount={ctrl.application?.total_comments}
+                  onPress={() => {
+                    navigate('Comments', { application_id, job_id });
+                  }}
+                />
+              </View>
+            )}
 
             <View>
               <FooterButtons

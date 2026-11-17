@@ -28,6 +28,8 @@ import CustomTimeline from '../../../../../components/molecules/TimelineCard';
 import { TimelineItem } from '../../../../../components/molecules/TimelineCard/timelinecard.d';
 import { VideoResponseCard, VideoResponseItem } from '../../../../../components/organisms/VideoResponseCard';
 import TestDetailsModal from '../../../../../components/organisms/TestDetailsModal';
+import { usePermission } from '../../../../../hooks/usePermission';
+import { PERMISSIONS } from '../../../../../utils/permission.constants';
 
 const normalizeContentType = (v: unknown) =>
   String(v ?? '')
@@ -70,6 +72,10 @@ export default function VideoInterview({
 
   const dispatch = useAppDispatch();
   const styles = useStyles();
+  const { can } = usePermission();
+  const canViewVideoInterview = can(PERMISSIONS.VIEW_AUTOMATED_VIDEO_INTERVIEW);
+  const canViewVideoInterviewAnalysis = can(PERMISSIONS.VIEW_VIDEO_INTERVIEW_ANALYSIS);
+
   const applicant = useAppSelector(selectSelectedApplication);
   const PersonalityScreeningList = useAppSelector(selectPersonalityScreeningList);
   const personalityLoading = useAppSelector(selectPersonalityScreeningLoading);
@@ -121,19 +127,18 @@ export default function VideoInterview({
   // }, []);
 
   useEffect(() => {
-    if (applicant?.id) {
-      dispatch(getPersonalityInterviewOptionsRequestAction(applicant.id));
-    }
-  }, [applicant?.id, dispatch]);
+    if (!canViewVideoInterview || !applicant?.id) return;
+    dispatch(getPersonalityInterviewOptionsRequestAction(applicant.id));
+  }, [applicant?.id, dispatch, canViewVideoInterview]);
 
   useEffect(() => {
-    if (!sessionContentId) return;
+    if (!canViewVideoInterview || !sessionContentId) return;
     setActiveIndex(0);
     setIsResponsesLoading(true);
     dispatch(
       getPersonalityScreeningResponsesRequestAction(sessionContentId)
     );
-  }, [sessionContentId, dispatch]);
+  }, [sessionContentId, dispatch, canViewVideoInterview]);
 
   useEffect(() => {
     if (!sessionContentId) {
@@ -520,11 +525,27 @@ export default function VideoInterview({
 
   /** While fetching responses for the selected session (list fetch is optional). */
   const showVideoContentShimmer =
-    personalityLoading && !!sessionContentId;
-  const showContentShimmer = showVideoContentShimmer || isResponsesLoading;
+    canViewVideoInterview && personalityLoading && !!sessionContentId;
+  const showContentShimmer =
+    canViewVideoInterview && (showVideoContentShimmer || isResponsesLoading);
 
   const hasVideoSessionContent =
-    (responses?.length ?? 0) > 0 || Boolean(personalityAiSummary);
+    (responses?.length ?? 0) > 0 ||
+    (canViewVideoInterviewAnalysis && Boolean(personalityAiSummary));
+
+  if (!canViewVideoInterview) {
+    return (
+      <View style={styles.noAccessContainer}>
+        <Typography
+          variant="boldTxtmd"
+          color={colors.gray[600]}
+          style={styles.noAccessText}
+        >
+          You don’t have access to view automated video interviews.
+        </Typography>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -554,8 +575,12 @@ export default function VideoInterview({
               valueKey="id"
               statusKey="status_text"
               setValue={sessionContentId ?? ''}
-              showHelpIcon={true}
-              onPressHelpIcon={() => setTestDetailsVisible(true)}
+              showHelpIcon={canViewVideoInterview}
+              onPressHelpIcon={() => {
+                if (canViewVideoInterview) {
+                  setTestDetailsVisible(true);
+                }
+              }}
               onSelect={(item) => {
                 onSessionContentIdChange(item?.id ?? null);
               }}
@@ -686,59 +711,61 @@ export default function VideoInterview({
         </View>
       ) : (
         <>
-          <View style={styles.shortListedCard}>
-            <View style={{ flexDirection: "row", alignItems: 'center', gap: 8 }}>
-              <SvgXml xml={sparkles} height={20} width={20} />
-              <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
-                Video Interview — AI Summary
-              </Typography>
-            </View>
-
-            <View style={{ flexDirection: 'row', overflow: 'hidden', flexWrap: 'wrap', gap: 8 }}>
-              {["Articulation", "Communication", "Language", "Logical Thinking", "Technical"].map((tab) => {
-                const isActive = activeTab === tab;
-                return (
-                  <TouchableOpacity
-                    key={tab}
-                    style={[styles.tab, isActive && styles.activeTab]}
-                    onPress={() => setActiveTab(tab)}
-                  >
-                    <Typography
-                      variant="mediumTxtsm"
-                      color={isActive ? colors.brand[700] : colors.gray[700]}
-                    >
-                      {tab}
-                    </Typography>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            <View style={styles.summaryCard}>
-              <View style={styles.rowBetween}>
+          {canViewVideoInterviewAnalysis && (
+            <View style={styles.shortListedCard}>
+              <View style={{ flexDirection: "row", alignItems: 'center', gap: 8 }}>
+                <SvgXml xml={sparkles} height={20} width={20} />
                 <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
-                  {activeTab} Analysis
-                </Typography>
-
-                {/* {scorePercent !== null && (
-              <View style={styles.scoreBadge}>
-                <Typography variant="mediumTxtxs" color={colors.orange[700]}>
-                  Score: {scorePercent}%
+                  Video Interview — AI Summary
                 </Typography>
               </View>
-            )} */}
+
+              <View style={{ flexDirection: 'row', overflow: 'hidden', flexWrap: 'wrap', gap: 8 }}>
+                {["Articulation", "Communication", "Language", "Logical Thinking", "Technical"].map((tab) => {
+                  const isActive = activeTab === tab;
+                  return (
+                    <TouchableOpacity
+                      key={tab}
+                      style={[styles.tab, isActive && styles.activeTab]}
+                      onPress={() => setActiveTab(tab)}
+                    >
+                      <Typography
+                        variant="mediumTxtsm"
+                        color={isActive ? colors.brand[700] : colors.gray[700]}
+                      >
+                        {tab}
+                      </Typography>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
 
-              <Typography
-                variant="regularTxtsm"
-                color={colors.gray[600]}
-                style={styles.summaryText}
-              >
-                {summaryData.text}
-              </Typography>
+              <View style={styles.summaryCard}>
+                <View style={styles.rowBetween}>
+                  <Typography variant="semiBoldTxtmd" color={colors.gray[900]}>
+                    {activeTab} Analysis
+                  </Typography>
+
+                  {/* {scorePercent !== null && (
+                <View style={styles.scoreBadge}>
+                  <Typography variant="mediumTxtxs" color={colors.orange[700]}>
+                    Score: {scorePercent}%
+                  </Typography>
+                </View>
+              )} */}
+                </View>
+
+                <Typography
+                  variant="regularTxtsm"
+                  color={colors.gray[600]}
+                  style={styles.summaryText}
+                >
+                  {summaryData.text}
+                </Typography>
+              </View>
+
             </View>
-
-          </View>
+          )}
 
           <VideoResponseCard
             responses={formattedVideoResponses}
