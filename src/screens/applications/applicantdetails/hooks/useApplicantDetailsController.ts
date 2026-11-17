@@ -136,7 +136,8 @@ export const useApplicantDetailsController = (
 
       if (
         stage.stage_type === 'automated_video_interview' &&
-        !can(PERMISSIONS.VIEW_AUTOMATED_VIDEO_INTERVIEW_STAGE)
+        !can(PERMISSIONS.VIEW_AUTOMATED_VIDEO_INTERVIEW_STAGE) &&
+        !can(PERMISSIONS.VIEW_AUTOMATED_VIDEO_INTERVIEW)
       ) {
         return;
       }
@@ -381,6 +382,7 @@ export const useApplicantDetailsController = (
     // Permissions
     canUpdateStatus: can(PERMISSIONS.UPDATE_APPLICATION_STATUS),
     canExportProfile: can(PERMISSIONS.EXPORT_APPLICATION_PROFILE),
+    canViewComment: can(PERMISSIONS.VIEW_COMMENT) || can(PERMISSIONS.VIEW_COMMENTS),
 
     // Handlers
     handleViewResume,

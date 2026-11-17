@@ -24,13 +24,15 @@ import { organizationalOrigin } from '../../../../features/auth';
 import { store } from '../../../../store';
 import { shareIcon } from '../../../../assets/svg/share';
 import { deleteIcon } from '../../../../assets/svg/deleteicon';
+import { closeIcon } from '../../../../assets/svg/closeicon';
+import { checkIcon } from '../../../../assets/svg/check';
 import ShareJobModal from '../../shareJobModal';
 import ConfirmModal from '../../confirmmodal';
 import { PERMISSIONS } from '../../../../utils/permission.constants';
 import { usePermission } from '../../../../hooks/usePermission';
 import { useAppDispatch } from '../../../../hooks/useAppDispatch';
 import { useBrandTheme } from '../../../../hooks/useBrandTheme';
-import { deleteJobRequestAction } from '../../../../features/jobs';
+import { deleteJobRequestAction, updateJobRequestAction } from '../../../../features/jobs';
 import { JobCardListProps, JobCardRowProps } from './jobcardlist.d';
 
 const IS_TABLET = DeviceInfo.isTablet();
@@ -62,12 +64,18 @@ const MENU_WIDTH = 190;
 
   const handleConfirmDelete = useCallback(() => {
     setDeleteModalVisible(false);
+    if (!can(PERMISSIONS.DELETE_JOB)) return;
     if (onDeleteJob) {
       onDeleteJob(item.id);
     } else {
       dispatch(deleteJobRequestAction(item.id));
     }
-  }, [dispatch, item.id, onDeleteJob]);
+  }, [dispatch, item.id, onDeleteJob, can]);
+
+  const handleTogglePublish = useCallback(() => {
+    if (!can(PERMISSIONS.PUBLISH_JOB)) return;
+    dispatch(updateJobRequestAction({ id: item.id, published: !item.published }));
+  }, [dispatch, item.id, item.published, can]);
 
   const handleCancelDelete = useCallback(() => {
     setDeleteModalVisible(false);
@@ -275,6 +283,18 @@ const MENU_WIDTH = 190;
               icon: copyIcon,
               onPress: handleCopyJobUrl,
             },
+            ...(can(PERMISSIONS.PUBLISH_JOB)
+              ? [
+                  {
+                    label: item.published ? 'Unpublish' : 'Publish',
+                    icon: item.published ? closeIcon : checkIcon,
+                    onPress: () => {
+                      setMenuVisible(false);
+                      handleTogglePublish();
+                    },
+                  },
+                ]
+              : []),
             ...(can(PERMISSIONS.SHARE_JOB)
               ? [
                   {
@@ -287,14 +307,18 @@ const MENU_WIDTH = 190;
                   },
                 ]
               : []),
-            {
-              label: 'Delete',
-              icon: deleteIcon,
-              onPress: () => {
-                setMenuVisible(false);
-                setDeleteModalVisible(true);
-              },
-            },
+            ...(can(PERMISSIONS.DELETE_JOB)
+              ? [
+                  {
+                    label: 'Delete',
+                    icon: deleteIcon,
+                    onPress: () => {
+                      setMenuVisible(false);
+                      setDeleteModalVisible(true);
+                    },
+                  },
+                ]
+              : []),
           ]}
         />
       )}

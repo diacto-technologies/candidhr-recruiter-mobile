@@ -33,4 +33,5 @@ export interface ColorSwatchProps {
   color: string;
   isSelected: boolean;
   onSelect: (color: string) => void;
+  disabled?: boolean;
 }

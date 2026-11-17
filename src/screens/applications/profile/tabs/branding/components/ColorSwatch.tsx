@@ -9,6 +9,7 @@ export const ColorSwatch: React.FC<ColorSwatchProps> = React.memo(({
   color,
   isSelected,
   onSelect,
+  disabled = false,
 }) => {
   const styles = useStyles();
 
@@ -18,8 +19,10 @@ export const ColorSwatch: React.FC<ColorSwatchProps> = React.memo(({
         styles.swatchBtn,
         { backgroundColor: color },
         isSelected && styles.swatchBtnSelected,
+        disabled && styles.swatchBtnDisabled,
       ]}
-      onPress={() => onSelect(color)}
+      onPress={() => !disabled && onSelect(color)}
+      disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={`Select color ${color}`}
       hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}

@@ -67,6 +67,8 @@ export const useJobsController = () => {
   
   const accessLoading = profileLoading || (profile === null && profileError === null);
   const hasPermission = accessLoading || can(PERMISSIONS.VIEW_JOB);
+  const canDeleteJob = can(PERMISSIONS.DELETE_JOB);
+  const canPublishJob = can(PERMISSIONS.PUBLISH_JOB);
 
   const isNavigatingToDetailRef = useRef(false);
 
@@ -225,9 +227,10 @@ export const useJobsController = () => {
   const handleToggleFavourite = (jobId: string) => dispatch(toggleFavouriteJob(jobId));
   const handleDeleteJob = useCallback(
     (jobId: string) => {
+      if (!can(PERMISSIONS.DELETE_JOB)) return;
       dispatch(deleteJobRequestAction({ id: jobId, deleted_by: profile?.id }));
     },
-    [dispatch, profile?.id],
+    [dispatch, profile?.id, can],
   );
   const handleJobPress = (jobId: string) => {
     isNavigatingToDetailRef.current = true;
@@ -236,6 +239,8 @@ export const useJobsController = () => {
 
   return {
     hasPermission,
+    canDeleteJob,
+    canPublishJob,
     filterSheet,
     setFilterSheet,
     selectedTab,

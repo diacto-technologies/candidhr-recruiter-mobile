@@ -12,6 +12,23 @@ export const useStyles = (brandColor: string = colors.brand[600]) => {
       paddingHorizontal: 16,
       paddingBottom: 32,
     },
+    adminNoticeBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.warning[50],
+      borderWidth: 1,
+      borderColor: colors.warning[200],
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      marginTop: 10,
+      marginBottom: 2,
+      gap: 10,
+    },
+    adminNoticeText: {
+      flex: 1,
+      lineHeight: 18,
+    },
     topBar: {
       paddingVertical: 12,
     },
@@ -96,11 +113,18 @@ export const useStyles = (brandColor: string = colors.brand[600]) => {
     inputWrapFocused: {
       borderColor: activeColor,
     },
+    inputWrapDisabled: {
+      backgroundColor: colors.gray[100],
+      borderColor: colors.gray[200],
+    },
     textInput: {
       flex: 1,
       fontSize: 14,
       color: colors.gray[900],
       paddingVertical: 0,
+    },
+    textInputDisabled: {
+      color: colors.gray[500],
     },
     charCounter: {
       marginLeft: 8,
@@ -257,6 +281,9 @@ export const useStyles = (brandColor: string = colors.brand[600]) => {
       borderColor: colors.gray[200],
       backgroundColor: colors.base.white,
     },
+    btnDisabled: {
+      opacity: 0.45,
+    },
     specsText: {
       marginTop: 2,
       lineHeight: 16,
@@ -290,6 +317,9 @@ export const useStyles = (brandColor: string = colors.brand[600]) => {
       shadowOpacity: 0.25,
       shadowRadius: 2,
       elevation: 3,
+    },
+    swatchBtnDisabled: {
+      opacity: 0.45,
     },
     customColorRow: {
       flexDirection: 'row',
